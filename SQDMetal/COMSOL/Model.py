@@ -83,10 +83,10 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").lengthUnit("m")
         self._create_block_centre('blk_chip', self.chip_len,self.chip_wid,self.chip_thickness, self.chip_centre[0], self.chip_centre[1],-self.chip_thickness*0.5)
         self._create_block_centre('blk_boundary', self.chip_len+2*self.pad_x,self.chip_wid+2*self.pad_y,self.chip_thickness+2*self.pad_z,
-                                                  self.chip_centre[0]-self.pad_x*0.5, self.chip_centre[1]-self.pad_y*0.5, -(self.chip_thickness-self.pad_z)*0.5)
+                                                  self.chip_centre[0], self.chip_centre[1], -(self.chip_thickness-self.pad_z)*0.5)
         #Create the selections to get face IDs for the exterior boundary
-        self.sel_ext_bnds_1 = self._create_boundary_selection_sphere(1e-9, -self.pad_x, -self.pad_y, -self.chip_thickness-self.pad_z)
-        self.sel_ext_bnds_2 = self._create_boundary_selection_sphere(1e-9, self.chip_len+self.pad_x, self.chip_wid+self.pad_y, self.pad_z)
+        self.sel_ext_bnds_1 = self._create_boundary_selection_sphere(1e-9, -self.chip_len*0.5-self.pad_x, -self.chip_wid*0.5-self.pad_y, -self.chip_thickness*0.5-self.pad_z)
+        self.sel_ext_bnds_2 = self._create_boundary_selection_sphere(1e-9, self.chip_len*0.5+self.pad_x, self.chip_wid*0.5+self.pad_y, self.chip_thickness*0.5+self.pad_z)
 
         #Create workplane and subsequent metallic geometry...
         self._model.java.component("comp1").geom("geom1").feature().create("wp1", "WorkPlane")
