@@ -1,4 +1,4 @@
-from pint import UnitRegistry
+# from pint import UnitRegistry
 
 class QUtilities:
     @staticmethod
@@ -16,5 +16,24 @@ class QUtilities:
 
     @staticmethod
     def parse_value_length(strVal):
-        ureg = UnitRegistry().Quantity
-        return ureg(strVal).to('m').magnitude
+        #This is far too slow!?
+        # ureg = UnitRegistry().Quantity
+        # return ureg(strVal).to('m').magnitude
+
+        #So do this instead...
+        strVal = strVal.strip()
+        assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."
+        if strVal[-2:] == "mm":
+            return float(strVal[:-2])*1e-3
+        elif strVal[-2:] == "um":
+            return float(strVal[:-2])*1e-6
+        elif strVal[-2:] == "nm":
+            return float(strVal[:-2])*1e-9
+        elif strVal[-2:] == "pm":
+            return float(strVal[:-2])*1e-12
+        elif strVal[-2:] == "fm":
+            return float(strVal[:-2])*1e-15
+        elif strVal[-1:] == "m":
+            return float(strVal[:-2])
+        else:
+            assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."

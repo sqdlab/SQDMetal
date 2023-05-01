@@ -137,23 +137,80 @@ class CapacitorInterdigital(QComponent):
     
     @staticmethod
     def _draw_capacitor(p, design):
+        Num = int(p.N_total)
+
         # Make the shapely polygons for the main cap structure
         len_fings_plus_gap = p.fing_len + p.fing_len_gap
-        cap_width = p.N_total*p.fing_wid + (p.N_total-1)*p.fing_wid_gap
+        cap_width = Num*p.fing_wid + (Num-1)*p.fing_wid_gap
         len_trace = np.sqrt((p.end_x-p.pos_x)**2+(p.end_y-p.pos_y)**2)
-        pad1 = [(0, p.cpw_width*0.5),
+        #Tracing the left wall and the bottom-side of the pad
+        pad1a = [
+                (0, p.cpw_width*0.5),
                 (0, -p.cpw_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, -p.cpw_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, -cap_width*0.5),
-                (len_trace*0.5-len_fings_plus_gap*0.5, -cap_width*0.5),
+                (len_trace*0.5-len_fings_plus_gap*0.5, -cap_width*0.5)]
+        #Tracing the top-side of the pad
+        pad1b = [
                 (len_trace*0.5-len_fings_plus_gap*0.5, cap_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, cap_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, p.cpw_width*0.5),
                 (0, p.cpw_width*0.5)]
-        pad2 = np.array(pad1)
-        pad2[:,0] = len_trace - pad2[:,0]
-        pad2 = pad2[::-1]
-        #
+        pad2a = np.array(pad1a)
+        pad2b = np.array(pad1b)
+        #Do the fingers
+        if Num % 2 == 0:
+            num_fings_1 = Num // 2
+            num_fings_2 = num_fings_1
+        else:
+            if p.larger_first:
+                num_fings_1 = (Num+1) // 2
+                num_fings_2 = (Num-1) // 2
+            else:
+                num_fings_1 = (Num-1) // 2
+                num_fings_2 = (Num+1) // 2
+        fing_coords1 = []
+        cur_x = pad1a[-1][0]
+        cur_y = pad1a[-1][1]
+        if num_fings_1 >= num_fings_2:
+            pad1a.pop(-1)
+        else:
+            cur_y += p.fing_wid + p.fing_wid_gap
+        for m in range(num_fings_1):
+            #Basically drawing:
+            #  e
+            #  d.......c
+            #  a.......b
+            fing_coords1 += [(cur_x, cur_y), (cur_x+p.fing_len, cur_y), (cur_x+p.fing_len, cur_y+p.fing_wid), (cur_x, cur_y+p.fing_wid), (cur_x, cur_y+p.fing_wid*2+p.fing_wid_gap*2)]
+            cur_y = fing_coords1[-1][1]
+        pad1 = pad1a + fing_coords1[:-1] + pad1b
+
+        if Num % 2 == 0:
+            pad2 = np.array(pad1)
+            pad2[:,0] = len_trace - pad2[:,0]
+            pad2[:,1] = -pad2[:,1]
+        else:
+            pad2a[:,0] = len_trace - pad2a[:,0]
+            pad2b[:,0] = len_trace - pad2b[:,0]
+            pad2a = pad2a.tolist()
+            
+            fing_coords2 = []
+            cur_x = pad2a[-1][0]
+            cur_y = pad2a[-1][1]
+            if num_fings_2 > num_fings_1:
+                pad2a.pop(-1)
+            else:
+                cur_y += p.fing_wid + p.fing_wid_gap
+            for m in range(num_fings_2):
+                #Basically drawing:
+                #          e
+                #  c.......d
+                #  b.......a
+                fing_coords2 += [(cur_x, cur_y), (cur_x-p.fing_len, cur_y), (cur_x-p.fing_len, cur_y+p.fing_wid), (cur_x, cur_y+p.fing_wid), (cur_x, cur_y+p.fing_wid*2+p.fing_wid_gap*2)]
+                cur_y = fing_coords2[-1][1]
+            pad2 = np.concatenate([pad2a, fing_coords2[:-1], pad2b])
+            pad2 = pad2[::-1]
+
         units = QUtilities.get_units(design)
         cpwP = CpwParams.fromQDesign(design)
         gap_cpw_line = cpwP.get_gap_from_width(p.cpw_width*units)/units
@@ -162,43 +219,39 @@ class CapacitorInterdigital(QComponent):
         else:
             gap_cpw_cap = p.side_gap
         #
-        padGap1 = np.array(pad1)
-        padGap1[[-2,-1,0],1] += gap_cpw_line
-        padGap1[[1,2],1] -= gap_cpw_line
-        padGap1[[5,6],1] += gap_cpw_cap
-        padGap1[[3,4],1] -= gap_cpw_cap
+        padGap = np.array([
+                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, cap_width*0.5 + gap_cpw_cap),
+                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, p.cpw_width*0.5 + gap_cpw_line),
+                 (0, p.cpw_width*0.5 + gap_cpw_line),
+
+                 (0, -p.cpw_width*0.5 - gap_cpw_line),
+                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, -p.cpw_width*0.5 - gap_cpw_line),
+                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, -cap_width*0.5 - gap_cpw_cap),
+
+                 (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat, -cap_width*0.5 - gap_cpw_cap),
+                 (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat+p.len_diag, -p.cpw_width*0.5 - gap_cpw_line),
+                 (len_trace, -p.cpw_width*0.5 - gap_cpw_line),
+
+                 (len_trace, p.cpw_width*0.5 + gap_cpw_line),
+                 (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat+p.len_diag, p.cpw_width*0.5 + gap_cpw_line),
+                 (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat, cap_width*0.5 + gap_cpw_cap),
+                 ])
         if p.len_diag == 0:
-            padGap1[[2,3,6,7],0] -= p.init_pad
+            padGap[[0,1,4,5],0] -= p.init_pad
+            padGap[[6,7,10,11],0] += p.init_pad
         else:
-            padGap1[[2,7],0] -= p.init_pad
-        padGap1[4:6,0] += 0.5*(len_fings_plus_gap)
-        padGap2 = padGap1*1.0
-        padGap2[:,0] = len_trace - padGap2[:,0]
-        padGap2 = padGap2[::-1]
-        #
+            padGap[[1,4],0] -= p.init_pad
+            padGap[[7,10],0] += p.init_pad
+        
+
         pin1 = pad1[:2]
         pin2 = pad2[[-2,-1]]
         #
         pad1 = shapely.Polygon(pad1)
         pad2 = shapely.Polygon(pad2)
-        padGap = shapely.unary_union([shapely.Polygon(padGap1), shapely.Polygon(padGap2)])
+        padGap = shapely.Polygon(padGap)
         pin1 = shapely.LineString(pin1)
         pin2 = shapely.LineString(pin2)
-        #Do the fingers
-        cur_x = len_trace*0.5-len_fings_plus_gap*0.5
-        cur_y = cap_width*0.5
-        poly_fings_1 = []
-        poly_fings_2 = []
-        flip = False
-        for m in range(p.N_total):
-            if flip:
-                poly_fings_2.append(shapely.Polygon([[cur_x+p.fing_len_gap, cur_y], [cur_x+p.fing_len_gap, cur_y-p.fing_wid], [cur_x+p.fing_len_gap+p.fing_len, cur_y-p.fing_wid], [cur_x+p.fing_len_gap+p.fing_len, cur_y]]))
-            else:
-                poly_fings_1.append(shapely.Polygon([[cur_x, cur_y], [cur_x, cur_y-p.fing_wid], [cur_x+p.fing_len, cur_y-p.fing_wid], [cur_x+p.fing_len, cur_y]]))
-            flip = not flip
-            cur_y -= p.fing_wid + p.fing_wid_gap
-        pad1 = shapely.unary_union([pad1] + poly_fings_1)
-        pad2 = shapely.unary_union([pad2] + poly_fings_2)
 
         polys = [pad1, pad2, padGap, pin1, pin2]
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
