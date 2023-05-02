@@ -34,6 +34,8 @@ class CapacitorInterdigital(QComponent):
                      when len_diag is zero) to ensure that the ground plane does not intersect with the main capacitor conductors. The
                      ground plane spacing typically starts to change on meeting with the LD or LF sections (see below). If init_pad > 0,
                      it starts from an earlier point.
+        * side_gap_uniform - If True, the spacing on the sides are made uniform by taking the maximum extent of either the gap around
+                             the inlet feed or the main capacitor body with the fingers.
     
     As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
         
@@ -89,6 +91,7 @@ class CapacitorInterdigital(QComponent):
         * fing_wid_gap='1um'
         * N_total=5
         * larger_first=True
+        * side_gap_uniform=False
         * side_gap='0um'
         * init_pad='0um'
     """
@@ -106,6 +109,7 @@ class CapacitorInterdigital(QComponent):
                            fing_wid_gap='1um',
                            N_total=5,
                            larger_first=True,
+                           side_gap_uniform=False,
                            side_gap='0um',
                            init_pad='0um')
     """Default drawing options"""
@@ -218,6 +222,10 @@ class CapacitorInterdigital(QComponent):
             gap_cpw_cap = cpwP.get_gap_from_width(cap_width*units)/units
         else:
             gap_cpw_cap = p.side_gap
+        if p.side_gap_uniform:
+            max_extent = max(p.cpw_width*0.5+gap_cpw_line, cap_width*0.5+gap_cpw_cap)
+            gap_cpw_line = max_extent - p.cpw_width*0.5
+            gap_cpw_cap = max_extent - cap_width*0.5
         #
         padGap = np.array([
                  (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, cap_width*0.5 + gap_cpw_cap),
@@ -283,6 +291,8 @@ class CapacitorInterdigitalPinStretch(QComponent):
                      when len_diag is zero) to ensure that the ground plane does not intersect with the main capacitor conductors. The
                      ground plane spacing typically starts to change on meeting with the LD or LF sections (see below). If init_pad > 0,
                      it starts from an earlier point.
+        * side_gap_uniform - If True, the spacing on the sides are made uniform by taking the maximum extent of either the gap around
+                             the inlet feed or the main capacitor body with the fingers.
     
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
@@ -340,6 +350,7 @@ class CapacitorInterdigitalPinStretch(QComponent):
         * fing_wid_gap='1um'
         * N_total=5
         * larger_first=True
+        * side_gap_uniform=False
         * side_gap='0um'
         * init_pad='0um'
     """
@@ -356,6 +367,7 @@ class CapacitorInterdigitalPinStretch(QComponent):
                            fing_wid_gap='1um',
                            N_total=5,
                            larger_first=True,
+                           side_gap_uniform=False,
                            side_gap='0um',
                            init_pad='0um')
     """Default drawing options"""

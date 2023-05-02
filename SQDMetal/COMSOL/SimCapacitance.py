@@ -1,9 +1,12 @@
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
+from SQDMetal.Utilities.QUtilities import QUtilities
 
 import mph
 import jpype.types as jtypes
 import geopandas as gpd
 import shapely
+import matplotlib.pyplot as plt
+import numpy as np
 
 class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
     def __init__(self, model):
@@ -57,6 +60,7 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
         minY = (self.model.chip_centre[1] - self.model.chip_wid*0.5)
         maxY = (self.model.chip_centre[1] + self.model.chip_wid*0.5)
         chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
+        
         leGeoms = [chip_bounding_poly] + [x[0] for x in self.model._cond_polys]
         leNames = ["Chip"] + [f"Cond{x[1]}" for x in self.model._cond_polys]
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)

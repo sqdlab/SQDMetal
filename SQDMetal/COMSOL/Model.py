@@ -83,10 +83,10 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").lengthUnit("m")
         self._create_block_centre('blk_chip', self.chip_len,self.chip_wid,self.chip_thickness, self.chip_centre[0], self.chip_centre[1],-self.chip_thickness*0.5)
         self._create_block_centre('blk_boundary', self.chip_len+2*self.pad_x,self.chip_wid+2*self.pad_y,self.chip_thickness+2*self.pad_z,
-                                                  self.chip_centre[0], self.chip_centre[1], -(self.chip_thickness-self.pad_z)*0.5)
+                                                  self.chip_centre[0], self.chip_centre[1], -self.chip_thickness*0.5)
         #Create the selections to get face IDs for the exterior boundary
-        self.sel_ext_bnds_1 = self._create_boundary_selection_sphere(1e-9, -self.chip_len*0.5-self.pad_x, -self.chip_wid*0.5-self.pad_y, -self.chip_thickness*0.5-self.pad_z)
-        self.sel_ext_bnds_2 = self._create_boundary_selection_sphere(1e-9, self.chip_len*0.5+self.pad_x, self.chip_wid*0.5+self.pad_y, self.chip_thickness*0.5+self.pad_z)
+        self.sel_ext_bnds_1 = self._create_boundary_selection_sphere(1e-9, -self.chip_len*0.5-self.pad_x+self.chip_centre[0], -self.chip_wid*0.5-self.pad_y+self.chip_centre[1], -self.chip_thickness-self.pad_z)
+        self.sel_ext_bnds_2 = self._create_boundary_selection_sphere(1e-9, self.chip_len*0.5+self.pad_x+self.chip_centre[0], self.chip_wid*0.5+self.pad_y+self.chip_centre[1], self.pad_z)
 
         #Create workplane and subsequent metallic geometry...
         self._model.java.component("comp1").geom("geom1").feature().create("wp1", "WorkPlane")
@@ -116,15 +116,7 @@ class COMSOL_Model:
         if filt.shape[0] == 0:
             return
 
-        unit_conv = self.design.get_units()
-        if unit_conv == 'mm':
-            unit_conv = 1e-3
-        elif unit_conv == 'um':
-            unit_conv = 1e-6
-        elif unit_conv == 'nm':
-            unit_conv = 1e-9
-        else:
-            assert False, f"Unrecognised units: {unit_conv}"
+        unit_conv = QUtilities.get_units(self.design)
         
         fuse_threshold = kwargs.get('fuse_threshold', 1e-12)
 
@@ -311,27 +303,20 @@ class COMSOL_Model:
         yR = self.chip_centre[1] + self.chip_wid*0.5
         self._create_poly(pol_name, [[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
         if filt.shape[0] > 0:
-            unit_conv = self.design.get_units()
-            if unit_conv == 'mm':
-                unit_conv = 1e-3
-            elif unit_conv == 'um':
-                unit_conv = 1e-6
-            elif unit_conv == 'nm':
-                unit_conv = 1e-9
-            else:
-                assert False, f"Unrecognised units: {unit_conv}"
+            unit_conv = QUtilities.get_units(self.design)
                 
             space_polys = shapely.unary_union(filt['geometry'])
             if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
                 space_polys = [x for x in space_polys.geoms]
             else:
                 space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
+            space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
             pol_name_ints = []
             for ind,cur_int in enumerate(space_polys):
                 pol_name_int = f"polGND{ind}"
                 pol_name_ints.append(pol_name_int)
                 #Convert coordinates into metres...
-                cur_poly_int = np.array(cur_int.exterior.coords[:]) * unit_conv
+                cur_poly_int = np.array(cur_int.exterior.coords[:])
                 cur_poly_int = self._simplify_geom(cur_poly_int, thresh)
                 sel_x, sel_y, sel_r = self._create_poly(pol_name_int, cur_poly_int[:-1])
             #Subtract interiors from the polygon
@@ -339,15 +324,26 @@ class COMSOL_Model:
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_name)
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_ints)
-            select_obj_name = diff_name
+            #Setup the resulting selection...
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresult", jtypes.JBoolean(True))
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresultshow", "bnd")
+            select_2D_name = "cselGND"
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().selection().create(select_2D_name, "CumulativeSelection")
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().selection(select_2D_name).label("Cumulative Selection Ground")
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("contributeto", select_2D_name)
+            select_3D_name = "condGND"
+            self._model.java.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
+            self._model.java.component("comp1").geom("geom1").runPre(select_3D_name)
+            self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
+            self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)(["wp1_"+select_2D_name]))
+            cur_select_index = len(self._conds)
         else:
             select_obj_name = pol_name
-        
-        cur_select_index = len(self._conds)
-        select_3D_name = self._setup_selection_boundaries(cur_select_index, select_obj_name)            
+            cur_select_index = len(self._conds)
+            select_3D_name = self._setup_selection_boundaries(cur_select_index, select_obj_name)            
         self._conds.append(("geom1_", select_3D_name))  #Prefix for accessing out of the geometry node...
         #
-        poly_sheet = Polygon([[xL/unit_conv,yL/unit_conv], [xR/unit_conv,yL/unit_conv], [xR/unit_conv,yR/unit_conv], [xL/unit_conv,yR/unit_conv]])
+        poly_sheet = Polygon([[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
         space_whole = shapely.unary_union(space_polys)
         self._cond_polys += [(poly_sheet.difference(space_whole), cur_select_index)]
 
