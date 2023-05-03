@@ -24,15 +24,15 @@ class QUtilities:
         strVal = strVal.strip()
         assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."
         if strVal[-2:] == "mm":
-            return float(strVal[:-2])*1e-3
+            return float(strVal[:-2]+'e-3')
         elif strVal[-2:] == "um":
-            return float(strVal[:-2])*1e-6
+            return float(strVal[:-2]+'e-6')
         elif strVal[-2:] == "nm":
-            return float(strVal[:-2])*1e-9
+            return float(strVal[:-2]+'e-9')
         elif strVal[-2:] == "pm":
-            return float(strVal[:-2])*1e-12
+            return float(strVal[:-2]+'e-12')
         elif strVal[-2:] == "fm":
-            return float(strVal[:-2])*1e-15
+            return float(strVal[:-2]+'e-15')
         elif strVal[-1:] == "m":
             return float(strVal[:-2])
         else:

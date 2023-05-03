@@ -253,6 +253,8 @@ class COMSOL_Model:
                 inds_left.remove(cur_ind_to_remove)
         self._cond_polys = new_cond_polys
 
+        self._model.java.component("comp1").geom("geom1").run()
+
         new_conds = []
         for cur_ind in new_ind_groups:
             select_3D_name = f"selFused{cur_ind}"
@@ -505,7 +507,7 @@ class COMSOL_Model:
     def _get_java_comp(self):
         return self._model.java
 
-    def build_geom_mater_elec_mesh(self, mesh_structure='Normal'):    #mesh_structure can be 'Fine'
+    def build_geom_mater_elec_mesh(self, mesh_structure='Normal', skip_meshing=False):    #mesh_structure can be 'Fine'
         '''
         Builds geometry, sets up materials, sets up electromagnetic parameters/ports and builds the mesh.
         '''
@@ -553,7 +555,8 @@ class COMSOL_Model:
         self._model.java.component("comp1").mesh("mesh1").feature("ftet10").create("size1", "Size")
         if mesh_structure == 'Fine':
             self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set("hauto", jtypes.JInt(4))
-        self._model.java.component("comp1").mesh("mesh1").run()
+        if not skip_meshing:
+            self._model.java.component("comp1").mesh("mesh1").run()
 
         #Prepare simulation parameters
         for cur_sim in self._cur_sims:
