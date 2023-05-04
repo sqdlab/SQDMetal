@@ -52,6 +52,8 @@ class COMSOL_Model:
         self.pad_y = kwargs.get('pad_y', 0.5e-3)
         self.pad_z = kwargs.get('pad_z', 0.5e-3)
 
+        self.bottom_grounded = kwargs.get('bottom_grounded', False)
+
         self._conds = []
         self._cond_polys = []   #Stores (polygon object, selection index)
         self._fine_mesh = []
@@ -82,11 +84,19 @@ class COMSOL_Model:
         #Create the main bounding area
         self._model.java.component("comp1").geom("geom1").lengthUnit("m")
         self._create_block_centre('blk_chip', self.chip_len,self.chip_wid,self.chip_thickness, self.chip_centre[0], self.chip_centre[1],-self.chip_thickness*0.5)
-        self._create_block_centre('blk_boundary', self.chip_len+2*self.pad_x,self.chip_wid+2*self.pad_y,self.chip_thickness+2*self.pad_z,
-                                                  self.chip_centre[0], self.chip_centre[1], -self.chip_thickness*0.5)
+        if self.bottom_grounded:
+            self._create_block_centre('blk_boundary', self.chip_len+2*self.pad_x,self.chip_wid+2*self.pad_y,self.chip_thickness+self.pad_z,
+                                            self.chip_centre[0], self.chip_centre[1], (self.pad_z-self.chip_thickness)*0.5)
+        else:
+            self._create_block_centre('blk_boundary', self.chip_len+2*self.pad_x,self.chip_wid+2*self.pad_y,self.chip_thickness+2*self.pad_z,
+                                                    self.chip_centre[0], self.chip_centre[1], -self.chip_thickness*0.5)
+        
         #Create the selections to get face IDs for the exterior boundary
-        self.sel_ext_bnds_1 = self._create_boundary_selection_sphere(1e-9, -self.chip_len*0.5-self.pad_x+self.chip_centre[0], -self.chip_wid*0.5-self.pad_y+self.chip_centre[1], -self.chip_thickness-self.pad_z)
-        self.sel_ext_bnds_2 = self._create_boundary_selection_sphere(1e-9, self.chip_len*0.5+self.pad_x+self.chip_centre[0], self.chip_wid*0.5+self.pad_y+self.chip_centre[1], self.pad_z)
+        self._model.java.component("comp1").geom("geom1").feature("blk_boundary").set("selresultshow", "bnd")
+        self._model.java.component("comp1").geom("geom1").selection().create("cBndOuter", "CumulativeSelection")
+        self._model.java.component("comp1").geom("geom1").selection("cBndOuter").label("bound_outer")
+        self._model.java.component("comp1").geom("geom1").feature("blk_boundary").set("contributeto", "cBndOuter")
+        self._sel_ext_boundaries = "geom1_cBndOuter_bnd"
 
         #Create workplane and subsequent metallic geometry...
         self._model.java.component("comp1").geom("geom1").feature().create("wp1", "WorkPlane")

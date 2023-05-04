@@ -431,6 +431,8 @@ class CapacitorGap(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
+        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
         * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
@@ -491,6 +493,8 @@ class CapacitorGap(QComponent):
         * gnd_width='1um'
         * side_gap='0um'
         * init_pad='0um'
+        * offset_lead1='0um'
+        * offset_lead2='0um'
     """
 
     #  Define structure functions
@@ -504,7 +508,9 @@ class CapacitorGap(QComponent):
                            cap_gap='3um',
                            gnd_width='1um',
                            side_gap='0um',
-                           init_pad='0um')
+                           init_pad='0um',
+                           offset_lead1='0um',
+                           offset_lead2='0um')
     """Default drawing options"""
 
     TOOLTIP = """Create a three finger planar capacitor with a ground pocket cuttout."""
@@ -549,7 +555,19 @@ class CapacitorGap(QComponent):
                 (0, p.cpw_width*0.5)]
         pad2 = np.array(pad1)
         pad2[:,0] = len_trace - pad2[:,0]
-        pad2 = pad2[::-1]
+        #
+        #Handle lead offsets...
+        pad1 = np.array(pad1)
+        pad1[[0,1,2,7,8],1] -= p.offset_lead1
+        # if np.abs(p.len_diag) < 1e-12 and np.abs(-p.cap_width*0.5+p.cpw_width*0.5 - p.offset_lead1) < 1e-12:     
+        #     pad1 = np.delete(pad1, 7, 0)
+        # elif np.abs(p.cap_width*0.5-p.cpw_width*0.5 - p.offset_lead1) < 1e-12:
+        #     pad1 = np.delete(pad1, 2, 0)
+        pad2[[0,1,2,7,8],1] -= p.offset_lead2
+        # if np.abs(p.len_diag) < 1e-12 and np.abs(-p.cap_width*0.5+p.cpw_width*0.5 - p.offset_lead2) < 1e-12:     
+        #     pad2 = np.delete(pad2, 7, 0)
+        # elif np.abs(p.cap_width*0.5-p.cpw_width*0.5 - p.offset_lead2) < 1e-12:
+        #     pad2 = np.delete(pad2, 2, 0)
         #
         units = QUtilities.get_units(design)
         cpwP = CpwParams.fromQDesign(design)
@@ -559,18 +577,26 @@ class CapacitorGap(QComponent):
         else:
             gap_cpw_cap = p.side_gap
         #
-        padGap1 = np.array(pad1)
+        padGap1 = pad1*1.0
+        padGap2 = pad2*1.0
         padGap1[[-2,-1,0],1] += gap_cpw_line
         padGap1[[1,2],1] -= gap_cpw_line
         padGap1[[5,6],1] += gap_cpw_cap
         padGap1[[3,4],1] -= gap_cpw_cap
+        padGap2[[-2,-1,0],1] += gap_cpw_line
+        padGap2[[1,2],1] -= gap_cpw_line
+        padGap2[[5,6],1] += gap_cpw_cap
+        padGap2[[3,4],1] -= gap_cpw_cap
         if p.len_diag == 0:
             padGap1[[2,3,6,7],0] -= p.init_pad
+            padGap2[[2,3,6,7],0] += p.init_pad
         else:
             padGap1[[2,7],0] -= p.init_pad
+            padGap1[[2,7],0] += p.init_pad
         padGap1[4:6,0] += 0.5*(p.cap_gap-p.gnd_width)
-        padGap2 = padGap1*1.0
-        padGap2[:,0] = len_trace - padGap2[:,0]
+        padGap2[4:6,0] -= 0.5*(p.cap_gap-p.gnd_width)
+        #
+        pad2 = pad2[::-1]
         padGap2 = padGap2[::-1]
         #
         pin1 = pad1[:2]

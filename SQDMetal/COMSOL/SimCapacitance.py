@@ -44,9 +44,8 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
             self.jc.component("comp1").physics(self.phys_es).feature(term_name).set("TerminalType", "Voltage")
             self.jc.component("comp1").physics(self.phys_es).feature(term_name).set("TerminalName", jtypes.JInt(cur_term+1))
         #Set the exterior boundaries to ground - otherwise capacitances will no longer have self-capacitances...
-        boundary_faces = self.model._get_selection_boundaries(self.model.sel_ext_bnds_1)+self.model._get_selection_boundaries(self.model.sel_ext_bnds_2)
         self.jc.component("comp1").physics(self.phys_es).create("gnd1", "Ground", 2)
-        self.jc.component("comp1").physics(self.phys_es).feature("gnd1").selection().set(jtypes.JArray(jtypes.JInt)(boundary_faces))
+        self.jc.component("comp1").physics(self.phys_es).feature("gnd1").selection().named(self.model._sel_ext_boundaries)
         
     def _get_required_physics(self):
         return [self.phys_es]

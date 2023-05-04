@@ -198,6 +198,24 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             # else:
             #     self.jc.study(self._study).feature(self._sub_study).set("preusesol", "no")
 
+    def set_freq_values(self, list_freqs, use_previous_solns = False):
+        '''
+        Set the frequency range to sweep in the s-parameter and E-field simulation. THE SIMULATION MUST BE BUILT BY THIS POINT (i.e. running build_geom_mater_elec_mesh).
+        Inputs:
+            - freq_start, freq_end - Start and end (inclusive) frequencies in units of Hertz
+            - num_points - Number of points to use in the sweep (must be above 1)
+            - use_previous_solns - (Default: False) If True, it will use the previous frequency value as a starting point for the current point; it can have the tendency
+                                   to falsely find local minima and cause the solution to have 'discrete steps' - so it's better to keep it False if accuracy is important.
+                                   Note that this is ignored if using Frequency Modal simulations (i.e. setting adaptive to 'Multiple')
+        '''
+        str_freqs = ", ".join(str(x*1e-9) for x in list_freqs)
+        if self.adaptive == 'Multiple':
+            self.jc.study(self._study).feature(self._sub_study[1]).set("plist", str_freqs)
+        else:
+            self.jc.study(self._study).feature(self._sub_study).set("errestandadap", "none")
+            self.jc.study(self._study).feature(self._sub_study).set("plist", str_freqs)
+
+
     def _get_required_physics(self):
         return [self.phys_emw]
 
