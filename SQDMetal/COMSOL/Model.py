@@ -563,8 +563,9 @@ class COMSOL_Model:
         # self._model.java.component("comp1").mesh("mesh1").feature("size").set("hmin", jtypes.JDouble(10e-6))
         self._model.java.component("comp1").mesh("mesh1").create("ftet10", "FreeTet")
         self._model.java.component("comp1").mesh("mesh1").feature("ftet10").create("size1", "Size")
-        if mesh_structure == 'Fine':
-            self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set("hauto", jtypes.JInt(4))
+        mesh_auto = {'Extremely fine' : 1, 'Extra fine' : 2, 'Finer' : 3, 'Fine' : 4, 'Normal' : 5, 'Coarse' : 6, 'Coarser' : 7, 'Extra coarse' : 8, 'Extremely coarse' : 9}
+        assert mesh_structure in mesh_auto, f"Predefined mesh type \'{mesh_structure}\' is not supported/recognised."
+        self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set("hauto", jtypes.JInt(mesh_auto[mesh_structure]));
         if not skip_meshing:
             self._model.java.component("comp1").mesh("mesh1").run()
 
