@@ -122,13 +122,9 @@ class COMSOL_Model:
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates()
 
-        fix_terminal_order = kwargs.get('fix_terminal_order', False)
-
         filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
         if filt.shape[0] == 0:
             return
-        if fix_terminal_order:
-            filt.sort_values(by='component', inplace=True)
 
         unit_conv = QUtilities.get_units(self.design)
         
@@ -152,21 +148,6 @@ class COMSOL_Model:
         #Convert all MultiPolygons into individual polygons...
         if not isinstance(metal_evap_polys, list):
             metal_evap_polys = [metal_evap_polys]
-        elif fix_terminal_order:
-            #Don't have to fix terminal order if they are all a part of the same terminal. Otherwise...
-            filtGeoms = filt['geometry'].tolist()
-            finalGeom = []
-            for cur_geom in filtGeoms:
-                found = False
-                for m, cur_union_geom in enumerate(metal_evap_polys):
-                    if QUtilities.chk_within(cur_geom, cur_union_geom):
-                        found = True
-                        break
-                if found:
-                    finalGeom.append(metal_evap_polys.pop(m))
-                if len(metal_evap_polys) == 0:
-                    break
-            metal_evap_polys += finalGeom
 
         metal_polys_all = []
         metal_sel_ids = []
@@ -295,6 +276,40 @@ class COMSOL_Model:
             new_conds += [('geom1_', select_3D_name)]
         self._conds = new_conds
 
+    def reorder_conds_by_comps(self, comp_list):
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates()
+        pvdSh = PVD_Shadows(self.design)
+        unit_conv = QUtilities.get_units(self.design)
+        
+        temp_conds_and_polys = []
+        for cur_comp in comp_list:
+            #Construct the net PVD shadowed polygon
+            polys = gsdf.loc[(gsdf['component'] == self.design.components[cur_comp].id) & (gsdf['subtract'] == False)]['geometry'].to_list()
+            if len(polys) > 1:
+                poly = shapely.unary_union(polys)
+                assert isinstance(poly, shapely.Polygon), f"Component \'{cur_comp}\' is not a contiguous polygonal object."
+            else:
+                poly = polys[0]
+            poly = shapely.affinity.scale(poly, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+            poly = pvdSh.get_all_shadows(poly, self.design.components[cur_comp].options.layer, 'merge')
+            for m in range(len(self._conds)):
+                if QUtilities.chk_within(poly, self._cond_polys[m][0]):
+                    cond = self._conds.pop(m)
+                    cond_poly = self._cond_polys.pop(m)
+                    temp_conds_and_polys += [(cond, cond_poly[0])]
+                    break
+        #Just add unlabelled polygons...
+        residual_conds = [(self._conds[m], self._cond_polys[m][0]) for m in range(len(self._conds))]
+        if len(residual_conds) > 0:
+            print('SQDMetal Warning: Residual conductors found that were unlabelled.')
+        temp_conds_and_polys += residual_conds
+
+        self._conds = []
+        self._cond_polys = []
+        for m in range(len(temp_conds_and_polys)):
+            self._conds += [temp_conds_and_polys[m][0]]
+            self._cond_polys += [(temp_conds_and_polys[m][1], m+1)] 
 
     def _simplify_geom(self, cur_poly, threshold):
         if threshold > 0:
@@ -644,6 +659,39 @@ class COMSOL_Model:
                 else:                    
                     self._model.java.study(cur_sim._study).feature(cur_sim._sub_study).activate(cur_physic, cur_active)
 
+
+    def plot(self, plot_chip_boundaries = True, plot_fine_mesh_bounds = True):
+        names = [x[1] for x in self._cond_polys]
+        geoms = [x[0] for x in self._cond_polys]
+
+        if plot_fine_mesh_bounds:
+            for m, cur_fine_mesh in enumerate(self._fine_mesh):
+                if cur_fine_mesh['type'] == 'rectCond':
+                    cur_name = f'FineMesh{m}(Conds)'
+                elif cur_fine_mesh['type'] == 'rect':
+                    cur_name = f'FineMesh{m}(Region)'
+                else:
+                    continue
+                leLine = shapely.LineString([[cur_fine_mesh['p1'][0], cur_fine_mesh['p1'][1]],
+                                            [cur_fine_mesh['p2'][0], cur_fine_mesh['p1'][1]],
+                                            [cur_fine_mesh['p2'][0], cur_fine_mesh['p2'][1]],
+                                            [cur_fine_mesh['p1'][0], cur_fine_mesh['p2'][1]],
+                                            [cur_fine_mesh['p1'][0], cur_fine_mesh['p1'][1]]])
+                geoms += [leLine]
+                names += [cur_name]
+
+        gdf = gpd.GeoDataFrame({'names':names}, geometry=geoms)
+        fig, ax = plt.subplots(1)
+
+        if plot_chip_boundaries:
+            minX = (self.chip_centre[0] - self.chip_len*0.5)
+            maxX = (self.chip_centre[0] + self.chip_len*0.5)
+            minY = (self.chip_centre[1] - self.chip_wid*0.5)
+            maxY = (self.chip_centre[1] + self.chip_wid*0.5)
+            data = np.array([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
+            ax.plot(data[:,0], data[:,1], 'k')
+
+        gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True, aspect='equal')
 
     def save(self, file_name):
         self._model.java.component("comp1").view("view1").set("transparency", jtypes.JBoolean(True))    #Just a nice helpful feature to stop one extra button click...
