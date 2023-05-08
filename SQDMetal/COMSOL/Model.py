@@ -122,9 +122,13 @@ class COMSOL_Model:
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates()
 
+        fix_terminal_order = kwargs.get('fix_terminal_order', False)
+
         filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
         if filt.shape[0] == 0:
             return
+        if fix_terminal_order:
+            filt.sort_values(by='component', inplace=True)
 
         unit_conv = QUtilities.get_units(self.design)
         
@@ -148,6 +152,22 @@ class COMSOL_Model:
         #Convert all MultiPolygons into individual polygons...
         if not isinstance(metal_evap_polys, list):
             metal_evap_polys = [metal_evap_polys]
+        elif fix_terminal_order:
+            #Don't have to fix terminal order if they are all a part of the same terminal. Otherwise...
+            filtGeoms = filt['geometry'].tolist()
+            finalGeom = []
+            for cur_geom in filtGeoms:
+                found = False
+                for m, cur_union_geom in enumerate(metal_evap_polys):
+                    if QUtilities.chk_within(cur_geom, cur_union_geom):
+                        found = True
+                        break
+                if found:
+                    finalGeom.append(metal_evap_polys.pop(m))
+                if len(metal_evap_polys) == 0:
+                    break
+            metal_evap_polys += finalGeom
+
         metal_polys_all = []
         metal_sel_ids = []
         for m, cur_poly in enumerate(metal_evap_polys):
@@ -317,7 +337,7 @@ class COMSOL_Model:
         if filt.shape[0] > 0:
             unit_conv = QUtilities.get_units(self.design)
                 
-            space_polys = shapely.unary_union(filt['geometry'])
+            space_polys = shapely.unary_union(filt['geometry'].buffer(0))
             if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
                 space_polys = [x for x in space_polys.geoms]
             else:
@@ -358,6 +378,37 @@ class COMSOL_Model:
         poly_sheet = Polygon([[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
         space_whole = shapely.unary_union(space_polys)
         self._cond_polys += [(poly_sheet.difference(space_whole), cur_select_index)]
+
+    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, minElementSize=1e-7, maxElementSize=5e-6):
+        assert x2>x1 and y2>y1, "Ensure (x1,y1) is the bottom-left corner while (x2,y2) is the top-right corner of the rectangle."
+        ind = len(self._fine_mesh)
+        rect_name = f"mesh_rect{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(rect_name, "Rectangle")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]));
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name); #Makes selection easier...
+        #
+        sel_mesh_name = f"selMesh{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(rect_name, 1)
+        #
+        self._fine_mesh += [{'type':'rect', 'p1':(x1,y1), 'p2':(x2,y2), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+
+    def fine_mesh_conductors_in_rectangle(self, x1, y1, x2, y2, minElementSize=1e-7, maxElementSize=5e-6):
+        assert x2>x1 and y2>y1, "Ensure (x1,y1) is the bottom-left corner while (x2,y2) is the top-right corner of the rectangle."
+        ind = len(self._fine_mesh)
+        rect_name = f"mesh_rect{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(rect_name, "Rectangle")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]));
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name); #Makes selection easier...
+        #
+        sel_mesh_name = f"selMesh{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(rect_name, 1)
+        #
+        self._fine_mesh += [{'type':'rectCond', 'p1':(x1,y1), 'p2':(x2,y2), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+
 
     def _extract_poly_coords(self, geom):
         #Inspired by: https://stackoverflow.com/questions/21824157/how-to-extract-interior-polygon-coordinates-using-shapely
@@ -529,6 +580,7 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)([x[1] for x in self._conds]))
+        self._model.java.component("comp1").geom("geom1").run("condAll")
 
         #Create materials
         self._create_material('Vacuum', 1.0, 1.0, 0.0)
@@ -545,19 +597,27 @@ class COMSOL_Model:
             cur_sim._run_premesh()
 
         #Create mesh
-        for mesh_ind, cur_fine_struct in enumerate(self._fine_mesh):
-            cur_polys = self._get_selection_boundaries(cur_fine_struct[0])
-            if len(cur_polys) == 0:
-                continue
-            mesh_name = "ftri" + str(mesh_ind)
+        for m, fmData in enumerate(self._fine_mesh):
+            sel_mesh_name = f'selFineMesh{m}'
+            self._model.java.component("comp1").geom("geom1").create(sel_mesh_name, "IntersectionSelection")
+            self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).set("entitydim", jtypes.JInt(2))
+            sel_list = [fmData['sel_rect']]
+            if fmData['type'] == 'rectCond':
+                sel_list += ["condAll"]
+            self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).set("input", jtypes.JArray(jtypes.JString)(sel_list))
+            self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).label(f"selFineMesh{m}")
+            self._model.java.component("comp1").geom("geom1").run(sel_mesh_name)
+
+            mesh_name = "ftri" + str(m)
             self._model.java.component("comp1").mesh("mesh1").create(mesh_name, "FreeTri")
+            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).selection().named("geom1_"+sel_mesh_name)
             self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).create("size1", "Size")
-            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).selection().set(jtypes.JArray(jtypes.JInt)(cur_polys))
+            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set("hauto", jtypes.JInt(1)) #Setting to extremely fine and then changing it - does this even do anything?
             self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('custom', jtypes.JBoolean(True))
             self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hmaxactive', jtypes.JBoolean(True))
             self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hminactive', jtypes.JBoolean(True))
-            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hmin', jtypes.JDouble(cur_fine_struct[1]))
-            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hmax', jtypes.JDouble(cur_fine_struct[2]))
+            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hmin', jtypes.JDouble(fmData['minElem']))
+            self._model.java.component("comp1").mesh("mesh1").feature(mesh_name).feature("size1").set('hmax', jtypes.JDouble(fmData['maxElem']))
         # self._model.java.component("comp1").mesh("mesh1").feature("size").set("custom", jtypes.JBoolean(True))
         # self._model.java.component("comp1").mesh("mesh1").feature("size").set("hmax", jtypes.JDouble(8e-4))
         # self._model.java.component("comp1").mesh("mesh1").feature("size").set("hmin", jtypes.JDouble(10e-6))
@@ -586,6 +646,7 @@ class COMSOL_Model:
 
 
     def save(self, file_name):
+        self._model.java.component("comp1").view("view1").set("transparency", jtypes.JBoolean(True))    #Just a nice helpful feature to stop one extra button click...
         self._model.save(file_name)
 
 

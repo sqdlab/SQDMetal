@@ -1,4 +1,5 @@
 # from pint import UnitRegistry
+import shapely
 
 class QUtilities:
     @staticmethod
@@ -37,3 +38,7 @@ class QUtilities:
             return float(strVal[:-2])
         else:
             assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."
+
+    @staticmethod
+    def chk_within(chk_geom, main_geom, thresh=0.99):
+        return shapely.intersection(chk_geom, main_geom).area / chk_geom.area > thresh
