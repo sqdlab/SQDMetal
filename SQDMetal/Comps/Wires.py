@@ -1,5 +1,7 @@
 from qiskit_metal.qlibrary.core import QComponent, QRoute
+from qiskit_metal.qlibrary.tlines.anchored_path import RouteAnchors
 import numpy as np
+import shapely
 from qiskit_metal.toolbox_python.attr_dict import Dict
 
 class WirePinStretch(QRoute):
@@ -33,3 +35,50 @@ class WirePinStretch(QRoute):
         self.add_pin('endR', [pt+tang, pt], width=p.trace_width, input_as_norm=True)
         
         self.make_elements(np.array([startPt, endPt]))
+
+class WirePins(QRoute):
+    default_options = Dict(pathObjPins=[],
+                           trace_width='10um', trace_gap='10um', fillet='50um',
+                           advanced=Dict(avoid_collision='false'))
+    
+    def __init__(self, design,
+                        name: str = None,
+                        options: Dict = None,
+                        type: str = "CPW",
+                        **kwargs):
+        #QRoute forces an end-pin to exist... So make it artificial...
+        pins = []
+        for cur_pin in [options.pathObjPins[0], options.pathObjPins[-1]]:
+            if isinstance(cur_pin, list):
+                comp, pin = cur_pin[0], cur_pin[1]
+            else:
+                comp, pin = cur_pin, 'a'
+            pins += [(comp, pin)]
+        options.pin_inputs['start_pin'] = Dict(component=pins[0][0], pin=pins[0][1])
+        options.pin_inputs['end_pin'] = Dict(component=pins[1][0], pin=pins[1][1])
+        super().__init__(design, name, options, **kwargs)
+
+    def make(self):
+        p = self.p
+
+        #Parse Path Joints...
+        pins = []
+        for cur_pin in self.options.pathObjPins:
+            if isinstance(cur_pin, list):
+                comp, pin = cur_pin[0], cur_pin[1]
+            else:
+                comp, pin = cur_pin, 'a'
+            pins += [self.design.components[comp].pins[pin]['middle']]
+        pins = np.vstack(pins)
+        
+        line = shapely.LineString(pins)
+
+        self.add_qgeometry('path', {'trace': line},
+                           width=p.trace_width,
+                           fillet=p.fillet,
+                           layer=p.layer)
+        self.add_qgeometry('path', {'cut': line},
+                               width=p.trace_width + 2 * p.trace_gap,
+                               fillet=p.fillet,
+                               layer=p.layer,
+                               subtract=True)

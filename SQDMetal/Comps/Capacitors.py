@@ -140,7 +140,7 @@ class CapacitorInterdigital(QComponent):
         self.add_pin('b', pin2.coords[::-1], width=p.cpw_width)
     
     @staticmethod
-    def _draw_capacitor(p, design):
+    def _draw_capacitor(p, design, discard_leads=False):
         Num = int(p.N_total)
 
         # Make the shapely polygons for the main cap structure
@@ -148,9 +148,12 @@ class CapacitorInterdigital(QComponent):
         cap_width = Num*p.fing_wid + (Num-1)*p.fing_wid_gap
         len_trace = np.sqrt((p.end_x-p.pos_x)**2+(p.end_y-p.pos_y)**2)
         #Tracing the left wall and the bottom-side of the pad
+        startX = 0
+        if discard_leads:
+            startX = len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag
         pad1a = [
-                (0, p.cpw_width*0.5),
-                (0, -p.cpw_width*0.5),
+                (startX, p.cpw_width*0.5),
+                (startX, -p.cpw_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, -p.cpw_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, -cap_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5, -cap_width*0.5)]
@@ -159,7 +162,7 @@ class CapacitorInterdigital(QComponent):
                 (len_trace*0.5-len_fings_plus_gap*0.5, cap_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, cap_width*0.5),
                 (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, p.cpw_width*0.5),
-                (0, p.cpw_width*0.5)]
+                (startX, p.cpw_width*0.5)]
         pad2a = np.array(pad1a)
         pad2b = np.array(pad1b)
         #Do the fingers
@@ -193,6 +196,7 @@ class CapacitorInterdigital(QComponent):
             pad2 = np.array(pad1)
             pad2[:,0] = len_trace - pad2[:,0]
             pad2[:,1] = -pad2[:,1]
+            pad2 = pad2[::-1]
         else:
             pad2a[:,0] = len_trace - pad2a[:,0]
             pad2b[:,0] = len_trace - pad2b[:,0]
@@ -230,17 +234,17 @@ class CapacitorInterdigital(QComponent):
         padGap = np.array([
                  (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, cap_width*0.5 + gap_cpw_cap),
                  (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, p.cpw_width*0.5 + gap_cpw_line),
-                 (0, p.cpw_width*0.5 + gap_cpw_line),
+                 (startX, p.cpw_width*0.5 + gap_cpw_line),
 
-                 (0, -p.cpw_width*0.5 - gap_cpw_line),
+                 (startX, -p.cpw_width*0.5 - gap_cpw_line),
                  (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat-p.len_diag, -p.cpw_width*0.5 - gap_cpw_line),
                  (len_trace*0.5-len_fings_plus_gap*0.5-p.len_flat, -cap_width*0.5 - gap_cpw_cap),
 
                  (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat, -cap_width*0.5 - gap_cpw_cap),
                  (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat+p.len_diag, -p.cpw_width*0.5 - gap_cpw_line),
-                 (len_trace, -p.cpw_width*0.5 - gap_cpw_line),
+                 (len_trace-startX, -p.cpw_width*0.5 - gap_cpw_line),
 
-                 (len_trace, p.cpw_width*0.5 + gap_cpw_line),
+                 (len_trace-startX, p.cpw_width*0.5 + gap_cpw_line),
                  (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat+p.len_diag, p.cpw_width*0.5 + gap_cpw_line),
                  (len_trace*0.5+len_fings_plus_gap*0.5+p.len_flat, cap_width*0.5 + gap_cpw_cap),
                  ])
@@ -250,7 +254,9 @@ class CapacitorInterdigital(QComponent):
         else:
             padGap[[1,4],0] -= p.init_pad
             padGap[[7,10],0] += p.init_pad
-        
+        if discard_leads:
+            padGap[[2,3],0] -= p.init_pad
+            padGap[[8,9],0] += p.init_pad
 
         pin1 = pad1[:2]
         pin2 = pad2[[-2,-1]]
@@ -297,7 +303,7 @@ class CapacitorInterdigitalPinStretch(QComponent):
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
         * dist_extend - Distance upon to stretch away from the start pin.
-    The resulting inductor is right in the centre. This class ignores pos_x, pos_y and orientation...
+    The resulting capacitor is right in the centre. This class ignores pos_x, pos_y and orientation...
         
     Pins:
         There are two pins on the capacitor at either end
@@ -403,6 +409,147 @@ class CapacitorInterdigitalPinStretch(QComponent):
         p.end_y = endPt[1]
 
         pad1, pad2, padGap, pin1, pin2 = CapacitorInterdigital._draw_capacitor(p, self._design)
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad1=pad1, pad2=pad2),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer its on
+        self.add_qgeometry('poly',
+                           dict(padGap=padGap),
+                           subtract=True,
+                           layer=p.layer)
+
+        # Generates its own pins
+        self.add_pin('a', pin1.coords[::-1], width=p.cpw_width)
+        self.add_pin('b', pin2.coords[::-1], width=p.cpw_width)
+
+class CapacitorInterdigitalPinPin(QComponent):
+    """Create an interdigital capacitor on a CPW.
+    The width of the fingers is determined by cpw_width.
+
+    Inherits QComponent class.
+
+    Capacitor Metal Geometry and Ground Cutout Pocket:
+        * len_diag - Length of the staggered region that bridges from CPW to the capacitor
+        * len_flat - Length of the flat region before starting onto the fingers
+        * fing_len - Actual finger length
+        * fing_len_gap - Gap between finger and the opposite capacitor conductor
+        * fing_wid - Finger width
+        * fing_wid_gap - Gap between adjacent fingers
+        * N_total - Total number of fingers
+        * larger_first - If True, for odd N_total, the larger number of fingers (i.e. (N+1)/2) will be on the first pad's conductor
+    
+    The spacing (i.e. cuts into the ground plane) can be controlled via:
+        * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
+                     it is set via the given side gap.
+        * init_pad - This adds spacing to the ground plane on the feed lines. This is useful when the diagonal section is steep (e.g.
+                     when len_diag is zero) to ensure that the ground plane does not intersect with the main capacitor conductors. The
+                     ground plane spacing typically starts to change on meeting with the LD or LF sections (see below). If init_pad > 0,
+                     it starts from an earlier point.
+        * side_gap_uniform - If True, the spacing on the sides are made uniform by taking the maximum extent of either the gap around
+                             the inlet feed or the main capacitor body with the fingers.
+    
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...'), end_pin=Dict(component=f'...',pin='...')) - Specifying start and end
+          positions via a component pins
+    The resulting capacitor is right in the centre. This class ignores pos_x, pos_y and orientation...
+        
+    Pins:
+        There are two pins on the capacitor at either end
+        The pins attach directly to the built in lead length and only needs a width defined
+        * cpw_width - center trace width of the trace lead line and cap fingers
+
+    Note that the pins are not drawn to ensure good compatibility with routing/wiring constructs.
+
+    Sketch:
+        Below is a sketch of the capacitor
+        ::
+
+        @@@@@   |   @@@@@                               When setting init_pad > 0:
+        @@@@@   |   @@@@@                                   @@@@@   |   @@@@@
+        @@@@@   |   @@@@@                                   @@@@@   |   @@@@@
+        @@@@@   |   @@@@@   @   = Ground Plane              @@      |   IP @@
+        @@@@@   -   LD  @   -,| = Conductors                @      ---  LD  @
+        @@@@   ---  LD  @                                   @    -------LF  @
+        @@@   ----- LD  @   LD = len_diag                   @    -------LF  @ 
+        @    -------LF  @                                   @    | | | |    @
+        @    -------LF  @   LF = len_flat                   @    |||||||    @   IP = init_pad
+        @ FL | | | |FLG @   FLG = fing_len_gap              @    |||||||    @
+        @ FL |||||||    @                                   @     | | |     @ 
+        @ FL |||||||SSSS@   S = side_gap                    @    -------LF  @
+        @     | | | FLG @   FL = fing_len                   @    -------LF  @ 
+        @    -------LF  @                                   @      ---  LD  @
+        @    -------LF  @   FP = Front Pad                  @@      |   IP @@
+        @@@   ----- LD  @                                   @@@@@   |   @@@@@
+        @@@@   ---  LD  @                                   @@@@@   |   @@@@@
+        @@@@@   -   LD  @
+        @@@@@   |       @   
+        @@@@@   |       @
+        @@@@@   |       @
+        @@@@@   |   @@@@@
+        @@@@@   |   @@@@@
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Cap 3 Interdigital
+
+    Default Options:
+        * trace_width: '10um
+        * dist_extend='50um'
+        * cpw_width='10um'
+        * len_diag='5um'
+        * len_flat='5um'
+        * fing_len='10um'
+        * fing_len_gap='1um'
+        * fing_wid='2um'
+        * fing_wid_gap='1um'
+        * N_total=5
+        * larger_first=True
+        * side_gap_uniform=False
+        * side_gap='0um'
+        * init_pad='0um'
+    """
+
+    #  Define structure functions
+
+    default_options = Dict(dist_extend='50um',
+                           cpw_width='10um',
+                           len_diag='5um',
+                           len_flat='5um',
+                           fing_len='10um',
+                           fing_len_gap='1um',
+                           fing_wid='2um',
+                           fing_wid_gap='1um',
+                           N_total=5,
+                           larger_first=True,
+                           side_gap_uniform=False,
+                           side_gap='0um',
+                           init_pad='0um')
+    """Default drawing options"""
+
+    TOOLTIP = """Create a three finger planar capacitor with a ground pocket cuttout."""
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        p.pos_x = startPt[0]
+        p.pos_y = startPt[1]
+
+        end_point = self.design.components[self.options.pin_inputs.end_pin.component].pins[self.options.pin_inputs.end_pin.pin]
+        endPt = end_point['middle']
+        p.end_x = endPt[0]
+        p.end_y = endPt[1]
+
+        pad1, pad2, padGap, pin1, pin2 = CapacitorInterdigital._draw_capacitor(p, self._design, True)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
