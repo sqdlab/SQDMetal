@@ -72,12 +72,12 @@ class JointExtend(QComponent):
         self.add_pin('a', [ptJoint.tolist(), pt.tolist()], width=width, input_as_norm=True)
 
 class Joint(QComponent):
-    default_options = Dict(pos_x='0um', pos_y='0um', orientation=0)
+    default_options = Dict(pos_x='0um', pos_y='0um', orientation=0, width='1um')
 
     def make(self):
         p = self.p
 
-        ptJoint = np.array([self.options.pos_x, self.options.pos_y])
+        ptJoint = np.array([p.pos_x, p.pos_y])
         norm_vec = np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
 
-        self.add_pin('a', [(ptJoint+norm_vec).tolist(), ptJoint.tolist()], width='1um', input_as_norm=True)
+        self.add_pin('a', [(ptJoint+norm_vec).tolist(), ptJoint.tolist()], width=p.width, input_as_norm=True)
