@@ -24,7 +24,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             if not self._setter is None:
                 self._setter.set('Lelement', jtypes.JDouble(val))
 
-    def __init__(self, model, adaptive='Single', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
+    def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
         self.model = model
         self.jc = model._get_java_comp()
         self.dset_name = ""
@@ -108,7 +108,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port[2][0],cur_port[2][1],0.0]))
             self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port[2][0],-cur_port[2][1],0.0]))
 
-    def create_port_on_CPW(self, qObjName, is_start=True, len_launch = 20e-6):
+    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
         '''
         Creates an RF port on a CPW inlet. The elements form fins to ground from the central CPW stripline. Note that the first port will automatically be
         the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports

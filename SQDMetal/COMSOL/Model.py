@@ -583,7 +583,7 @@ class COMSOL_Model:
     def _get_java_comp(self):
         return self._model.java
 
-    def build_geom_mater_elec_mesh(self, mesh_structure='Normal', skip_meshing=False):    #mesh_structure can be 'Fine'
+    def build_geom_mater_elec_mesh(self, mesh_structure='Normal', skip_meshing=False, substrate_permittivity=11.7):    #mesh_structure can be 'Fine'
         '''
         Builds geometry, sets up materials, sets up electromagnetic parameters/ports and builds the mesh.
         '''
@@ -600,8 +600,8 @@ class COMSOL_Model:
         #Create materials
         self._create_material('Vacuum', 1.0, 1.0, 0.0)
         self._model.java.component("comp1").material('Vacuum').selection().all()
-        self._create_material('Si', 11.7, 1.0, 0.0)     #Don't use 4.35e-4 for conductivity as it can cause issues with convergence in inductance simulations...
-        self._model.java.component("comp1").material('Si').selection().set(self._model.java.selection('geom1_blk_chip_dom').entities(3))
+        self._create_material('Substrate', substrate_permittivity, 1.0, 0.0)     #Don't use 4.35e-4 for conductivity as it can cause issues with convergence in inductance simulations...
+        self._model.java.component("comp1").material('Substrate').selection().set(self._model.java.selection('geom1_blk_chip_dom').entities(3))
         #Set the conductive boundaries to Aluminium (ignored by s-parameter and capacitance-matrix simulations due to PEC, but inductor simulations require conductivity)
         # cond_bounds = [self._get_selection_boundaries(x)[0] for x in self._conds]
         self._create_material('Metal', 0.0, 1.0, 3.77e7)
