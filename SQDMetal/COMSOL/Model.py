@@ -407,7 +407,8 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(rect_name, 1)
         #
-        self._fine_mesh += [{'type':'rect', 'p1':(x1,y1), 'p2':(x2,y2), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+        leLine = shapely.LineString([[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]])
+        self._fine_mesh += [{'type':'all', 'poly':leLine, 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
     def fine_mesh_conductors_in_rectangle(self, x1, y1, x2, y2, minElementSize=1e-7, maxElementSize=5e-6):
         assert x2>x1 and y2>y1, "Ensure (x1,y1) is the bottom-left corner while (x2,y2) is the top-right corner of the rectangle."
@@ -422,8 +423,41 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(rect_name, 1)
         #
-        self._fine_mesh += [{'type':'rectCond', 'p1':(x1,y1), 'p2':(x2,y2), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+        leLine = shapely.LineString([[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]])
+        self._fine_mesh += [{'type':'conds', 'poly':leLine, 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
+    def fine_mesh_in_poly(self, poly, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
+        leCoords = np.array(poly.exterior.coords[:])
+        if qmUnits:
+            leCoords *= QUtilities.get_units(self.design)
+        ind = len(self._fine_mesh)
+        pol_name = f"mesh_poly{ind}"
+        sel_x, sel_y, sel_r = self._create_poly(pol_name, leCoords)
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name); #Makes selection easier...
+        #
+        sel_mesh_name = f"selMesh{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(pol_name, 1)
+        #
+        self._fine_mesh += [{'type':'all', 'poly':shapely.LineString(leCoords), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+
+    def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
+        ind = len(self._fine_mesh)
+        pol_names = []
+        for m, poly in enumerate(list_polys):
+            leCoords = np.array(poly.exterior.coords[:])
+            if qmUnits:
+                leCoords *= QUtilities.get_units(self.design)
+            pol_name = f"mesh_poly{ind}_{m}"
+            sel_x, sel_y, sel_r = self._create_poly(pol_name, leCoords)
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name); #Makes selection easier...
+            pol_names += [pol_name]
+        sel_mesh_name = f"selMesh{ind}"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
+        for pol_name in pol_names:
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(pol_name, 1)
+        #
+        self._fine_mesh += [{'type':'all', 'poly':shapely.LineString(leCoords), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
     def _extract_poly_coords(self, geom):
         #Inspired by: https://stackoverflow.com/questions/21824157/how-to-extract-interior-polygon-coordinates-using-shapely
@@ -617,7 +651,7 @@ class COMSOL_Model:
             self._model.java.component("comp1").geom("geom1").create(sel_mesh_name, "IntersectionSelection")
             self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).set("entitydim", jtypes.JInt(2))
             sel_list = [fmData['sel_rect']]
-            if fmData['type'] == 'rectCond':
+            if fmData['type'] == 'conds':
                 sel_list += ["condAll"]
             self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).set("input", jtypes.JArray(jtypes.JString)(sel_list))
             self._model.java.component("comp1").geom("geom1").feature(sel_mesh_name).label(f"selFineMesh{m}")
@@ -666,18 +700,14 @@ class COMSOL_Model:
 
         if plot_fine_mesh_bounds:
             for m, cur_fine_mesh in enumerate(self._fine_mesh):
-                if cur_fine_mesh['type'] == 'rectCond':
+                if cur_fine_mesh['type'] == 'conds':
                     cur_name = f'FineMesh{m}(Conds)'
-                elif cur_fine_mesh['type'] == 'rect':
+                elif cur_fine_mesh['type'] == 'all':
                     cur_name = f'FineMesh{m}(Region)'
                 else:
                     continue
-                leLine = shapely.LineString([[cur_fine_mesh['p1'][0], cur_fine_mesh['p1'][1]],
-                                            [cur_fine_mesh['p2'][0], cur_fine_mesh['p1'][1]],
-                                            [cur_fine_mesh['p2'][0], cur_fine_mesh['p2'][1]],
-                                            [cur_fine_mesh['p1'][0], cur_fine_mesh['p2'][1]],
-                                            [cur_fine_mesh['p1'][0], cur_fine_mesh['p1'][1]]])
-                geoms += [leLine]
+
+                geoms += [cur_fine_mesh['poly']]
                 names += [cur_name]
 
         gdf = gpd.GeoDataFrame({'names':names}, geometry=geoms)

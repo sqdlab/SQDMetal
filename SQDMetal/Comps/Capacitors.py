@@ -668,7 +668,9 @@ class CapacitorGap(QComponent):
         p = self.p
         #########################################################
 
-        pad1, pad2, padGap1, padGap2, pin1, pin2 = CapacitorGap._draw_capacitor(p, self._design)
+        pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid = CapacitorGap._draw_capacitor(p, self._design)
+
+        self.bound_poly_mid = polyBndMid
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -748,7 +750,13 @@ class CapacitorGap(QComponent):
         #
         pin1 = pad1[:2]
         pin2 = pad2[[-2,-1]]
-        #
+
+        polyBndMid = [(len_trace*0.5-p.cap_gap*0.5, -p.cap_width*0.5-gap_cpw_cap),
+                      (len_trace*0.5+p.cap_gap*0.5, -p.cap_width*0.5-gap_cpw_cap),
+                      (len_trace*0.5+p.cap_gap*0.5, p.cap_width*0.5+gap_cpw_cap),
+                      (len_trace*0.5-p.cap_gap*0.5, p.cap_width*0.5+gap_cpw_cap)]
+        polyBndMid = shapely.Polygon(polyBndMid)
+
         pad1 = shapely.Polygon(pad1)
         pad2 = shapely.Polygon(pad2)
         padGap1 = shapely.Polygon(padGap1)
@@ -756,9 +764,9 @@ class CapacitorGap(QComponent):
         pin1 = shapely.LineString(pin1)
         pin2 = shapely.LineString(pin2)
 
-        polys = [pad1, pad2, padGap1, padGap2, pin1, pin2]
+        polys = [pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid]
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [pad1, pad2, padGap1, padGap2, pin1, pin2] = polys
+        [pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid] = polys
 
-        return pad1, pad2, padGap1, padGap2, pin1, pin2
+        return pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid

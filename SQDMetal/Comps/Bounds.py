@@ -43,24 +43,7 @@ class BoundRectangle(QComponent):
 
         objs = str_objs.split(',')
         objs = [x.strip() for x in objs]
-        minX = 1000
-        maxX = -1000
-        minY = 1000
-        maxY = -1000
-        for cur_obj in objs:
-            paths = self.design.components[cur_obj].qgeometry_table('path')
-            for _, row in paths.iterrows():
-                cur_minX, cur_minY, cur_maxX, cur_maxY = row['geometry'].buffer(row['width'] / 2, cap_style=shapely.geometry.CAP_STYLE.flat).bounds
-                minX = min(cur_minX, minX)
-                minY = min(cur_minY, minY)
-                maxX = max(cur_maxX, maxX)
-                maxY = max(cur_maxY, maxY)
-            for cur_poly in self.design.components[cur_obj].qgeometry_list('poly'):
-                cur_minX, cur_minY, cur_maxX, cur_maxY = cur_poly.bounds
-                minX = min(cur_minX, minX)
-                minY = min(cur_minY, minY)
-                maxX = max(cur_maxX, maxX)
-                maxY = max(cur_maxY, maxY)
+        minX, minY, maxX, maxY = QUtilities.get_comp_bounds(self.design, objs)
         poly = shapely.Polygon([(minX, minY), (maxX, minY), (maxX, maxY), (minX, maxY)])
 
         #subtracts out ground plane on the layer its on
