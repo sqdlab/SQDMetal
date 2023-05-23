@@ -98,12 +98,17 @@ class PVD_Shadows:
         unit_conv, unit_conv_name = self.get_units()
         metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
 
+        plot_mask = kwargs.get('plot_mask', True)
 
         if layer_id in self.evap_profiles:
-            plot_polys = [metal_polys]
-            names = [f"Layer {layer_id} Mask"]
-            plot_polys += self.get_all_shadows(metal_polys, layer_id, mode, **kwargs)
-            names += [f"Layer {layer_id}, Step {x}" for x in range(len(plot_polys)-1)]
+            plot_polys = []
+            names = []
+            if plot_mask:
+                plot_polys += [metal_polys]
+                names += [f"Layer {layer_id} Mask"]
+            shad_polys = self.get_all_shadows(metal_polys, layer_id, mode, **kwargs)
+            plot_polys += shad_polys
+            names += [f"Layer {layer_id}, Step {x}" for x in range(len(shad_polys))]
         else:
             plot_polys = [metal_polys]
             names = [f"Layer {layer_id}"]

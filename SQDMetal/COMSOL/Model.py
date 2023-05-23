@@ -444,10 +444,12 @@ class COMSOL_Model:
     def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
         ind = len(self._fine_mesh)
         pol_names = []
+        leLines = []
         for m, poly in enumerate(list_polys):
             leCoords = np.array(poly.exterior.coords[:])
             if qmUnits:
                 leCoords *= QUtilities.get_units(self.design)
+            leLines += [shapely.LineString(leCoords)]
             pol_name = f"mesh_poly{ind}_{m}"
             sel_x, sel_y, sel_r = self._create_poly(pol_name, leCoords)
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name); #Makes selection easier...
@@ -457,7 +459,7 @@ class COMSOL_Model:
         for pol_name in pol_names:
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_mesh_name).selection("selection").set(pol_name, 1)
         #
-        self._fine_mesh += [{'type':'all', 'poly':shapely.LineString(leCoords), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
+        self._fine_mesh += [{'type':'all', 'poly':shapely.MultiLineString(leLines), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
     def _extract_poly_coords(self, geom):
         #Inspired by: https://stackoverflow.com/questions/21824157/how-to-extract-interior-polygon-coordinates-using-shapely
