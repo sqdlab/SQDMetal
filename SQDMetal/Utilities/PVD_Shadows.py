@@ -56,7 +56,7 @@ class PVD_Shadows:
 
     def plot_all_layers(self, mode='separate', **kwargs):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
         unit_conv, unit_conv_name = self.get_units()
         
         plot_mask = kwargs.get('plot_mask', True)
@@ -89,7 +89,7 @@ class PVD_Shadows:
 
     def plot_layer(self, layer_id, mode='separate', **kwargs):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
         filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
         if filt.shape[0] == 0:

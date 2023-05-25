@@ -76,6 +76,8 @@ class COMSOL_Model:
         self._cur_solns = []
 
         self._cur_sims = simulations
+
+        self._resolution = kwargs.get('resolution', 4)
         
         # #Prepare simulation parameters
         # for cur_sim in self._cur_sims:
@@ -106,12 +108,25 @@ class COMSOL_Model:
 
     def add_metallic(self, layer_id, **kwargs):
         '''
-        Adds metallic conductors from the Klayout design onto the surface layer of the chip simulation. The idea is to supply the final Klayout layout object
-        and the metallic polygons are added to the COMSOL simulation.
+        Adds metallic conductors from the Qiskit-Metal design object onto the surface layer of the chip simulation. If the particular layer has
+        fancy PVD evaporation steps, the added metallic layer will account for said steps and merge the final result. In addition, all metallic
+        elements that are contiguous are merged into single blobs.
+
         Inputs:
-            - kLayoutObj - A Klayout object (i.e. the object used when calling the function to save to a GDS file)
-            - layer_id - The index of the layer from which to take the metallic polygons (e.g. in the old tutorials, that would be layer_photo)
-            - cell_num - (Optional) The cell index in the Klayout object in which the layer resides. Default value is taken to be 0.
+            - layer_id - The index of the layer from which to take the metallic polygons
+            - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
+                          combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
+                          argument is negative, the argument is ignored.
+            - fuse_threshold - (Optional) Defaults to 1e-12. This is the minimum distance between metallic elements, below which they are considered
+                               to be a single polygon and thus, the polygons are merged with the gap filled. This accounts for floating-point errors
+                               that make adjacent elements fail to merge as a single element, due to infinitesimal gaps between them.
+            - evap_mode - (Optional) Defaults to 'separate_delete_below'. These are the methods upon which to separate or merge overlapping elements
+                          across multiple evaporation steps. See documentation on PVD_Shadows for more details on the available options.
+            - group_by_evaporations - (Optional) Defaults to False. If set to True, if elements on a particular evaporation step are separated due
+                                      to the given evap_mode, they will still be selected as a part of the same conductor (useful for example, in
+                                      capacitance matrix simulations).
+            - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
+                          PVD_Shadows for more details on its definition.
         '''
 
         #Fresh update on PVD profiles...
@@ -120,7 +135,7 @@ class COMSOL_Model:
         thresh = kwargs.get('threshold',  -1)
 
         qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(self._resolution)
 
         filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
         if filt.shape[0] == 0:
@@ -278,7 +293,7 @@ class COMSOL_Model:
 
     def reorder_conds_by_comps(self, comp_list):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(self._resolution)
         pvdSh = PVD_Shadows(self.design)
         unit_conv = QUtilities.get_units(self.design)
         
@@ -335,11 +350,20 @@ class COMSOL_Model:
         return select_3D_name
 
     def add_ground_plane(self, **kwargs):
+        '''
+        Adds metallic ground-plane from the Qiskit-Metal design object onto the surface layer of the chip simulation.
+
+        Inputs:
+            - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
+                          combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
+                          argument is negative, the argument is ignored.
+        '''
+
         #Assumes that all masks are simply closed without any interior holes etc... Why would you need one anyway?
         thresh = kwargs.get('threshold', -1)
 
         qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(self._resolution)
 
         filt = gsdf.loc[gsdf['subtract'] == True]
         #Now create a plane sheet covering the entire chip
