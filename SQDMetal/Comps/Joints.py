@@ -26,11 +26,10 @@ def get_path_point(frac_line, is_right_hand, leDesign, component_name, trace_nam
         pt_frac = (frac_line*total_dist - sum_dists)/dists[m]
         if pt_frac <= 1.0:
             ptLine = np.array([ pt_frac*(lePath[m+1][0]-lePath[m][0])+lePath[m][0], pt_frac*(lePath[m+1][1]-lePath[m][1])+lePath[m][1] ])
-            if is_right_hand:
-                norm_vec = np.array([-lePath[m+1][1]-lePath[m][1], lePath[m+1][0]-lePath[m][0]])
-                norm_vec /= np.linalg.norm(norm_vec)
-                if not is_right_hand:
-                    norm_vec = -norm_vec
+            norm_vec = np.array([-lePath[m+1][1]-lePath[m][1], lePath[m+1][0]-lePath[m][0]])
+            norm_vec /= np.linalg.norm(norm_vec)
+            if not is_right_hand:
+                norm_vec = -norm_vec
             break
         sum_dists += dists[m]
     return ptLine, norm_vec, pathObj
@@ -78,6 +77,6 @@ class Joint(QComponent):
         p = self.p
 
         ptJoint = np.array([p.pos_x, p.pos_y])
-        norm_vec = np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
+        norm_vec = np.array([-np.cos(p.orientation/180*np.pi), -np.sin(p.orientation/180*np.pi)])
 
         self.add_pin('a', [(ptJoint+norm_vec).tolist(), ptJoint.tolist()], width=p.width, input_as_norm=True)

@@ -46,7 +46,7 @@ class BoundRectangle(QComponent):
         minX, minY, maxX, maxY = QUtilities.get_comp_bounds(self.design, objs)
         poly = shapely.Polygon([(minX, minY), (maxX, minY), (maxX, maxY), (minX, maxY)])
 
-        #subtracts out ground plane on the layer its on
+        #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(bndRect=poly),
                            subtract=p.is_ground_cut,

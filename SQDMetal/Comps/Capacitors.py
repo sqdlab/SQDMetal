@@ -129,7 +129,7 @@ class CapacitorInterdigital(QComponent):
                            dict(pad1=pad1, pad2=pad2),
                            layer=p.layer)
 
-        #subtracts out ground plane on the layer its on
+        #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap=padGap),
                            subtract=True,
@@ -415,7 +415,7 @@ class CapacitorInterdigitalPinStretch(QComponent):
                            dict(pad1=pad1, pad2=pad2),
                            layer=p.layer)
 
-        #subtracts out ground plane on the layer its on
+        #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap=padGap),
                            subtract=True,
@@ -556,7 +556,7 @@ class CapacitorInterdigitalPinPin(QComponent):
                            dict(pad1=pad1, pad2=pad2),
                            layer=p.layer)
 
-        #subtracts out ground plane on the layer its on
+        #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap=padGap),
                            subtract=True,
@@ -568,7 +568,6 @@ class CapacitorInterdigitalPinPin(QComponent):
 
 class CapacitorGap(QComponent):
     """Creates a gap capacitor on a CPW with an optional bisectional ground plane.
-    The width of the fingers is determined by cpw_width.
 
     Inherits QComponent class.
 
@@ -678,7 +677,7 @@ class CapacitorGap(QComponent):
                                 pad2=pad2),
                            layer=p.layer)
 
-        #subtracts out ground plane on the layer its on
+        #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap1=padGap1,
                                 padGap2=padGap2),
@@ -770,3 +769,142 @@ class CapacitorGap(QComponent):
         [pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid] = polys
 
         return pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid
+
+
+class CapacitorProngPin(QComponent):
+    """Creates a forked gap capacitorthat wraps around the target lead. Usually used for Xmons or any line couplings.
+
+    Inherits QComponent class.
+
+    Capacitor Metal Geometry and Ground Cutout Pocket:
+        * prong_width  - Width of the two prongs
+        * prong_length - Length of the two prongs
+        * pin_gap      - Capacitor gap from the fork to the target pin
+        * pin_gap_side - Capacitor gap of side prongs to the sides of the target pin
+        * pad_thickness - Length of the Capacitor fork pad
+
+    The structure automatically cuts a box around the entire fork; further spacing (i.e. cuts into the ground plane) can be controlled via:
+        * gap_side  - Spacing to ground plane on the outer sides of the fork
+        * gap_front - Spacing to ground plane in the direction of the target pin
+        * gap_back - Spacing to ground plane away from the direction of the target pin
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying the target component pin
+
+    Pins:
+        There is one pin 'a' to link to the fork (there is no trace drawn in this structure intrinsically). Only needs a width defined
+        * trace_width - center trace width of the trace that attaches to this capacitor.
+
+    Sketch:
+        Below is a sketch of the capacitor
+        ::
+
+            @@@@@@@@@@@@@@@@@@@     @  = Ground Plane
+            @              GB @     #  = Target pin
+            @   _____x_____GB @     x = pin location with width trace_width
+            @ T|           |  @     W = prong_width
+            @ T|  _______  |  @     L = prong_length
+            @ L| |   P   | |GS@     P = pin_gap
+            @ L|W|  ###  | |  @     S = pin_gap_side
+            @ L|_|SS###  |_|  @     T = pad_thickness
+            @       ###   GF  @     BG = gap_back
+            @       ###   GF  @     GF = gap_front
+            @@@@@@  ###  @@@@@@     GS = gap_side
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Cap 3 Interdigital
+
+    Default Options:
+        * prong_width='4um'
+        * prong_length='10um'
+        * pin_gap='6um'
+        * pin_gap_side='4um'
+        * pad_thickness='10um'
+        * gap_side='5um'
+        * gap_front='5um'
+        * gap_back='5um'
+        * trace_width='10um'
+    """
+
+    #  Define structure functions
+
+    default_options = Dict(prong_width='4um',
+                           prong_length='10um',
+                           pin_gap='6um',
+                           pin_gap_side='4um',
+                           pad_thickness='10um',
+                           gap_side='5um',
+                           gap_front='5um',
+                           gap_back='5um',
+                           trace_width='10um')
+    """Default drawing options"""
+
+    TOOLTIP = """Create a three finger planar capacitor with a ground pocket cuttout."""
+
+    def __init__(self, design,
+                    name: str = None,
+                    options: Dict = None,
+                    type: str = "CPW",
+                    **kwargs):
+        #QRoute forces an end-pin to exist... So make it artificial...
+        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
+        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
+        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
+        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+        super().__init__(design, name, options, **kwargs)
+        #TODO: Perhaps a pull request to add poppable options?
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        startPtNorm = start_point['normal']
+
+        wid = start_point['width']
+
+        pad = [
+              (p.pin_gap-p.prong_length, wid*0.5+p.pin_gap_side),
+              (p.pin_gap-p.prong_length, wid*0.5+p.pin_gap_side+p.prong_width),
+              (p.pin_gap+p.pad_thickness, wid*0.5+p.pin_gap_side+p.prong_width),
+              (p.pin_gap+p.pad_thickness, -wid*0.5-p.pin_gap_side-p.prong_width),
+              (p.pin_gap-p.prong_length, -wid*0.5-p.pin_gap_side-p.prong_width),
+              (p.pin_gap-p.prong_length, -wid*0.5-p.pin_gap_side),
+              (p.pin_gap, -wid*0.5-p.pin_gap_side),
+              (p.pin_gap, wid*0.5+p.pin_gap_side)]
+
+        gap = [
+              (p.pin_gap+p.pad_thickness+p.gap_back, -wid*0.5-p.pin_gap_side-p.prong_width-p.gap_side),
+              (p.pin_gap+p.pad_thickness+p.gap_back, wid*0.5+p.pin_gap_side+p.prong_width+p.gap_side),
+              (p.pin_gap-p.prong_length-p.gap_front, wid*0.5+p.pin_gap_side+p.prong_width+p.gap_side),
+              (p.pin_gap-p.prong_length-p.gap_front, -wid*0.5-p.pin_gap_side-p.prong_width-p.gap_side)]
+
+        pad = shapely.Polygon(pad[::-1])
+        gap = shapely.Polygon(gap)
+        pin = shapely.LineString([(p.pin_gap+p.pad_thickness, wid*0.5+p.pin_gap_side+p.prong_width),
+                                  (p.pin_gap+p.pad_thickness, -wid*0.5-p.pin_gap_side-p.prong_width)])
+
+        polys = [pad, gap, pin]
+        polys = draw.rotate(polys, np.arctan2(startPtNorm[1], startPtNorm[0]), origin=(0, 0), use_radians=True)
+        polys = draw.translate(polys, *startPt)
+        [pad, gap, pin] = polys
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad=pad),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer it's on
+        self.add_qgeometry('poly',
+                           dict(padGap=gap),
+                           subtract=True,
+                           layer=p.layer)
+
+        # Generates its own pin
+        self.add_pin('a', pin.coords, width=p.trace_width)

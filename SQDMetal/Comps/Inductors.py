@@ -97,7 +97,7 @@ class InductorMeander(QComponent):
                            dict(inductor=poly),
                            layer=p.layer)
 
-        # subtracts out ground plane on the layer its on
+        # subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap=padGap),
                            subtract=True,
@@ -260,7 +260,7 @@ class InductorMeanderPinStretch(QComponent):
                            dict(inductor=poly),
                            layer=p.layer)
 
-        # subtracts out ground plane on the layer its on
+        # subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(padGap=padGap),
                            subtract=True,
