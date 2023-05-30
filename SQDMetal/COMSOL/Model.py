@@ -43,10 +43,21 @@ class COMSOL_Model:
     def initialize_model(self, design, simulations, **kwargs):
         self.design = design
 
-        self.chip_len = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
-        self.chip_wid = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
+        restrict_rect = kwargs.get('segment_rectangle', None)   #Given as [x1,y1,x2,y2]
+        if isinstance(restrict_rect, list) or isinstance(restrict_rect, np.ndarray) or isinstance(restrict_rect, tuple):
+            self.restrict_rect = [min([restrict_rect[0], restrict_rect[2]]), min([restrict_rect[1], restrict_rect[3]]),
+                                  max([restrict_rect[0], restrict_rect[2]]), max([restrict_rect[1], restrict_rect[3]])]
+            self.chip_len = self.restrict_rect[2]-self.restrict_rect[0]
+            self.chip_wid = self.restrict_rect[3]-self.restrict_rect[1]
+            self.chip_centre = [(self.restrict_rect[0]+self.restrict_rect[2])*0.5,
+                                (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
+                                QUtilities.parse_value_length(design.chips['main']['size']['center_z'])]
+        else:
+            self.chip_len = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
+            self.chip_wid = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
+            self.chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+
         self.chip_thickness = np.abs(QUtilities.parse_value_length(design.chips['main']['size']['size_z']))
-        self.chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
 
         self.pad_x = kwargs.get('pad_x', 0.5e-3)
         self.pad_y = kwargs.get('pad_y', 0.5e-3)
@@ -149,6 +160,8 @@ class COMSOL_Model:
         metal_polys = shapely.unary_union(filt['geometry'])
         metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
         metal_polys = self._fuse_polygons_threshold(metal_polys, fuse_threshold)
+        if isinstance(self.restrict_rect, list):
+            metal_polys = shapely.clip_by_rect(metal_polys, *self.restrict_rect)
         #Calculate the individual evaporated elements if required
         evap_mode = kwargs.get('evap_mode', 'separate_delete_below')
         group_by_evaporations = kwargs.get('group_by_evaporations', False)

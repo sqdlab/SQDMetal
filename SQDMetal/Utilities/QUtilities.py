@@ -50,6 +50,7 @@ class QUtilities:
             objs = [objs]
         x_vals = []
         y_vals = []
+        unit_conv = QUtilities.get_units(design)
         for cur_obj in objs:
             paths = design.components[cur_obj].qgeometry_table('path')
             for _, row in paths.iterrows():
@@ -60,8 +61,11 @@ class QUtilities:
                 cur_minX, cur_minY, cur_maxX, cur_maxY = cur_poly.bounds
                 x_vals += [cur_minX, cur_maxX]
                 y_vals += [cur_minY, cur_maxY]
+            #In case the geometry is empty, just take the pos_x and pos_y identifiers (e.g. the Joint object)...
+            if len(design.components[cur_obj].qgeometry_table('path')) == 0 and len(design.components[cur_obj].qgeometry_table('poly')) == 0:
+                x_vals += [QUtilities.parse_value_length(design.components[cur_obj].options.pos_x)/unit_conv]
+                y_vals += [QUtilities.parse_value_length(design.components[cur_obj].options.pos_y)/unit_conv]
         if units_metres:
-            unit_conv = QUtilities.get_units(design)
             return unit_conv*min(x_vals), unit_conv*min(y_vals), unit_conv*max(x_vals), unit_conv*max(y_vals)
         else:
             return min(x_vals), min(y_vals), max(x_vals), max(y_vals)

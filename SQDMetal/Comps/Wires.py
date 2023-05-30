@@ -49,7 +49,7 @@ class WirePins(QRoute):
         #QRoute forces an end-pin to exist... So make it artificial...
         pins = []
         for cur_pin in [options.pathObjPins[0], options.pathObjPins[-1]]:
-            if isinstance(cur_pin, list):
+            if isinstance(cur_pin, list) or isinstance(cur_pin, tuple):
                 comp, pin = cur_pin[0], cur_pin[1]
             else:
                 comp, pin = cur_pin, 'a'
@@ -64,7 +64,7 @@ class WirePins(QRoute):
         #Parse Path Joints...
         pins = []
         for cur_pin in self.options.pathObjPins:
-            if isinstance(cur_pin, list):
+            if isinstance(cur_pin, list) or isinstance(cur_pin, tuple):
                 comp, pin = cur_pin[0], cur_pin[1]
             else:
                 comp, pin = cur_pin, 'a'

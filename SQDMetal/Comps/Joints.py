@@ -35,7 +35,7 @@ def get_path_point(frac_line, is_right_hand, leDesign, component_name, trace_nam
     return ptLine, norm_vec, pathObj
 
 class RouteJoint(QComponent):
-    default_options = Dict(pathObj='', pathObjTraceName='', frac_line=0.5, is_right_hand=True)
+    default_options = Dict(pathObj='', pathObjTraceName='', frac_line=0.5, is_right_hand=True, attach_on_side=False)
     
     def make(self):
         p = self.p
@@ -48,12 +48,15 @@ class RouteJoint(QComponent):
             ptLine, norm_vec, pathObj = get_path_point(p.frac_line, p.is_right_hand, self._design, self.options.pathObj, self.options.pathObjTraceName)
             width = pathObj['width'].iloc[0]
         
+        if p.attach_on_side:
+            ptLine -= norm_vec*width*0.5
+        
         self.options.pos_x, self.options.pos_y = ptLine
 
         self.add_pin('a', [(ptLine+norm_vec).tolist(), ptLine.tolist()], width=width, input_as_norm=True)
 
 class JointExtend(QComponent):
-    default_options = Dict(jointObj='', jointPin='a', orientation=0, dist_extend='10um')
+    default_options = Dict(jointObj='', jointPin='a', orientation=0, pin_orientation=None, dist_extend='10um')
 
     def make(self):
         p = self.p
@@ -67,6 +70,8 @@ class JointExtend(QComponent):
             pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
             width = jointPin['width']
         self.options.pos_x, self.options.pos_y = pt
+        if self.options.pin_orientation != None:
+            ptJoint = pt - np.array([np.cos(self.options.pin_orientation/180*np.pi), np.sin(self.options.pin_orientation/180*np.pi)])
 
         self.add_pin('a', [ptJoint.tolist(), pt.tolist()], width=width, input_as_norm=True)
 

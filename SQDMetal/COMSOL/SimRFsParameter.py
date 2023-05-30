@@ -146,6 +146,45 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         #of ground from the CPW for portA.
         cur_launch += [vec_perp]
         self._ports += [cur_launch]
+    
+    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6):
+        '''
+        Creates an RF port on a CPW inlet. The elements form fins to ground from the central CPW stripline. Note that the first port will automatically be
+        the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports
+        are defined.
+        Inputs:
+            - CPW_obj - A CPW object that has the attributes: start, end, width, gap
+            - is_start - If True, then the port is attached to the start of the CPW, while False attaches the port to the end of the CPW
+            - len_launch - (Default: 20e-6) Length of the inlet port fins along the the CPW. It is a good idea to keep it thin w.r.t. CPW gap 
+        '''
+        
+        qObj = self.model.design.components[qObjName]
+        # if isinstance(qObj, LaunchpadWirebond):
+        vec_ori, vec_launch, cpw_wid, cpw_gap = self._get_Route_params(qObjName, pin_name)
+        # else:
+        #     assert False, f"\'{qObjName}\' is an unsupported object type."
+
+        vec_perp = np.array([vec_launch[1],-vec_launch[0]])
+        vec_launch *= len_launch
+
+        pol_name = "port_launch" + str(len(self._ports))
+        
+        launches = [vec_ori + vec_perp * cpw_wid*0.5, vec_ori + vec_perp * (cpw_wid*0.5+cpw_gap),
+                    vec_ori + vec_launch + vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch + vec_perp * cpw_wid*0.5]
+        launches = [[p[0],p[1]] for p in launches]
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launches)
+        cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+
+        launches = [vec_ori - vec_perp * cpw_wid*0.5, vec_ori - vec_perp * (cpw_wid*0.5+cpw_gap),
+                    vec_ori + vec_launch - vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch - vec_perp * cpw_wid*0.5]
+        launches = [[p[0],p[1]] for p in launches]
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launches)
+        cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+
+        #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
+        #of ground from the CPW for portA.
+        cur_launch += [vec_perp]
+        self._ports += [cur_launch]
 
     def create_lumped_element(self, vec_start, vec_end, width, value, elem_type='Inductor'):
         '''
@@ -275,5 +314,16 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         padDir = design.components[launcher_name].pins['tie']['normal']*1.0
         padWid = QUtilities.parse_value_length(design.components[launcher_name].options['pad_width'])
         padGap = QUtilities.parse_value_length(design.components[launcher_name].options['pad_gap'])
+
+        return startPt, padDir, padWid, padGap
+
+    def _get_Route_params(self, route_name, pin_name):
+        design = self.model.design
+        unit_conv = QUtilities.get_units(design)
+
+        startPt = design.components[route_name].pins[pin_name]['middle']*unit_conv
+        padDir = -1.0*design.components[route_name].pins[pin_name]['normal']
+        padWid = QUtilities.parse_value_length(design.components[route_name].options.trace_width)
+        padGap = QUtilities.parse_value_length(design.components[route_name].options.trace_gap)
 
         return startPt, padDir, padWid, padGap
