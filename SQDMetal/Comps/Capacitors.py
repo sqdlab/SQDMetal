@@ -917,6 +917,7 @@ class CapacitorUcapGroundPin(QComponent):
         * prong_width   - Width of the two prongs
         * prong_length  - Length of the two prongs
         * pad_thickness - Length of the Capacitor fork pad
+        * swap_direction - If True, the fork is the first pad and the trace is the second pad instead.
         
     Spacing around the structure (i.e. cuts into the ground plane) can be controlled via:
         * gap_side  - Spacing to ground plane on the outer sides of the fork
@@ -963,6 +964,7 @@ class CapacitorUcapGroundPin(QComponent):
         * prong_width='4um'
         * prong_length='10um'
         * pad_thickness='10um'
+        * swap_direction=False
         * gap_side='5um'
         * gap_front='5um'
         * gap_back='5um'
@@ -979,6 +981,7 @@ class CapacitorUcapGroundPin(QComponent):
                            prong_width='4um',
                            prong_length='10um',
                            pad_thickness='10um',
+                           swap_direction=False,
                            gap_side='5um',
                            gap_front='5um',
                            gap_back='5um')
@@ -1039,6 +1042,12 @@ class CapacitorUcapGroundPin(QComponent):
         gap2 = shapely.Polygon(gap2)
         pin = shapely.LineString([(p.trace_length+p.pad_trace_gap+p.pad_thickness, p.trace_width*0.5),
                                   (p.trace_length+p.pad_trace_gap+p.pad_thickness, -p.trace_width*0.5)])
+
+        if p.swap_direction:
+            polys = [pad1, pad2, gap1, gap2]
+            polys = draw.translate(polys, -p.trace_length-p.pad_trace_gap-p.pad_thickness)
+            polys = draw.rotate(polys, 180, origin=(0,0))
+            [pad1, pad2, gap1, gap2] = polys
 
         polys = [pad1, pad2, gap1, gap2, pin]
         polys = draw.rotate(polys, np.arctan2(startPtNorm[1], startPtNorm[0]), origin=(0, 0), use_radians=True)

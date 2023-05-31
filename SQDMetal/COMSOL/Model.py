@@ -53,6 +53,7 @@ class COMSOL_Model:
                                 (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
                                 QUtilities.parse_value_length(design.chips['main']['size']['center_z'])]
         else:
+            self.restrict_rect = None
             self.chip_len = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
             self.chip_wid = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
             self.chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
