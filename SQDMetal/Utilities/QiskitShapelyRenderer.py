@@ -16,4 +16,17 @@ class QiskitShapelyRenderer(QMplRenderer):
         self.dfs = []
         self.options.resolution = str(resolution)
         self.render_tables(None)
-        return gpd.GeoDataFrame(pd.concat(self.dfs, ignore_index=True))
+
+        gsdf = gpd.GeoDataFrame(pd.concat(self.dfs, ignore_index=True))
+
+        #Discard polygons that are simulation constructs (i.e. "junction" types)
+        df_jjs = self.design.qgeometry.tables['junction']
+        inds_to_pop = []
+        for index, row in df_jjs.iterrows():
+            for index_cands, row_cands in gsdf.iterrows():
+                if row['component'] == row_cands['component'] and row['name'] == row_cands['name']:
+                    inds_to_pop += [index_cands]
+        gsdf.drop(inds_to_pop, inplace=True)
+        
+
+        return gsdf
