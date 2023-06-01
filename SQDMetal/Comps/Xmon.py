@@ -37,7 +37,7 @@ class Xmon(QComponent):
           @@@@@@@  u__   @@@@@@@         @  = Ground Plane
           @@@@@@@  |  |  @@@@@@@   /|\   CW = cross_width
           @        |  |        @    |    CH = cross_height
-          @L ______|  |______ r@    |    V  = vBar_width
+          @l ______|  |______ r@    |    V  = vBar_width
           @ |                |H@   CH    H  = hBar_width
           @ |______    ______|H@    |    v  = vBar_gap
           @        |  |  h     @    |    h  = hBar_gap

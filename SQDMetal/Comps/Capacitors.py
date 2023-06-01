@@ -917,6 +917,10 @@ class CapacitorUcapGroundPin(QComponent):
         * prong_width   - Width of the two prongs
         * prong_length  - Length of the two prongs
         * pad_thickness - Length of the Capacitor fork pad
+        * gnd_prong_trace_dist - If less than zero, the ground bisecting the prong and the trace is in the centre. Otherwise,
+                                 this value sets the gap from the prongs.
+        * gnd_pad_trace_dist   - If less than zero, the ground bisecting the pad and the trace is in the centre. Otherwise,
+                                 this value sets the gap from the pads.
         * swap_direction - If True, the fork is the first pad and the trace is the second pad instead.
         
     Spacing around the structure (i.e. cuts into the ground plane) can be controlled via:
@@ -939,9 +943,9 @@ class CapacitorUcapGroundPin(QComponent):
          @    ____________aaaa____________ B  @     l = trace_length
          @   |                            |T  @     S = prong_trace_gap             x = Target pin
          @   |   ______________________   |T  @     P = pad_trace_gap               a = Connecting pin generated on this part
-         @   |  |          P           |  |L  @     g = gnd_prong_trace
-         @   |  |   @@@@@@@P@@@@@@@@f  |  |L  @     f = gnd_pad_trace
-         @sss|  |   @@@@@@@P@@@@@@@@f  |WW|L  @     W = prong_width
+         @   |  |          P      H    |  |L  @     g = gnd_prong_trace             G = gnd_prong_trace_dist
+         @   |  |   @@@@@@@P@@@@@@@@f  |  |L  @     f = gnd_pad_trace               H = gnd_pad_trace_dist
+         @sss|  |GGG@@@@@@@P@@@@@@@@f  |WW|L  @     W = prong_width
          @   |  |   @@    _P__    @@   |  |L  @     L = prong_length
          @   |__|SSSSSSSS|    |l  @@   |__|L  @     T = pad_thickness
          @          @@   |tttt|l  @@       f  @     s = gap_side
@@ -964,6 +968,8 @@ class CapacitorUcapGroundPin(QComponent):
         * prong_width='4um'
         * prong_length='10um'
         * pad_thickness='10um'
+        * gnd_prong_trace_dist='-1um'
+        * gnd_pad_trace_dist='-1um'
         * swap_direction=False
         * gap_side='5um'
         * gap_front='5um'
@@ -981,6 +987,8 @@ class CapacitorUcapGroundPin(QComponent):
                            prong_width='4um',
                            prong_length='10um',
                            pad_thickness='10um',
+                           gnd_prong_trace_dist='-1um',
+                           gnd_pad_trace_dist='-1um',
                            swap_direction=False,
                            gap_side='5um',
                            gap_front='5um',
@@ -1007,13 +1015,19 @@ class CapacitorUcapGroundPin(QComponent):
                (p.trace_length, -p.trace_width*0.5),
                (p.trace_length, p.trace_width*0.5)]
         
-        gap_side = (p.prong_trace_gap - p.gnd_prong_trace)*0.5
-        gap_front = (p.pad_trace_gap - p.gnd_pad_trace)*0.5
+        if p.gnd_prong_trace_dist > 0:
+            gap_to_inner_gnd_side = p.prong_trace_gap - p.gnd_prong_trace - p.gnd_prong_trace_dist
+        else:
+            gap_to_inner_gnd_side = (p.prong_trace_gap - p.gnd_prong_trace)*0.5
+        if p.gnd_pad_trace_dist > 0:
+            gap_to_inner_gnd_front = p.pad_trace_gap - p.gnd_pad_trace - p.gnd_pad_trace_dist
+        else:
+            gap_to_inner_gnd_front = (p.pad_trace_gap - p.gnd_pad_trace)*0.5
         gap1 = [
-               (0, p.trace_width*0.5+gap_side),
-               (0, -p.trace_width*0.5-gap_side),
-               (p.trace_length+gap_front, -p.trace_width*0.5-gap_side),
-               (p.trace_length+gap_front, p.trace_width*0.5+gap_side)]
+               (0, p.trace_width*0.5+gap_to_inner_gnd_side),
+               (0, -p.trace_width*0.5-gap_to_inner_gnd_side),
+               (p.trace_length+gap_to_inner_gnd_front, -p.trace_width*0.5-gap_to_inner_gnd_side),
+               (p.trace_length+gap_to_inner_gnd_front, p.trace_width*0.5+gap_to_inner_gnd_side)]
 
         pad2 = [
                (p.trace_length+p.pad_trace_gap+p.pad_thickness, p.trace_width*0.5+p.prong_trace_gap+p.prong_width),
@@ -1025,13 +1039,17 @@ class CapacitorUcapGroundPin(QComponent):
                (p.trace_length+p.pad_trace_gap-p.prong_length, -p.trace_width*0.5-p.prong_trace_gap-p.prong_width),
                (p.trace_length+p.pad_trace_gap+p.pad_thickness, -p.trace_width*0.5-p.prong_trace_gap-p.prong_width)]
 
+        if p.gnd_prong_trace_dist > 0:
+            gap_to_inner_gnd_side = p.gnd_prong_trace_dist
+        if p.gnd_pad_trace_dist > 0:
+            gap_to_inner_gnd_front = p.gnd_pad_trace_dist
         gap2 = [
                (p.trace_length+p.pad_trace_gap+p.pad_thickness+p.gap_back, p.trace_width*0.5+p.prong_trace_gap+p.prong_width+p.gap_side),
                (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, p.trace_width*0.5+p.prong_trace_gap+p.prong_width+p.gap_side),
-               (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, p.trace_width*0.5+p.prong_trace_gap-gap_side),
-               (p.trace_length+p.pad_trace_gap-gap_front, p.trace_width*0.5+p.prong_trace_gap-gap_side),
-               (p.trace_length+p.pad_trace_gap-gap_front, -p.trace_width*0.5-p.prong_trace_gap+gap_side),
-               (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, -p.trace_width*0.5-p.prong_trace_gap+gap_side),
+               (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, p.trace_width*0.5+p.prong_trace_gap-gap_to_inner_gnd_side),
+               (p.trace_length+p.pad_trace_gap-gap_to_inner_gnd_front, p.trace_width*0.5+p.prong_trace_gap-gap_to_inner_gnd_side),
+               (p.trace_length+p.pad_trace_gap-gap_to_inner_gnd_front, -p.trace_width*0.5-p.prong_trace_gap+gap_to_inner_gnd_side),
+               (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, -p.trace_width*0.5-p.prong_trace_gap+gap_to_inner_gnd_side),
                (p.trace_length+p.pad_trace_gap-p.prong_length-p.gap_front, -p.trace_width*0.5-p.prong_trace_gap-p.prong_width-p.gap_side),
                (p.trace_length+p.pad_trace_gap+p.pad_thickness+p.gap_back, -p.trace_width*0.5-p.prong_trace_gap-p.prong_width-p.gap_side)]
 

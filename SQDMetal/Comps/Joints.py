@@ -56,7 +56,7 @@ class RouteJoint(QComponent):
         self.add_pin('a', [(ptLine+norm_vec).tolist(), ptLine.tolist()], width=width, input_as_norm=True)
 
 class JointExtend(QComponent):
-    default_options = Dict(jointObj='', jointPin='a', orientation=0, pin_orientation=None, dist_extend='10um')
+    default_options = Dict(jointObj='', jointPin='a', orientation=0, pin_orientation=None, dist_extend='10um', extend_off_pin_dir=False)
 
     def make(self):
         p = self.p
@@ -67,7 +67,10 @@ class JointExtend(QComponent):
         else:
             jointPin = self._design.components[self.options.jointObj].pins[self.options.jointPin]
             ptJoint = jointPin['middle']
-            pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
+            if p.extend_off_pin_dir:
+                pt = ptJoint + p.dist_extend * jointPin['normal']
+            else:
+                pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
             width = jointPin['width']
         self.options.pos_x, self.options.pos_y = pt
         if self.options.pin_orientation != None:
