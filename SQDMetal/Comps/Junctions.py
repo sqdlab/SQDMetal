@@ -87,6 +87,25 @@ class JunctionDolan(QComponent):
         p = self.p
         #########################################################
 
+        pad_T, pad_Fork = JunctionDolan.draw_junction(p)
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad1=pad_T, pad_Fork=pad_Fork),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer it's on
+        # self.add_qgeometry('poly',
+        #                    dict(padGap=padGap),
+        #                    subtract=True,
+        #                    layer=p.layer)
+
+        # Generates its own pins
+        # self.add_pin('a', pin1.coords[::-1], width=p.cpw_width)
+        # self.add_pin('b', pin2.coords[::-1], width=p.cpw_width)
+
+    @staticmethod
+    def draw_junction(p):
         struct_width = p.t_pad_size + p.bridge_gap + p.finger_length + p.prong_length + p.fork_pad_size
         len_comp = np.sqrt((p.end_x-p.pos_x)**2+(p.end_y-p.pos_y)**2)
         len_stem = (len_comp - struct_width)/2
@@ -140,7 +159,102 @@ class JunctionDolan(QComponent):
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         [pad_T, pad_Fork] = polys
+        return pad_T, pad_Fork
 
+class JunctionDolanPinStretch(QComponent):
+    """Create a Dolan Bridge Josephson Junction
+
+    Inherits QComponent class.
+
+    The Dolan Bridge consists of a T-Section followed by a Fork Section.
+
+    Dolan Bridge Josephson Junction Metal Geometry (no Ground Cutout):
+        * bridge_gap - Gap between the T-Section and the Fork Section
+        * finger_length - Length of the thin section on the end of the Fork Section
+        * finger_width  - Width of the thin section on the end of the Fork Section
+        * squid_width  - Overall width of the SQUID loop
+        * stem_width  - Width of the leads connecting to the Josephson Junction
+        * prong_width  - Length of the thicker section on the end of the Fork Section
+        * prong_length  - Width of the thicker section on the end of the Fork Section
+        * t_pad_size  - Thickness of the T-Section pad connecting to the leads
+        * fork_pad_size  - Thickness of the Fork Section pad connecting to the leads
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
+        * dist_extend - Distance upon to stretch away from the start pin.
+    The resulting Josephson junction is right in the centre. This class ignores pos_x, pos_y and orientation...
+        
+    Pins:
+        There are no pins given that overlap and precise positioning is usually the concern...
+
+    Sketch:
+        Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
+        ::
+
+            SW.............SW
+                   | |
+                   |S|              SW  = squid_width
+             ______| |______        S   = stem_width 
+            |      ___      | FPS   FPS = fork_pad_size
+            |     |   |PW.PW| PL    PL  = prong_length
+            |_   _|   |_   _| PL    PW  = prong_width
+              | |       | |   FW 
+              | |       |F|   FW    F  = finger_width
+              |_|       |_|   FW    FW = finger_width
+                              BG    BG = bridge_gap
+             _______________  BG
+            |______   ______| TPS   TPS = t_pad_size
+                   | |              x   = Location where target poin is attached.
+                   |S|        
+                   |x|
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Dolan Bridge Josephson Junction
+
+    Default Options:
+        * trace_width: '10um
+        * dist_extend='40um'
+        * bridge_gap='0.2um'
+        * finger_length='1.75um'
+        * finger_width='0.235um'
+        * squid_width='5.4um'
+        * stem_width='2um'
+        * prong_width='0.5um'
+        * prong_length='1.75um'
+        * t_pad_size='0.3um'
+        * fork_pad_size='0.5um'
+    """
+
+    default_options = Dict(dist_extend='40um',
+                           bridge_gap='0.2um',
+                           finger_length='1.75um',
+                           finger_width='0.235um',
+                           squid_width='5.4um',
+                           stem_width='2um',
+                           prong_width='0.5um',
+                           prong_length='1.75um',
+                           t_pad_size='0.3um',
+                           fork_pad_size='0.5um')
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        norm = start_point['normal']
+        p.pos_x = startPt[0]
+        p.pos_y = startPt[1]
+        endPt = startPt + norm*p.dist_extend
+        p.end_x = endPt[0]
+        p.end_y = endPt[1]
+
+        pad_T, pad_Fork = JunctionDolan.draw_junction(p)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
