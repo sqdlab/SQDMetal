@@ -26,7 +26,7 @@ def get_path_point(frac_line, is_right_hand, leDesign, component_name, trace_nam
         pt_frac = (frac_line*total_dist - sum_dists)/dists[m]
         if pt_frac <= 1.0:
             ptLine = np.array([ pt_frac*(lePath[m+1][0]-lePath[m][0])+lePath[m][0], pt_frac*(lePath[m+1][1]-lePath[m][1])+lePath[m][1] ])
-            norm_vec = np.array([-lePath[m+1][1]-lePath[m][1], lePath[m+1][0]-lePath[m][0]])
+            norm_vec = np.array([-(lePath[m+1][1]-lePath[m][1]), lePath[m+1][0]-lePath[m][0]])
             norm_vec /= np.linalg.norm(norm_vec)
             if not is_right_hand:
                 norm_vec = -norm_vec
