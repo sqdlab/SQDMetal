@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Author: Prasanna Pakkiam
+# Creation Date: 24/05/2023
+# Description: Collection of to draw Josephson Junctions.
+
 from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent

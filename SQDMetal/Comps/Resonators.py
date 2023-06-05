@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Author: Prasanna Pakkiam
+# Creation Date: 01/06/2023
+# Description: Collection of classes to draw resonators (such as meander resonators).
+
 from qiskit_metal.qlibrary.core import QComponent, QRoute
 from qiskit_metal.qlibrary.tlines.anchored_path import RouteAnchors
 import numpy as np

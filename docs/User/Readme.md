@@ -1,11 +1,20 @@
 # User Documentation
 
 Custom *Qiskit-Metal* compatible parts:
-- Capacitors
-- Inductors
-- Joints
-- Wires
-- Bounds
+- Overview
+- Circuit components:
+    - Capacitors
+    - Flux lines
+    - Inductors
+    - Josephson junctions
+    - Resonators
+    - Xmon
+- Connecting components:
+    - Bandages
+    - Bounds
+    - Joints
+    - Wires
+- Markers
 
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)

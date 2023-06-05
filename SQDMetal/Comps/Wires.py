@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Author: Prasanna Pakkiam
+# Creation Date: 01/05/2023
+# Description: Collection of classes to wires - from routing objects to tapers.
+
 from qiskit_metal.qlibrary.core import QComponent, QRoute
 from qiskit_metal.qlibrary.tlines.anchored_path import RouteAnchors
 from qiskit_metal import draw
@@ -7,6 +12,40 @@ from qiskit_metal.toolbox_python.attr_dict import Dict
 from SQDMetal.Utilities.QUtilities import QUtilities
 
 class WirePinStretch(QRoute):
+    """Creates a wire that extends some distance away from some target component's pin.
+
+    Inherits QComponent class.
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
+        * dist_extend - Distance upon to stretch away from the start pin.
+    The resulting wire is a straight section with width equal to that specified by the start pin and extends dist_extend
+    from the start pin (in the direction given by the start pin).
+
+    Pins:
+        There are three pins in the end section:
+            * end
+            * end_L
+            * end_R
+        where end is flush in the direction of the wire, while end_L and end_R are on the sides:
+        
+                        <-w->             x = start pin location 
+         _________________l__             e = 'end' pin
+        |                    |  /|\       l = 'end_L' pin
+        x                    e   w        r = 'end_R' pin
+        |_________________r__|  \|/       d = dist_extend
+        <----------d--------->            w = width of start pin
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Wire that extends off a pin.
+
+    Default Options:
+        * dist_extend='10um'
+    """
+
     default_options = Dict(dist_extend='10um')
 
     def __init__(self, design,
@@ -39,6 +78,40 @@ class WirePinStretch(QRoute):
         self.make_elements(np.array([startPt, endPt]))
 
 class WirePins(QRoute):
+    """Rudimentary manual routing wire that passes through all the listed pins. It supports CPW cutouts and an additional
+    gap in the end for open-ended terminations.
+
+    Inherits QComponent class.
+
+    The CPW wire parameters are given via:
+        * trace_width - width of CPW
+        * trace_gap - gap to ground plane around CPW
+        * fillet    - radius of fillet/turns on every corner
+        * end_gap   - gap to ground plane at the end of the wire (useful for open-ended terminations)
+
+    The waypoints for the positioning/routing is given via a list of pins in 'pathObjPins'. Each pin can be either:
+        * 2-tuple signifying the component name and the pin name
+        * Single string - in this case, it is presumed that the pin name is 'a' (as is the case with most Joints)
+    For example:
+        pathObjPins=[('Launcher1', 'tie'), 'jnt_1', 'jnt_2', ('Launcher2', 'tie')]
+
+    Pins:
+        There are no inherent pins in this object, but they can be added manually via constructs like RouteJoint
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Wire that hits manually selected pins.
+
+    Default Options:
+        * pathObjPins=[]    <--- Needs to have at least 2 pins to form a path!
+        * trace_width='10um'
+        * trace_gap='10um'
+        * fillet='50um'
+        * end_gap='0um'
+    """
+
     default_options = Dict(pathObjPins=[],
                            trace_width='10um', trace_gap='10um', fillet='50um', end_gap='0um',
                            advanced=Dict(avoid_collision='false'))
@@ -113,7 +186,7 @@ class WireElbowParallelPinPin(QRoute):
     Sketch:
         Below is a sketch of the wiring configurations available depending on the position of the pins
         ::
-                     P  R                     f                             P  R            R = fillet
+                       P  R                   f                             P  R            R = fillet
                    p1>----\            p1>----\ R                       p1>----\            P = pin_pad
                           |                   |                                |            f = frac_pos_elbow
                           |                   |                   /------------/ f

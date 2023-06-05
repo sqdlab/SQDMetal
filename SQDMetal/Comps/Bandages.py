@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+# Author: Prasanna Pakkiam
+# Creation Date: 02/06/2023
+# Description: Collection of classes to draw bandages onto pins.
+
 from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
@@ -5,6 +10,41 @@ import numpy as np
 import shapely
 
 class BandageRectPin(QComponent):
+    """Create a rectangular bandage on a pin
+
+    Inherits QComponent class.
+
+    Square marker either has a Metal or ground cutout Geometry as specified by is_ground_cutout:
+        * square_width  - Width of square along x-axis
+        * square_height - Height of square along y-axis
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying centre position via a component pin
+    The resulting bandage is right on this pin. This class ignores pos_x, pos_y and orientation...
+        
+    Pins:
+        There are no pins given that overlap and precise positioning is usually the concern...
+
+    Sketch:
+        Below is a sketch of the solitary square marker
+        ::
+
+             <--W-->    
+             _______
+            |       |  /|\    W = width
+            |   X   |   |H    H = height
+            |_______|  \|/    X = location of target pin
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Rectangular bandage on a pin
+
+    Default Options:
+        * width='10um'
+        * height='10um'
+    """
 
     default_options = Dict(width='10um',
                            height='10um'
