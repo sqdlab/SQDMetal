@@ -30,7 +30,8 @@ class JunctionDolan(QComponent):
     As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
         
     Pins:
-        There are no pins given that overlap and precise positioning is usually the concern...
+        There are pins given on either side to help position the bandage. They are called 't' and 'f' for the T-pad and
+        fork respectively. Pin width is stem_width.
 
     Sketch:
         Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
@@ -92,7 +93,7 @@ class JunctionDolan(QComponent):
         p = self.p
         #########################################################
 
-        pad_T, pad_Fork = JunctionDolan.draw_junction(p)
+        pad_T, pad_Fork, pin1, pin2 = JunctionDolan.draw_junction(p)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -106,8 +107,8 @@ class JunctionDolan(QComponent):
         #                    layer=p.layer)
 
         # Generates its own pins
-        # self.add_pin('a', pin1.coords[::-1], width=p.cpw_width)
-        # self.add_pin('b', pin2.coords[::-1], width=p.cpw_width)
+        self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
+        self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
     @staticmethod
     def draw_junction(p):
@@ -157,14 +158,16 @@ class JunctionDolan(QComponent):
         pad_Fork = np.array(pad_Fork)
         pad_Fork[:,0] += p.t_pad_size + p.bridge_gap + len_stem
 
+        pin1 = shapely.LineString(pad_T[1:3])
+        pin2 = shapely.LineString([pad_Fork[-1], pad_Fork[0]])
         pad_T = shapely.Polygon(pad_T)
         pad_Fork = shapely.Polygon(pad_Fork)
 
-        polys = [pad_T, pad_Fork]
+        polys = [pad_T, pad_Fork, pin1, pin2]
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [pad_T, pad_Fork] = polys
-        return pad_T, pad_Fork
+        [pad_T, pad_Fork, pin1, pin2] = polys
+        return pad_T, pad_Fork, pin1, pin2
 
 class JunctionDolanPinStretch(QComponent):
     """Create a Dolan Bridge Josephson Junction
@@ -190,7 +193,8 @@ class JunctionDolanPinStretch(QComponent):
     The resulting Josephson junction is right in the centre. This class ignores pos_x, pos_y and orientation...
         
     Pins:
-        There are no pins given that overlap and precise positioning is usually the concern...
+        There are pins given on either side to help position the bandage. They are called 't' and 'f' for the T-pad and
+        fork respectively. Pin width is stem_width.
 
     Sketch:
         Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
@@ -259,7 +263,7 @@ class JunctionDolanPinStretch(QComponent):
         p.end_x = endPt[0]
         p.end_y = endPt[1]
 
-        pad_T, pad_Fork = JunctionDolan.draw_junction(p)
+        pad_T, pad_Fork, pin1, pin2 = JunctionDolan.draw_junction(p)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -273,5 +277,5 @@ class JunctionDolanPinStretch(QComponent):
         #                    layer=p.layer)
 
         # Generates its own pins
-        # self.add_pin('a', pin1.coords[::-1], width=p.cpw_width)
-        # self.add_pin('b', pin2.coords[::-1], width=p.cpw_width)
+        self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
+        self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
