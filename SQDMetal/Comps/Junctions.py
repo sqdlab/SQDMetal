@@ -26,6 +26,7 @@ class JunctionDolan(QComponent):
         * prong_length  - Width of the thicker section on the end of the Fork Section
         * t_pad_size  - Thickness of the T-Section pad connecting to the leads
         * fork_pad_size  - Thickness of the Fork Section pad connecting to the leads
+        * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
 
     As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
         
@@ -37,22 +38,22 @@ class JunctionDolan(QComponent):
         Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
         ::
 
-            SW.............SW
-                   | |
-                   |S|              SW  = squid_width
-             ______| |______        S   = stem_width 
-            |      ___      | FPS   FPS = fork_pad_size
-            |     |   |PW.PW| PL    PL  = prong_length
-            |_   _|   |_   _| PL    PW  = prong_width
-              | |       | |   FW 
-              | |       |F|   FW    F  = finger_width
-              |_|       |_|   FW    FW = finger_width
-                              BG    BG = bridge_gap
-             _______________  BG
-            |______   ______| TPS   TPS = t_pad_size
-                   | |
-                   |S|        
-                   | |
+                SW.............SW
+                       | |
+                       |S|                   SW  = squid_width
+                 ______| |______             S   = stem_width 
+                |      ___      |     FPS    FPS = fork_pad_size
+                |     |   |PW.PW|     PL     PL  = prong_length
+                |_   _|   |_   _|     PL     PW  = prong_width
+                  | |       | |       FW  
+                  | |       |F|       FW     F  = finger_width
+                  |_|       |_|       FW     FW = finger_width
+                                      BG     BG = bridge_gap
+             _______________________  BG
+            |__________   __________| TPS    TPS = t_pad_size
+            <-->       | |       <-->        TP  = t_pad_extra
+             TPE       |S|        TPE
+                       | |
 
     .. image::
         Cap3Interdigital.png
@@ -73,6 +74,7 @@ class JunctionDolan(QComponent):
         * prong_length='1.75um'
         * t_pad_size='0.3um'
         * fork_pad_size='0.5um'
+        * t_pad_extra='0.0um'
     """
 
     default_options = Dict(pos_x='0um',pos_y='0um',
@@ -85,7 +87,8 @@ class JunctionDolan(QComponent):
                            prong_width='0.5um',
                            prong_length='1.75um',
                            t_pad_size='0.3um',
-                           fork_pad_size='0.5um')
+                           fork_pad_size='0.5um',
+                           t_pad_extra='0.0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -122,10 +125,10 @@ class JunctionDolan(QComponent):
                 (-len_stem, p.stem_width*0.5),
                 (-len_stem, -p.stem_width*0.5),
                 (0, -p.stem_width*0.5),
-                (0, -p.squid_width*0.5),
-                (p.t_pad_size, -p.squid_width*0.5),
-                (p.t_pad_size, p.squid_width*0.5),
-                (0, p.squid_width*0.5)]
+                (0, -p.squid_width*0.5-p.t_pad_extra),
+                (p.t_pad_size, -p.squid_width*0.5-p.t_pad_extra),
+                (p.t_pad_size, p.squid_width*0.5+p.t_pad_extra),
+                (0, p.squid_width*0.5+p.t_pad_extra)]
     
         #The Fork Section and Stem
         pad_Fork = [
@@ -186,6 +189,7 @@ class JunctionDolanPinStretch(QComponent):
         * prong_length  - Width of the thicker section on the end of the Fork Section
         * t_pad_size  - Thickness of the T-Section pad connecting to the leads
         * fork_pad_size  - Thickness of the Fork Section pad connecting to the leads
+        * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
 
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
@@ -200,22 +204,22 @@ class JunctionDolanPinStretch(QComponent):
         Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
         ::
 
-            SW.............SW
-                   | |
-                   |S|              SW  = squid_width
-             ______| |______        S   = stem_width 
-            |      ___      | FPS   FPS = fork_pad_size
-            |     |   |PW.PW| PL    PL  = prong_length
-            |_   _|   |_   _| PL    PW  = prong_width
-              | |       | |   FW 
-              | |       |F|   FW    F  = finger_width
-              |_|       |_|   FW    FW = finger_width
-                              BG    BG = bridge_gap
-             _______________  BG
-            |______   ______| TPS   TPS = t_pad_size
-                   | |              x   = Location where target poin is attached.
-                   |S|        
-                   |x|
+                SW.............SW
+                       | |
+                       |S|                   SW  = squid_width
+                 ______| |______             S   = stem_width 
+                |      ___      |     FPS    FPS = fork_pad_size
+                |     |   |PW.PW|     PL     PL  = prong_length
+                |_   _|   |_   _|     PL     PW  = prong_width
+                  | |       | |       FW  
+                  | |       |F|       FW     F  = finger_width
+                  |_|       |_|       FW     FW = finger_width
+                                      BG     BG = bridge_gap
+             _______________________  BG
+            |__________   __________| TPS    TPS = t_pad_size
+            <-->       | |       <-->        TP  = t_pad_extra
+             TPE       |S|        TPE        x   = Location where target poin is attached.
+                       |x|
 
     .. image::
         Cap3Interdigital.png
@@ -235,6 +239,7 @@ class JunctionDolanPinStretch(QComponent):
         * prong_length='1.75um'
         * t_pad_size='0.3um'
         * fork_pad_size='0.5um'
+        * t_pad_extra='0.0um'
     """
 
     default_options = Dict(dist_extend='40um',
@@ -246,7 +251,8 @@ class JunctionDolanPinStretch(QComponent):
                            prong_width='0.5um',
                            prong_length='1.75um',
                            t_pad_size='0.3um',
-                           fork_pad_size='0.5um')
+                           fork_pad_size='0.5um',
+                           t_pad_extra='0.0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
