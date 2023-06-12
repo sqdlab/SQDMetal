@@ -78,7 +78,7 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom().create("geom1", 3)
         self._model.java.component("comp1").mesh().create("mesh1")        
 
-        #N.B. The ordering of the datasets here is the defauly naming scheme: dset1, dset2 etc...
+        #N.B. The ordering of the datasets here is the default naming scheme: dset1, dset2 etc...
         self._cur_dset_index = 1
         #List of physics directives used amongst the simulations (e.g. Electrostatic parameters, RF Frequency parameters, Magnetic Field parameters etc...)
         self._cur_physics = []

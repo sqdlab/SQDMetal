@@ -15,6 +15,7 @@ Custom *Qiskit-Metal* compatible parts:
     - Joints
     - Wires
 - Markers
+- Holes
 
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
