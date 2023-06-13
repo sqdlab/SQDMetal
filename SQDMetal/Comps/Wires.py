@@ -169,9 +169,9 @@ class WireElbowParallelPinPin(QRoute):
     """A rudimentary wire connector that mimics the 'Microsoft Office Autoshapes Elbow Connector with yellow handle' with curved corners.
     The connecting pins must be either parallel or anti-parallel
 
-    Inherits QComponent class.
+    Inherits QRoute class.
 
-    Resonator Metal Geometry and Ground Cutout Pocket:
+    Wire Metal Geometry and Ground Cutout Pocket:
         * frac_pos_elbow - Position of the crossward part of the elbow; only exists when the pins are anti-parallel. It is a fraction where
                            0.0 is next to the start pin while 1.0 is next to the end pin.
         * fillet - Radius of the turns on the elbows
@@ -256,8 +256,46 @@ class WireElbowParallelPinPin(QRoute):
 
 
 class WireElbowSingle(QRoute):
+    """A wire connection that has one corner/elbow turn to connect two pins.
 
-    default_options = Dict(trace_width='10um', trace_gap='10um', frac_pos_elbow=0.5, fillet='20um', pin_pad='2um')
+    Inherits QRoute class.
+
+    Wire Metal Geometry and Ground Cutout Pocket:
+        * fillet - Radius of the turns on the elbows
+    The parameters trace_width and trace_gap define the CPW dimensions.
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...'), end_pin=Dict(component=f'...',pin='...')) - Specifying start and end
+          positions via a component pins
+
+    Sketch:
+        Below is a sketch of the wiring configurations available depending on the position of the pins
+        ::
+            P1###########
+                         #
+                          #             # = Wire
+                           #            P1 and P2 = the pins between which the wire connects
+                            #
+                             P2
+
+        Notice that the pin directions point in direction of wire segments. The turning corner is set at the line intersection of the two pin
+        vectors. Thus, this shouldn't be used when the pins are facing away from one another.
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Wire with single corner between pins
+
+    Default Options:
+        * trace_width='10um'
+        * trace_gap='10um'
+        * fillet='20um'
+    """
+
+    default_options = Dict(trace_width='10um',
+                           trace_gap='10um',
+                           fillet='20um')
 
     def make(self):
         p = self.p
@@ -270,7 +308,11 @@ class WireElbowSingle(QRoute):
         endPt = end_point['middle']
         end_norm = end_point['normal']
         
-        t,u = np.linalg.solve([[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]], [endPt[0]-startPt[0], endPt[1]-startPt[1]])
+        try:
+            t,u = np.linalg.solve([[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]], [endPt[0]-startPt[0], endPt[1]-startPt[1]])
+        except:
+            assert False, "The pins are parallel and this construct should not be used. Try for example, WireElbowParallelPinPin or WirePins instead."
+        assert t > 0, "The pins are facing away and will cause the turn to occur at some point behind the components. Check direction of pins."
         midPt = startPt+start_norm*t
 
         path = [startPt, midPt, endPt]
@@ -279,16 +321,60 @@ class WireElbowSingle(QRoute):
         self.set_pin("end")
         self.make_elements(path)
 
-class WireTaperPin(QComponent):
-    #  Define structure functions
+class WireTaperPinStretch(QComponent):
+    """A taper to change width of wire at some pin.
 
+    Inherits QComponent class.
+
+    Wire Metal Geometry and Ground Cutout Pocket:
+        * dist_extend - Length of taper
+        * orig_gap    - If the target pin is a CPW, this argument will be ignored and the trace_gap parameter from the pin's CPW component
+                        will be taken. Otherwise, the initial CPW gap will be taken from orig_gap.
+    The parameters trace_width and trace_gap define the final CPW dimensions.
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start and end
+          positions via a component pins
+
+    Pins:
+        There is a pin called 'a' to continue the taper onto a wire of different width.
+
+    Sketch:
+        Below is a sketch of the wiring configurations available depending on the position of the pins
+        ::
+              @@@@@@G
+              @@@@  G           # = Taper
+              @@    G           @ = Ground plane
+             g    ## /|\        P = Pin to attach taper
+             g  ####  |         W = trace_width
+              ######  |         G = trace_gap
+            P ######  W         D = dist_extend
+              ######  |         g = orig_gap
+                ####  |
+                  ## \|/
+              <..D.>
+              @@@@
+              @@@@@@
+
+        Notice that the pin directions point in direction of wire segments. The turning corner is set at the line intersection of the two pin
+        vectors. Thus, this shouldn't be used when the pins are facing away from one another.
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Taper to change width of wire at some pin.
+
+    Default Options:
+        * trace_width='20um'
+        * trace_gap='10um'
+        * dist_extend='30um'
+        * orig_gap='10um'
+    """
     default_options = Dict(trace_width='20um',
                            trace_gap='10um',
-                           taper_length='30um',
+                           dist_extend='30um',
                            orig_gap='10um')
-    """Default drawing options"""
-
-    TOOLTIP = """Create a three finger planar capacitor with a ground pocket cuttout."""
 
     def __init__(self, design,
                     name: str = None,
