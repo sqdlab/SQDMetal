@@ -255,6 +255,30 @@ class WireElbowParallelPinPin(QRoute):
         self.make_elements(path)
 
 
+class WireElbowSingle(QRoute):
+
+    default_options = Dict(trace_width='10um', trace_gap='10um', frac_pos_elbow=0.5, fillet='20um', pin_pad='2um')
+
+    def make(self):
+        p = self.p
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        start_norm = start_point['normal']
+
+        end_point = self.design.components[self.options.pin_inputs.end_pin.component].pins[self.options.pin_inputs.end_pin.pin]
+        endPt = end_point['middle']
+        end_norm = end_point['normal']
+        
+        t,u = np.linalg.solve([[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]], [endPt[0]-startPt[0], endPt[1]-startPt[1]])
+        midPt = startPt+start_norm*t
+
+        path = [startPt, midPt, endPt]
+
+        self.set_pin("start")
+        self.set_pin("end")
+        self.make_elements(path)
+
 class WireTaperPin(QComponent):
     #  Define structure functions
 
@@ -330,3 +354,5 @@ class WireTaperPin(QComponent):
 
         # Generates its own pins
         self.add_pin('a', pin.coords, width=p.trace_width)
+
+
