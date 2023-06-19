@@ -33,6 +33,7 @@ class HoleBorders(QComponent):
         * exclude_geoms  - Given a list of component names to exclude when patterning the bordering holes.
         * include_geoms  - Given a list of component names to include when patterning the bordering holes. If it's empty, then all
                            metals in the layers given by border_layers are selected for border-hole patterning.
+        * layer_gnd_plane - The layer in which to place the ground cutout.
 
     This class ignores pos_x and pos_y...
         
@@ -73,6 +74,7 @@ class HoleBorders(QComponent):
         * border_layers=[1,2,3]
         * exclude_geoms=[]
         * include_geoms=[]
+        * layer_gnd_plane=1
     """
 
     default_options = Dict(hole_radius='5um', 
@@ -84,7 +86,8 @@ class HoleBorders(QComponent):
                            hole_radius_gnd='6um', 
                            border_layers=[1,2,3],
                            exclude_geoms=[],
-                           include_geoms=[])
+                           include_geoms=[],
+                           layer_gnd_plane=1)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -157,5 +160,5 @@ class HoleBorders(QComponent):
             self.add_qgeometry('poly',
                                dict(holesGND=shapely.MultiPolygon(polys)),
                                subtract=True,
-                               layer=p.layer)
+                               layer=p.layer_gnd_plane)
 
