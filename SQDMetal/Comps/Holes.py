@@ -33,7 +33,12 @@ class HoleBorders(QComponent):
         * exclude_geoms  - Given a list of component names to exclude when patterning the bordering holes.
         * include_geoms  - Given a list of component names to include when patterning the bordering holes. If it's empty, then all
                            metals in the layers given by border_layers are selected for border-hole patterning.
-        * layer_gnd_plane - The layer in which to place the ground cutout.
+        * layer_gnd_plane - The layer in which to place the ground cutout. This should be typically layer 1 (hence, the default).
+    ***READ CAREFULLY*** the holes are placed as follows:
+        1. Select all metals (not cut-outs) in all layers supplied by border_layers - restrict to only include_geoms if non-empty.
+           Careful when supplying include_geoms as it can pattern holes on unincluded metallic surfaces.
+        2. Pattern holes on selected metals
+        3. Using exclude_geoms, a buffer area is made via dist_init and num_hole_lines. All holes in this area are culled.
 
     This class ignores pos_x and pos_y...
         
@@ -102,7 +107,7 @@ class HoleBorders(QComponent):
 
         if len(p.exclude_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.exclude_geoms]
-            filt = filt[~filt['component'].isin(leGeoms)]
+            exfilt = filt[filt['component'].isin(leGeoms)]
         if len(p.include_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.include_geoms]
             filt = filt[filt['component'].isin(leGeoms)]
@@ -131,6 +136,18 @@ class HoleBorders(QComponent):
                 distances = np.arange(0, cur_line.length, p.dist_holes)
                 points = [cur_line.interpolate(distance) for distance in distances]
                 leHoles += points
+
+        #Cull holes in excluded geometry
+        if len(p.exclude_geoms) > 0:
+            ex_metal_polys = shapely.unary_union(exfilt['geometry'])
+            ex_metal_polys = QUtilities.fuse_polygons_threshold(ex_metal_polys, 1e-12/units)
+            polys = ex_metal_polys.buffer(p.dist_init + p.num_hole_lines*p.dist_holes)
+            leHoleFilts = []
+            for m, cur_hole in enumerate(leHoles):
+                if not polys.contains(cur_hole):
+                    leHoleFilts += [m]
+            leHoles = [leHoles[m] for m in leHoleFilts]
+
         leHoles = np.array([[h.x,h.y] for h in leHoles])
 
         #Cull holes that are too close
