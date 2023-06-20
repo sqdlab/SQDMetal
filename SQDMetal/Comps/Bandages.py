@@ -19,7 +19,8 @@ class BandageRectPin(QComponent):
         * square_height - Height of square along y-axis
 
     The positioning can be done dynamically via:
-        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying centre position via a component pin
+        * target_comp - Name of the Qiskit metal component which has the pin to be bandaged
+        * target_pin  - Name of the pin of the target Qiskit metal component where this bandage sits
     The resulting bandage is right on this pin. This class ignores pos_x, pos_y and orientation...
         
     Pins:
@@ -56,10 +57,8 @@ class BandageRectPin(QComponent):
                     type: str = "CPW",
                     **kwargs):
         #QRoute forces an end-pin to exist... So make it artificial...
-        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
-        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
-        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
-        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+        assert 'target_comp' in options, "Must provide a target component via \'target_comp\'."
+        assert 'target_pin' in options, "Must provide a target component pin via \'target_pin\'."
         super().__init__(design, name, options, **kwargs)
         #TODO: Perhaps a pull request to add poppable options?
 
@@ -69,7 +68,7 @@ class BandageRectPin(QComponent):
         p = self.p
         #########################################################
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        start_point = self.design.components[self.options.target_comp].pins[self.options.target_pin]
         startPt = start_point['middle']
         normal = -start_point['normal']
         rot_angle = np.arctan2(normal[1], normal[0])

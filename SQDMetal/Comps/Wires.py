@@ -408,14 +408,14 @@ class WireTaperPinStretch(QComponent):
 
         taper = [
                 (0, width*0.5),
-                (p.taper_length, p.trace_width*0.5),
-                (p.taper_length, -p.trace_width*0.5),
+                (p.dist_extend, p.trace_width*0.5),
+                (p.dist_extend, -p.trace_width*0.5),
                 (0, -width*0.5)]
 
         taper_gap = [
                     (0, width*0.5+gap),
-                    (p.taper_length, p.trace_width*0.5+p.trace_gap),
-                    (p.taper_length, -p.trace_width*0.5-p.trace_gap),
+                    (p.dist_extend, p.trace_width*0.5+p.trace_gap),
+                    (p.dist_extend, -p.trace_width*0.5-p.trace_gap),
                     (0, -width*0.5-gap)]
 
         pin = shapely.LineString(taper[1:3])
