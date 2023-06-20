@@ -49,7 +49,9 @@ class JointExtend(QComponent):
 
     The pin on the target component is specified via:
         * jointObj - Name of target component in the design to which the pin is to attach.
-        * jointPin - Name of the pin on the target component
+        * jointPin - Name of the pin on the target component. If left as blank (i.e. ''), the component's centre (pos_x, pos_y)
+                     will be taken.
+        * pin_width - Width associated with pin. Ignored if jointPin is specified
     
     The positioning is specified via:
         * dist_extend - Distance in which to place the pin away from the target component pin
@@ -76,24 +78,29 @@ class JointExtend(QComponent):
         * dist_extend='10um'
         * pin_orientation=None
         * extend_off_pin_dir=False
+        * pin_width='10um'
     """
 
-    default_options = Dict(jointObj='', jointPin='a', orientation=0, dist_extend='10um', pin_orientation=None, extend_off_pin_dir=False)
+    default_options = Dict(jointObj='', jointPin='a', orientation=0, dist_extend='10um', pin_orientation=None, extend_off_pin_dir=False, pin_width='10um')
 
     def make(self):
         p = self.p
 
-        if self.options.pathObj == '':
-            pt = np.array([0,0])
-            width = 1e-6
+        if self.options.jointPin == '':
+            ptJoint = np.array([self._design.components[self.options.jointObj].p.pos_x, self._design.components[self.options.jointObj].p.pos_y])
+            angl = self._design.components[self.options.jointObj].p.orientation
+            norm = np.array([np.cos(angl/180*np.pi), np.sin(angl/180*np.pi)])
+            width = p.pin_width
         else:
             jointPin = self._design.components[self.options.jointObj].pins[self.options.jointPin]
             ptJoint = jointPin['middle']
-            if p.extend_off_pin_dir:
-                pt = ptJoint + p.dist_extend * jointPin['normal']
-            else:
-                pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
+            norm = jointPin['normal']
             width = jointPin['width']
+        if p.extend_off_pin_dir:
+            pt = ptJoint + p.dist_extend * norm
+        else:
+            pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
+
         self.options.pos_x, self.options.pos_y = pt
         if self.options.pin_orientation != None:
             ptJoint = pt - np.array([np.cos(self.options.pin_orientation/180*np.pi), np.sin(self.options.pin_orientation/180*np.pi)])
