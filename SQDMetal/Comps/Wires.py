@@ -12,7 +12,8 @@ from qiskit_metal.toolbox_python.attr_dict import Dict
 from SQDMetal.Utilities.QUtilities import QUtilities
 
 class WirePinStretch(QRoute):
-    """Creates a wire that extends some distance away from some target component's pin.
+    """Creates a wire that extends some distance away from some target component's pin. It also has provisions to provide
+    gaps in the start and/or end to the ground plane (e.g. for open-ended terminations).
 
     Inherits QComponent class.
 
@@ -21,6 +22,16 @@ class WirePinStretch(QRoute):
         * dist_extend - Distance upon to stretch away from the start pin.
     The resulting wire is a straight section with width equal to that specified by the start pin and extends dist_extend
     from the start pin (in the direction given by the start pin).
+
+    The part additionally has options to add ground cuts to the start and end portions (e.g. open-ended terminations):
+        * start_gap - Distance to cut into ground plane at start.
+        * end_gap   - Distance to cut into ground plane at end.
+    The values are interpreted as follows:
+        - start_gap, end_gap > 0, the gap to the ground plane is the supplied value
+        - start_gap, end_gap == 0, the gap to the ground plane is taken as trace_gap
+        - start_gap, end_gap < 0, no gap is given.        
+
+    As usual trace_width and trace_gap specify the CPW dimensions.
 
     Pins:
         There are three pins in the end section:
@@ -44,9 +55,13 @@ class WirePinStretch(QRoute):
 
     Default Options:
         * dist_extend='10um'
+        * start_gap='-1um'
+        * end_gap='-1um'
     """
 
-    default_options = Dict(dist_extend='10um')
+    default_options = Dict(dist_extend='10um',
+                           start_gap='-1um',
+                           end_gap='-1um')
 
     def __init__(self, design,
                         name: str = None,
@@ -75,7 +90,28 @@ class WirePinStretch(QRoute):
         pt = endPt-tang*p.trace_width*0.5-norm*p.trace_width*0.5
         self.add_pin('endR', [pt+tang, pt], width=p.trace_width, input_as_norm=True)
         
-        self.make_elements(np.array([startPt, endPt]))
+        line = shapely.LineString(np.array([startPt, endPt]))
+        line_gap = np.array([startPt, endPt])
+        if p.start_gap > 0:
+            line_gap[0] -= norm*p.start_gap
+        elif p.start_gap == 0:
+            line_gap[0] -= norm*p.trace_gap
+        if p.end_gap > 0:
+            line_gap[1] += norm*p.end_gap
+        elif p.end_gap == 0:
+            line_gap[1] += norm*p.trace_gap
+        line_gap = shapely.LineString(line_gap)
+
+        self.add_qgeometry('path', {'trace': line},
+                           width=p.trace_width,
+                           fillet=p.fillet,
+                           layer=p.layer)
+        self.add_qgeometry('path', {'cut': line_gap},
+                               width=p.trace_width + 2 * p.trace_gap,
+                               fillet=p.fillet,
+                               layer=p.layer,
+                               subtract=True)
+        # self.make_elements(np.array([startPt, endPt]))
 
 class WirePins(QRoute):
     """Rudimentary manual routing wire that passes through all the listed pins. It supports CPW cutouts and an additional
