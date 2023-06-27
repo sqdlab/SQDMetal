@@ -12,7 +12,7 @@ class CpwParams:
     def fromQDesign(cls, design, chip_name='main'):
         matr = design.chips[chip_name].material
         if matr == 'silicon':
-            er = 11.7
+            er = 11.45 # room temp silicon (11.7) vs ultra-cold silicon (11.45)
         else:
             assert False, "Unrecognised material - cannot infer permittivity."
         h = QUtilities.parse_value_length(design.chips[chip_name].size['size_z'])
