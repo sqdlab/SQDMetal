@@ -2,6 +2,7 @@ import numpy as np
 import scipy.special
 import scipy.optimize
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.Materials import Material
 
 class CpwParams:
     def __init__(self, rel_permittivity, dielectric_thickness):
@@ -11,12 +12,19 @@ class CpwParams:
     @classmethod
     def fromQDesign(cls, design, chip_name='main'):
         matr = design.chips[chip_name].material
-        if matr == 'silicon':
-            er = 11.45 # room temp silicon (11.7) vs ultra-cold silicon (11.45)
-        else:
-            assert False, "Unrecognised material - cannot infer permittivity."
+        er = Material(matr).permittivity
         h = QUtilities.parse_value_length(design.chips[chip_name].size['size_z'])
         return CpwParams(er, h)
+    
+    def fromMaterial(cls, material_obj, h):
+        #That is, it can be called as: CpwParams.fromMaterial("sapphire", 500e-6) or CpwParams.fromMaterial(Material(...), 500e-6) etc...
+        if isinstance(material_obj, str):
+            Er = Material(material_obj).permittivity
+        elif isinstance(material_obj, Material):
+            Er = material_obj.permittivity
+        else:
+            assert False, "The first argument \"material_obj\" must be a Material object type or a string for the material name."
+        return CpwParams(Er, h)
 
     @staticmethod
     def calc_impedance(tr_wid, tr_gap, er, h):
