@@ -13,7 +13,7 @@ class Material:
         else:
             #The names can have capitals and can be delimited via spaces, underscores or camelcase
             orig_name = name
-            name = name.tolower().replace(" ", "").replace("_", "")
+            name = name.lower().replace(" ", "").replace("_", "")
             ################################
             #
             #SILICON
