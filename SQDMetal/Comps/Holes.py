@@ -57,9 +57,9 @@ class HoleBorders(QComponent):
             ##############     O   
             i             iiiii     O
             i       
-            O   O   O   O   O   O   O
-
-            O   O   O   O   O   O   O
+            O   O   O   O   O   O   O d
+                                      d
+            O   O   O   O   O   O   O d
                              ddd
 
     .. image::

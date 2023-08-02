@@ -7,6 +7,7 @@ from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 from qiskit_metal.toolbox_python.attr_dict import Dict
+from SQDMetal.Utilities.QUtilities import QUtilities
 
 
 class Joint(QComponent):
@@ -121,6 +122,8 @@ class RouteJoint(QComponent):
 
     The positioning along the path is specified via:
         * frac_line - The fraction along the path (from 0 to 1) from the start to which to attach the pin
+        * dist_line - Distance along the path from the start to which to attach the pin. Note that this is only valid if frac_line
+                      is given as a number outside the interval [0,1].
         * is_right_hand  - If True, the orientation of the pin is normal to the path and faces the right hand side; left hand
                            side if given as False.
         * attach_on_side - If True, the pin is offset to match the width of the wire/path so that it's touching the side of
@@ -144,11 +147,12 @@ class RouteJoint(QComponent):
         * pathObj=''
         * pathObjTraceName=''
         * frac_line=0.5
+        * dist_line=0
         * is_right_hand=True
         * attach_on_side=False
     """
 
-    default_options = Dict(pathObj='', pathObjTraceName='', frac_line=0.5, is_right_hand=True, attach_on_side=False)
+    default_options = Dict(pathObj='', pathObjTraceName='', frac_line=0.5, dist_line=0, is_right_hand=True, attach_on_side=False)
     
     def make(self):
         p = self.p
@@ -158,45 +162,23 @@ class RouteJoint(QComponent):
             norm_vec = np.array([1,0])
             width = 1e-6
         else:
-            ptLine, norm_vec, pathObj = RouteJoint.get_path_point(p.frac_line, p.is_right_hand, self._design, self.options.pathObj, self.options.pathObjTraceName)
-            width = pathObj['width'].iloc[0]
+            if p.frac_line < 0 or p.frac_line > 1:
+                leDist = p.dist_line
+                leFrac = False
+            else:
+                leDist = p.frac_line
+                leFrac = True
+
+            final_pts, normals, width, gap, total_dist = QUtilities.calc_points_on_path([leDist], self._design, self.options.pathObj, trace_name=self.options.pathObjTraceName, dists_are_fractional=leFrac)
+            ptLine = final_pts[0]
+            norm_vec = normals[0]
         
         if p.attach_on_side:
-            ptLine -= norm_vec*width*0.5
+            if p.is_right_hand:
+                ptLine += norm_vec*width*0.5
+            else:
+                ptLine -= norm_vec*width*0.5
         
         self.options.pos_x, self.options.pos_y = ptLine
 
-        self.add_pin('a', [(ptLine+norm_vec).tolist(), ptLine.tolist()], width=width, input_as_norm=True)
-
-    @staticmethod
-    def get_path(leDesign, component_name, trace_name='', pts_per_turn=25):
-        df = leDesign.qgeometry.tables['path']
-        df = df[df['component'] == leDesign.components[component_name].id]#['geometry'][0]
-        if trace_name != '':
-            df = df[df['name']==trace_name]
-        else:
-            df = df[df['subtract']==False]
-        
-        qmpl = QMplRenderer(None, leDesign, None)
-        qmpl.options['resolution'] = str(pts_per_turn)
-        df = qmpl.render_fillet(df)     #TODO: This can be done analytically based on fillet radii...
-        return df['geometry'].iloc[0], df
-
-    @staticmethod
-    def get_path_point(frac_line, is_right_hand, leDesign, component_name, trace_name='', pts_per_turn=25):
-        path, pathObj = RouteJoint.get_path(leDesign, component_name, trace_name, pts_per_turn)
-        lePath = np.array(path.coords[:])
-        dists = np.linalg.norm(lePath[1:,:]-lePath[:-1,:], axis=1)
-        total_dist = np.sum(dists)
-        sum_dists = 0
-        for m in range(dists.shape[0]):
-            pt_frac = (frac_line*total_dist - sum_dists)/dists[m]
-            if pt_frac <= 1.0:
-                ptLine = np.array([ pt_frac*(lePath[m+1][0]-lePath[m][0])+lePath[m][0], pt_frac*(lePath[m+1][1]-lePath[m][1])+lePath[m][1] ])
-                norm_vec = np.array([-(lePath[m+1][1]-lePath[m][1]), lePath[m+1][0]-lePath[m][0]])
-                norm_vec /= np.linalg.norm(norm_vec)
-                if not is_right_hand:
-                    norm_vec = -norm_vec
-                break
-            sum_dists += dists[m]
-        return ptLine, norm_vec, pathObj
+        self.add_pin('a', [(ptLine-norm_vec).tolist(), ptLine.tolist()], width=width, input_as_norm=True)
