@@ -172,12 +172,13 @@ class RouteJoint(QComponent):
             final_pts, normals, width, gap, total_dist = QUtilities.calc_points_on_path([leDist], self._design, self.options.pathObj, trace_name=self.options.pathObjTraceName, dists_are_fractional=leFrac)
             ptLine = final_pts[0]
             norm_vec = normals[0]
-        
+            if not p.is_right_hand:
+                norm_vec = -norm_vec        
         if p.attach_on_side:
             if p.is_right_hand:
-                ptLine += norm_vec*width*0.5
+                ptLine += normals[0]*width*0.5
             else:
-                ptLine -= norm_vec*width*0.5
+                ptLine -= normals[0]*width*0.5
         
         self.options.pos_x, self.options.pos_y = ptLine
 
