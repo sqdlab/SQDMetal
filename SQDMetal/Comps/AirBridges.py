@@ -13,7 +13,9 @@ from SQDMetal.Utilities.QUtilities import QUtilities
 from scipy.spatial import KDTree
 
 class AirBridgeCPW(QComponent):
-    """Places air bridges along a given CPW path.
+    """Places air bridges along a given CPW path. The positions of the air-bridges are given in handy object attributes:
+        * current_positions  - xy-coordinates of the air-bridges (in the Qiskit-Metal units)
+        * current_arclengths - Distance (along the CPW path - i.e. arclength) of each air-bridge.
 
     Inherits QComponent class.
 
@@ -122,6 +124,8 @@ class AirBridgeCPW(QComponent):
 
         airbridge_pads = []
         airbridge_iBars = []
+        self.current_positions = []
+        self.current_arclengths = []
         for m in range(final_pts.shape[0]):
             matTrans = np.array([normals[m], [-normals[m][1], normals[m][0]]])
 
@@ -144,6 +148,8 @@ class AirBridgeCPW(QComponent):
             chk_geom = shapely.MultiPolygon([(cur_pts,[]), (cur_pts2,[])])
             if shapely.intersection(chk_geom, obstacles).area / chk_geom.area < thresh:
                 airbridge_pads += [cur_pts, cur_pts2]
+                self.current_positions += [final_pts[m]]
+                self.current_arclengths += [dists[m]]
             else:
                 continue
             
@@ -166,7 +172,9 @@ class AirBridgeCPW(QComponent):
             airbridge_iBars += [np.array(iBar)@matTrans + final_pts[m]]
 
 
-        
+        self.current_positions = np.array(self.current_positions)
+        self.current_arclengths = np.array(self.current_arclengths)
+
         airbridge_pads = [(x,[]) for x in airbridge_pads]
         airbridge_iBars = [(x,[]) for x in airbridge_iBars]
 
