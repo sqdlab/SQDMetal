@@ -1,5 +1,8 @@
 from SQDMetal.PALACE.Model import PALACE_Simulation_Base
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
+from SQDMetal.COMSOL.Model import COMSOL_Model
+from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
+from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -26,12 +29,16 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, Gmsh_Renderer, mode, user_options = default_user_options, createFiles = False):
+    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = default_user_options, 
+                                    view_design_gmsh_gui = False, create_files = False):
         self.name = name
-        self.Gmsh_Renderer = Gmsh_Renderer
+        self.metal_design = metal_design
+        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
+        self.meshing = meshing
         self.user_options = user_options
-        self.createFiles = createFiles
+        self.view_design_gmsh_gui = view_design_gmsh_gui
+        self.create_files = create_files
 
 
     def run(self):
@@ -41,29 +48,75 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
     def prepare_simulation(self):
         '''set-up the simulation'''
 
-        #prepare design in Gmsh
-        self.Gmsh_Renderer._prepare_design('capacitance_simulation')
-        
-        #Create simulation files
-        if self.createFiles == True:
-            #create directory to store simulation files
-            self._create_directory(self.name)
+        if self.meshing == 'GMSH':
 
-            #if using HPC create batch file
-            if self.mode == 'HPC':
-                self.create_batch_file()
+            #Create the gmsh renderer to convert qiskit metal geomentry to gmsh geometry
+            pgr = Palace_Gmsh_Renderer(self.metal_design)
 
-            #create config file
-            self.create_config_file(self.Gmsh_Renderer)
+            #prepare design by converting shapely geometries to Gmsh geometries
+            pgr._prepare_design('capacitance_simulation')
 
-        #open gmsh gui to show design
-        self.Gmsh_Renderer.view_design_components()
+            if self.create_files == True:
+                #create directory to store simulation files
+                self._create_directory(self.name)
 
-        #create mesh
-        self.Gmsh_Renderer._intelligent_mesh('capacitance_simulation')
+                #create config file
+                self.create_config_file(Palace_Gmsh_Renderer_object = pgr)
 
-        #save mesh
-        self._save_mesh()
+                #create batch file
+                if self.mode == 'HPC':
+                    self.create_batch_file()
+                
+                #create mesh
+                pgr._intelligent_mesh('capacitance_simulation', 
+                                min_size = self.user_options['mesh_min'], 
+                                max_size = self.user_options['mesh_max'], 
+                                mesh_sampling = self.user_options['mesh_sampling'])
+
+                self._save_mesh_gmsh()
+
+            if self.view_design_gmsh_gui == True:
+                #plot design in gmsh gui
+                pgr.view_design_components()
+            
+                   
+        if self.meshing == 'COMSOL':
+
+            #initialise the COMSOL engine
+            COMSOL_Model.init_engine()
+            cmsl = COMSOL_Model('res')
+
+            #Create COMSOL capacitance sim object
+            simCapMats = COMSOL_Simulation_CapMats(cmsl)
+            cmsl.initialize_model(self.metal_design, [simCapMats], bottom_grounded = True, resolution = 10)
+
+            #Add metallic layers
+            cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
+            cmsl.add_ground_plane(threshold=1e-10)
+            #cmsl.fuse_all_metals()
+
+            #build model
+            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
+
+            #plot model
+            cmsl.plot()
+
+            #save comsol file
+            #cmsl.save(self.name)
+
+            if self.create_files == True:
+                #create directory to store simulation files
+                self._create_directory(self.name)
+
+                #create config file
+                self.create_config_file(comsol_obj = cmsl, simCap_object = simCapMats)
+
+                #create batch file
+                if self.mode == 'HPC':
+                    self.create_batch_file()
+
+            #save mesh
+            self._save_mesh_comsol(comsol_obj = cmsl)
 
 
 
@@ -85,7 +138,7 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
-        if self.createFiles == True:
+        if self.create_files == True:
             parent_simulation_dir = self._check_simulation_mode()
 
             # Directory
@@ -99,7 +152,8 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
             print("Directory '% s' created" % directory)
 
 
-    def _save_mesh(self):
+
+    def _save_mesh_gmsh(self):
 
         parent_simulation_dir = self._check_simulation_mode()
 
@@ -112,29 +166,90 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
         
 
 
-    def create_config_file(self, Palace_Gmsh_Renderer_object):
+    def _save_mesh_comsol(self, comsol_obj):
+        '''function used to save the comsol mesh file'''
+        if self.create_files == True:
+            parent_simulation_dir = self._check_simulation_mode()
+
+            # file_name
+            file_name = self.name + "/" + self.name + ".mphbin"
+    
+            # Path
+            path = os.path.join(parent_simulation_dir, file_name)
+
+            #COMSOL export commands
+            comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
+            comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
+
+
+
+    def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
 
-        PGR = Palace_Gmsh_Renderer_object
+        if self.meshing == 'GMSH':
 
-        Terminal = []
-        for i,value in enumerate(PGR.config_metals_cap):
-            metal = {"Index": i+1,
-                     "Attributes": [value]}
-            Terminal.append(metal)
+            #GMSH renderer object needed to get boundary conditions for config file
+            PGR = kwargs['Palace_Gmsh_Renderer_object']
 
+            #GMSH config file variables
+            material_air = [PGR.config_air_box]
+            material_dielectric = [PGR.config_dielectric_base]
+            far_field = [PGR.config_far_field]
+            
+            #metals to compute capacitances for
+            Terminal = []
+            for i,value in enumerate(PGR.config_metals_cap):
+                metal = {"Index": i+1,
+                        "Attributes": [value]}
+                Terminal.append(metal)
+
+            #define length scale
+            l0 = 1e-3
+
+            #file extension
+            file_ext = '.msh'
+        
+        if self.meshing == 'COMSOL':
+
+            #COMSOL object and RF Sim object needed to get boundary conditions for config file
+            comsol = kwargs['comsol_obj']  
+            sCapMats = kwargs['simCap_object']
+
+            #COMSOL config file variables
+            material_air = list(comsol._model.java.component("comp1").material("Vacuum").selection().entities())
+            material_dielectric = list(comsol._model.java.component("comp1").material("Substrate").selection().entities())
+            far_field = list(comsol._model.java.component("comp1").physics(sCapMats.phys_es).feature("gnd1").selection().entities())
+
+            #metals to compute capacitances for
+            Terminal = []
+            for i,term_name in enumerate(sCapMats.terminal_names):
+                term_assigned_value = list(comsol._model.java.component("comp1").physics(sCapMats.phys_es).feature(term_name).selection().entities())
+                metal = {"Index": i+1,
+                        "Attributes": term_assigned_value}
+                Terminal.append(metal)
+
+            #define length scale
+            l0 = 1
+
+            #file extension
+            file_ext = '.mphbin'
+
+        #get material parameters
+        dielectric = Material(self.user_options["dielectric_material"])
+
+        
         #Define python dictionary to convert to json file
         config = {
                     "Problem":
                     {
                         "Type": "Electrostatic",
                         "Verbose": 2,
-                        "Output": "/scratch/user/uqdsomm1/Palace-Project2/outputFiles/" + self.name
+                        "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
                     },
                     "Model":
                     {
-                        "Mesh": "/scratch/user/uqdsomm1/Palace-Project2/inputFiles/" + self.name + "/" + self.name + ".msh",
-                        "L0": 0.001,  # mm
+                        "Mesh": "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + file_ext,
+                        "L0": l0,  # mm
                         "Refinement":
                         {
                             "UniformLevels": self.user_options["mesh_refinement"]
@@ -145,15 +260,15 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
                         "Materials":
                         [
                             {
-                                "Attributes": [PGR.config_air_box],  # Air
+                                "Attributes": material_air,  # Air
                                 "Permeability": 1.0,
                                 "Permittivity": 1.0,
                                 "LossTan": 0.0
                             },
                             {
-                                "Attributes": [PGR.config_dielectric_base],  # Dielectric
-                                "Permeability": 1.0,
-                                "Permittivity": 11.7,
+                                "Attributes": material_dielectric,  # Dielectric
+                                "Permeability": dielectric.permeability,
+                                "Permittivity": dielectric.permittivity,
                                 "LossTan": 1.2e-5
                             }
                         ]
@@ -162,7 +277,7 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
                     {
                         "Ground":
                         {
-                        "Attributes": [PGR.config_far_field]
+                        "Attributes": far_field
                         },
                         "Terminal":
                             Terminal,
@@ -174,7 +289,7 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
                     },
                     "Solver":
                     {
-                        "Order": 2,
+                        "Order": self.user_options["solver_order"],
                         "Electrostatic":
                         {
                         "Save": self.user_options["solns_to_save"]
@@ -215,8 +330,8 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
                 "output_loc": "#SBATCH --output=" + self.name + ".out",
                 "error_out": "#SBATCH --error=" + self.name + ".err",
                 "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=1",
-                "tasks": "#SBATCH --ntasks-per-node=10",
+                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
+                "tasks": "#SBATCH --ntasks-per-node=20",
                 "cpus": "#SBATCH --cpus-per-task=1",
                 "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
                 "time": "#SBATCH --time=" + self.user_options['sim_time'],
@@ -224,8 +339,8 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
                 "foss": "module load foss/2021a",
                 "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
                 "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/user/uqdsomm1/Palace-Project2/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/user/uqdsomm1/Palace-Project2/inputFiles/" + self.name + "/" + self.name + ".json"
+                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
+                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
         }
     
         #check simulation mode and return appropriate parent directory 

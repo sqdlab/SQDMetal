@@ -96,6 +96,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
         self.jc.component("comp1").physics(self.phys_emw).feature("pec2").selection().named("geom1_condAll")
         #Create the excitation ports
+        self.port_names = []
         for cur_port_id,cur_port in enumerate(self._ports):
             port_name = "lport" + str(cur_port_id)
             self.jc.component("comp1").physics(self.phys_emw).create(port_name, "LumpedPort", 2)
@@ -107,6 +108,8 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').selection().set(jtypes.JArray(jtypes.JInt)(port_bndsB))
             self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port[2][0],cur_port[2][1],0.0]))
             self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port[2][0],-cur_port[2][1],0.0]))
+            #
+            self.port_names.append(port_name)
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
         '''

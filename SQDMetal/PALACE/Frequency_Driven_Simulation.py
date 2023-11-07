@@ -1,39 +1,51 @@
 from SQDMetal.PALACE.Model import PALACE_Simulation_Base
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
+from SQDMetal.COMSOL.Model import COMSOL_Model
+from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
+from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
 import gmsh
 
-class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
+class PALACE_Driven_Simulation(PALACE_Simulation_Base):
 
     #Class Variables
     default_user_options = {
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
-                 "min_freq": 6, #GHz
-                 "max_freq": 9, #GHz
-                 "freq_step": 0.1, #GHz
-                 "save_step": 0,
+                 "min_freq": 5.7,
+                 "max_freq": 7.6,
+                 "freq_step": 0.0001,
+                 "solns_to_save": 4,
                  "solver_order": 2,
+                 "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
+                 "mesh_max": 100e-3,
+                 "mesh_min": 10e-3,
+                 "mesh_sampling": 120,
                  "sim_memory": '300G',
-                 "sim_time": '8:00:00',
-    }
+                 "sim_time": '14:00:00',
+                 "HPC_nodes": '4',
+                }
+    
 
-    # Parent Directory path
-    HPC_parent_simulation_dir = "C:/PALACE_Simulations/"
+    #Parent Directory path
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, Gmsh_Renderer, mode, launchpad_list, user_options = default_user_options, createFiles = False):
+    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, launchpad_list, user_options = default_user_options, 
+                 view_design_gmsh_gui = False, create_files = False):
         self.name = name
-        self.Gmsh_Renderer = Gmsh_Renderer
+        self.metal_design = metal_design
+        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
+        self.meshing = meshing
         self.launchpad_list = launchpad_list
         self.user_options = user_options
-        self.createFiles = createFiles
+        self.view_design_gmsh_gui = view_design_gmsh_gui
+        self.create_files = create_files
         
         
     def run(self):
@@ -42,34 +54,84 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
 
     def prepare_simulation(self):
         '''set-up the simulation'''
+        
+        if self.meshing == 'GMSH':
 
-        #add lumped ports on launch pads
-        for _,launchpad in enumerate(self.launchpad_list):
-            self.Gmsh_Renderer.add_ports_on_launchpad(launchpad)
+            #Create the gmsh renderer to convert qiskit metal geomentry to gmsh geometry
+            pgr = Palace_Gmsh_Renderer(self.metal_design)
 
-        #prepare design by converting shapely geometries to Gmsh geometries
-        self.Gmsh_Renderer._prepare_design('frequency_driven_simulation')
+            #add lumped ports on launch pads
+            for _,launchpad in enumerate(self.launchpad_list):
+                pgr.add_ports_on_launchpad(launchpad)
 
-        if self.createFiles == True:
-            #create directory to store simulation files
-            self._create_directory(self.name)
+            #prepare design by converting shapely geometries to Gmsh geometries
+            pgr._prepare_design('driven_simulation')
 
-            if self.mode == 'HPC':
+            if self.create_files == True:
+                #create directory to store simulation files
+                self._create_directory(self.name)
+
+                #create config file
+                self.create_config_file(Palace_Gmsh_Renderer_object = pgr)
+
                 #create batch file
-                self.create_batch_file()
+                if self.mode == 'HPC':
+                    self.create_batch_file()
+                
+                #create mesh
+                pgr._intelligent_mesh('driven_simulation', 
+                                min_size = self.user_options['mesh_min'], 
+                                max_size = self.user_options['mesh_max'], 
+                                mesh_sampling = self.user_options['mesh_sampling'])
 
-            #create config file
-            self.create_config_file(self.Gmsh_Renderer)
+            self._save_mesh_gmsh()
 
-        #plot design in gmsh gui
-        self.Gmsh_Renderer.view_design_components()
+            if self.view_design_gmsh_gui == True:
+                #plot design in gmsh gui
+                pgr.view_design_components()
+            
+                
+        if self.meshing == 'COMSOL':
 
-        #create mesh
-        self.Gmsh_Renderer._intelligent_mesh('frequency_driven_simulation')
+            #initialise the COMSOL engine
+            COMSOL_Model.init_engine()
+            cmsl = COMSOL_Model('res')
 
-        #save
-        self._save_mesh()
+            #Create COMSOL RF sim object
+            sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
+            cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
 
+            #Add metallic layers
+            cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
+            cmsl.add_ground_plane(threshold=1e-10)
+            #cmsl.fuse_all_metals()
+
+            #assign ports
+            for _,launchpad in enumerate(self.launchpad_list):
+                sim_sParams.create_port_CPW_on_Launcher(launchpad.name)
+            
+            #build model
+            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
+
+            #plot model
+            cmsl.plot()
+
+            #save comsol file
+            cmsl.save(self.name)
+
+            if self.create_files == True:
+                #create directory to store simulation files
+                self._create_directory(self.name)
+
+                #create config file
+                self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
+
+                #create batch file
+                if self.mode == 'HPC':
+                    self.create_batch_file()
+
+            #save mesh
+            self._save_mesh_comsol(comsol_obj = cmsl)
 
 
     def _check_simulation_mode(self):
@@ -79,7 +141,7 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
         parent_simulation_dir = None
 
         if self.mode == "HPC":
-            parent_simulation_dir = self.HPC_parent_simulation_dir
+            parent_simulation_dir = self.sim_parent_directory
         elif self.mode == "simPC":
             parent_simulation_dir = self.simPC_parent_simulation_dir
         else:
@@ -105,9 +167,9 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
         print("Directory '% s' created" % directory)
 
 
-    def _save_mesh(self):
-
-        if self.createFiles == True:
+    def _save_mesh_gmsh(self):
+        '''function used to save the gmsh mesh file'''
+        if self.create_files == True:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
@@ -116,13 +178,73 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
             # Path
             path = os.path.join(parent_simulation_dir, file_name)
             gmsh.write(path)
+            
+            
+    def _save_mesh_comsol(self, comsol_obj):
+        '''function used to save the comsol mesh file'''
+        if self.create_files == True:
+            parent_simulation_dir = self._check_simulation_mode()
+
+            # file_name
+            file_name = self.name + "/" + self.name + ".mphbin"
+    
+            # Path
+            path = os.path.join(parent_simulation_dir, file_name)
+
+            #COMSOL export commands
+            comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
+            comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
+            
 
 
-    def create_config_file(self, Palace_Gmsh_Renderer_object):
+    def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
 
+        if self.meshing == 'GMSH':
 
-        PGR = Palace_Gmsh_Renderer_object
+            #GMSH renderer object needed to get boundary conditions for config file
+            PGR = kwargs['Palace_Gmsh_Renderer_object']
+
+            #GMSH config file variables
+            material_air = [PGR.config_air_box]
+            material_dielectric = [PGR.config_dielectric_base]
+            PEC_metals = PGR.config_metals_rf
+            far_field = [PGR.config_far_field]
+            port1_pos_y = [PGR.config_ports[0]]
+            port1_neg_y = [PGR.config_ports[1]]
+            port2_pos_y = [PGR.config_ports[3]]
+            port2_neg_y = [PGR.config_ports[2]]
+
+            #define length scale
+            l0 = 1e-3
+
+            #file extension
+            file_ext = '.msh'
+        
+        if self.meshing == 'COMSOL':
+
+            #COMSOL object and Cap Sim object needed to get boundary conditions for config file
+            comsol = kwargs['comsol_obj']  
+            sParams_sim = kwargs['simRF_object']
+
+            #COMSOL config file variables
+            material_air = list(comsol._model.java.component("comp1").material("Vacuum").selection().entities())
+            material_dielectric = list(comsol._model.java.component("comp1").material("Substrate").selection().entities())
+            PEC_metals = list(comsol._model.java.component("comp1").material("Metal").selection().entities())
+            far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
+            port1_pos_y = [list(comsol._model.java.component("comp1").physics("emw").feature("lport0").selection().entities())[1]]
+            port1_neg_y = [list(comsol._model.java.component("comp1").physics("emw").feature("lport0").selection().entities())[0]]
+            port2_pos_y = [list(comsol._model.java.component("comp1").physics("emw").feature("lport1").selection().entities())[1]]
+            port2_neg_y = [list(comsol._model.java.component("comp1").physics("emw").feature("lport1").selection().entities())[0]]
+
+            #define length scale
+            l0 = 1
+
+            #file extension
+            file_ext = '.mphbin'
+
+        #get material parameters
+        dielectric = Material(self.user_options["dielectric_material"])
 
         #Define python dictionary to convert to json file
         config = {
@@ -130,12 +252,12 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
             {
                 "Type": "Driven",
                 "Verbose": 2,
-                "Output": "/scratch/user/uqdsomm1/Palace-Project2/outputFiles/" + self.name
+                "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
             },
             "Model":
             {
-                "Mesh": "/scratch/user/uqdsomm1/Palace-Project2/inputFiles/"  + self.name + "/" + self.name + ".msh",
-                "L0": 1.0e-3,  # mm
+                "Mesh": "/scratch/project/palace-sqdlab/inputFiles/"  + self.name + "/" + self.name + file_ext,
+                "L0": l0,  
                 "Refinement":
                 {
                 "UniformLevels": self.user_options["mesh_refinement"]
@@ -146,15 +268,15 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
                 "Materials":
                 [
                     {
-                        "Attributes": [PGR.config_air_box],  # Air
+                        "Attributes": material_air,  # Air
                         "Permeability": 1.0,
                         "Permittivity": 1.0,
                         "LossTan": 0.0
                     },
                     {
-                        "Attributes": [PGR.config_dielectric_base],  # Dielectric
-                        "Permeability": 1.0,
-                        "Permittivity": 11.7,
+                        "Attributes": material_dielectric,  # Dielectric
+                        "Permeability": dielectric.permeability,
+                        "Permittivity": dielectric.permittivity,
                         "LossTan": 1.2e-5
                     }
                 ]
@@ -163,11 +285,11 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
             {
                 "PEC":
                 {
-                    "Attributes": PGR.config_metals_rf,  # Metal trace
+                    "Attributes": PEC_metals,  # Metal trace
                 },
                     "Absorbing":
                 {
-                    "Attributes": [PGR.config_far_field],
+                    "Attributes": far_field,
                     "Order": 1
                 },
                 "LumpedPort":
@@ -179,11 +301,11 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
                     "Elements":
                     [
                         {
-                        "Attributes": [PGR.config_ports[1]],
+                        "Attributes": port1_pos_y,
                         "Direction": "+Y"
                         },
                         {
-                        "Attributes": [PGR.config_ports[0]],
+                        "Attributes": port1_neg_y,
                         "Direction": "-Y"
                         }
                     ]
@@ -194,11 +316,11 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
                     "Elements":
                     [
                         {
-                        "Attributes": [PGR.config_ports[2]],
+                        "Attributes": port2_pos_y,
                         "Direction": "+Y"
                         },
                         {
-                        "Attributes": [PGR.config_ports[3]],
+                        "Attributes": port2_neg_y,
                         "Direction": "-Y"
                         }
                     ]
@@ -210,10 +332,10 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
                 "Order": self.user_options["solver_order"],
                 "Driven":
                 {
-                    "MinFreq": self.user_options["min_freq"],  # GHz
-                    "MaxFreq": self.user_options["max_freq"],  # GHz
-                    "FreqStep": self.user_options["freq_step"],  # GHz
-                    "SaveStep": self.user_options["save_step"] #Controls how often, in number of frequency steps, to save computed fields to disk for visualization with ParaView
+                    "MinFreq": self.user_options["min_freq"],  # starting freequency
+                    "MaxFreq": self.user_options["max_freq"],  # end frequency
+                    "FreqStep": self.user_options["freq_step"],  # step size
+                    "SaveStep": self.user_options["save_step"] # Number of frequency steps for computed field modes to save to disk for visualization with ParaView
                 },
                 "Linear":
                 {
@@ -245,14 +367,17 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
 
     def create_batch_file(self):
         
+        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
+        #so I can get the slurm job number to use for testing
+
         sbatch = {
                 "header": "#!/bin/bash --login",
                 "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "#SBATCH --output=" + self.name + ".out",
+                "output_loc": "# SBATCH --output=" + self.name + ".out",
                 "error_out": "#SBATCH --error=" + self.name + ".err",
                 "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=1",
-                "tasks": "#SBATCH --ntasks-per-node=10",
+                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
+                "tasks": "#SBATCH --ntasks-per-node=20",
                 "cpus": "#SBATCH --cpus-per-task=1",
                 "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
                 "time": "#SBATCH --time=" + self.user_options['sim_time'],
@@ -260,8 +385,8 @@ class PALACE_Frequency_Driven_Simulation(PALACE_Simulation_Base):
                 "foss": "module load foss/2021a",
                 "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
                 "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/user/uqdsomm1/Palace-Project2/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/user/uqdsomm1/Palace-Project2/inputFiles/" + self.name + "/" + self.name + ".json"
+                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
+                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
         }
     
         #check simulation mode and return appropriate parent directory 

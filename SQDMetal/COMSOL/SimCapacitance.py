@@ -9,6 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
+    
+    #terminal names
+    terminal_names = []
+    
     def __init__(self, model):
         self.model = model
         self.jc = model._get_java_comp()
@@ -39,6 +43,7 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
         #Create terminals for capacitance matrix simulations
         for cur_term in range(len(self.model._conds)):
             term_name = "term"+str(cur_term)
+            self.terminal_names.append(term_name)
             self.jc.component("comp1").physics(self.phys_es).create(term_name, "Terminal", 2)           
             self.jc.component("comp1").physics(self.phys_es).feature(term_name).selection().named("".join(self.model._conds[cur_term]))
             self.jc.component("comp1").physics(self.phys_es).feature(term_name).set("TerminalType", "Voltage")
