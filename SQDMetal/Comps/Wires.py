@@ -477,4 +477,142 @@ class WireTaperPinStretch(QComponent):
         # Generates its own pins
         self.add_pin('a', pin.coords, width=p.trace_width)
 
+class WireTaperProbePinStretch(QComponent):
+    """A taper that splits into two probes.
+
+    Inherits QComponent class.
+
+    Wire Metal Geometry and Ground Cutout Pocket:
+        * dist_extend - Length of taper
+        * orig_gap    - If the target pin is a CPW, this argument will be ignored and the trace_gap parameter from the pin's CPW component
+                        will be taken. Otherwise, the initial CPW gap will be taken from orig_gap.
+        * probe_gap1  - Gap between the two probes in the taper at origin
+        * probe_gap2  - Gap between the two probes in the taper at the end of the extension
+        
+    The parameters trace_width and trace_gap define the final CPW dimensions.
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start and end
+          positions via a component pins
+
+    Pins:
+        There are pins called 'L' and 'R' on the ends of the two probes
+
+    Sketch:
+        Below is a sketch of the wiring configurations available depending on the position of the pins
+        ::
+              @@@@@@G
+              @@@@  G           # = Taper
+              @@    G           @ = Ground plane
+             g     #  W         
+             g    ##L W         P = Pin to attach taper
+             g  ####  W         W = trace_width
+              ###  2            G = trace_gap
+              1    2            g = orig_gap
+            P 1    2            D = dist_extend
+              1    2            1 = probe_gap1
+              ###  2            2 = probe_gap2
+                ####  W         L = New pin to attach a probe wire
+                  ##R W         R = New pin to attach a probe wire
+                   #  W
+              <..D.>
+              @@@@
+              @@@@@@
+
+        Notice that the pin directions point in direction of wire segments. The turning corner is set at the line intersection of the two pin
+        vectors. Thus, this shouldn't be used when the pins are facing away from one another.
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Taper to change width of wire at some pin.
+
+    Default Options:
+        * trace_width='20um'
+        * trace_gap='10um'
+        * dist_extend='30um'
+        * orig_gap='10um'
+        * probe_gap1='2um'
+        * probe_gap2='4um'
+    """
+    default_options = Dict(trace_width='20um',
+                           trace_gap='10um',
+                           dist_extend='30um',
+                           orig_gap='10um',
+                           probe_gap1='2um',
+                           probe_gap2='4um')
+
+    def __init__(self, design,
+                    name: str = None,
+                    options: Dict = None,
+                    type: str = "CPW",
+                    **kwargs):
+        #QRoute forces an end-pin to exist... So make it artificial...
+        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
+        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
+        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
+        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+        super().__init__(design, name, options, **kwargs)
+        #TODO: Perhaps a pull request to add poppable options?
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        norm = start_point['normal']
+        rot_angle = np.arctan2(norm[1], norm[0])
+        width = start_point['width']
+        if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
+            gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
+            gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
+        else:
+            gap = p.orig_gap
+
+        taper1 = [
+                (0, width*0.5),
+                (0, p.probe_gap1*0.5),
+                (p.dist_extend, p.probe_gap2*0.5),
+                (p.dist_extend, p.trace_width + p.probe_gap2*0.5)]
+        taper2 = [
+                (0, -p.probe_gap1*0.5),
+                (0, -width*0.5),
+                (p.dist_extend, -p.trace_width - p.probe_gap2*0.5),
+                (p.dist_extend, -p.probe_gap2*0.5)]
+
+        taper_gap = [
+                    (0, width*0.5+gap),
+                    (p.dist_extend, p.trace_width + p.probe_gap2*0.5+p.trace_gap),
+                    (p.dist_extend, -p.trace_width - p.probe_gap2*0.5-p.trace_gap),
+                    (0, -width*0.5-gap)]
+
+        pinL = shapely.LineString(taper1[2:])
+        pinR = shapely.LineString(taper2[2:])
+        taper1 = shapely.Polygon(taper1)
+        taper2 = shapely.Polygon(taper2)
+        taper_gap = shapely.Polygon(taper_gap)
+
+        polys = [taper1, taper2, taper_gap, pinL, pinR]
+        polys = draw.rotate(polys, rot_angle, origin=(0, 0), use_radians=True)
+        polys = draw.translate(polys, *startPt)
+        [taper1, taper2, taper_gap, pinL, pinR] = polys
+        
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(taper1=taper1, taper2=taper2),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer it's on
+        self.add_qgeometry('poly',
+                           dict(taper_gap=taper_gap),
+                           subtract=True,
+                           layer=p.layer)
+
+        # Generates its own pins
+        self.add_pin('L', pinL.coords[::-1], width=p.trace_width)
+        self.add_pin('R', pinR.coords[::-1], width=p.trace_width)
 
