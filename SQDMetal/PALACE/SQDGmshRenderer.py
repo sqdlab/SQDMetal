@@ -89,15 +89,21 @@ class Palace_Gmsh_Renderer:
 
 
     def _prepare_design(self, simulation):
-        '''takes qiskit metal design geometries from shapely and turns all geometries into polygons placing them into'''
+        '''Takes qiskit metal design geometries from shapely and turns all geometries into polygons. Some elements such as
+        launch pads are already polygons however other elements such as meander resonators are linestrings and need to be
+        converted to polygons in shapely. 
+        
+        Qiskit metal usually has two polygons associated with an element if it is not a linestring geometry. These are
+        (1) metal and (2) a dielectric gap surrounding element. This method also separates the metal and dielectric gap components
+        and stores them in their respective lists. '''
 
-        #Remove any previous model and add new gmshmodel
+        #Remove any previous model and add new gmsh model
         gmsh.model.remove()
         gmsh.finalize()
         gmsh.initialize()
         gmsh.model.add('qiskit_to_gmsh')
 
-        #create list with component names
+        #create a list with all the components in the design
         component_list = self.design.all_component_names_id()
         component_names = []
         for i in range(len(component_list)):
@@ -106,7 +112,7 @@ class Palace_Gmsh_Renderer:
         #qiskit metal element shapely types
         element_types = ['path', 'poly', 'junction']
 
-        #Determine whether component is a metal or dielectric gap and add it to its corresponding list
+        #Determine whether component is a metal or dielectric gap and add it to its corresponding list which is a class variable
         for i, component_name in enumerate(component_names):
             for j, element_type in enumerate(element_types):
                 if(not self.design.qgeometry.get_component(component_name)[element_type].empty):
@@ -135,7 +141,7 @@ class Palace_Gmsh_Renderer:
             else:
                 Palace_Gmsh_Renderer.dielectric_gap_polygons.append((entry[0], entry[2].geometry))
 
-        #create chip surface
+        #create chip surface where structures will sit
         Palace_Gmsh_Renderer.metal_surface = shapely.geometry.box(self.center_x - 0.5*self.size_x, self.center_y - 0.5*self.size_y,
                              self.center_x + 0.5*self.size_x, self.center_y + 0.5*self.size_y)
 
@@ -158,7 +164,7 @@ class Palace_Gmsh_Renderer:
             All metal components are fused except for the ground plane as shorting lambda/4 resonators to the ground plane
             creates difficulties in the capacitance simulations. At this stage all geometries are still in shapely.'''   
         
-        #get dielectric gap polygons
+        #get dielectric gap polygons and put them in a list to be fused
         dielectric_fuse_list = []
         for i, value in enumerate(Palace_Gmsh_Renderer.dielectric_gap_polygons):
             dielectric_fuse_list.append(value[1])
@@ -169,7 +175,8 @@ class Palace_Gmsh_Renderer:
         #cutout dielectric gaps from metal ground plain
         ground_plain = shapely.difference(Palace_Gmsh_Renderer.metal_surface, fused_dielectric_gaps)
 
-        #get metal polygons
+        #get metal polygons and put them in a list to be fused. Note for capacitance simulations, we do not want to fuse metals with
+        #ground plane as this will short labda/4 resonators to ground, making capcitance simulations difficult.
         metal_fuse_list = []
         for i, value in enumerate(Palace_Gmsh_Renderer.metal_polygons):
             metal_fuse_list.append(value[1])
@@ -197,8 +204,8 @@ class Palace_Gmsh_Renderer:
         
 
     def _rf_sim_prep(self):
-        '''Prepare capacitance simulation by fusing dielectric gaps and then cutting these out from the chip's metal surface.
-            All metal components are fused except including the ground plane, ensuring lambda/4 resonators are shorted to the 
+        '''Prepare rf simulation by fusing dielectric gaps and then cutting these out from the chip's metal surface.
+            All metal components are fused including the ground plane, ensuring lambda/4 resonators are shorted to the 
             groud plane. At this stage all geometries are still in shapely.'''
         
         #get dielectric gap polygons
@@ -242,11 +249,13 @@ class Palace_Gmsh_Renderer:
         '''For the RF simulation all shapely geometries are converted to geometries in GMSH and boundary conditions such as PEC conditions
             are applied.'''
 
+        #Some of the created metal polygons in geopandas have both internal and external boundaries. Thus, to create the geometry in gmsh
+        #we need to create the external polygon then cut out the internal polygon.
         metal_list = []
         for i, metal in enumerate(Palace_Gmsh_Renderer.gpd_polys):
-            metal_simplified = metal.simplify(1e-9)
-            gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior[0].coords[:])
-            if len(metal_simplified.interiors[0]) >= 1:
+            metal_simplified = metal.simplify(1e-6) #this removes points that are too closely spaced
+            gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior[0].coords[:]) #draw exterior polygon into gmsh
+            if len(metal_simplified.interiors[0]) >= 1: #if the geopandas poly has an interior then cut from exterior polygon
                 interiors = []
                 for _,interior in enumerate(metal_simplified.interiors[0]):
                     gmsh_interior = self._draw_polygon_from_coords(interior.coords[:])
@@ -261,18 +270,19 @@ class Palace_Gmsh_Renderer:
                 Palace_Gmsh_Renderer.gmsh_metals.append(gmsh_exterior)
                 metal_list.append((2,gmsh_exterior))
 
-        #update geometries
+        #update geometries, these function calls make sure the existing model stores the newly created
+        #geometries
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
         
-        #create volume of dielectric base
+        #create volume of dielectric base in gmsh
         self._draw_chip_base()
 
         #update geometries
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
         
-        #add launchpads
+        #create lumped ports on launch pads 
         for i,launch_pad in enumerate(Palace_Gmsh_Renderer.launch_pads_list):
             self._create_ports_on_launchpad(launch_pad)
    
@@ -281,6 +291,8 @@ class Palace_Gmsh_Renderer:
         for i,value in enumerate(Palace_Gmsh_Renderer.ports_list):
             lumped_ports.append((2,value))
 
+        #We must fragment all elements together to create a cohesive mesh in gmsh. Fragmenting essentially means embedding
+        #geometries into one another
         elements_to_fragment = metal_list
         elements_to_fragment.extend(lumped_ports)
 
@@ -297,10 +309,10 @@ class Palace_Gmsh_Renderer:
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
 
-        #add physical group for  metals and ground plane
+        #add physical group (Boundary Condition) for metals and ground plane
         gmsh.model.addPhysicalGroup(2, Palace_Gmsh_Renderer.gmsh_metals, name = 'metals')
         
-        #add dielectric volume as dielectric base
+        #add dielectric volume boundary condition 
         gmsh.model.addPhysicalGroup(3, [chip[0][1]], name = 'dielectric_base')
         Palace_Gmsh_Renderer.frag_dielectric_vol = chip[0][1]
 
@@ -315,7 +327,7 @@ class Palace_Gmsh_Renderer:
         
         # gmsh.model.addPhysicalGroup(2, Palace_Gmsh_Renderer.gmsh_gap_list, name = 'dielectric_gaps')
 
-        #draw airbox surrounfding chip
+        #draw airbox surrounding chip into gmsh
         self._draw_air_box()
 
         #get physical group indentifiers to use in config file
@@ -328,7 +340,7 @@ class Palace_Gmsh_Renderer:
         
         metal_list = []
         for i, metal in enumerate(Palace_Gmsh_Renderer.gpd_polys):
-            metal_simplified = metal.simplify(1e-9)
+            metal_simplified = metal.simplify(1e-6)
             gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior[0].coords[:])
             if len(metal_simplified.interiors[0]) >= 1:
                 interiors = []
@@ -349,7 +361,7 @@ class Palace_Gmsh_Renderer:
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
         
-        #draw ground plane separately, simplify removes points in polygon which are too close to eachother
+        #draw ground plane separately for capacitance simulation
         if type(Palace_Gmsh_Renderer.capacitance_ground_plane) == shapely.geometry.polygon.Polygon:
             ground_plane_elements = [Palace_Gmsh_Renderer.capacitance_ground_plane]
         else:
@@ -359,7 +371,7 @@ class Palace_Gmsh_Renderer:
         ground_plane_list = []
         for i, metal in enumerate(ground_plane_elements):
             gpd_metal = gpd.GeoSeries([metal])
-            metal_simplified = gpd_metal.simplify(1e-9)
+            metal_simplified = gpd_metal.simplify(1e-6)
             gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior[0].coords[:])
             if len(metal_simplified.interiors[0]) >= 1:
                 interiors = []
@@ -399,7 +411,6 @@ class Palace_Gmsh_Renderer:
         for _,element in enumerate(ground_plane_list):
             fragment_list.append((2,element))
         
-
         print(metal_list)
         print(fragment_list)
 
@@ -453,7 +464,7 @@ class Palace_Gmsh_Renderer:
 
 
     def _draw_chip_base(self):
-        '''This method draws the chip base given the dimensions defined by the user'''
+        '''This method draws the chip base into gmsh given the dimensions defined by the user in qiskit metal'''
 
         #half values of the sizes
         half_size_x = self.size_x/2
@@ -504,7 +515,7 @@ class Palace_Gmsh_Renderer:
             in as an argument and then draws it in Gmsh and returns the surface ID''' 
 
         #simplify polygon, remove points that are too close together
-        new_polygon = polygon.simplify(1e-9)
+        new_polygon = polygon.simplify(1e-6)
 
         #gets polygon coordinates depending on the type of argument fed to the function
         x_coords = new_polygon.exterior.coords.xy[0]
@@ -548,7 +559,7 @@ class Palace_Gmsh_Renderer:
 
 
     def _draw_polygon_from_coords(self, coords):
-        '''draws polygon in GMSH from x and y coordinates''' 
+        '''draws polygon in GMSH from x and y coordinates and returns the surface ID''' 
 
         #gets polygon coordinates depending on the type of argument fed to the function
         x_coords = []
@@ -596,7 +607,8 @@ class Palace_Gmsh_Renderer:
 
 
     def _draw_path(self, path: pd.Series):
-        '''takes a pandas series in as an argument and then draws it in Gmsh'''
+        '''Takes a pandas series in as an argument and then draws the path as a polygon in shapely. Returns the polygon generated 
+        from the path'''
 
         #get width and buffer amount for path
         width = path.width
@@ -613,7 +625,7 @@ class Palace_Gmsh_Renderer:
 
 
     def _draw_air_box(self):
-        '''draw airbox that surounds chip'''
+        '''draw airbox into gmsh'''
 
         #for air box choose increase in dimensions in 'mm'
         air_box_delta_x = (1/4) * self.size_x
@@ -825,7 +837,8 @@ class Palace_Gmsh_Renderer:
 
 
     def _create_metals_for_fine_mesh(self):
-        '''draw metal surface in order to mesh finer in these regions'''
+        '''draw metal surface into gmsh in order to mesh finer in these regions. Note that these surfaces are just used to tell gmsh
+        where to mesh finer, they are not included in the output of the design.'''
 
         #get metal polygons
         metal_fuse_list = []
@@ -855,7 +868,7 @@ class Palace_Gmsh_Renderer:
         #create metal surface in Gmsh
         gmsh_metals_for_meshing = []
         for i, metal in enumerate(mesh_gpd_polys):
-            metal_simplified = metal.simplify(1e-9)
+            metal_simplified = metal.simplify(1e-6)
             gmsh_poly = self._draw_polygon_from_coords(metal_simplified.exterior[0].coords[:])
             gmsh_metals_for_meshing.append(gmsh_poly)
         
