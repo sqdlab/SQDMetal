@@ -19,7 +19,6 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QUtilities import QUtilities
 
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 import pandas as pd
 import geopandas as gpd
 

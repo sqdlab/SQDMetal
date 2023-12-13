@@ -22,4 +22,4 @@ Utility modules:
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)
-
+- [Simulations using Palace](Sim_Comsol.md)

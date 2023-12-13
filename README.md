@@ -12,7 +12,7 @@ There are two classes of documentation provided for this stack:
 
 ## Installation instructions
 
-The installation requirements are to simply install Qiskit-Metal and then to pull this repository as outlined in this section. First run Anaconda prompt and run the following command to create an environment (in this example, the name is sqdmetal_env):
+The following installation instructions automatically installs Qiskit-Metal along with SQDMetal. First run Anaconda prompt and run the following command to create an environment (in this example, the name is sqdmetal_env):
 
 ```
 conda create -n sqdmetal_env
@@ -29,9 +29,10 @@ Ideally, the pip installation of qiskit-metal should work, but there are some de
 ```
 conda install -c conda-forge gdspy
 conda install -c conda-forge pyside2
+conda install -c conda-forge gmsh python-gmsh
 ```
 
-Now choose a folder to house SQDMetal (idea is to create an editable folder such that the code can be modified and pushed without upsetting the pip package manager). Once navigating to this folder, run the usual GIT clone:
+The last one is optional and only required if using Palace. Now choose a folder to house SQDMetal (idea is to create an editable folder such that the code can be modified and pushed without upsetting the pip package manager). Once navigating to this folder, run the usual GIT clone:
 
 ```
 cd C:/Users/....../myFolder/

@@ -13,6 +13,8 @@ class PALACE_Driven_Simulation(PALACE_Simulation_Base):
 
     #Class Variables
     default_user_options = {
+                 "layers": [1,2,3],
+                 "ground_plane": True,
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "min_freq": 5.7,
@@ -35,7 +37,7 @@ class PALACE_Driven_Simulation(PALACE_Simulation_Base):
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, launchpad_list, user_options = default_user_options, 
+    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, launchpad_list, user_options = {}, 
                  view_design_gmsh_gui = False, create_files = False):
         self.name = name
         self.metal_design = metal_design
@@ -43,7 +45,9 @@ class PALACE_Driven_Simulation(PALACE_Simulation_Base):
         self.mode = mode
         self.meshing = meshing
         self.launchpad_list = launchpad_list
-        self.user_options = user_options
+        self.user_options = {}
+        for key in default_user_options:
+            self.user_options[key] = user_options.get(key, default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         
