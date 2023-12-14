@@ -1,6 +1,8 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 import numpy as np
 import os
+import gmsh
 
 class PALACE_Model:
     def __init__(self, meshing):

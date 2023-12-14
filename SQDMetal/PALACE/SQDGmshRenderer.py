@@ -53,16 +53,6 @@ class Palace_Gmsh_Renderer:
     gmsh_dielectric_gaps = []
     gmsh_gap_list = []
 
-    ###Physical Groups/Boundary Conditions###
-    config_metals_rf = []
-    config_metals_cap = []
-    config_ground_plane = None
-    config_far_field = None
-    config_dielectric_base = None
-    config_dielectric_gaps = []
-    config_air_box = None
-    config_ports = []
-
     #constructor takes qiskit-metal design
     def __init__(self, design):
         self.design = design
@@ -101,10 +91,28 @@ class Palace_Gmsh_Renderer:
 
         unit_conv = 1   #Because it is stuck in mm?!
 
-        print(metallic_layers)
+        #Handle the ground plane...
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates(fillet_resolution)
+        filt = gsdf.loc[gsdf['subtract'] == True]
+        space_polys = QUtilities.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold)
+        if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
+            space_polys = [x for x in space_polys.geoms]
+        else:
+            space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
+        space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
+        #cutout dielectric gaps from metal ground plain <-- haha ground "plain"...
+        #create chip surface where structures will sit
+        metal_surface = shapely.geometry.box(self.center_x - 0.5*self.size_x, self.center_y - 0.5*self.size_y,
+                             self.center_x + 0.5*self.size_x, self.center_y + 0.5*self.size_y)
+        ground_plain = shapely.difference(metal_surface, shapely.geometry.multipolygon.MultiPolygon(space_polys))
+        #
         #Gather all polygons into contiguous groups
         metal_polys = {}
         num_polys = 0
+        if not ground_plain.is_empty:
+            metal_polys[0] = ground_plain
+            num_polys += 1
         for cur_layer in metallic_layers:
             cur_layer['unit_conv'] = unit_conv
             cur_layer['resolution'] = fillet_resolution
@@ -124,7 +132,6 @@ class Palace_Gmsh_Renderer:
             else:
                 return 1
         new_polys = {}
-        print(metal_polys)
         new_polys[0] = metal_polys[0]
         for m in range(1, num_polys):
             found_match = False
@@ -137,30 +144,14 @@ class Palace_Gmsh_Renderer:
             if not found_match:
                 new_polys[len(new_polys)] = metal_polys[m]
 
-        #Handle the ground plane...
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates(fillet_resolution)
-        filt = gsdf.loc[gsdf['subtract'] == True]
-        space_polys = QUtilities.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold)
-        if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
-            space_polys = [x for x in space_polys.geoms]
-        else:
-            space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
-        space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
 
-        return self._sim_prep(simulation.replace('_',' '), new_polys, space_polys, sim_constructs)
+        return self._sim_prep(simulation.replace('_',' '), new_polys, sim_constructs)
 
-    def _sim_prep(self, type_name, metal_polys, space_polys, sim_constructs):
+    def _sim_prep(self, type_name, metal_polys, sim_constructs):
         '''Prepare simulation by fusing dielectric gaps and then cutting these out from the chip's metal surface.
             All metal components are fused including the ground plane. At this stage all geometries are still in
             shapely.'''
 
-        #cutout dielectric gaps from metal ground plain
-        #create chip surface where structures will sit
-        metal_surface = shapely.geometry.box(self.center_x - 0.5*self.size_x, self.center_y - 0.5*self.size_y,
-                             self.center_x + 0.5*self.size_x, self.center_y + 0.5*self.size_y)
-        ground_plain = shapely.difference(metal_surface, shapely.geometry.multipolygon.MultiPolygon(space_polys))        #
-        metal_polys[len(metal_polys)] = ground_plain
         metal_list = []
         for m in metal_polys:
             cur_poly = metal_polys[m]
