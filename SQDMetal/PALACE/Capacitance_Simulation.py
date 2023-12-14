@@ -1,4 +1,4 @@
-from SQDMetal.PALACE.Model import PALACE_Simulation_Base
+from SQDMetal.PALACE.Model import PALACE_Model
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
@@ -10,10 +10,11 @@ import os
 import io
 import gmsh
 
-class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
+class PALACE_Capacitance_Simulation(PALACE_Model):
 
     #Class Variables
     default_user_options = {
+                 "fillet_resolution": 4,
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "solns_to_save": 3,
@@ -37,10 +38,11 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
-        for key in default_user_options:
-            self.user_options[key] = user_options.get(key, default_user_options[key])
+        for key in PALACE_Capacitance_Simulation.default_user_options:
+            self.user_options[key] = user_options.get(key, PALACE_Capacitance_Simulation.default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
+        super().__init__(meshing)
 
 
     def run(self):
@@ -56,14 +58,14 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
             pgr = Palace_Gmsh_Renderer(self.metal_design)
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            pgr._prepare_design('capacitance_simulation')
+            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, [], self.user_options['fillet_resolution'], 'capacitance_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
                 #create config file
-                self.create_config_file(Palace_Gmsh_Renderer_object = pgr)
+                self.create_config_file(gmsh_render_attrs = gmsh_render_attrs)
 
                 #create batch file
                 if self.mode == 'HPC':
@@ -194,13 +196,13 @@ class PALACE_Capacitance_Simulation(PALACE_Simulation_Base):
             PGR = kwargs['Palace_Gmsh_Renderer_object']
 
             #GMSH config file variables
-            material_air = [PGR.config_air_box]
-            material_dielectric = [PGR.config_dielectric_base]
-            far_field = [PGR.config_far_field]
+            material_air = [gmsh_render_attrs['air_box']]
+            material_dielectric = [gmsh_render_attrs['dielectric']]
+            far_field = [gmsh_render_attrs['far_field']]
             
             #metals to compute capacitances for
             Terminal = []
-            for i,value in enumerate(PGR.config_metals_cap):
+            for i,value in enumerate(gmsh_render_attrs['metals']):
                 metal = {"Index": i+1,
                         "Attributes": [value]}
                 Terminal.append(metal)

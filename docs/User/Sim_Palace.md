@@ -47,3 +47,43 @@ sudo apt install paraview
 ### HPC cluster
 
 ## Usage
+
+
+```python
+from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
+from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
+
+#Eigenmode Simulation Options
+user_defined_options = {
+                 "mesh_refinement":  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
+                 "dielectric_material": "silicon",                  #choose dielectric material - 'silicon' or 'sapphire'
+                 "starting_freq": 7.5,                              #starting frequency in GHz 
+                 "number_of_freqs": 4,                              #number of eigenmodes to find
+                 "solns_to_save": 4,                                #number of electromagnetic field visualizations to save
+                 "solver_order": 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
+                 "solver_tol": 1.0e-8,                              #error residual tolerance foriterative solver
+                 "solver_maxits": 100,                              #number of solver iterations
+                 "comsol_meshing": "Extremely fine",                #level of COMSOL meshing: 'Extremely fine', 'Extra fine', 'Finer', 'Fine', 'Normal'
+                 "mesh_max": 120e-3,                                #maxiumum element size for the mesh in mm
+                 "mesh_min": 10e-3,                                 #minimum element size for the mesh in mm
+                 "mesh_sampling": 130,                              #number of points to mesh along a geometry
+                 "sim_memory": '300G',                              #amount of memory for each HPC node i.e. 4 nodes x 300 GB = 1.2 TB
+                 "sim_time": '20:00:00',                            #allocated time for simulation 
+                 "HPC_nodes": '4',                                  #number of Bunya nodes. By default 20 cpus per node are selected, then total cores = 20 x HPC_nodes
+                }
+
+#Creat the Palace Eigenmode simulation
+eigen_sim = PALACE_Eigenmode_Simulation(name ='single_resonator_example_eigen',                     #name of simulation
+                                        metal_design = design,                                      #feed in qiskit metal design
+                                        sim_parent_directory = "",            #choose directory where mesh file, config file and HPC batch file will be saved
+                                        mode = 'HPC',                                               #choose simulation mode 'HPC' or 'simPC'                                          
+                                        meshing = 'GMSH',                                           #choose meshing 'GMSH' or 'COMSOL'
+                                        user_options = user_defined_options,                        #provide options chosen above
+                                        view_design_gmsh_gui = False,                               #view design in GMSH gui 
+                                        create_files = True)                                        #create mesh, config and HPC batch files
+eigen_sim.add_metallic(1)
+eigen_sim.add_ground_plane()
+eigen_sim.create_port_CPW_on_Launcher('LP1', 20e-3)
+eigen_sim.create_port_CPW_on_Launcher('LP2', 20e-3)
+eigen_sim.prepare_simulation()
+```
