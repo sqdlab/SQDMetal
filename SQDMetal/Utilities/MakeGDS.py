@@ -83,7 +83,8 @@ class MakeGDS:
                                         gds_metal, "not", layer=layer+neg_layer_offset)
 
             cell.add(gds_metal)
-            cell.add(gds_rect_neg)
+            if gds_rect_neg:
+                cell.add(gds_rect_neg)
 
     def export(self, file_name):
         self.lib.write_gds(file_name)
