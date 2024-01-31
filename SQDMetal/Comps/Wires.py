@@ -191,6 +191,8 @@ class WirePins(QRoute):
         else:
             line_gap = line
 
+        self.set_pin("start")
+        self.set_pin("end")
         self.add_qgeometry('path', {'trace': line},
                            width=p.trace_width,
                            fillet=p.fillet,

@@ -584,7 +584,7 @@ class COMSOL_Model:
         vec3 *= epsilon_mov
         return (vec3[0]+poly_coords[min_ind][0], vec3[1]+poly_coords[min_ind][1], rad)
 
-    def _create_boundary_selection_sphere(self, radius, pos_x,pos_y,pos_z=0.0):
+    def _create_boundary_selection_sphere(self, radius, pos_x,pos_y,pos_z=0.0, is_edge = False):
         '''
         Creates a selection in which all boundaries within the sphere are selected (after the geometry has been fully built). Return value is the selection
         name/ID that can be used to query for domains later via the function _get_selection_boundaries.
@@ -595,7 +595,7 @@ class COMSOL_Model:
         sel_name = 'sel' + str(self._num_sel)
         self._num_sel += 1
         self._model.java.selection().create(sel_name, 'Ball')
-        self._model.java.selection(sel_name).set('entitydim', '2')
+        self._model.java.selection(sel_name).set('entitydim', '2' if not is_edge else '1')
         self._model.java.selection(sel_name).set('condition', 'intersects')
         self._model.java.selection(sel_name).set('posx', jtypes.JDouble(pos_x))
         self._model.java.selection(sel_name).set('posy', jtypes.JDouble(pos_y))
