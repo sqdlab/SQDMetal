@@ -19,7 +19,6 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QUtilities import QUtilities
 
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 import pandas as pd
 import geopandas as gpd
 
@@ -143,71 +142,7 @@ class COMSOL_Model:
                           PVD_Shadows for more details on its definition.
         '''
 
-        #Fresh update on PVD profiles...
-        pvd_shadows = PVD_Shadows(self.design)
-
-        thresh = kwargs.get('threshold',  -1)
-
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates(self._resolution)
-
-        filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
-        if filt.shape[0] == 0:
-            return
-
-        unit_conv = QUtilities.get_units(self.design)
-        
-        fuse_threshold = kwargs.get('fuse_threshold', 1e-12)
-
-        #Merge the metallic elements
-        metal_polys = shapely.unary_union(filt['geometry'])
-        metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
-        metal_polys = self._fuse_polygons_threshold(metal_polys, fuse_threshold)
-        if isinstance(self.restrict_rect, list):
-            metal_polys = shapely.clip_by_rect(metal_polys, *self.restrict_rect)
-        #Calculate the individual evaporated elements if required
-        evap_mode = kwargs.get('evap_mode', 'separate_delete_below')
-        group_by_evaporations = kwargs.get('group_by_evaporations', False)
-        if group_by_evaporations and evap_mode != 'merge':
-            metal_evap_polys_separate = pvd_shadows.get_all_shadows(metal_polys, layer_id, 'separate')
-            #Convert all MultiPolygons into individual polygons...
-            if not isinstance(metal_evap_polys_separate, list):
-                metal_evap_polys_separate = [metal_evap_polys_separate]
-        #Calculate evaporated shadows
-        evap_trim = kwargs.get('evap_trim', 20e-9)
-        metal_evap_polys = pvd_shadows.get_all_shadows(metal_polys, layer_id, evap_mode, layer_trim_length=evap_trim)
-        #Convert all MultiPolygons into individual polygons...
-        if not isinstance(metal_evap_polys, list):
-            metal_evap_polys = [metal_evap_polys]
-
-        metal_polys_all = []
-        metal_sel_ids = []
-        for m, cur_poly in enumerate(metal_evap_polys):
-            if isinstance(cur_poly, shapely.geometry.multipolygon.MultiPolygon):
-                temp_cur_metals = [x for x in cur_poly.geoms]
-                metal_polys_all += temp_cur_metals
-                num_polys = len(temp_cur_metals)
-            else:
-                temp_cur_metals = [cur_poly] #i.e. it's just a lonely Polygon object...
-                metal_polys_all += temp_cur_metals
-                num_polys = 1
-
-            if group_by_evaporations and evap_mode != 'merge':
-                #Collect the separate polygons that live in the current evaporation layer
-                cur_polys_separate = metal_evap_polys_separate[m]
-                if isinstance(cur_polys_separate, shapely.geometry.multipolygon.MultiPolygon):
-                    cur_polys_separate = [x for x in cur_polys_separate.geoms]
-                #Find the separate polygon in which the given polygon fits... 
-                cur_sel_inds = []
-                for cur_metal in temp_cur_metals:
-                    for sep_piece_ind, cur_metal_piece in enumerate(cur_polys_separate):
-                        if shapely.intersection(cur_metal, cur_metal_piece).area >= 0.99*cur_metal.area:
-                            cur_sel_inds += [len(metal_sel_ids) + sep_piece_ind]
-                            break
-                metal_sel_ids += cur_sel_inds
-            else:
-                #Just enumerate to all separate metallic pieces...
-                metal_sel_ids += [x for x in range(len(metal_sel_ids), len(metal_sel_ids) + num_polys)]
+        metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(design, layer_id, **kwargs)
 
         metal_sel_obj_names = {}
         unique_ids = np.unique(metal_sel_ids)

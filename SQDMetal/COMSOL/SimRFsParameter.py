@@ -121,27 +121,13 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             - is_start - If True, then the port is attached to the start of the CPW, while False attaches the port to the end of the CPW
             - len_launch - (Default: 20e-6) Length of the inlet port fins along the the CPW. It is a good idea to keep it thin w.r.t. CPW gap 
         '''
-        
-        qObj = self.model.design.components[qObjName]
-        if isinstance(qObj, LaunchpadWirebond):
-            vec_ori, vec_launch, cpw_wid, cpw_gap = self._get_LauncherWB_params(qObjName)
-        else:
-            assert False, f"\'{qObjName}\' is an unsupported object type."
-
-        vec_perp = np.array([vec_launch[1],-vec_launch[0]])
-        vec_launch *= len_launch
-
         pol_name = "port_launch" + str(len(self._ports))
         
-        launches = [vec_ori + vec_perp * cpw_wid*0.5, vec_ori + vec_perp * (cpw_wid*0.5+cpw_gap),
-                    vec_ori + vec_launch + vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch + vec_perp * cpw_wid*0.5]
-        launches = [[p[0],p[1]] for p in launches]
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launches)
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.model.design, qObjName, len_launch)
+
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
         cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
-        launches = [vec_ori - vec_perp * cpw_wid*0.5, vec_ori - vec_perp * (cpw_wid*0.5+cpw_gap),
-                    vec_ori + vec_launch - vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch - vec_perp * cpw_wid*0.5]
-        launches = [[p[0],p[1]] for p in launches]
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launches)
         cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
@@ -160,28 +146,15 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             - is_start - If True, then the port is attached to the start of the CPW, while False attaches the port to the end of the CPW
             - len_launch - (Default: 20e-6) Length of the inlet port fins along the the CPW. It is a good idea to keep it thin w.r.t. CPW gap 
         '''
-        
-        qObj = self.model.design.components[qObjName]
-        # if isinstance(qObj, LaunchpadWirebond):
-        vec_ori, vec_launch, cpw_wid, cpw_gap = self._get_Route_params(qObjName, pin_name)
-        # else:
-        #     assert False, f"\'{qObjName}\' is an unsupported object type."
-
-        vec_perp = np.array([vec_launch[1],-vec_launch[0]])
-        vec_launch *= len_launch
 
         pol_name = "port_launch" + str(len(self._ports))
-        
-        launches = [vec_ori + vec_perp * cpw_wid*0.5, vec_ori + vec_perp * (cpw_wid*0.5+cpw_gap),
-                    vec_ori + vec_launch + vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch + vec_perp * cpw_wid*0.5]
-        launches = [[p[0],p[1]] for p in launches]
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launches)
+
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.model.design, qObjName, pin_name, len_launch)
+
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
         cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
-        launches = [vec_ori - vec_perp * cpw_wid*0.5, vec_ori - vec_perp * (cpw_wid*0.5+cpw_gap),
-                    vec_ori + vec_launch - vec_perp * (cpw_wid*0.5+cpw_gap), vec_ori + vec_launch - vec_perp * cpw_wid*0.5]
-        launches = [[p[0],p[1]] for p in launches]
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launches)
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
         cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
@@ -307,26 +280,3 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         else:
             self.optimal_value = (sol.x, sol.fun)
         return self.optimal_value
-    
-    def _get_LauncherWB_params(self, launcher_name):
-        design = self.model.design
-        
-        launcher_len = QUtilities.parse_value_length(design.components[launcher_name].options['pad_height']) + QUtilities.parse_value_length(design.components[launcher_name].options['taper_height']) + QUtilities.parse_value_length(design.components[launcher_name].options['lead_length'])
-        unit_conv = QUtilities.get_units(design)
-        startPt = design.components[launcher_name].pins['tie']['middle']*unit_conv - design.components[launcher_name].pins['tie']['normal']*launcher_len
-        padDir = design.components[launcher_name].pins['tie']['normal']*1.0
-        padWid = QUtilities.parse_value_length(design.components[launcher_name].options['pad_width'])
-        padGap = QUtilities.parse_value_length(design.components[launcher_name].options['pad_gap'])
-
-        return startPt, padDir, padWid, padGap
-
-    def _get_Route_params(self, route_name, pin_name):
-        design = self.model.design
-        unit_conv = QUtilities.get_units(design)
-
-        startPt = design.components[route_name].pins[pin_name]['middle']*unit_conv
-        padDir = -1.0*design.components[route_name].pins[pin_name]['normal']
-        padWid = QUtilities.parse_value_length(design.components[route_name].options.trace_width)
-        padGap = QUtilities.parse_value_length(design.components[route_name].options.trace_gap)
-
-        return startPt, padDir, padWid, padGap
