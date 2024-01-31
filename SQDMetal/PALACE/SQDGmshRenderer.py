@@ -15,7 +15,7 @@ from qiskit_metal.qlibrary.core import QComponent
 from collections import OrderedDict
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
-
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class Palace_Gmsh_Renderer:
 
@@ -95,7 +95,7 @@ class Palace_Gmsh_Renderer:
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(fillet_resolution)
         filt = gsdf.loc[gsdf['subtract'] == True]
-        space_polys = QUtilities.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold)
+        space_polys = ShapelyEx.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold)
         if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
             space_polys = [x for x in space_polys.geoms]
         else:
@@ -136,7 +136,7 @@ class Palace_Gmsh_Renderer:
         for m in range(1, num_polys):
             found_match = False
             for n in range(len(new_polys)):
-                cur_check = QUtilities.fuse_polygons_threshold([metal_polys[m], new_polys[n]], fuse_threshold)
+                cur_check = ShapelyEx.fuse_polygons_threshold([metal_polys[m], new_polys[n]], fuse_threshold)
                 if get_poly_cardinality(cur_check) < get_poly_cardinality(metal_polys[m]) + get_poly_cardinality(new_polys[n]):
                     new_polys[n] = cur_check
                     found_match = True
@@ -566,7 +566,7 @@ class Palace_Gmsh_Renderer:
                 metal_fuse_list.append(metal_poly[1])
         
         #Fuse the metal elements using Qutilities function (unary_union)
-        fused_metals = QUtilities.fuse_polygons_threshold(metal_fuse_list)
+        fused_metals = ShapelyEx.fuse_polygons_threshold(metal_fuse_list)
 
         #list to store geopandas polygons
         mesh_gpd_polys = []

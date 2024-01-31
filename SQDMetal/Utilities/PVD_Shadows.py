@@ -7,7 +7,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
-from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class PVD_Shadows:
     def __init__(self, design, chip_name='main'):
@@ -154,7 +154,7 @@ class PVD_Shadows:
 
     def get_shadow_largest_interior_for_component(self, qObj_name, mode='separate', **kwargs):
         polys = self.get_shadows_for_component(qObj_name, mode, **kwargs)
-        polys = QUtilities.fuse_polygons_threshold(polys, kwargs.get('threshold', 1e-9))
+        polys = ShapelyEx.fuse_polygons_threshold(polys, kwargs.get('threshold', 1e-9))
         if isinstance(polys, shapely.geometry.multipolygon.MultiPolygon):
             polys = [x for x in polys.geoms]
         else:

@@ -11,6 +11,7 @@ import shapely
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.QUtilities import QUtilities
 from scipy.spatial import KDTree
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class HoleBorders(QComponent):
     """Draws holes some distance away from metallic objects - similar to via fencing in PCBs.
@@ -114,7 +115,7 @@ class HoleBorders(QComponent):
 
         units = QUtilities.get_units(self.design)
         metal_polys = shapely.unary_union(filt['geometry'])
-        metal_polys = QUtilities.fuse_polygons_threshold(metal_polys, 1e-12/units)
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, 1e-12/units)
 
         leHoles = []
         for hl in range(int(p.num_hole_lines)):
@@ -140,7 +141,7 @@ class HoleBorders(QComponent):
         #Cull holes in excluded geometry
         if len(p.exclude_geoms) > 0:
             ex_metal_polys = shapely.unary_union(exfilt['geometry'])
-            ex_metal_polys = QUtilities.fuse_polygons_threshold(ex_metal_polys, 1e-12/units)
+            ex_metal_polys = ShapelyEx.fuse_polygons_threshold(ex_metal_polys, 1e-12/units)
             polys = ex_metal_polys.buffer(p.dist_init + p.num_hole_lines*p.dist_holes)
             leHoleFilts = []
             for m, cur_hole in enumerate(leHoles):

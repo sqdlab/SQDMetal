@@ -23,7 +23,7 @@ import pandas as pd
 import geopandas as gpd
 
 from SQDMetal.Utilities.Materials import Material
-
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class COMSOL_Model:
     _engine = None
@@ -141,8 +141,8 @@ class COMSOL_Model:
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
         '''
-
-        metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(design, layer_id, **kwargs)
+        thresh = kwargs.get('threshold', -1)
+        metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, layer_id, **kwargs)
 
         metal_sel_obj_names = {}
         unique_ids = np.unique(metal_sel_ids)
@@ -191,18 +191,6 @@ class COMSOL_Model:
         else:
             return 1
 
-    def _fuse_polygons_threshold(self, polys, threshold=1e-12):
-        if not isinstance(polys, list):
-            polys = [polys]
-        lePolys = []
-        for cur_poly in polys:
-            if isinstance(cur_poly, shapely.geometry.multipolygon.MultiPolygon):
-                lePolys += list(cur_poly.geoms)
-            else:
-                lePolys += [cur_poly]
-        lePolys = [p.buffer(threshold, join_style=2, cap_style=3) for p in lePolys]
-        return shapely.unary_union(lePolys).buffer(-threshold, join_style=2, cap_style=3)
-
     def fuse_all_metals(self, fuse_threshold = 1e-12):
         new_cond_polys = []
         inds_left = [x for x in range(len(self._cond_polys))]
@@ -215,7 +203,7 @@ class COMSOL_Model:
                 found_another_ind = False
                 for cur_ind in other_poly_inds:
                     cur_check_poly = self._cond_polys[cur_ind][0]
-                    cur_check = self._fuse_polygons_threshold([cur_blobotron, cur_check_poly], fuse_threshold)
+                    cur_check = ShapelyEx.fuse_polygons_threshold([cur_blobotron, cur_check_poly], fuse_threshold)
                     if COMSOL_Model.get_poly_cardinality(cur_check) < COMSOL_Model.get_poly_cardinality(cur_blobotron) + COMSOL_Model.get_poly_cardinality(cur_check_poly):
                         cur_blobotron = cur_check
                         inds_to_pop += [cur_ind]
@@ -260,7 +248,7 @@ class COMSOL_Model:
             poly = shapely.affinity.scale(poly, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
             poly = pvdSh.get_all_shadows(poly, self.design.components[cur_comp].options.layer, 'merge')
             for m in range(len(self._conds)):
-                if QUtilities.chk_within(poly, self._cond_polys[m][0]):
+                if ShapelyEx.chk_within(poly, self._cond_polys[m][0]):
                     cond = self._conds.pop(m)
                     cond_poly = self._cond_polys.pop(m)
                     temp_conds_and_polys += [(cond, cond_poly[0])]
