@@ -21,7 +21,7 @@ class ResonatorHalfWave(ResonatorBase):
     def __init__(self, f0, shorted=False, impedance=50):
         self.f0 = f0
         self.Zr = impedance
-        self.shorted = False
+        self.shorted = shorted
     
     def get_res_capacitance(self):
         if self.shorted:
@@ -45,6 +45,77 @@ class ResonatorHalfWave(ResonatorBase):
     def get_res_frequency(self):
         return self.f0
 
+class ResonatorQuarterWave(ResonatorBase):
+    def __init__(self, f0, shorted=False, impedance=50):
+        self.f0 = f0
+        self.Zr = impedance
+        self.shorted = shorted
+    
+    def get_res_capacitance(self):
+        if self.shorted:
+            #Equivalent to a PARALLEL RLC
+            return np.pi/(4 * self.Zr * 2*np.pi*self.f0)
+        else:
+            #Equivalent to a SERIES RLC
+            return 4/(np.pi * self.Zr * 2*np.pi*self.f0)
+    
+    def get_res_inductance(self):
+        if self.shorted:
+            #Equivalent to a PARALLEL RLC
+            return (4*self.Zr)/(np.pi * 2*np.pi*self.f0)
+        else:
+            #Equivalent to a SERIES RLC
+            return (self.Zr*np.pi)/(4 * 2*np.pi*self.f0)
+    
+    def get_res_impedance(self):
+        return self.Zr
+    
+    def get_res_frequency(self):
+        return self.f0
+
+class ResonatorLC(ResonatorBase):
+    def __init__(self, f0=None, L=None, C=None):
+        if f0 == None:
+            assert L != None and C!= None, "Must supply L and C if omitting f0."
+            self.L = L
+            self.C = C
+            self.f0 = 1/(2*np.pi * np.sqrt(L*C))
+        elif L == None:
+            assert f0 != None and C!= None, "Must supply f0 and C if omitting L."
+            self.f0 = f0
+            self.C = C
+            self.L = 1/((2*np.pi*f0)**2 * C)
+        elif C == None:
+            assert f0 != None and L!= None, "Must supply f0 and L if omitting C."
+            self.f0 = f0
+            self.L = L
+            self.C = 1/((2*np.pi*f0)**2 * L)
+        else:
+            assert np.abs(2*np.pi*f0 - 1/np.sqrt(L*C)) < 1e-9, "System overconstrained. Just supply 2 of L, C and F0..."
+    
+    def get_res_capacitance(self):
+        if self.shorted:
+            #Equivalent to a PARALLEL RLC
+            return np.pi/(4 * self.Zr * 2*np.pi*self.f0)
+        else:
+            #Equivalent to a SERIES RLC
+            return 4/(np.pi * self.Zr * 2*np.pi*self.f0)
+    
+    def get_res_inductance(self):
+        if self.shorted:
+            #Equivalent to a PARALLEL RLC
+            return (4*self.Zr)/(np.pi * 2*np.pi*self.f0)
+        else:
+            #Equivalent to a SERIES RLC
+            return (self.Zr*np.pi)/(4 * 2*np.pi*self.f0)
+    
+    def get_res_impedance(self):
+        return np.sqrt(self.L/self.C)
+    
+    def get_res_frequency(self):
+        return self.f0
+
+
 class XmonDesigner:
     def __init__(self, resonator):
         self.resonator = resonator
@@ -66,7 +137,7 @@ class XmonDesigner:
         Ec = (2*elem)**2 / (2*CJeff)
         return (QubiFreqHertz * h + Ec/4)**2 / (2*Ec)
     @staticmethod
-    def _g_hertz(f_res, C_g, C_J, C_r, QubiFreqHertz, Z_r):
+    def _g_hertz(f_res, C_g, C_J, QubiFreqHertz, C_r, L_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
         Z_0 = 376.730313668
@@ -75,13 +146,16 @@ class XmonDesigner:
         Ec = (2*elem)**2 / (2*CJeff) / h
         E_J_hertz = XmonDesigner._EJ_from_QubitFreqHertz(QubiFreqHertz, C_J, C_g, C_r) / h
 
+        Creff = XmonDesigner._eff_Cr(C_J, C_g, C_r)
+        Z_r = np.sqrt(L_r/Creff)
+
         return (2*np.pi*f_res * C_g)/(C_J+C_g/C_r*(C_J+C_r)) * (2*E_J_hertz/Ec)**(1/4) * np.sqrt(Z_r/Z_0) * np.sqrt(2*np.pi*alpha) / (2*np.pi)
 
     @staticmethod
-    def _chi_hertz(f_res, C_g, C_J, C_r, QubiFreqHertz, Z_r):
+    def _chi_hertz(f_res, C_g, C_J, QubiFreqHertz, C_r, L_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
-        g_hertz = XmonDesigner._g_hertz(f_res, C_g, C_J, C_r, QubiFreqHertz, Z_r)
+        g_hertz = XmonDesigner._g_hertz(f_res, C_g, C_J, QubiFreqHertz, C_r, L_r)
         CJeff = XmonDesigner._eff_CJ(C_J, C_g, C_r)
         Ec = (2*elem)**2 / (2*CJeff)
         delta = QubiFreqHertz - f_res
@@ -97,7 +171,7 @@ class XmonDesigner:
         return Ec/(24*h)
 
     def optimise(self, param_constraints):
-        func = lambda x: abs(XmonDesigner._chi_hertz(self.resonator.get_res_frequency(), x[1], x[2], self.resonator.get_res_capacitance(), x[0], self.resonator.get_res_impedance()) - x[3])
+        func = lambda x: abs(XmonDesigner._chi_hertz(self.resonator.get_res_frequency(), x[1], x[2], x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()) - x[3])
 
         params = self.get_free_params()
         num_params = len(params)
@@ -115,8 +189,8 @@ class XmonDesigner:
                 x0.append(param_constraints[cur_param])
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
 
-        g = XmonDesigner._g_hertz(self.resonator.get_res_frequency(), sol.x[1], sol.x[2], self.resonator.get_res_capacitance(), sol.x[0], self.resonator.get_res_impedance())
-        chi = XmonDesigner._chi_hertz(self.resonator.get_res_frequency(), sol.x[1], sol.x[2], self.resonator.get_res_capacitance(), sol.x[0], self.resonator.get_res_impedance())
+        g = XmonDesigner._g_hertz(self.resonator.get_res_frequency(), sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
+        chi = XmonDesigner._chi_hertz(self.resonator.get_res_frequency(), sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
         anh = XmonDesigner._anharmonicity_hertz(sol.x[1], sol.x[2], self.resonator.get_res_capacitance())
 
         self.resonator.print()
