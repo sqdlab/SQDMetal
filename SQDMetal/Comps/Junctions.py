@@ -27,6 +27,8 @@ class JunctionDolan(QComponent):
         * t_pad_size  - Thickness of the T-Section pad connecting to the leads
         * fork_pad_size  - Thickness of the Fork Section pad connecting to the leads
         * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
+        * reverse    - Default False. If True, the direction of the prongs is flipped by 180 degrees (that is, the prongs will
+                       be near the first pin)
 
     As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
         
@@ -88,7 +90,8 @@ class JunctionDolan(QComponent):
                            prong_length='1.75um',
                            t_pad_size='0.3um',
                            fork_pad_size='0.5um',
-                           t_pad_extra='0.0um')
+                           t_pad_extra='0.0um',
+                           reverse=False)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -167,6 +170,9 @@ class JunctionDolan(QComponent):
         pad_Fork = shapely.Polygon(pad_Fork)
 
         polys = [pad_T, pad_Fork, pin1, pin2]
+        if p.reverse:
+            polys = draw.translate(polys, -len_comp, 0)
+            polys = draw.rotate(polys, np.pi, origin=(0, 0), use_radians=True)
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         [pad_T, pad_Fork, pin1, pin2] = polys
@@ -190,6 +196,9 @@ class JunctionDolanPinStretch(QComponent):
         * t_pad_size  - Thickness of the T-Section pad connecting to the leads
         * fork_pad_size  - Thickness of the Fork Section pad connecting to the leads
         * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
+        * reverse    - Default False. If True, the direction of the prongs is flipped by 180 degrees (that is, the prongs will
+                       be near the target pin)
+
 
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
@@ -252,7 +261,8 @@ class JunctionDolanPinStretch(QComponent):
                            prong_length='1.75um',
                            t_pad_size='0.3um',
                            fork_pad_size='0.5um',
-                           t_pad_extra='0.0um')
+                           t_pad_extra='0.0um',
+                           reverse=False)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
