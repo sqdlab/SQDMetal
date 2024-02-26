@@ -1,6 +1,6 @@
 import numpy as np
 import scipy.optimize
-from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.GenUtilities import GenUtilities
 
 
 ##################################################################################
@@ -17,9 +17,9 @@ class ResonatorBase:
         raise NotImplementedError()
     def print(self):
         print("Resonator:")
-        print(f"\tFrequency: {QUtilities.add_units(self.get_res_frequency())}Hz")
-        print(f"\tInductance: {QUtilities.add_units(self.get_res_inductance())}H")
-        print(f"\tCapacitance: {QUtilities.add_units(self.get_res_capacitance())}F")
+        print(f"\tFrequency: {GenUtilities.add_units(self.get_res_frequency())}Hz")
+        print(f"\tInductance: {GenUtilities.add_units(self.get_res_inductance())}H")
+        print(f"\tCapacitance: {GenUtilities.add_units(self.get_res_capacitance())}F")
 
 class ResonatorHalfWave(ResonatorBase):
     def __init__(self, f0, shorted=False, impedance=50):
@@ -162,6 +162,12 @@ class TransmonBase:
 
         return -(Ec/(4*h) * g_hertz**2) / (delta * (delta - Ec/(4*h)))
 
+    def EJonEC(self, CJeff, fQubitHertz):
+        elem = 1.60217663e-19
+        h = 6.62607015e-34
+        Ec = (elem)**2 / (2*CJeff)
+        return fQubitHertz / (Ec/h)
+
     def _anharmonicity_hertz(self, C_g, C_J, C_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
@@ -169,52 +175,72 @@ class TransmonBase:
         Ec = (2*elem)**2 / (2*CJeff)
         return Ec/(4*h)
 
+    def get_free_params(self):
+        raise NotImplementedError()
+
+    def parse_params(self, param_constraints):
+        default_params = self.get_free_params()
+        x0 = []
+        constrs = []
+        mapped_params = {}
+        for m, cur_param in enumerate(default_params):
+            cur_param_constraints = param_constraints if cur_param in param_constraints else default_params
+            #
+            if isinstance(cur_param_constraints[cur_param], tuple) or isinstance(cur_param_constraints[cur_param], list) or isinstance(cur_param_constraints[cur_param], np.ndarray):
+                cons = np.array(cur_param_constraints[cur_param])
+                assert cons.size == 2, "Must provide the constraint as either a single value (equality) or a tuple (bounded region)."
+                constrs.append((cons[0], cons[1]))
+                x0.append(0.5*(cons[0]+cons[1]))
+            else:
+                constrs.append((cur_param_constraints[cur_param], cur_param_constraints[cur_param]))
+                x0.append(cur_param_constraints[cur_param])
+            mapped_params[cur_param] = m
+        return x0, constrs, mapped_params
+
 class XmonDesigner(TransmonBase):
     def __init__(self, resonator):
         self.resonator = resonator
     
     def get_free_params(self):
-        return ['fQubit', 'C_g', 'C_J', 'chi']
+        return {'fQubit':(1,20e9), 'C_g':(1e-18,1e-9), 'C_J':(1e-18,1e-9), 'chi':(-10e9,-1), 'Ej/Ec':(0.01,1000)}
 
     def optimise(self, param_constraints):
-        func = lambda x: abs(self._chi_hertz(x[1], x[2], x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()) - x[3])
+        x0, constrs, mps = self.parse_params(param_constraints)
 
-        params = self.get_free_params()
-        num_params = len(params)
-        constrs = []
-        x0 = []
-        for m, cur_param in enumerate(params):
-            assert cur_param in params, f"Must provide {cur_param} parameter constraint."
-            if isinstance(param_constraints[cur_param], tuple) or isinstance(param_constraints[cur_param], list) or isinstance(param_constraints[cur_param], np.ndarray):
-                cons = np.array(param_constraints[cur_param])
-                assert cons.size == 2, "Must provide the constraint as either a single value (equality) or a tuple (bounded region)."
-                constrs.append((cons[0], cons[1]))
-                x0.append(0.5*(cons[0]+cons[1]))
-            else:
-                constrs.append((param_constraints[cur_param], param_constraints[cur_param]))
-                x0.append(param_constraints[cur_param])
+        fres, Cres, Lres = self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()
+
+        func = lambda x: abs(self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
+
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
+        x = sol.x
 
-        g = self._g_hertz(sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
-        chi = self._chi_hertz(sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
-        anh = self._anharmonicity_hertz(sol.x[1], sol.x[2], self.resonator.get_res_capacitance())
 
+        g = self._g_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], Cres, Lres)
+        chi = self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres)
+        anh = self._anharmonicity_hertz(sol.x[1], sol.x[2], Cres)
+
+        print(f"Cost Function Error: {func(sol.x)/2*100}%")
         self.resonator.print()
         print("Qubit:")
-        print(f"\tFrequency: {QUtilities.add_units(sol.x[0])}Hz")
-        print(f"\tAnharmonicity: {QUtilities.add_units(anh)}Hz")
-        print(f"\tg: {QUtilities.add_units(g)}Hz")
-        print(f"\tDelta: {QUtilities.add_units(sol.x[0]-self.resonator.get_res_frequency())}Hz")
-        print(f"\tchi: {QUtilities.add_units(chi)}Hz")
-        print(f"\tCg: {QUtilities.add_units(sol.x[1])}F")
-        print(f"\tCJ: {QUtilities.add_units(sol.x[2])}F")
+        print(f"\tFrequency: {GenUtilities.add_units(sol.x[0])}Hz")
+        print(f"\tAnharmonicity: {GenUtilities.add_units(anh)}Hz")
+        print(f"\tg: {GenUtilities.add_units(g)}Hz")
+        print(f"\tDelta: {GenUtilities.add_units(x[mps['fQubit']]-fres)}Hz")
+        print(f"\tchi: {GenUtilities.add_units(chi)}Hz")
+        print(f"\tCg: {GenUtilities.add_units(x[mps['C_g']])}F")
+        print(f"\tCJ: {GenUtilities.add_units(x[mps['C_J']])}F")
+        print(f"\tEj/Ec: {x[mps['Ej/Ec']]}")
 
 class FloatingTransmonDesigner(TransmonBase):
     def __init__(self, resonator):
         self.resonator = resonator
     
     def get_free_params(self):
-        return ['fQubit', 'C_q1', 'C_q2', 'C_g1', 'C_g2', 'C_J', 'chi']
+        return {'fQubit':(1,20e9),
+                'C_q1':(1e-18,1e-9), 'C_q2':(1e-18,1e-9),
+                'C_g1':(1e-18,1e-9), 'C_g2':(1e-18,1e-9),
+                'C_J':(1e-18,1e-9),
+                'chi':(-10e9,-1), 'Ej/Ec':(0.01,1000)}
     
     def _eff_Cg(self, C_q1, C_q2, C_g1, C_g2):
         return (C_g1*C_q2 - C_g2*C_q1) / (C_q1 + C_q2 + C_g1 + C_g2)
@@ -222,47 +248,43 @@ class FloatingTransmonDesigner(TransmonBase):
         return (C_g1*C_g2 + 2*C_g2*C_q1 + C_q1*C_q2) / (C_q1 + C_q2 + C_g1 + C_g2)
 
     def optimise(self, param_constraints):
-        func = lambda x: abs(self._chi_hertz(self._eff_Cg(*x[1:5]), self._eff_Cq(*x[1:5])+x[5], x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()) - x[6])
+        x0, constrs, mps = self.parse_params(param_constraints)
 
-        params = self.get_free_params()
-        num_params = len(params)
-        constrs = []
-        x0 = []
-        for m, cur_param in enumerate(params):
-            assert cur_param in params, f"Must provide {cur_param} parameter constraint."
-            if isinstance(param_constraints[cur_param], tuple) or isinstance(param_constraints[cur_param], list) or isinstance(param_constraints[cur_param], np.ndarray):
-                cons = np.array(param_constraints[cur_param])
-                assert cons.size == 2, "Must provide the constraint as either a single value (equality) or a tuple (bounded region)."
-                constrs.append((cons[0], cons[1]))
-                x0.append(0.5*(cons[0]+cons[1]))
-            else:
-                constrs.append((param_constraints[cur_param], param_constraints[cur_param]))
-                x0.append(param_constraints[cur_param])
+        fres, Cres, Lres = self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()
+
+        func = lambda x: abs(self._chi_hertz(self._eff_Cg(*x[1:5]), self._eff_Cq(*x[1:5])+x[5], x[0], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(self._eff_Cq(*x[1:5])+x[5], self._eff_Cg(*x[1:5]), Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
+
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
+        x = sol.x
 
-        g = self._g_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
-        chi = self._chi_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
-        anh = self._anharmonicity_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], self.resonator.get_res_capacitance())
+        g = self._g_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], Cres, Lres)
+        chi = self._chi_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], fres, Cres, Lres)
+        anh = self._anharmonicity_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], Cres)
 
         # print(sol.x)
+        print(f"Cost Function Error: {func(sol.x)/2*100}%")
         self.resonator.print()
         print("Qubit:")
-        print(f"\tFrequency: {QUtilities.add_units(sol.x[0])}Hz")
-        print(f"\tAnharmonicity: {QUtilities.add_units(anh)}Hz")
-        print(f"\tg: {QUtilities.add_units(g)}Hz")
-        print(f"\tDelta: {QUtilities.add_units(sol.x[0]-self.resonator.get_res_frequency())}Hz")
-        print(f"\tchi: {QUtilities.add_units(chi)}Hz")
-        print(f"\tCq1: {QUtilities.add_units(sol.x[1])}F")
-        print(f"\tCq2: {QUtilities.add_units(sol.x[2])}F")
-        print(f"\tCg1: {QUtilities.add_units(sol.x[3])}F")
-        print(f"\tCg2: {QUtilities.add_units(sol.x[4])}F")
+        print(f"\tFrequency: {GenUtilities.add_units(sol.x[0])}Hz")
+        print(f"\tAnharmonicity: {GenUtilities.add_units(anh)}Hz")
+        print(f"\tg: {GenUtilities.add_units(g)}Hz")
+        print(f"\tDelta: {GenUtilities.add_units(x[mps['fQubit']]-fres)}Hz")
+        print(f"\tchi: {GenUtilities.add_units(chi)}Hz")
+        print(f"\tCq1: {GenUtilities.add_units(x[mps['C_q1']])}F")
+        print(f"\tCq2: {GenUtilities.add_units(x[mps['C_q2']])}F")
+        print(f"\tCg1: {GenUtilities.add_units(x[mps['C_g1']])}F")
+        print(f"\tCg2: {GenUtilities.add_units(x[mps['C_g2']])}F")
+        print(f"\tCJ: {GenUtilities.add_units(x[mps['C_J']])}F")
+        print(f"\tEj/Ec: {x[mps['Ej/Ec']]}")
+        # print(f"\tEj/Ec: {GenUtilities.add_units(x[mps['C_g2']])}F")
 
 if __name__ == '__main__':
-    # XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({'fQubit':9.5e9, 'C_g':(0.5e-15,10e-15), 'C_J':(1e-15,20e-15), 'chi':(-10e6,-1.7e6)})
-    FloatingTransmonDesigner(ResonatorHalfWave(7.5e9)).optimise({'fQubit':6e9, 
-                                                                  'C_q1':30.862e-15,
-                                                                  'C_q2':31.974e-15,
-                                                                  'C_g1':10.910e-15,
-                                                                  'C_g2':0.916e-15,
-                                                                  'C_J':42.461e-15,
-                                                                  'chi':(-0.9e6,-0.2e6)})
+    XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({'fQubit':9.5e9, 'C_g':(0.1e-15,10e-15), 'C_J':(10e-15,150e-15), 'chi':(-10e6,-0.1e6), 'Ej/Ec':(1,100)})
+    # FloatingTransmonDesigner(ResonatorHalfWave(7.5e9)).optimise({'fQubit':(1e9, 10e9), 
+    #                                                               'C_q1':(30.862e-15),
+    #                                                               'C_q2':(31.974e-15),
+    #                                                               'C_g1':(10.910e-15),
+    #                                                               'C_g2':(0.916e-15),
+    #                                                               'C_J':(42.461e-15, 55e-15),
+    #                                                               'chi':(-0.9e6,-0.2e6),
+    #                                                               'Ej/Ec':20})
