@@ -137,7 +137,7 @@ class TransmonBase:
         Ec = (2*elem)**2 / (2*CJeff)
         return (QubiFreqHertz * h + Ec/4)**2 / (2*Ec)
     
-    def _g_hertz(self, C_g, C_J, QubiFreqHertz, f_res, C_r, L_r):
+    def _g_hertz(self, C_g, C_J, QubiFreqHertz, C_r, L_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
         Z_0 = 376.730313668
@@ -148,25 +148,26 @@ class TransmonBase:
 
         Creff = self._eff_Cr(C_J, C_g, C_r)
         Z_r = np.sqrt(L_r/Creff)
+        w_res = 1/np.sqrt(L_r*Creff)
 
-        return (2*np.pi*f_res * C_g)/(C_J+C_g/C_r*(C_J+C_r)) * (2*E_J_hertz/Ec)**(1/4) * np.sqrt(Z_r/Z_0) * np.sqrt(2*np.pi*alpha) / (2*np.pi)
+        return (w_res * C_g)/(C_J+C_g/C_r*(C_J+C_r)) * (2*E_J_hertz/Ec)**(1/4) * np.sqrt(Z_r/Z_0) * np.sqrt(2*np.pi*alpha) / (2*np.pi)
     
     def _chi_hertz(self, C_g, C_J, QubiFreqHertz, f_res, C_r, L_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
-        g_hertz = self._g_hertz(C_g, C_J, QubiFreqHertz, f_res, C_r, L_r)
+        g_hertz = self._g_hertz(C_g, C_J, QubiFreqHertz, C_r, L_r)
         CJeff = self._eff_CJ(C_J, C_g, C_r)
         Ec = (2*elem)**2 / (2*CJeff)
         delta = QubiFreqHertz - f_res
 
-        return -(Ec/(24*h) * g_hertz**2) / (delta * (delta - Ec/(24*h)))
+        return -(Ec/(4*h) * g_hertz**2) / (delta * (delta - Ec/(4*h)))
 
     def _anharmonicity_hertz(self, C_g, C_J, C_r):
         elem = 1.60217663e-19
         h = 6.62607015e-34
         CJeff = self._eff_CJ(C_J, C_g, C_r)
         Ec = (2*elem)**2 / (2*CJeff)
-        return Ec/(24*h)
+        return Ec/(4*h)
 
 class XmonDesigner(TransmonBase):
     def __init__(self, resonator):
@@ -194,7 +195,7 @@ class XmonDesigner(TransmonBase):
                 x0.append(param_constraints[cur_param])
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
 
-        g = self._g_hertz(sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
+        g = self._g_hertz(sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
         chi = self._chi_hertz(sol.x[1], sol.x[2], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
         anh = self._anharmonicity_hertz(sol.x[1], sol.x[2], self.resonator.get_res_capacitance())
 
@@ -239,10 +240,11 @@ class FloatingTransmonDesigner(TransmonBase):
                 x0.append(param_constraints[cur_param])
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
 
-        g = self._g_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
+        g = self._g_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
         chi = self._chi_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance())
         anh = self._anharmonicity_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], self.resonator.get_res_capacitance())
 
+        # print(sol.x)
         self.resonator.print()
         print("Qubit:")
         print(f"\tFrequency: {QUtilities.add_units(sol.x[0])}Hz")
@@ -250,9 +252,17 @@ class FloatingTransmonDesigner(TransmonBase):
         print(f"\tg: {QUtilities.add_units(g)}Hz")
         print(f"\tDelta: {QUtilities.add_units(sol.x[0]-self.resonator.get_res_frequency())}Hz")
         print(f"\tchi: {QUtilities.add_units(chi)}Hz")
-        print(f"\tCg: {QUtilities.add_units(sol.x[1])}F")
-        print(f"\tCJ: {QUtilities.add_units(sol.x[2])}F")
+        print(f"\tCq1: {QUtilities.add_units(sol.x[1])}F")
+        print(f"\tCq2: {QUtilities.add_units(sol.x[2])}F")
+        print(f"\tCg1: {QUtilities.add_units(sol.x[3])}F")
+        print(f"\tCg2: {QUtilities.add_units(sol.x[4])}F")
 
 if __name__ == '__main__':
-    XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({'fQubit':9.5e9, 'C_g':(0.5e-15,10e-15), 'C_J':(10e-15,100e-15), 'chi':(-3e6,-1.7e6)})
-    
+    # XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({'fQubit':9.5e9, 'C_g':(0.5e-15,10e-15), 'C_J':(1e-15,20e-15), 'chi':(-10e6,-1.7e6)})
+    FloatingTransmonDesigner(ResonatorHalfWave(7.5e9)).optimise({'fQubit':6e9, 
+                                                                  'C_q1':30.862e-15,
+                                                                  'C_q2':31.974e-15,
+                                                                  'C_g1':10.910e-15,
+                                                                  'C_g2':0.916e-15,
+                                                                  'C_J':42.461e-15,
+                                                                  'chi':(-0.9e6,-0.2e6)})

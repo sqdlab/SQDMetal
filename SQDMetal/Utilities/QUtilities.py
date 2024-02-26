@@ -1,7 +1,6 @@
 # from pint import UnitRegistry
 import shapely
 import numpy as np
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
