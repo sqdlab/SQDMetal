@@ -7,6 +7,7 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class PVD_Shadows:
     def __init__(self, design, chip_name='main'):
@@ -119,6 +120,55 @@ class PVD_Shadows:
         ax.set_xlabel(f'Position ({unit_conv_name})')
         ax.set_ylabel(f'Position ({unit_conv_name})')
 
+    def get_shadows_for_component(self, qObj_name, mode='separate', **kwargs):
+        comp_id = self.design.components[qObj_name].id
+
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
+
+        filt = gsdf.loc[(gsdf['component'] == comp_id) & (gsdf['subtract'] == False)]
+        if filt.shape[0] == 0:
+            return
+        metal_polys = shapely.unary_union(filt['geometry'])
+        unit_conv, unit_conv_name = self.get_units()
+        metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+
+        plot_mask = kwargs.get('plot_mask', True)
+
+        layer_id = int(self.design.components[qObj_name].options.layer)
+
+        if layer_id in self.evap_profiles:
+            plot_polys = []
+            names = []
+            if plot_mask:
+                plot_polys += [metal_polys]
+                names += [f"Layer {layer_id} Mask"]
+            shad_polys = self.get_all_shadows(metal_polys, layer_id, mode, **kwargs)
+            plot_polys += shad_polys
+            names += [f"Layer {layer_id}, Step {x}" for x in range(len(shad_polys))]
+        else:
+            plot_polys = [metal_polys]
+            names = [f"Layer {layer_id}"]
+        
+        return plot_polys
+
+    def get_shadow_largest_interior_for_component(self, qObj_name, mode='separate', **kwargs):
+        polys = self.get_shadows_for_component(qObj_name, mode, **kwargs)
+        polys = ShapelyEx.fuse_polygons_threshold(polys, kwargs.get('threshold', 1e-9))
+        if isinstance(polys, shapely.geometry.multipolygon.MultiPolygon):
+            polys = [x for x in polys.geoms]
+        else:
+            polys = [polys]
+        #
+        cur_area = 0
+        cur_max_int = None
+        for poly in polys:
+            for cur_int_line in poly.interiors:
+                cur_int = shapely.Polygon(cur_int_line)
+                if cur_int.area > cur_area:
+                    cur_area = cur_int.area
+                    cur_max_int = cur_int
+        return np.array(cur_max_int.exterior.coords[:]), cur_max_int
 
     def get_all_shadows(self, cur_poly, layer_id, mode='merge', **kwargs):
         if not layer_id in self.evap_profiles:

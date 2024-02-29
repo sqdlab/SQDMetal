@@ -166,5 +166,29 @@ The result is a numpy array where the rows are: frequencies, S11 values, S21 val
 
 Finally, note that on running the simulation (as shown below), all field solutions are stored for all frequencies except for the individual frequency solutions (i.e. Multi-Modal) when using `adaptive='Multiple'`, where only the fields on the ports (i.e. required for s-parameter calculations) are stored.
 
+## Magnetic field simulations
 
+Given a COMSOL model, a magnetic field simulation can be done via the `COMSOL_Simulation_MagneticField` class. This simulation is specifically designed to send in a DC current, observe the resulting magnetic field and subsequently calculate the net flux through some unit area (e.g. a SQUID loop).
 
+**Before running `build_geom_mater_elec_mesh`**, one must define the following:
+
+```python
+sim_BField.set_current_feed_on_CPW_on_Route('flux_line')
+sim_BField.set_Bfield_integration_area(coords)
+```
+
+The first command attaches a CPW-friendly current feeder (i.e. feeds the centre line while grounding both adjacent ground-planes simultaneously). The second command defines an area to which the $B_z$ component of the field is integrated. Note that a handy function in the `PVD_Shadows` class can be used to find the coordinates of the largest interior (i.e. hole) in a SQUID loop after shadow evaporation calculations:
+
+```python
+pvd = PVD_Shadows(design)
+# pvd.plot_layer(2)
+coords, poly = pvd.get_shadow_largest_interior_for_component('jj_qubit')
+```
+
+To get the flux, simply run:
+
+```python
+net_flux = sim_BField.run()
+```
+
+The units are in **Webers** (i.e. flux is the surface integral of $\mathbf{B}$).

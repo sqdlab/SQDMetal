@@ -1,11 +1,11 @@
 # from pint import UnitRegistry
 import shapely
 import numpy as np
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class QUtilities:
     @staticmethod
@@ -44,10 +44,6 @@ class QUtilities:
             return float(strVal[:-2])
         else:
             assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."
-
-    @staticmethod
-    def chk_within(chk_geom, main_geom, thresh=0.99):
-        return shapely.intersection(chk_geom, main_geom).area / chk_geom.area > thresh
 
     @staticmethod
     def get_comp_bounds(design, objs, units_metres = False):
@@ -210,19 +206,6 @@ class QUtilities:
         return line_segs
 
     @staticmethod
-    def fuse_polygons_threshold(polys, threshold=1e-12):
-        if not isinstance(polys, list):
-            polys = [polys]
-        lePolys = []
-        for cur_poly in polys:
-            if isinstance(cur_poly, shapely.geometry.multipolygon.MultiPolygon):
-                lePolys += list(cur_poly.geoms)
-            else:
-                lePolys += [cur_poly]
-        lePolys = [p.buffer(threshold, join_style=2, cap_style=3) for p in lePolys]
-        return shapely.unary_union(lePolys).buffer(-threshold, join_style=2, cap_style=3)
-
-    @staticmethod
     def get_metals_in_layer(design, layer_id, **kwargs):
         '''
         Partitions unique conductors from a layer in a Qiskit-Metal design object. If the particular layer has fancy PVD evaporation steps, the added
@@ -273,7 +256,7 @@ class QUtilities:
         #Merge the metallic elements
         metal_polys = shapely.unary_union(filt['geometry'])
         metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
-        metal_polys = QUtilities.fuse_polygons_threshold(metal_polys, fuse_threshold)
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
         restrict_rect = kwargs.get('restrict_rect', None)
         if isinstance(restrict_rect, list):
             metal_polys = shapely.clip_by_rect(metal_polys, *restrict_rect)

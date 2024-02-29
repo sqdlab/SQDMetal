@@ -3,6 +3,7 @@ import shapely
 import numpy as np
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class MakeGDS:
     def __init__(self, design, threshold=1e-9, precision=1e-9, curve_resolution=22):
@@ -42,7 +43,7 @@ class MakeGDS:
         all_layers = []
         #Assuming Layer 0 is GND Plane
         gaps = gsdf.loc[(gsdf['subtract'] == True)]
-        gaps = QUtilities.fuse_polygons_threshold(gaps['geometry'].tolist(), threshold)
+        gaps = ShapelyEx.fuse_polygons_threshold(gaps['geometry'].tolist(), threshold)
         #
         sx = QUtilities.parse_value_length(self._design.chips['main']['size']['size_x'])/leUnits
         sy = QUtilities.parse_value_length(self._design.chips['main']['size']['size_y'])/leUnits
@@ -57,7 +58,7 @@ class MakeGDS:
         leLayers = np.unique(gsdf['layer'])
         for layer in leLayers:
             metals = gsdf.loc[(gsdf['layer'] == layer) & (gsdf['subtract'] == False)]
-            metals = QUtilities.fuse_polygons_threshold(metals['geometry'].tolist(), threshold)
+            metals = ShapelyEx.fuse_polygons_threshold(metals['geometry'].tolist(), threshold)
             metals = shapely.affinity.scale(metals, xfact=leUnits/gds_units, yfact=leUnits/gds_units, origin=(0,0))
             all_layers.append((layer, metals))
 
@@ -83,7 +84,8 @@ class MakeGDS:
                                         gds_metal, "not", layer=layer+neg_layer_offset)
 
             cell.add(gds_metal)
-            cell.add(gds_rect_neg)
+            if gds_rect_neg:
+                cell.add(gds_rect_neg)
 
     def export(self, file_name):
         self.lib.write_gds(file_name)
