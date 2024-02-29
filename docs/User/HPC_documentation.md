@@ -51,11 +51,11 @@ We can open and then edit the 'ExternalPETSc.cmake' file with the following comm
 
 Scroll down the page using the down arrow until you reach the following code block:
 
-![Alt text](../Petsc_before.png)
+![Alt text](Petsc_before.png)
 
 Here, we want to delete the line 'TEST_BEFORE_INSTALL' and change the option for 'TEST_COMMAND' to '' '', so the code block should now look like the following:
 
-![Alt text](../Petsc_after.png)
+![Alt text](Petsc_after.png)
 
 Save these changes to the file by holding 'Ctrl' and 'o', then hit 'Enter' to write the changes. You can then exit from the file by holding 'Ctrl' and 'x', this should take you back to the command prompt terminal.
 
@@ -65,11 +65,11 @@ The next test we want to remove is located in the file 'PkgConfigHelpers.cmake' 
 
 Scroll down to the following code block:
 
-![Alt text](../SLEPC_before.png)
+![Alt text](SLEPC_before.png)
 
 Here we are removing the test code for SLEPc which is an eigenvalue/eigenvalue solver for large sparse matrices. Now, delete the 'try_run' block and the 'if else' block leaving only the following code:
 
-![Alt text](../SLEPC_after.png)
+![Alt text](SLEPC_after.png)
 
 Again, save these changes to the file by holding 'Ctrl' and 'o', then hit 'Enter' to write the changes. Exit from the file by holding 'Ctrl' and 'x'.
 
