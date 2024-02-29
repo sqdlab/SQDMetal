@@ -77,7 +77,9 @@ class QUtilities:
         Returns the points along a path taking into account the curved edges (i.e. fillets).
 
         Inputs:
-            * dists - List of raw distances (or fractional distances from 0 to 1 if dists_are_fractional is made True) along the path.
+            * dists - List of raw distances (or fractional distances from 0 to 1 if dists_are_fractional is made True) along the path. If dists
+                      is given as a single value, then dists_are_fractional is ignored, and the returned path will be a bunch of points spaced
+                      by the value given by dists. Units are in Qiskit-Metal design units (when not fractional).
             * component_name - Name of the QComponent in the design
             * trace_name - (Optional) If provided, then the path given by the trace_name is selected. Otherwise, the default path (typically
                            called 'trace' in normal wiring/routing objects) is selected.
@@ -91,8 +93,8 @@ class QUtilities:
             * width - CPW trace width.
             * gap   - CPW trace gap.
             * total_dist - Total length of path.
+        Note that the units in the returned values are in Qiskit-Metal design units...
         '''
-        dists = np.sort(dists)
 
         df = design.qgeometry.tables['path']
         df = df[df['component'] == design.components[component_name].id]#['geometry'][0]
@@ -116,9 +118,16 @@ class QUtilities:
         line_segs = QUtilities.calc_lines_and_fillets_on_path(np.array(dfTrace['geometry'].iloc[0].coords[:]), rFillet, design.template_options.PRECISION)
 
         total_dist = sum([x['dist'] for x in line_segs])
-        if dists_are_fractional:
-            assert np.min(dists) >= 0 and np.max(dists) <= 1, "Fractional distances must be in the interval: [0,1]."
-            dists = dists * total_dist
+        
+        if isinstance(dists, (list, tuple, np.ndarray)):
+            dists = np.sort(dists)
+            if dists_are_fractional:
+                assert np.min(dists) >= 0 and np.max(dists) <= 1, "Fractional distances must be in the interval: [0,1]."
+                dists = dists * total_dist
+        else:
+            dists = np.arange(0, total_dist, dists)
+            if dists[-1] != total_dist:
+                dists = np.concatenate([dists, [total_dist]])
 
         final_pts = []
         normals = []

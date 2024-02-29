@@ -9,6 +9,7 @@ class PALACE_Model:
         self.meshing = meshing
         self._metallic_layers = []
         self._ground_plane = {'omit': True}
+        self._fine_meshes = []
 
     def create_batch_file(self):
         pass
@@ -159,10 +160,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 #     self.create_batch_file()
                 
                 #create mesh
-                pgr._intelligent_mesh('eigenmode_simulation', 
-                                min_size = self.user_options['mesh_min'], 
-                                max_size = self.user_options['mesh_max'], 
-                                mesh_sampling = self.user_options['mesh_sampling'])
+                # pgr._intelligent_mesh('eigenmode_simulation', 
+                #                 min_size = self.user_options['mesh_min'], 
+                #                 max_size = self.user_options['mesh_max'], 
+                #                 mesh_sampling = self.user_options['mesh_sampling'])
+                pgr.fine_mesh(self._fine_meshes)
 
                 self._save_mesh_gmsh()
 
@@ -234,6 +236,27 @@ class PALACE_Model_RF_Base(PALACE_Model):
         #of ground from the CPW for portA (given as +X, -X, +Y or -Y for AWS Palace...).
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [(port_name, qObjName, launchesA + [launchesA[-1]], launchesB + [launchesB[-1]], self._check_port_orientation(vec_perp))]
+
+    def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
+        leUnits = QUtilities.get_units(self.metal_design)
+        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
+        self._fine_meshes.append({
+            'type': 'path',
+            'path': lePath * 1e3, #Get it into mm...
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
+            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+        })
+
+    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
+        self._fine_meshes.append({
+            'type': 'box',
+            'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
+            'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
+            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+        })
 
     def _check_port_orientation(self, vec_perp):
         thresh = 0.9999
