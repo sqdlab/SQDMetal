@@ -128,7 +128,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
         cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launches)
+        sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
         cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
