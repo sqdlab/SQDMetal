@@ -73,10 +73,63 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study[1]).set("storesel", jtypes.JArray(jtypes.JString)(lst_ports))
         self._soln = self.model._add_solution("solRFsparams")
         self.jc.sol().create(self._soln)
-        self.jc.sol(self._soln).createAutoSequence(self._study)
+        if self.adaptive != 'None':
+            self.jc.sol(self._soln).createAutoSequence(self._study)
+        else:
+            self.jc.sol(self._soln).study(self._study)
+            self._temporary_freq_domain_AutoSequence()
         # if self.adaptive == 'None':
         #     self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
         self.dset_name = self.model._get_dset_name()
+
+    def _temporary_freq_domain_AutoSequence(self):
+        self.jc.sol(self._soln).create("st1", "StudyStep")
+        self.jc.sol(self._soln).feature("st1").set("study", self._study)
+        self.jc.sol(self._soln).feature("st1").set("studystep", "freq")
+        self.jc.sol(self._soln).create("v1", "Variables")
+        self.jc.sol(self._soln).feature("v1").set("control", "freq")
+        self.jc.sol(self._soln).create("s1", "Stationary")
+        self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
+        self.jc.sol(self._soln).feature("s1").create("p1", "Parametric")
+        self.jc.sol(self._soln).feature("s1").feature().remove("pDef")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pname", jtypes.JArray(jtypes.JString)(["freq"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plistarr", jtypes.JArray(jtypes.JString)(["1.0, 2.0, 3.0"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("punit", jtypes.JArray(jtypes.JString)(["GHz"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pcontinuationmode", "no")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("preusesol", "auto")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pdistrib", "off")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plot", "on")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plotgroup", "Default")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("probesel", "all")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("probes", jtypes.JArray(jtypes.JString)([]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("control", "freq")
+        self.jc.sol(self._soln).feature("s1").set("linpmethod", "sol")
+        self.jc.sol(self._soln).feature("s1").set("linpsol", "zero")
+        self.jc.sol(self._soln).feature("s1").set("control", "freq")
+        self.jc.sol(self._soln).feature("s1").feature("aDef").set("complexfun", jtypes.JBoolean(True))
+        self.jc.sol(self._soln).feature("s1").create("fc1", "FullyCoupled")
+        self.jc.sol(self._soln).feature("s1").create("i1", "Iterative")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("linsolver", "gmres")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("prefuntype", "right")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("itrestart", "300")
+        self.jc.sol(self._soln).feature("s1").feature("i1").label("Suggested Iterative Solver (emw)")
+        self.jc.sol(self._soln).feature("s1").feature("i1").create("mg1", "Multigrid")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").set("iter", "1")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").create("sv1", "SORVector")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("prefun", "sorvec")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("iter", jtypes.JInt(2))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("relax", jtypes.JInt(1))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("sorvecdof", jtypes.JArray(jtypes.JString)(["comp1_E"]))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").create("sv1", "SORVector")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("prefun", "soruvec")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("iter", jtypes.JInt(2))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("relax", jtypes.JInt(1))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("sorvecdof", jtypes.JArray(jtypes.JString)(["comp1_E"]))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("cs").create("d1", "Direct")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("cs").feature("d1").set("linsolver", "pardiso")
+        self.jc.sol(self._soln).feature("s1").feature("fc1").set("linsolver", "i1")
+        self.jc.sol(self._soln).feature("s1").feature().remove("fcDef")
+        self.jc.sol(self._soln).attach("stdRFsparams")
 
     def _run_premesh(self):
         #Create physics and study for RF analysis (e.g. s-parameters)
@@ -234,7 +287,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
     def _get_required_physics(self):
         return [self.phys_emw]
 
-    def run(self, recompute=True):
+    def run(self, recompute=True, is_dB=False):
         '''
         Run simulation to get s-parameters after running the simulation. Returns a 3-row array in which the rows are: frequency values, S11s, S21s.
         MUST RUN AFTER COMPILING SIMULATION (i.e. after running build_geom_mater_elec_mesh...)
@@ -252,10 +305,19 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         freqs = np.array(freqs[0])[:,1]
         s1Remains = []
         for cur_ind in range(0,len(self._ports)):
-            self.jc.result().numerical("ev1").set("expr", f"emw.S{cur_ind+1}1dB")
-            cur_sVals = self.jc.result().numerical("ev1").getData()
-            #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
-            cur_sVals = np.array(cur_sVals[0])[:,1]
+            if is_dB:
+                self.jc.result().numerical("ev1").set("expr", f"emw.S{cur_ind+1}1dB")
+                cur_sVals = self.jc.result().numerical("ev1").getData()
+                #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
+                cur_sVals = np.array(cur_sVals[0])[:,1]
+            else:
+                #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
+                self.jc.result().numerical("ev1").set("expr", f"real(emw.S{cur_ind+1}1)")
+                cur_sValsR = self.jc.result().numerical("ev1").getData()
+                self.jc.result().numerical("ev1").set("expr", f"imag(emw.S{cur_ind+1}1)")
+                cur_sValsI = self.jc.result().numerical("ev1").getData()
+                #
+                cur_sVals = np.array(cur_sValsR[0])[:,0] + 1j*np.array(cur_sValsI[0])[:,0]
             s1Remains += [cur_sVals]
         self.jc.result().numerical().remove("ev1")
 

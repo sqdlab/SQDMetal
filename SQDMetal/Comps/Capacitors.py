@@ -608,7 +608,7 @@ class CapacitorGap(QComponent):
             @   -------   @ LF         LF = len_flat                    @    -------LF  @     IP = init_pad
             @   -------   @ LF                                          @           CG  @
             @   WWWWWWW   @ CG         W = cap_width                    @           CG  @
-            @             @ CG                                       GW @@@@@@@@@@@@@@@@@
+            @             @ CG                                       GW @@@@@@@@@@@@CG@@@
          GW @@@@@@@@@@@@@@@ CG         CG = cap_gap                     @           CG  @
          GW @@@@@@@@@@@@@@@ CG         GW = gnd_width                   @           CG  @
          GW @@@@@@@@@@@@@@@ CG                                          @    -------LF  @
@@ -957,7 +957,7 @@ class CapacitorGapPinPin(QComponent):
             @   -------   @ LF         LF = len_flat                    @    -------LF  @     IP = init_pad
             @   -------   @ LF                                          @           CG  @
             @   WWWWWWW   @ CG         W = cap_width                    @           CG  @
-            @             @ CG                                       GW @@@@@@@@@@@@@@@@@
+            @             @ CG                                       GW @@@@@@@@@@@@CG@@@
          GW @@@@@@@@@@@@@@@ CG         CG = cap_gap                     @           CG  @
          GW @@@@@@@@@@@@@@@ CG         GW = gnd_width                   @           CG  @
          GW @@@@@@@@@@@@@@@ CG                                          @    -------LF  @
