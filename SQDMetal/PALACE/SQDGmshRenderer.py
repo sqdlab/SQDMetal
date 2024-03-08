@@ -18,32 +18,8 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class Palace_Gmsh_Renderer:
-
-    #lists to store entites which comprise the dielectric gaps and metals in the design
-    dielectric_gap_surface = []
-    metal_surfaces = []
-    
-    #fragmented dielectric vol
-    frag_dielectric_vol = None
-
-    #lumped element ports
-    ports_list = []
-
     #meshing parameter
     lc = None
-
-    ###Lists for Shapely Polygons###
-    metals = []
-    metal_polygons = []
-    metal_polygons_for_meshing = []
-    fused_metals = []
-    dielectric_gaps = []
-    dielectric_gap_polygons = []
-    fused_dielectric_gaps = []
-    ground_plane_cut = None
-    ground_plane_fused_metal = None
-    fused_cutouts = None
-    capacitance_ground_plane = []
 
     ###GeoPandas GeoSeries###
     gpd_polys = []
@@ -592,7 +568,29 @@ class Palace_Gmsh_Renderer:
         
         return gmsh_metals_for_meshing
 
+    def _set_field_params(self, field_name, index, **kwargs):
+        gmsh.model.mesh.field.add(field_name, index)
+        for cur_key in kwargs:
+            cur_val = kwargs.get(cur_key)
+            if isinstance(cur_val, (list, tuple)):
+                gmsh.model.mesh.field.setNumbers(index, cur_key, cur_val)
+            else:
+                gmsh.model.mesh.field.setNumber(index, cur_key, cur_val)
     
+    def _set_field_fine_mesh_path(self, index, path, mesh_sampling, min_size, max_size):
+        #Path given as (x,y) coordinates
+        lePoints = [gmsh.model.geo.addPoint(x[0],x[1], 0) for x in path]
+        leLines = [gmsh.model.geo.addLine(lePoints[m-1], lePoints[m]) for m in range(1, len(lePoints))]
+        gmsh.model.geo.synchronize()
+        self._set_field_params("Distance", index, Sampling=mesh_sampling, CurvesList=leLines)
+        self._set_field_params("Threshold", index+1, InField=index, SizeMin=min_size, SizeMax=max_size, DistMin=max_size/4, DistMax=3*max_size)
+        return index+1
+    
+    def _set_field_fine_mesh_box(self, index, x_bnds, y_bnds, mesh_sampling, min_size, max_size):
+        self._set_field_params("Box", index, XMin=min(x_bnds), XMax=max(x_bnds), YMin=min(y_bnds), YMax=max(y_bnds), #ZMin=-0.01, ZMax=0.01,
+                                             Thickness = 3*max_size, VIn=min_size, VOut=max_size)
+        return index
+
     def _intelligent_mesh(self, simulation_type, min_size, max_size, mesh_sampling):
         '''mesh chip geometry intelligently by meshing finer in regions where the geometry is smaller.'''
 
@@ -611,21 +609,51 @@ class Palace_Gmsh_Renderer:
         if simulation_type == 'capacitance_simulation':
             gmsh.model.mesh.field.setNumbers(1, "SurfacesList", self._create_metals_for_fine_mesh()) #Palace_Gmsh_Renderer.gmsh_metals
         if simulation_type == 'eigenmode_simulation' or 'driven_simulation':
-            gmsh.model.mesh.field.setNumbers(1, "SurfacesList", self._create_metals_for_fine_mesh()) #Palace_Gmsh_Renderer.gmsh_gap_list
+            gmsh.model.mesh.field.setNumbers(1, "SurfacesList", [2])#self._create_metals_for_fine_mesh()) #Palace_Gmsh_Renderer.gmsh_gap_list
 
         #define mesh field
-        gmsh.model.mesh.field.add("Threshold", 2)
-        gmsh.model.mesh.field.setNumber(2, "InField", 1)
-        gmsh.model.mesh.field.setNumber(2, "SizeMin", min_size)
-        gmsh.model.mesh.field.setNumber(2, "SizeMax", max_size)
-        gmsh.model.mesh.field.setNumber(2, "DistMin", max_size/4)
-        gmsh.model.mesh.field.setNumber(2, "DistMax", 3*max_size)
+        self._set_field_params("Threshold", 2, InField=1, SizeMin=min_size, SizeMax=max_size, DistMin=max_size/4, DistMax=3*max_size)
+
+        self._set_field_params("Box", 3, XMin=-0.3, XMax=0.3, YMin=-1.5, YMax=0.0, ZMin=-0.01, ZMax=0.01, VIn=0.001, VOut=0.1)
+        self._set_field_params("Threshold", 4, InField=3, SizeMin=min_size, SizeMax=max_size, DistMin=max_size/4, DistMax=3*max_size)
+
+        self._set_field_params("Min", 5, FieldsList=[2, 4])
+
+        self._set_field_fine_mesh_path(6, [(-0.3,-0.5), (0.3,-1.0), (-0.3,-1.5)], mesh_sampling, min_size, max_size)
 
         #set background field and render mesh
-        gmsh.model.mesh.field.setAsBackgroundMesh(2)
+        gmsh.model.mesh.field.setAsBackgroundMesh(7)
         gmsh.option.setNumber('Mesh.MshFileVersion', 2.2)
         gmsh.model.mesh.generate(dim = 3)
-        
+    
+    def fine_mesh(self, fine_mesh_params):
+        '''mesh chip geometry intelligently by meshing finer in regions where the geometry is smaller.'''
+
+        #turn off meshing parameters that are not required
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+
+        #set mesh algorithm Mesh.Algorithm3D to HXT (option - 10) or Delaunay 3D (option - 1)
+        gmsh.option.setNumber("Mesh.Algorithm3D", 1) 
+
+        cur_field_index = 1
+        global_field_inds = []
+        for cur_fine in fine_mesh_params:
+            if cur_fine['type'] == 'path':
+                new_ind = self._set_field_fine_mesh_path(cur_field_index, cur_fine['path'], cur_fine['mesh_sampling'], cur_fine['min_size'], cur_fine['max_size'])
+            if cur_fine['type'] == 'box':
+                new_ind = self._set_field_fine_mesh_box(cur_field_index, cur_fine['x_bnds'], cur_fine['y_bnds'], cur_fine['mesh_sampling'], cur_fine['min_size'], cur_fine['max_size'])
+            global_field_inds.append(new_ind)
+            cur_field_index = new_ind + 1
+
+        #Combine all field constraints
+        self._set_field_params("Min", cur_field_index, FieldsList=global_field_inds)
+        #set background field and render mesh
+        gmsh.model.mesh.field.setAsBackgroundMesh(cur_field_index)
+        gmsh.option.setNumber('Mesh.MshFileVersion', 2.2)
+        gmsh.model.mesh.generate(dim = 3)
+
 
 
 

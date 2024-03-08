@@ -46,6 +46,8 @@ sudo apt install paraview
 
 ### HPC cluster
 
+Working installation instructions for the Australian Bunya cluster are given [here](HPC_documentation.md).
+
 ## Usage
 
 
@@ -70,6 +72,7 @@ user_defined_options = {
                  "sim_memory": '300G',                              #amount of memory for each HPC node i.e. 4 nodes x 300 GB = 1.2 TB
                  "sim_time": '20:00:00',                            #allocated time for simulation 
                  "HPC_nodes": '4',                                  #number of Bunya nodes. By default 20 cpus per node are selected, then total cores = 20 x HPC_nodes
+                 "fillet_resolution":12                             #Number of vertices per quarter turn on a filleted path
                 }
 
 #Creat the Palace Eigenmode simulation
@@ -83,7 +86,15 @@ eigen_sim = PALACE_Eigenmode_Simulation(name ='single_resonator_example_eigen', 
                                         create_files = True)                                        #create mesh, config and HPC batch files
 eigen_sim.add_metallic(1)
 eigen_sim.add_ground_plane()
+
+#Add in the RF ports
 eigen_sim.create_port_CPW_on_Launcher('LP1', 20e-3)
 eigen_sim.create_port_CPW_on_Launcher('LP2', 20e-3)
+#Fine-mesh routed paths
+eigen_sim.fine_mesh_along_path(100e-6, 'resonator1', mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
+eigen_sim.fine_mesh_along_path(100e-6, 'TL', mesh_sampling=130, mesh_min=7e-3, mesh_max=120e-3)
+#Fine-mesh a rectangular region
+eigen_sim.fine_mesh_in_rectangle(-0.14e-3, -1.33e-3, 0.14e-3, -1.56e-3, mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
+
 eigen_sim.prepare_simulation()
 ```

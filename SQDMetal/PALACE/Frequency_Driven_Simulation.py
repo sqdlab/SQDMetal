@@ -1,4 +1,4 @@
-from SQDMetal.PALACE.Model import PALACE_Model
+from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
