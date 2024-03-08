@@ -34,13 +34,14 @@ class MakeGDS:
         leUnits = QUtilities.get_units(self._design)
         self.lib = gdspy.GdsLibrary(precision=self.precision)
 
-        cell = self.lib.new_cell('Main')
+        self.cell = self.lib.new_cell('Main')
 
         threshold = self.threshold
         gds_units = 1e-6
 
         #Assemble geometry for each layer
         all_layers = []
+        self._layer_metals = {}
         #Assuming Layer 0 is GND Plane
         gaps = gsdf.loc[(gsdf['subtract'] == True)]
         gaps = ShapelyEx.fuse_polygons_threshold(gaps['geometry'].tolist(), threshold)
@@ -73,19 +74,31 @@ class MakeGDS:
             gds_metal = None
             for cur_poly in temp_cur_metals:
                 if gds_metal:
-                    gds_metal = gdspy.boolean(gdspy.Polygon(cur_poly.exterior.coords[:]), gds_metal, "or", layer=layer)
+                    gds_metal = gdspy.boolean(gdspy.Polygon(cur_poly.exterior.coords[:]), gds_metal, "or", layer=layer, max_points=1000000)
                 else:
                     gds_metal = gdspy.Polygon(cur_poly.exterior.coords[:], layer=layer)
                 for cur_int in cur_poly.interiors:
-                    gds_metal = gdspy.boolean(gds_metal,gdspy.Polygon(cur_int.coords[:]), "not", layer=layer)
+                    gds_metal = gdspy.boolean(gds_metal,gdspy.Polygon(cur_int.coords[:]), "not", layer=layer, max_points=1000000)
 
             gds_rect_neg = gdspy.boolean(gdspy.Rectangle(((cx-0.5*sx)*leUnits/gds_units, (cy-0.5*sy)*leUnits/gds_units),
                                                         ((cx+0.5*sx)*leUnits/gds_units, (cy+0.5*sy)*leUnits/gds_units)),
-                                        gds_metal, "not", layer=layer+neg_layer_offset)
+                                        gds_metal, "not", layer=layer+neg_layer_offset, max_points=1000000)
 
-            cell.add(gds_metal)
+            self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or"))    #max_points = 199 here...
+            self._layer_metals[layer] = gds_metal
             if gds_rect_neg:
-                cell.add(gds_rect_neg)
+                self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or"))    #max_points = 199 here...
+                self._layer_metals[layer+neg_layer_offset] = gds_rect_neg
+
+    def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
+        assert operation in ["and", "or", "xor", "not"], "Operation must be: \"and\", \"or\", \"xor\", \"not\""
+        if output_layer == None:
+            output_layer = max([x for x in self._layer_metals]) + 1
+
+        new_metal = gdspy.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=output_layer, precision=1e-6, max_points=1000000)
+
+        self.cell.add(gdspy.boolean(new_metal, new_metal, "or"))    #max_points = 199 here...
+        self._layer_metals[output_layer] = new_metal
 
     def export(self, file_name):
         self.lib.write_gds(file_name)
