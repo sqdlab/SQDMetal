@@ -142,6 +142,7 @@ class COMSOL_Model:
                           PVD_Shadows for more details on its definition.
         '''
         thresh = kwargs.get('threshold', -1)
+        kwargs['restrict_rect'] = self.restrict_rect
         metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, layer_id, **kwargs)
 
         metal_sel_obj_names = {}
