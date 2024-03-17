@@ -1,6 +1,8 @@
 from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 import pandas as pd
 import geopandas as gpd
+import shapely
+import numpy as np
 
 class QiskitShapelyRenderer(QMplRenderer):
     dfs = []
@@ -30,3 +32,16 @@ class QiskitShapelyRenderer(QMplRenderer):
         
 
         return gsdf
+
+    @staticmethod
+    def get_rendered_path_poly(design, path_coords, path_width, fillet_radius, resolution=4):
+        mplRend = QMplRenderer(None, design, None)
+        lePath = mplRend.fillet_path({
+            'geometry': shapely.LineString(path_coords.tolist() if isinstance(path_coords, np.ndarray) else path_coords),
+            'fillet': fillet_radius,
+            'resolution': resolution
+        })
+        return lePath.buffer(distance=path_width/2,
+                          cap_style=shapely.geometry.CAP_STYLE.flat,
+                          join_style=shapely.geometry.JOIN_STYLE.mitre,
+                          resolution=resolution)
