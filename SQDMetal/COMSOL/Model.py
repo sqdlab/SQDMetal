@@ -54,10 +54,11 @@ class COMSOL_Model:
                                 (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
                                 QUtilities.parse_value_length(design.chips['main']['size']['center_z'])]
         else:
-            self.restrict_rect = None
             self.chip_len = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
             self.chip_wid = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
             self.chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+            self.restrict_rect = [self.chip_centre[0]-0.5*self.chip_len, self.chip_centre[1]-0.5*self.chip_wid,
+                                  self.chip_centre[0]+0.5*self.chip_len, self.chip_centre[1]+0.5*self.chip_wid]
 
         self.chip_thickness = np.abs(QUtilities.parse_value_length(design.chips['main']['size']['size_z']))
 
@@ -322,19 +323,37 @@ class COMSOL_Model:
             else:
                 space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
             space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
-            pol_name_ints = []
-            for ind,cur_int in enumerate(space_polys):
-                pol_name_int = f"polGND{ind}"
-                pol_name_ints.append(pol_name_int)
-                #Convert coordinates into metres...
-                cur_poly_int = np.array(cur_int.exterior.coords[:])
-                cur_poly_int = self._simplify_geom(cur_poly_int, thresh)
-                sel_x, sel_y, sel_r = self._create_poly(pol_name_int, cur_poly_int[:-1])
-            #Subtract interiors from the polygon
+            pol_name_cuts = []
+            for ind,cur_cut in enumerate(space_polys):
+                pol_name_cut = f"polGND{ind}"
+                pol_name_cuts.append(pol_name_cut)
+                cur_poly_cut = np.array(cur_cut.exterior.coords[:])
+                cur_poly_cut = self._simplify_geom(cur_poly_cut, thresh)
+                #
+                poly_interiors = cur_cut.interiors
+                if len(poly_interiors) > 0:
+                    pol_name_ints = []
+                    for ind,cur_int in enumerate(poly_interiors):
+                        pol_name_int = f"{pol_name_cut}S{ind}"
+                        pol_name_ints.append(pol_name_int)
+                        #Convert coordinates into metres...
+                        cur_poly_int = np.array(cur_int.coords[:])
+                        cur_poly_int = self._simplify_geom(cur_poly_int, thresh)
+                        sel_x, sel_y, sel_r = self._create_poly(pol_name_int, cur_poly_int[:-1])
+                    #Subtract interiors from the polygon
+                    pol_ext_name = f"{pol_name_cut}E"
+                    sel_x, sel_y, sel_r = self._create_poly(pol_ext_name, cur_poly_cut[:-1])
+                    diff_name = pol_name_cut
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_ext_name)
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_ints)
+                else:
+                    sel_x, sel_y, sel_r = self._create_poly(pol_name_cut, cur_poly_cut[:-1])
+            #Subtract cuts from the polygon
             diff_name = f"difGND"
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_name)
-            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_ints)
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_cuts)
             #Setup the resulting selection...
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresult", jtypes.JBoolean(True))
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresultshow", "bnd")
@@ -405,12 +424,19 @@ class COMSOL_Model:
         #
         self._fine_mesh += [{'type':'all', 'poly':shapely.LineString(leCoords), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
+    def fine_mesh_around_comp_boundaries(self, list_comp_names, minElementSize=1e-7, maxElementSize=5e-6, **kwargs):
+        kwargs['restrict_rect'] = self.restrict_rect
+        list_polys = QUtilities.get_perimetric_polygons(self.design, list_comp_names, **kwargs)
+        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False)
+
     def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
         ind = len(self._fine_mesh)
         pol_names = []
         leLines = []
         for m, poly in enumerate(list_polys):
             leCoords = np.array(poly.exterior.coords[:])
+            if leCoords.size == 0:
+                continue
             if qmUnits:
                 leCoords *= QUtilities.get_units(self.design)
             leLines += [shapely.LineString(leCoords)]
