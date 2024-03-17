@@ -28,8 +28,10 @@ class QUtilities:
         # return ureg(strVal).to('m').magnitude
 
         #So do this instead...
+        if isinstance(strVal, int) or isinstance(strVal, float):
+            return strVal
         strVal = strVal.strip()
-        assert len(strVal) > 1, f"Length \'{strVal}\' is invalid."
+        assert len(strVal) > 1, f"Length \'{strVal}\' is invalid (no units?)."
         if strVal[-2:] == "mm":
             return float(strVal[:-2]+'e-3')
         elif strVal[-2:] == "um":
@@ -314,6 +316,37 @@ class QUtilities:
                 metal_sel_ids += [x for x in range(len(metal_sel_ids), len(metal_sel_ids) + num_polys)]
 
         return metal_polys_all, metal_sel_ids
+
+    @staticmethod
+    def get_perimetric_polygons(design, comp_names, **kwargs):
+        thresh = kwargs.get('threshold',  -1)
+        resolution = kwargs.get('resolution', 4)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates(resolution)
+
+        ids = [design.components[x].id for x in comp_names]
+        filt = gsdf[gsdf['component'].isin(ids)]
+
+        if filt.shape[0] == 0:
+            return
+    
+        unit_conv = kwargs.get('unit_conv', QUtilities.get_units(design))
+        fuse_threshold = kwargs.get('fuse_threshold', 1e-12)
+
+        metal_polys = shapely.unary_union(filt['geometry'])
+        metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
+        restrict_rect = kwargs.get('restrict_rect', None)
+        if isinstance(restrict_rect, list):
+            metal_polys = shapely.clip_by_rect(metal_polys, *restrict_rect)
+
+        if isinstance(metal_polys, shapely.geometry.multipolygon.MultiPolygon):
+            lePolys = list(metal_polys.geoms)
+        else:
+            lePolys = [metal_polys]
+        
+        return lePolys
 
     @staticmethod
     def _get_LauncherWB_params(design, launcher_name, unit_conv_extra=1):        
