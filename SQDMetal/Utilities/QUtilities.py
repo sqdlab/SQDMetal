@@ -303,6 +303,8 @@ class QUtilities:
                 cur_polys_separate = metal_evap_polys_separate[m]
                 if isinstance(cur_polys_separate, shapely.geometry.multipolygon.MultiPolygon):
                     cur_polys_separate = [x for x in cur_polys_separate.geoms]
+                else:
+                    cur_polys_separate = [cur_polys_separate]
                 #Find the separate polygon in which the given polygon fits... 
                 cur_sel_inds = []
                 for cur_metal in temp_cur_metals:
