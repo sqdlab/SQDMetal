@@ -181,10 +181,21 @@ class COMSOL_Model:
         #Settle the conductor selections...
         for cur_id in metal_sel_obj_names:
             cur_sel_index = len(self._conds)
-            select_3D_name = self._setup_selection_boundaries(cur_sel_index, metal_sel_obj_names[cur_id])            
+            select_3D_name = self._setup_selection_boundaries(cur_sel_index, metal_sel_obj_names[cur_id])
             self._conds.append( ("geom1_", select_3D_name) )  #Prefix for accessing out of the geometry node...
             #Could optimise this line...
             self._cond_polys.append( ( shapely.unary_union([metal_polys_all[m] for m in range(len(metal_polys_all)) if metal_sel_ids[m] == cur_id]), cur_sel_index ) )
+
+    def _add_cond(self, poly_coords):
+        cur_sel_index = self._num_polys
+
+        selObjName = f"Uclip{cur_sel_index}"
+        self._create_poly(selObjName, poly_coords)
+        select_3D_name = self._setup_selection_boundaries(len(self._conds), selObjName)
+        self._conds.append( ("geom1_", select_3D_name) )  #Prefix for accessing out of the geometry node...
+        self._cond_polys.append((shapely.Polygon(poly_coords), cur_sel_index))
+
+        self._num_polys += 1
 
     @staticmethod
     def get_poly_cardinality(poly):

@@ -215,6 +215,10 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         cur_launch += [vec_perp]
         self._ports += [cur_launch]
 
+    def get_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+        self.model._add_cond(Uclip)
+
     def create_lumped_element(self, vec_start, vec_end, width, value, elem_type='Inductor'):
         '''
         Creates a lumped element. Note that it must be vertical or horizontal between conductors...
