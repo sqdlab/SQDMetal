@@ -15,6 +15,8 @@ class ResonatorBase:
         raise NotImplementedError()
     def get_res_frequency(self):
         raise NotImplementedError()
+    def is_res_parallelLC(self):
+        raise NotImplementedError()
     def print(self):
         print("Resonator:")
         print(f"\tFrequency: {GenUtilities.add_units(self.get_res_frequency())}Hz")
@@ -48,9 +50,12 @@ class ResonatorHalfWave(ResonatorBase):
     
     def get_res_frequency(self):
         return self.f0
+    
+    def is_res_parallelLC(self):
+        return not self.shorted
 
 class ResonatorQuarterWave(ResonatorBase):
-    def __init__(self, f0, shorted=False, impedance=50):
+    def __init__(self, f0, shorted=True, impedance=50):
         self.f0 = f0
         self.Zr = impedance
         self.shorted = shorted
@@ -76,6 +81,9 @@ class ResonatorQuarterWave(ResonatorBase):
     
     def get_res_frequency(self):
         return self.f0
+    
+    def is_res_parallelLC(self):
+        return self.shorted
 
 class ResonatorLC(ResonatorBase):
     def __init__(self, f0=None, L=None, C=None):
@@ -118,6 +126,9 @@ class ResonatorLC(ResonatorBase):
     
     def get_res_frequency(self):
         return self.f0
+    
+    def is_res_parallelLC(self):
+        return True
 
 
 ##################################################################################
@@ -199,6 +210,7 @@ class TransmonBase:
 
 class XmonDesigner(TransmonBase):
     def __init__(self, resonator):
+        assert resonator.is_res_parallelLC(), "Resonator must be in a parallel-coupled arrangment."
         self.resonator = resonator
     
     def get_free_params(self):
@@ -233,6 +245,7 @@ class XmonDesigner(TransmonBase):
 
 class FloatingTransmonDesigner(TransmonBase):
     def __init__(self, resonator):
+        assert resonator.is_res_parallelLC(), "Resonator must be in a parallel-coupled arrangment."
         self.resonator = resonator
     
     def get_free_params(self):

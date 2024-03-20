@@ -20,6 +20,7 @@ Custom *Qiskit-Metal* compatible parts:
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
 - [GDS Exporter](GDS.md)
+- [Qubit Designer](Qubit_Designer.md)
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)
