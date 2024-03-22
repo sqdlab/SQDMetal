@@ -1,11 +1,17 @@
 
 class GenUtilities:
     @staticmethod
-    def add_units(val):
+    def add_units(val, sigfigs=-1, noUnits=False):
         if isinstance(val, float) or isinstance(val, int):
             thinspace = u"\u2009"
             def clip_val(value):
-                return f'{value:.12g}'
+                if sigfigs > 0:
+                    return '{number:.{width}g}'.format(number=value, width=sigfigs)
+                else:
+                    return f'{value:.12g}'
+            
+            if noUnits:
+                return f'{clip_val(val)}'
 
             if abs(val) < 1e-15:
                 return f'{clip_val(val*1e18)}{thinspace}a'
