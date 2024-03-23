@@ -423,13 +423,13 @@ class QUtilities:
         
         vec_perp = np.array([-vec_launch[1],vec_launch[0]])
 
-        gap_sep = separation_gap if separation_gap > 0 else cpw_gap
+        gap_sep = separation_gap*unit_conv_extra if separation_gap > 0 else cpw_gap
 
         Uclip = [vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap),
-                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side),
-                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side) - vec_launch*(gap_sep + thickness_back),
-                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side) - vec_launch*(gap_sep + thickness_back),
-                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side),
+                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra),
+                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra) - vec_launch*(gap_sep + thickness_back*unit_conv_extra),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra) - vec_launch*(gap_sep + thickness_back*unit_conv_extra),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra),
                  vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap),
                  vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep,
                  vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep]

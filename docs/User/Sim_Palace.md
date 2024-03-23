@@ -48,7 +48,7 @@ sudo apt install paraview
 
 Working installation instructions for the Australian Bunya cluster are given [here](HPC_documentation.md).
 
-## Usage
+## Usage (local PC)
 
 
 ```python
@@ -97,4 +97,19 @@ eigen_sim.fine_mesh_along_path(100e-6, 'TL', mesh_sampling=130, mesh_min=7e-3, m
 eigen_sim.fine_mesh_in_rectangle(-0.14e-3, -1.33e-3, 0.14e-3, -1.56e-3, mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
 
 eigen_sim.prepare_simulation()
+```
+
+## Usage (HPC)
+
+Here, some extra parameters need to be supplied. Specifically the path to a JSON file (supplied in the user option: `"HPC_Parameters_JSON"`) containing the parameters. Here is a template:
+
+```json
+{
+    "HPC_nodes": 4,
+    "sim_memory": "300G",
+    "sim_time": "20:00:00",
+    "account_name": "sam",
+    "palace_location": "/scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin",
+    "input_dir": "/scratch/project/palace-sqdlab/inputFiles/"
+}
 ```

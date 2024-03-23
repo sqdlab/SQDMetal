@@ -21,8 +21,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "sim_memory": '200G',
-                 "sim_time": '1:00:00',
+                 "HPC_Parameters_JSON": ""
     }
 
     # Parent Directory path
@@ -42,11 +41,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             self.user_options[key] = user_options.get(key, PALACE_Capacitance_Simulation.default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
-        super().__init__(meshing)
-
-
-    def run(self):
-        pass  
+        super().__init__(meshing, mode, user_options)
 
 
     def prepare_simulation(self):
@@ -243,16 +238,17 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         
         #Define python dictionary to convert to json file
+        filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         config = {
                     "Problem":
                     {
                         "Type": "Electrostatic",
                         "Verbose": 2,
-                        "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
+                        "Output": filePrefix  + "outputFiles"
                     },
                     "Model":
                     {
-                        "Mesh": "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + file_ext,
+                        "Mesh":  filePrefix + self.name + file_ext,
                         "L0": l0,  # mm
                         "Refinement":
                         {
@@ -323,43 +319,4 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
-    
-
-
-    def create_batch_file(self):
-        
-        sbatch = {
-                "header": "#!/bin/bash --login",
-                "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "#SBATCH --output=" + self.name + ".out",
-                "error_out": "#SBATCH --error=" + self.name + ".err",
-                "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
-                "tasks": "#SBATCH --ntasks-per-node=20",
-                "cpus": "#SBATCH --cpus-per-task=1",
-                "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
-                "time": "#SBATCH --time=" + self.user_options['sim_time'],
-                "account": "#SBATCH --account=a_fedorov",
-                "foss": "module load foss/2021a",
-                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
-                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
-        }
-    
-        #check simulation mode and return appropriate parent directory 
-        parent_simulation_dir = self._check_simulation_mode()
-
-        #create sbatch file name
-        sim_file_name = self.name + '.sbatch'
-
-        #destination for config file
-        simulation_dir = parent_simulation_dir + str(self.name)
-
-        #save to created directory
-        file = os.path.join(simulation_dir, sim_file_name)
-
-        #write sbatch dictionary to file
-        with open(file, "w+", newline='\n') as f:
-            for value in sbatch.values():
-                f.write('{}\n'.format(value))
+        self._sim_config = file

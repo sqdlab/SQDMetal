@@ -26,9 +26,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "mesh_max": 100e-3,
                  "mesh_min": 10e-3,
                  "mesh_sampling": 120,
-                 "sim_memory": '300G',
-                 "sim_time": '14:00:00',
-                 "HPC_nodes": '4',
+                 "HPC_Parameters_JSON": ""
                 }
 
     #Parent Directory path
@@ -47,12 +45,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing)
-        
-        
-    def run(self):
-        pass  
-
+        super().__init__(meshing, mode, user_options)
 
     def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -123,16 +116,17 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         config_ports[0]["Excitation"] = True
 
         #Define python dictionary to convert to json file
+        filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         config = {
             "Problem":
             {
                 "Type": "Eigenmode",
                 "Verbose": 2,
-                "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
+                "Output": filePrefix  + "outputFiles"
             },
             "Model":
             {
-                "Mesh": "/scratch/project/palace-sqdlab/inputFiles/"  + self.name + "/" + self.name + file_ext,
+                "Mesh":  filePrefix + self.name + file_ext,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -205,46 +199,5 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
-    
+        self._sim_config = file
 
-
-    def create_batch_file(self):
-        
-        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
-        #so I can get the slurm job number to use for testing
-
-        sbatch = {
-                "header": "#!/bin/bash --login",
-                "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "# SBATCH --output=" + self.name + ".out",
-                "error_out": "#SBATCH --error=" + self.name + ".err",
-                "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
-                "tasks": "#SBATCH --ntasks-per-node=20",
-                "cpus": "#SBATCH --cpus-per-task=1",
-                "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
-                "time": "#SBATCH --time=" + self.user_options['sim_time'],
-                "account": "#SBATCH --account=a_fedorov",
-                "foss": "module load foss/2021a",
-                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
-                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
-        }
-    
-        #check simulation mode and return appropriate parent directory 
-        parent_simulation_dir = self._check_simulation_mode()
-
-        #create sbatch file name
-        sim_file_name = self.name + '.sbatch'
-
-        #destination for config file
-        simulation_dir = parent_simulation_dir + str(self.name)
-
-        #save to created directory
-        file = os.path.join(simulation_dir, sim_file_name)
-
-        #write sbatch dictionary to file
-        with open(file, "w+", newline = '\n') as f:
-            for value in sbatch.values():
-                f.write('{}\n'.format(value))

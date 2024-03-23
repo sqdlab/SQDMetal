@@ -73,7 +73,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study[1]).set("storesel", jtypes.JArray(jtypes.JString)(lst_ports))
         self._soln = self.model._add_solution("solRFsparams")
         self.jc.sol().create(self._soln)
-        if self.adaptive != 'None':
+        if True:#self.adaptive != 'None':
             self.jc.sol(self._soln).createAutoSequence(self._study)
         else:
             self.jc.sol(self._soln).study(self._study)

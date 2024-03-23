@@ -1,21 +1,32 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
+from SQDMetal.COMSOL.Model import COMSOL_Model
+from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 import numpy as np
-import os
+import os, subprocess
 import gmsh
+import json
 
 class PALACE_Model:
-    def __init__(self, meshing):
+    def __init__(self, meshing, mode, options):
         self.meshing = meshing
         self._metallic_layers = []
         self._ground_plane = {'omit': True}
         self._fine_meshes = []
+        self._sim_config = ""
+        self._input_dir = ""
+        self._output_subdir = ""
+
+        if mode == 'HPC':
+            with open(options["HPC_Parameters_JSON"], "r") as f:
+                self.hpc_options = json.loads(f.read())
+        else:
+            self.palace_dir = options.get('palace_dir', 'palace')                
+            self.hpc_options = {"input_dir":""}
 
     def create_batch_file(self):
         pass
     def create_config_file(self):
-        pass
-    def run(self):
         pass
     def _prepare_simulation(self, metallic_layers, ground_plane):
         raise NotImplementedError()
@@ -46,6 +57,7 @@ class PALACE_Model:
                           PVD_Shadows for more details on its definition.
         '''
         self._metallic_layers += [{
+            'type': 'design_layer',
             'layer_id': layer_id,
             'threshold': kwargs.get('threshold', -1),
             'fuse_threshold': kwargs.get('fuse_threshold', 1e-12),
@@ -65,6 +77,69 @@ class PALACE_Model:
         '''
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
 
+    def run(self):
+        assert self._sim_config != "", "Must run prepare_simulation at least once."
+
+        config_file = self._sim_config
+        leFile = os.path.basename(os.path.realpath(config_file))
+        leDir = os.path.dirname(os.path.realpath(config_file))
+
+        with open("temp.sh", "w+") as f:
+            f.write(f"cd \"{leDir}\"\n")
+            f.write(f"\"{self.palace_dir}\" -np 16 {leFile}\n")
+
+        self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        try:
+            self.cur_process.wait()
+        except KeyboardInterrupt:
+            self.cur_process.kill()
+        self.cur_process = None
+
+        return self.retrieve_data()
+
+    def retrieve_data(self):
+        pass
+
+    def create_batch_file(self):
+        
+        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
+        #so I can get the slurm job number to use for testing
+
+        sbatch = {
+                "header": "#!/bin/bash --login",
+                "job_name": "#SBATCH --job-name=" + self.name,
+                "output_loc": "# SBATCH --output=" + self.name + ".out",
+                "error_out": "#SBATCH --error=" + self.name + ".err",
+                "partition": "#SBATCH --partition=general",
+                "nodes": "#SBATCH --nodes=" + self.hpc_options["HPC_nodes"],
+                "tasks": "#SBATCH --ntasks-per-node=20",
+                "cpus": "#SBATCH --cpus-per-task=1",
+                "memory": "#SBATCH --mem=" + self.hpc_options["sim_memory"],
+                "time": "#SBATCH --time=" + self.hpc_options['sim_time'],
+                "account": "#SBATCH --account=" + self.hpc_options['account_name'],
+                "foss": "module load foss/2021a",
+                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
+                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
+                "run_command": f"srun {self.hpc_options['palace_location']} " + self.hpc_options["input_dir"] + self.name + "/" + self.name + ".json"
+        }
+    
+        #check simulation mode and return appropriate parent directory 
+        parent_simulation_dir = self._check_simulation_mode()
+
+        #create sbatch file name
+        sim_file_name = self.name + '.sbatch'
+
+        #destination for config file
+        simulation_dir = parent_simulation_dir + str(self.name)
+
+        #save to created directory
+        file = os.path.join(simulation_dir, sim_file_name)
+
+        #write sbatch dictionary to file
+        with open(file, "w+", newline = '\n') as f:
+            for value in sbatch.values():
+                f.write('{}\n'.format(value))
+
     def _check_simulation_mode(self):
         '''method to check the type of simualtion being run and return
             the parent directory to store the simulation files'''
@@ -73,8 +148,8 @@ class PALACE_Model:
 
         if self.mode == "HPC":
             parent_simulation_dir = self.sim_parent_directory
-        elif self.mode == "simPC":
-            parent_simulation_dir = self.simPC_parent_simulation_dir
+        elif self.mode == "simPC" or self.mode == "PC":
+            parent_simulation_dir = self.sim_parent_directory
         else:
             Exception('Invalid simulation mode entered.')
         
@@ -118,15 +193,30 @@ class PALACE_Model:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
-            file_name = self.name + "/" + self.name + ".mphbin"
+            comsol_obj.save(parent_simulation_dir + self.name + "/" + self.name)
     
             # Path
-            path = os.path.join(parent_simulation_dir, file_name)
+            path = os.path.abspath(parent_simulation_dir) + "/" + self.name + "/" + self.name + ".mphbin"
 
             #COMSOL export commands
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
+    def _get_folder_prefix(self):
+        return self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+
+    def set_local_output_subdir(self, name, update_config_file=True):
+        self._output_subdir = str(name)
+        self._output_dir = self._get_folder_prefix()  + "outputFiles"
+        if self._output_subdir != "":
+            self._output_dir += "/" + self._output_subdir
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Problem']['Output'] = self._output_dir
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
+            self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
 class PALACE_Model_RF_Base(PALACE_Model):
     def _prepare_simulation(self, metallic_layers, ground_plane):
@@ -146,7 +236,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 lePorts += [(port_name + 'b', launchesB)]
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, self.user_options['fillet_resolution'], 'eigenmode_simulation')
+            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, options['fillet_resolution'], 'eigenmode_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -184,8 +274,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
             #Add metallic layers
             for cur_layer in metallic_layers:
-                layer_id = cur_layer.get('layer_id')
-                cmsl.add_metallic(layer_id, **cur_layer)
+                if cur_layer.get('type') == 'design_layer':
+                    cmsl.add_metallic(**cur_layer)
+                elif cur_layer.get('type') == 'Uclip':
+                    if cur_layer['clip_type'] == 'inplane':
+                        sim_sParams.get_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
             if not ground_plane['omit']:
                 cmsl.add_ground_plane(threshold=ground_plane['threshold'])
             #cmsl.fuse_all_metals()
@@ -195,11 +288,17 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
                 sim_sParams.create_port_CPW_on_Launcher(qObjName)
             
+            for fine_mesh in self._fine_meshes:
+                if fine_mesh['type'] == 'box':
+                    x_bnds = fine_mesh['x_bnds']
+                    y_bnds = fine_mesh['y_bnds']
+                    cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
+
             #build model
             cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
 
             #plot model
-            cmsl.plot()
+            # cmsl.plot()
 
             #save comsol file
             #cmsl.save(self.name)
@@ -237,6 +336,17 @@ class PALACE_Model_RF_Base(PALACE_Model):
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [(port_name, qObjName, launchesA + [launchesA[-1]], launchesB + [launchesB[-1]], self._check_port_orientation(vec_perp))]
 
+    def get_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        self._metallic_layers += [{
+            'type': 'Uclip',
+            'clip_type':'inplane',
+            'qObjName':qObjName,
+            'thickness_side':thickness_side,
+            'thickness_back':thickness_back,
+            'separation_gap':separation_gap,
+            'unit_conv_extra':unit_conv_extra
+        }]
+
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
         leUnits = QUtilities.get_units(self.metal_design)
         lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
@@ -254,9 +364,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
             'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
             'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
-            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
         })
+
+
 
     def _check_port_orientation(self, vec_perp):
         thresh = 0.9999
