@@ -20,7 +20,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "solns_to_save": 4,
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
-                 "solver_maxits": 100,
+                 "solver_maxits": 300,
                  "mesh_max": 100e-3,
                  "mesh_min": 10e-3,
                  "mesh_sampling": 120,
@@ -80,9 +80,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                ports[port_name + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
-                ports[port_name + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
+                ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
+                ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
 
             #define length scale
             l0 = 1
@@ -96,7 +95,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         #Process Ports
         config_ports = []
         for m, cur_port in enumerate(self._ports):
-            port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
+            port_name, vec_perps = cur_port['port_name'], cur_port['vec_CPW2GND_1']
             config_ports.append({
                     "Index": m+1,
                     "R": 50.00,  # Ω, 2-element uniform

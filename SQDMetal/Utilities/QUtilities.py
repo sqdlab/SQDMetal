@@ -435,3 +435,26 @@ class QUtilities:
                  vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep]
         
         return Uclip
+
+    @staticmethod
+    def get_RFport_CPW_groundU_Route_inplane(design, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        # qObj = design.components[route_name]
+        #TODO: Do type-checking here?
+        vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(design, route_name, pin_name, unit_conv_extra)
+        # else:
+        #     assert False, f"\'{qObjName}\' is an unsupported object type."
+        
+        vec_perp = np.array([-vec_launch[1],vec_launch[0]])
+
+        gap_sep = separation_gap*unit_conv_extra if separation_gap > 0 else cpw_gap
+
+        Uclip = [vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap),
+                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra),
+                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra) - vec_launch*(gap_sep + thickness_back*unit_conv_extra),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra) - vec_launch*(gap_sep + thickness_back*unit_conv_extra),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap + thickness_side*unit_conv_extra),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap),
+                 vec_ori - vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep,
+                 vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep]
+        
+        return Uclip

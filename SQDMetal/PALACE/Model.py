@@ -231,9 +231,8 @@ class PALACE_Model_RF_Base(PALACE_Model):
             assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher function."
             lePorts = []
             for cur_port in self._ports:
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                lePorts += [(port_name + 'a', launchesA)]
-                lePorts += [(port_name + 'b', launchesB)]
+                lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
+                lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             #prepare design by converting shapely geometries to Gmsh geometries
             gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, options['fillet_resolution'], 'eigenmode_simulation')
@@ -277,22 +276,28 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 if cur_layer.get('type') == 'design_layer':
                     cmsl.add_metallic(**cur_layer)
                 elif cur_layer.get('type') == 'Uclip':
-                    if cur_layer['clip_type'] == 'inplane':
+                    if cur_layer['clip_type'] == 'inplaneLauncher':
                         sim_sParams.get_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                    elif cur_layer['clip_type'] == 'inplaneRoute':
+                        sim_sParams.get_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
             if not ground_plane['omit']:
                 cmsl.add_ground_plane(threshold=ground_plane['threshold'])
             #cmsl.fuse_all_metals()
 
             #assign ports
             for cur_port in self._ports:
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                sim_sParams.create_port_CPW_on_Launcher(qObjName)
+                if cur_port['type'] == 'launcher':
+                    sim_sParams.create_port_CPW_on_Launcher(cur_port['qObjName'], cur_port['len_launch'])
+                elif cur_port['type'] == 'route':
+                    sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
             
             for fine_mesh in self._fine_meshes:
                 if fine_mesh['type'] == 'box':
                     x_bnds = fine_mesh['x_bnds']
                     y_bnds = fine_mesh['y_bnds']
                     cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
+                elif fine_mesh['type'] == 'comp_bounds':
+                    cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
 
             #build model
             cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
@@ -334,13 +339,41 @@ class PALACE_Model_RF_Base(PALACE_Model):
         #Each port is defined as: [port_name, portA-coords, portB-coords, vec_CPW2GND_1] where vec_CPW2GND_1 is a vector pointing in the direction
         #of ground from the CPW for portA (given as +X, -X, +Y or -Y for AWS Palace...).
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
-        self._ports += [(port_name, qObjName, launchesA + [launchesA[-1]], launchesB + [launchesB[-1]], self._check_port_orientation(vec_perp))]
+        self._ports += [{'port_name':port_name, 'type':'launcher', 'qObjName':qObjName, 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[-1]],
+                         'portBcoords': launchesB + [launchesB[-1]],
+                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp)}]
+
+    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6):
+        port_name = "rf_port_" + str(len(self._ports))
+        
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1e3)  #Units of mm...
+
+        #Each port is defined as: [port_name, portA-coords, portB-coords, vec_CPW2GND_1] where vec_CPW2GND_1 is a vector pointing in the direction
+        #of ground from the CPW for portA (given as +X, -X, +Y or -Y for AWS Palace...).
+        #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
+        self._ports += [{'port_name':port_name, 'type':'route', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[-1]],
+                         'portBcoords': launchesB + [launchesB[-1]],
+                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp)}]
 
     def get_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
         self._metallic_layers += [{
             'type': 'Uclip',
-            'clip_type':'inplane',
+            'clip_type':'inplaneLauncher',
             'qObjName':qObjName,
+            'thickness_side':thickness_side,
+            'thickness_back':thickness_back,
+            'separation_gap':separation_gap,
+            'unit_conv_extra':unit_conv_extra
+        }]
+
+    def get_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        self._metallic_layers += [{
+            'type': 'Uclip',
+            'clip_type':'inplaneRoute',
+            'route_name':route_name,
+            'pin_name':pin_name,
             'thickness_side':thickness_side,
             'thickness_back':thickness_back,
             'separation_gap':separation_gap,
@@ -363,6 +396,15 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'type': 'box',
             'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
             'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
+        })
+
+    def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
+        self._fine_meshes.append({
+            'type': 'comp_bounds',
+            'list_comp_names': list_comp_names,
             'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
             'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
             'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
