@@ -12,18 +12,6 @@ import scipy.optimize
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
-    class Lumped_Element:
-        def __init__(self, selection, elem_type, value):
-            self._sel = selection
-            self._elem_type = elem_type
-            self.value = value
-            self._setter = None
-        
-        def set_value(self, val):
-            self.value = val
-            if not self._setter is None:
-                self._setter.set('Lelement', jtypes.JDouble(val))
-
     def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
         self.model = model
         self.jc = model._get_java_comp()
@@ -139,11 +127,10 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         for cur_elem_id, cur_lelem in enumerate(self.lumped_elems):
             elem_name = "lelem" + str(cur_elem_id)
             self.jc.component("comp1").physics(self.phys_emw).create(elem_name, "LumpedElement", 2)
-            elem_bnds = self.model._get_selection_boundaries(cur_lelem._sel[0])
+            elem_bnds = self.model._get_selection_boundaries(cur_lelem[0])
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).selection().set(jtypes.JArray(jtypes.JInt)(elem_bnds))
-            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem._elem_type)
-            cur_lelem._setter = self.jc.component("comp1").physics(self.phys_emw).feature(elem_name)
-            cur_lelem.set_value(cur_lelem.value)
+            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem[2])
+            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
 
         #Note that PEC1 is the default exterior boundary condition
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
@@ -223,32 +210,18 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap, unit_conv_extra)
         self.model._add_cond(Uclip)
 
-    def create_lumped_element(self, vec_start, vec_end, width, value, elem_type='Inductor'):
-        '''
-        Creates a lumped element. Note that it must be vertical or horizontal between conductors...
-        Inputs:
-            - vec_start - A DPoint for the start of the rectangle (in Klayout units)
-            - vec_end   - A DPoint for the end of the rectangle (in Klayout units)
-            - width     - Width of the rectangle in metres
-            - value     - Value of the component raw units (e.g. Henries for Inductors)
-        '''
-        vec_start *= self.model.kLy2metre
-        vec_end *= self.model.kLy2metre
-        
-        vec_elem = vec_end - vec_start
-        vec_perp = db.DVector(vec_elem.y,-vec_elem.x) / vec_elem.length()
+    def create_lumped_inductance(self, qObj1, pin1, qObj2, pin2, width, value):
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = self.model.design.components[qObj1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.model.design.components[qObj2].pins[pin2]['middle'] * unit_conv
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= width*0.5
 
-        pol_name = "lumped_elem" + str(len(self.lumped_elems))
-        
-        launches = [vec_start - vec_perp * width*0.5, vec_start + vec_perp * width*0.5,
-                    vec_start + vec_perp * width*0.5 + vec_elem, vec_start - vec_perp * width*0.5 + vec_elem]
-        launches = [[p.x,p.y] for p in launches]
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name, launches)
-        cur_lumped_elem = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
 
-        new_elem = COMSOL_Simulation_RFsParameters.Lumped_Element(cur_lumped_elem, elem_type, value)
-        self.lumped_elems += [new_elem]
-        return new_elem
+        self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), value, 'Inductor'])
 
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
