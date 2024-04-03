@@ -24,7 +24,7 @@ Utility modules:
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)
-- [Simulations using Palace](Sim_Palace.md.md)
+- [Simulations using Palace](Sim_Palace.md)
 
 Installation Instructions:
 - [PALACE installation on UQ HPC (Bunya)](HPC_documentation.md)

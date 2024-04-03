@@ -13,13 +13,13 @@ Make sure to install the `gmsh` in the Python environment. Now to run simulation
 
 This method has been tested to work on Kubuntu. Ensure GIT has been installed via:
 
-```
+```bash
 sudo apt-get install git
 ```
 
 Now install the  [Spack Package Manager](https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html) by running in console (in some directory of preference - e.g. somewhere in the home directory):
 
-```
+```bash
 git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git ~/spack
 cd ~/spack
 . share/spack/setup-env.sh
@@ -27,7 +27,7 @@ cd ~/spack
 
 Now run:
 
-```
+```bash
 spack install palace
 find -name palace*
 ```
@@ -43,6 +43,30 @@ Executing the above block should show the command-line switches required for Pal
 ```
 sudo apt install paraview
 ```
+
+**Troubleshooting**
+
+Errors can appear after updating the Linux system. Simply reinstall palace as above (starting from the `setup-env.sh` command). However, first run:
+
+```bash
+sudo rm -r .spack/
+```
+
+Alternatively, [edit the compilers.yaml file](https://stackoverflow.com/questions/67899951/change-version-of-gcc-which-does-not-support-compiling-c-programs-using-the-co) to the latest GCC version.
+
+If OpenMPI processes fail to spawn (i.e. Palace does not start), try running the following [command in terminal](https://askubuntu.com/questions/730/how-do-i-set-environment-variables):
+
+```bash
+export PMIX_MCA_gds=hash
+```
+
+In the case of a Jupyter Notebook (i.e. running the commands in *SQDMetal*), add this to the initialisation cell:
+
+```python
+import os
+os.environ["PMIX_MCA_gds"]="hash"
+```
+
 
 ### HPC cluster
 
