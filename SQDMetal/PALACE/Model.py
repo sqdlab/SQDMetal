@@ -228,7 +228,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             pgr = Palace_Gmsh_Renderer(self.metal_design)
 
             #Prepare the ports...
-            assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher function."
+            assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
             for cur_port in self._ports:
                 lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
@@ -322,7 +322,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             #save mesh
             self._save_mesh_comsol(comsol_obj = cmsl)
 
-    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
+    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         '''
         Creates an RF port on a CPW inlet. The elements form fins to ground from the central CPW stripline. Note that the first port will automatically be
         the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports
@@ -342,9 +342,10 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._ports += [{'port_name':port_name, 'type':'launcher', 'qObjName':qObjName, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[-1]],
                          'portBcoords': launchesB + [launchesB[-1]],
-                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp)}]
+                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
-    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6):
+    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))
         
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1e3)  #Units of mm...
@@ -355,7 +356,23 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._ports += [{'port_name':port_name, 'type':'route', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[-1]],
                          'portBcoords': launchesB + [launchesB[-1]],
-                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp)}]
+                         'vec_CPW2GND_1': self._check_port_orientation(vec_perp),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+
+    def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
+        #Enumerate port_ind from 1...
+        #TODO: Override if different for Eigenmode...
+        self._ports[port_ind-1]['impedance_R'] = impedance_R
+        self._ports[port_ind-1]['impedance_L'] = impedance_L
+        self._ports[port_ind-1]['impedance_C'] = impedance_C
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['R'] = impedance_R
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['L'] = impedance_L
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['C'] = impedance_C
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
 
     def get_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
         self._metallic_layers += [{

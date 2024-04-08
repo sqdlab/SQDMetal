@@ -96,9 +96,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         config_ports = []
         for m, cur_port in enumerate(self._ports):
             port_name, vec_perps = cur_port['port_name'], cur_port['vec_CPW2GND_1']
-            config_ports.append({
+            leDict = {
                     "Index": m+1,
-                    "R": 50.00,  # Ω, 2-element uniform
                     "Elements":
                     [
                         {
@@ -110,7 +109,14 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                         "Direction": vec_perps[1]
                         }
                     ]
-                })
+                }
+            if 'impedance_R' in cur_port:
+                leDict['R'] = cur_port['impedance_R']
+            if 'impedance_L' in cur_port:
+                leDict['L'] = cur_port['impedance_L']
+            if 'impedance_C' in cur_port:
+                leDict['C'] = cur_port['impedance_C']
+            config_ports.append(leDict)
         config_ports[0]["Excitation"] = True
 
         if isinstance(self.freqs, tuple):
