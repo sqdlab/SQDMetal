@@ -9,6 +9,7 @@ import numpy as np
 import json
 import os
 import gmsh
+import pandas as pd
 
 class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
@@ -26,6 +27,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "mesh_max": 100e-3,
                  "mesh_min": 10e-3,
                  "mesh_sampling": 120,
+                 "comsol_meshing": "Extremely fine",
                  "HPC_Parameters_JSON": ""
                 }
 
@@ -81,9 +83,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                ports[port_name + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
-                ports[port_name + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
+                ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
+                ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
 
             #define length scale
             l0 = 1
@@ -97,10 +98,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #Process Ports
         config_ports = []
         for m, cur_port in enumerate(self._ports):
-            port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-            config_ports.append({
+            port_name, vec_perps = cur_port['port_name'], cur_port['vec_CPW2GND_1']
+            leDict = {
                     "Index": m+1,
-                    "R": 50.00,  # Ω, 2-element uniform
                     "Elements":
                     [
                         {
@@ -112,10 +112,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                         "Direction": vec_perps[1]
                         }
                     ]
-                })
+                }
+            if 'impedance_R' in cur_port:
+                leDict['R'] = cur_port['impedance_R']
+            if 'impedance_L' in cur_port:
+                leDict['L'] = cur_port['impedance_L']
+            if 'impedance_C' in cur_port:
+                leDict['C'] = cur_port['impedance_C']
+            config_ports.append(leDict)
         config_ports[0]["Excitation"] = True
 
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         config = {
             "Problem":
@@ -200,4 +209,22 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
         self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)
+    
+    def set_freq_search(self, min_freq_Hz, num_freq):
+        self.user_options["starting_freq"] = min_freq_Hz / 1e9
+        self.user_options["number_of_freqs"] = num_freq
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Solver']['Eigenmode']['Target'] = min_freq_Hz / 1e9
+            config_json['Solver']['Eigenmode']['N'] = num_freq
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
 
+    def retrieve_data(self):
+        raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
+        #It should be: m, Re(f), Im(f), Q        
+        return {'f_real': raw_data[:,1]*1e9, 'f_imag': raw_data[:,2]*1e9, 'Q': raw_data[:,3]}

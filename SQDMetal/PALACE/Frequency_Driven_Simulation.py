@@ -212,6 +212,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
         self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)
     
     def set_freq_values(self, startGHz, endGHz, stepGHz):
         self.freqs = (startGHz, endGHz, stepGHz)
