@@ -84,9 +84,13 @@ class PALACE_Model:
         leFile = os.path.basename(os.path.realpath(config_file))
         leDir = os.path.dirname(os.path.realpath(config_file))
 
+        log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{self._output_data_dir}/out.log\"\n")
+            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{log_location}\"\n")
+        os.makedirs(self._output_data_dir)
+        with open(log_location, 'w') as fp:
+            pass
 
         self.cur_process = subprocess.Popen("./temp.sh", shell=True)
         try:
