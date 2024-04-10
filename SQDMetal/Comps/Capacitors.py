@@ -1261,7 +1261,9 @@ class CapacitorGapMeander(QComponent):
         if not discard_leads:
             polys = [main, mainG, pad1, pad2, pad1G, pad2G, lePath, mean_path1, mean_path2, pin1, pin2]
         else:
-            polys = [main, mainG, lePath, mean_path1, mean_path2, pin1, pin2]
+            polys = [main, mainG, lePath, mean_path1, mean_path2]
+            polys = draw.translate(polys, 0.0, -p.offset_part)
+            polys = polys + [pin1, pin2]
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         if not discard_leads:
@@ -1433,8 +1435,7 @@ class CapacitorGapMeanderPinPin(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
-        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_part - Offsets the capacitor (positive being to the right when facing into the capacitor from the first pin) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
@@ -1507,8 +1508,7 @@ class CapacitorGapMeanderPinPin(QComponent):
         * cap_width='100um'
         * side_gap='20um'
         * init_pad='10um'
-        * offset_lead1='0um'
-        * offset_lead2='0um'
+        * offset_part='0um'
         * mean_gnd_start_left=True
         * mean_gnd_width='1um'
         * mean_gnd_gap='1um'
@@ -1526,8 +1526,7 @@ class CapacitorGapMeanderPinPin(QComponent):
                            cap_width='100um',
                            side_gap='20um',
                            init_pad='10um',
-                           offset_lead1='0um',
-                           offset_lead2='0um',
+                           offset_part='0um',
                            mean_gnd_start_left=True,
                            mean_gnd_width='1um',
                            mean_gnd_gap='1um',

@@ -86,7 +86,7 @@ class PALACE_Model:
 
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np 16 {leFile}\n")
+            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{self._output_data_dir}/out.log\"\n")
 
         self.cur_process = subprocess.Popen("./temp.sh", shell=True)
         try:
