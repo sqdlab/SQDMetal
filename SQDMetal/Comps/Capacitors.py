@@ -581,7 +581,7 @@ class CapacitorGap(QComponent):
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
         * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
-        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_lead2 - Offsets the second lead (positive being to the left when facing into the capacitor) along the capacitor.
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
         * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
@@ -1062,7 +1062,7 @@ class CapacitorGapMeander(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
         * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
 
@@ -1259,7 +1259,8 @@ class CapacitorGapMeander(QComponent):
                                          len_trace*0.5+p.mean_gnd_width*0.5, p.cap_width*0.5+gap_cpw_cap)
 
         if not discard_leads:
-            polys = [main, mainG, pad1, pad2, pad1G, pad2G, lePath, mean_path1, mean_path2, pin1, pin2]
+            polys = [main, mainG, lePath, mean_path1, mean_path2, pad1, pad1G, pin1, pad2, pad2G, pin2]
+            polys = draw.translate(polys, 0.0, -p.offset_lead1)            
         else:
             polys = [main, mainG, lePath, mean_path1, mean_path2]
             polys = draw.translate(polys, 0.0, -p.offset_part)
@@ -1267,7 +1268,7 @@ class CapacitorGapMeander(QComponent):
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         if not discard_leads:
-            main, mainG, pad1, pad2, pad1G, pad2G, lePath, mean_path1, mean_path2, pin1, pin2 = polys
+            main, mainG, lePath, mean_path1, mean_path2, pad1, pad1G, pin1, pad2, pad2G, pin2 = polys
             dict_conds = dict(main=main, pad1=pad1, pad2=pad2, lePath=lePath, mean_path1=mean_path1, mean_path2=mean_path2)
             dict_gaps = dict(mainG=mainG, pad1G=pad1G, pad2G=pad2G)
         else:
@@ -1289,7 +1290,7 @@ class CapacitorGapMeanderPinStretch(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
         * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
 

@@ -265,7 +265,7 @@ class QUtilities:
         fuse_threshold = kwargs.get('fuse_threshold', 1e-12)
 
         #Merge the metallic elements
-        metal_polys = shapely.unary_union(filt['geometry'])
+        metal_polys = shapely.unary_union(filt['geometry'].buffer(0))   #Buffer makes geometry valid to prevent this error: https://stackoverflow.com/questions/74779301/unable-to-assign-free-hole-to-a-shell-error-when-flattening-polygons
         metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
         metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
         restrict_rect = kwargs.get('restrict_rect', None)
