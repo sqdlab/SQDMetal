@@ -464,7 +464,7 @@ class CapacitorInterdigitalPinPin(QComponent):
         The pins attach directly to the built in lead length and only needs a width defined
         * cpw_width - center trace width of the trace lead line and cap fingers
 
-    Note that the pins are not drawn to ensure good compatibility with routing/wiring constructs.
+    Note that the leads are not drawn to ensure good compatibility with routing/wiring constructs.
 
     Sketch:
         Below is a sketch of the capacitor
@@ -580,8 +580,8 @@ class CapacitorGap(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
-        * offset_lead2 - Offsets the second lead (positive being to the left when facing into the capacitor) along the capacitor.
+        * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
+        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
         * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
@@ -710,8 +710,8 @@ class CapacitorGap(QComponent):
         #
         #Handle lead offsets...
         if not discard_leads:
-            pad1[[0,1,2,7,8],1] -= p.offset_lead1
-            pad2[[0,1,2,7,8],1] -= p.offset_lead2
+            pad1[[0,1,2,7,8],1] += p.offset_lead1
+            pad2[[0,1,2,7,8],1] += p.offset_lead2
         units = QUtilities.get_units(design)
         cpwP = CpwParams.fromQDesign(design)
         gap_cpw_line = cpwP.get_gap_from_width(p.cpw_width*units)/units
@@ -790,7 +790,8 @@ class CapacitorGapPinStretch(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_part - Offsets the capacitor (positive being to the right when facing into the capacitor from the first pin) along the capacitor.
+        * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
+        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
         * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
@@ -942,7 +943,7 @@ class CapacitorGapPinPin(QComponent):
         The pins attach directly to the built in lead length and only needs a width defined
         * trace_width - center trace width of the trace lead line and cap fingers
 
-    Note that the pins are not drawn to ensure good compatibility with routing/wiring constructs.
+    Note that the leads are not drawn to ensure good compatibility with routing/wiring constructs.
 
     Sketch:
         Below is a sketch of the capacitor
