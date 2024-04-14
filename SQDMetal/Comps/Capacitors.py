@@ -706,20 +706,12 @@ class CapacitorGap(QComponent):
                 (0, p.cpw_width*0.5)]
         pad2 = np.array(pad1)
         pad2[:,0] = len_trace - pad2[:,0]
+        pad1 = np.array(pad1)
         #
         #Handle lead offsets...
-        pad1 = np.array(pad1)
-        pad1[[0,1,2,7,8],1] -= p.offset_lead1
-        # if np.abs(p.len_diag) < 1e-12 and np.abs(-p.cap_width*0.5+p.cpw_width*0.5 - p.offset_lead1) < 1e-12:     
-        #     pad1 = np.delete(pad1, 7, 0)
-        # elif np.abs(p.cap_width*0.5-p.cpw_width*0.5 - p.offset_lead1) < 1e-12:
-        #     pad1 = np.delete(pad1, 2, 0)
-        pad2[[0,1,2,7,8],1] -= p.offset_lead2
-        # if np.abs(p.len_diag) < 1e-12 and np.abs(-p.cap_width*0.5+p.cpw_width*0.5 - p.offset_lead2) < 1e-12:     
-        #     pad2 = np.delete(pad2, 7, 0)
-        # elif np.abs(p.cap_width*0.5-p.cpw_width*0.5 - p.offset_lead2) < 1e-12:
-        #     pad2 = np.delete(pad2, 2, 0)
-        #
+        if not discard_leads:
+            pad1[[0,1,2,7,8],1] -= p.offset_lead1
+            pad2[[0,1,2,7,8],1] -= p.offset_lead2
         units = QUtilities.get_units(design)
         cpwP = CpwParams.fromQDesign(design)
         gap_cpw_line = cpwP.get_gap_from_width(p.cpw_width*units)/units
