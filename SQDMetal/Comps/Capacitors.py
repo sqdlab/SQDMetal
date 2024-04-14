@@ -774,10 +774,16 @@ class CapacitorGap(QComponent):
         pin1 = shapely.LineString(pin1)
         pin2 = shapely.LineString(pin2)
 
-        polys = [pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid]
+        if not discard_leads:
+            polys = [pad1, pad2, padGap1, padGap2, polyBndMid, pin1, pin2]
+            polys = draw.translate(polys, 0.0, -p.offset_lead1)
+        else:
+            polys = [pad1, pad2, padGap1, padGap2, polyBndMid]
+            polys = draw.translate(polys, 0.0, -p.offset_part)
+            polys = polys + [pin1, pin2]
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid] = polys
+        [pad1, pad2, padGap1, padGap2, polyBndMid, pin1, pin2] = polys
 
         return pad1, pad2, padGap1, padGap2, pin1, pin2, polyBndMid
 
@@ -792,8 +798,7 @@ class CapacitorGapPinStretch(QComponent):
         * cap_width - Width of the main capacitor
         * cap_gap  - Distance between the two conductors of the capacitor
         * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
-        * offset_lead1 - Offsets the first lead (positive being to the right when facing into the capacitor) along the capacitor.
-        * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
+        * offset_part - Offsets the capacitor (positive being to the right when facing into the capacitor from the first pin) along the capacitor.
 
     The spacing (i.e. cuts into the ground plane) can be controlled via:
         * side_gap - If this is zero, then the gap on the sides of the capacitor is calculated via a 50ohm impedance CPW line. Otherwise,
@@ -991,8 +996,7 @@ class CapacitorGapPinPin(QComponent):
         * gnd_width='1um'
         * side_gap='0um'
         * init_pad='0um'
-        * offset_lead1='0um'
-        * offset_lead2='0um'
+        * offset_part='0um',
     """
 
     #  Define structure functions
@@ -1007,8 +1011,7 @@ class CapacitorGapPinPin(QComponent):
                            gnd_width='1um',
                            side_gap='0um',
                            init_pad='0um',
-                           offset_lead1='0um',
-                           offset_lead2='0um')
+                           offset_part='0um')
     """Default drawing options"""
 
     TOOLTIP = """Create a three finger planar capacitor with a ground pocket cuttout."""
@@ -1060,8 +1063,6 @@ class CapacitorGapMeander(QComponent):
     Capacitor Metal Geometry and Ground Cutout Pocket:
         * cap_length - Length of the flat region before starting onto the fingers
         * cap_width - Width of the main capacitor
-        * cap_gap  - Distance between the two conductors of the capacitor
-        * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
         * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
         * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
@@ -1260,7 +1261,7 @@ class CapacitorGapMeander(QComponent):
 
         if not discard_leads:
             polys = [main, mainG, lePath, mean_path1, mean_path2, pad1, pad1G, pin1, pad2, pad2G, pin2]
-            polys = draw.translate(polys, 0.0, -p.offset_lead1)            
+            polys = draw.translate(polys, 0.0, -p.offset_lead1)
         else:
             polys = [main, mainG, lePath, mean_path1, mean_path2]
             polys = draw.translate(polys, 0.0, -p.offset_part)
@@ -1288,8 +1289,6 @@ class CapacitorGapMeanderPinStretch(QComponent):
     Capacitor Metal Geometry and Ground Cutout Pocket:
         * cap_length - Length of the flat region before starting onto the fingers
         * cap_width - Width of the main capacitor
-        * cap_gap  - Distance between the two conductors of the capacitor
-        * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
         * offset_lead1 - Offsets the first lead (positive being to the left when facing into the capacitor) along the capacitor.
         * offset_lead2 - Offsets the second lead (positive being to the right when facing into the capacitor) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
@@ -1434,8 +1433,6 @@ class CapacitorGapMeanderPinPin(QComponent):
     Capacitor Metal Geometry and Ground Cutout Pocket:
         * cap_length - Length of the flat region before starting onto the fingers
         * cap_width - Width of the main capacitor
-        * cap_gap  - Distance between the two conductors of the capacitor
-        * gnd_width - Width of ground plane that bisects the two conductors of the capacitor (can be zero)
         * offset_part - Offsets the capacitor (positive being to the right when facing into the capacitor from the first pin) along the capacitor.
         * cpw_width - Width of the capacitor leads (the gap is calculated automatically as per a 50ohm impedance line)
 
