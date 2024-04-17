@@ -215,6 +215,7 @@ class WireElbowParallelPinPin(QRoute):
         * fillet - Radius of the turns on the elbows
         * pin_pad - Minimum distance to traverse before turning from a given pin (making it non-zero helps ensure it passes the 'bad-fillet'
                     checks in Qiskit-Metal). Ignored in the 2 Elbows, anti-parallel case shown below...
+        * end_gap   - gap to ground plane at the end of the wire (useful for open-ended terminations)
     The parameters trace_width and trace_gap define the CPW dimensions.
 
     The positioning can be done dynamically via:
@@ -246,9 +247,10 @@ class WireElbowParallelPinPin(QRoute):
         * frac_pos_elbow=0.5
         * fillet='20um'
         * pin_pad='2um'
+        * end_gap='0um'
     """
 
-    default_options = Dict(frac_pos_elbow=0.5, fillet='20um', pin_pad='2um')
+    default_options = Dict(frac_pos_elbow=0.5, fillet='20um', pin_pad='2um', end_gap='0um')
 
     def make(self):
         p = self.p
@@ -288,9 +290,26 @@ class WireElbowParallelPinPin(QRoute):
         path[:,0] += startPt[0]
         path[:,1] += startPt[1]
 
+        line = shapely.LineString(np.vstack(path))
+        if p.end_gap > 0:
+            norm_vec = path[-1]-path[-2]
+            norm_vec = norm_vec / np.linalg.norm(norm_vec) * p.end_gap
+            path[-1] = path[-1] + norm_vec
+            line_gap = shapely.LineString(np.vstack(path))
+        else:
+            line_gap = line
+
         self.set_pin("start")
         self.set_pin("end")
-        self.make_elements(path)
+        self.add_qgeometry('path', {'trace': line},
+                           width=p.trace_width,
+                           fillet=p.fillet,
+                           layer=p.layer)
+        self.add_qgeometry('path', {'cut': line_gap},
+                               width=p.trace_width + 2 * p.trace_gap,
+                               fillet=p.fillet,
+                               layer=p.layer,
+                               subtract=True)
 
 
 class WireElbowSingle(QRoute):
