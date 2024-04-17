@@ -56,7 +56,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study[0]).set("neigsactive", jtypes.JBoolean(True))
             self.jc.study(self._study).feature(self._sub_study[0]).set("neigs", f"{self.modal_min_freq_num_eigs[1]}")
             #Only store the port solutions for Multi-Modal...
-            lst_ports = [item for sublist in self._ports for item in sublist[:2]]
+            lst_ports = ["geom1_"+cur_port['polys'][0] for cur_port in self._ports]
             self.jc.study(self._study).feature(self._sub_study[1]).set("usestoresel", "selection");
             self.jc.study(self._study).feature(self._sub_study[1]).set("storesel", jtypes.JArray(jtypes.JString)(lst_ports))
         self._soln = self.model._add_solution("solRFsparams")
@@ -140,16 +140,32 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         for cur_port_id,cur_port in enumerate(self._ports):
             port_name = "lport" + str(cur_port_id)
             self.jc.component("comp1").physics(self.phys_emw).create(port_name, "LumpedPort", 2)
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'MultiElementUniform')
-            port_bndsA = self.model._get_selection_boundaries(cur_port[0])
-            port_bndsB = self.model._get_selection_boundaries(cur_port[1])
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().set(jtypes.JArray(jtypes.JInt)(port_bndsA+port_bndsB))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').selection().set(jtypes.JArray(jtypes.JInt)(port_bndsA))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').selection().set(jtypes.JArray(jtypes.JInt)(port_bndsB))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port[2][0],cur_port[2][1],0.0]))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port[2][0],-cur_port[2][1],0.0]))
+            if cur_port['type'] == 'CPW':
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'MultiElementUniform')
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').selection().named('geom1_'+cur_port['polys'][1])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').selection().named('geom1_'+cur_port['polys'][2])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port['vec_perp'][0],cur_port['vec_perp'][1],0.0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port['vec_perp'][0],-cur_port['vec_perp'][1],0.0]))
+            else:
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'Uniform')
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
             #
             self.port_names.append(port_name)
+
+    def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6):
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = self.model.design.components[qObjName1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.model.design.components[qObjName2].pins[pin2]['middle'] * unit_conv
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= rect_width*0.5
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"port{len(self._ports)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
+        select_3D_name = self.model._setup_selection_boundaries(len(self._ports), f"port{len(self._ports)}", 'port')
+        cur_port = {'type':'Single', 'polys': [select_3D_name]}
+        self._ports += [cur_port]
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
         '''
@@ -165,16 +181,26 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.model.design, qObjName, len_launch)
 
+        cur_port = {'type':'CPW'}
+
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
-        cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameA = self.model._setup_selection_boundaries(len(self._ports), pol_name + "a", 'porta')
 
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
-        cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameB = self.model._setup_selection_boundaries(len(self._ports), pol_name + "b", 'portb')
+
+        sel_all_name = f'uniselPort{len(self._ports)}'
+        self.jc.component("comp1").geom("geom1").create(sel_all_name, "UnionSelection")
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).label(sel_all_name)
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("entitydim", jtypes.JInt(2))
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("input", jtypes.JArray(jtypes.JString)([select_3D_nameA, select_3D_nameB]))
+
+        cur_port['polys'] = [sel_all_name, select_3D_nameA, select_3D_nameB]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
         #of ground from the CPW for portA.
-        cur_launch += [vec_perp]
-        self._ports += [cur_launch]
+        cur_port['vec_perp'] = vec_perp
+        self._ports += [cur_port]
     
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6):
         '''
@@ -191,22 +217,32 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.model.design, qObjName, pin_name, len_launch)
 
+        cur_port = {'type':'CPW', 'polys': []}
+
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
-        cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameA = self.model._setup_selection_boundaries(len(self._ports), pol_name + "a", 'porta')
 
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
-        cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameB = self.model._setup_selection_boundaries(len(self._ports), pol_name + "b", 'portb')
+
+        sel_all_name = f'uniselPort{len(self._ports)}'
+        self.jc.component("comp1").geom("geom1").create(sel_all_name, "UnionSelection")
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).label(sel_all_name)
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("entitydim", jtypes.JInt(2))
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("input", jtypes.JArray(jtypes.JString)([select_3D_nameA, select_3D_nameB]))
+
+        cur_port['polys'] = [sel_all_name, select_3D_nameA, select_3D_nameB]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
         #of ground from the CPW for portA.
-        cur_launch += [vec_perp]
-        self._ports += [cur_launch]
+        cur_port['vec_perp'] = vec_perp
+        self._ports += [cur_port]
 
-    def get_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
         Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap, unit_conv_extra)
         self.model._add_cond(Uclip)
 
-    def get_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
         Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap, unit_conv_extra)
         self.model._add_cond(Uclip)
 

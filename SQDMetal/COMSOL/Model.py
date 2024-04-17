@@ -287,14 +287,14 @@ class COMSOL_Model:
             cur_poly = fin_poly
         return cur_poly
 
-    def _setup_selection_boundaries(self, index, select_obj_name):
+    def _setup_selection_boundaries(self, index, select_obj_name, sel_3D_prefix='cond'):
         if not isinstance(select_obj_name, list):
             select_obj_name = [select_obj_name] 
-        select_name = f"sel{index}"
+        select_name = f"sel{sel_3D_prefix}{index}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(select_name, "ExplicitSelection")
         for cur_sel_name in select_obj_name:
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(select_name).selection("selection").set(cur_sel_name, 1)
-        select_3D_name = f"cond{index}"
+        select_3D_name = f"{sel_3D_prefix}{index}"
         self._model.java.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))

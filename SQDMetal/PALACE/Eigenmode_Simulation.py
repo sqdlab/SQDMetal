@@ -83,8 +83,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
-                ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
-                ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
+                if cur_port['elem_type'] == 'cpw':
+                    ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue2').selection().entities())[0]
+                    ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue1').selection().entities())[0]
+                else:
+                    ports[cur_port['port_name']] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
 
             #define length scale
             l0 = 1
@@ -98,21 +101,25 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #Process Ports
         config_ports = []
         for m, cur_port in enumerate(self._ports):
-            port_name, vec_perps = cur_port['port_name'], cur_port['vec_CPW2GND_1']
+            port_name, vec_field = cur_port['port_name'], cur_port['vec_field']
             leDict = {
-                    "Index": m+1,
-                    "Elements":
-                    [
+                    "Index": m+1,                    
+                }
+            if port_name + 'a' in ports:
+                leDict['Elements'] = [
                         {
                         "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_perps[0]
+                        "Direction": vec_field + [0]
                         },
                         {
                         "Attributes": [ports[port_name + 'b']],
-                        "Direction": vec_perps[1]
+                        "Direction": [-x for x in vec_field] + [0]
                         }
                     ]
-                }
+            else:
+                leDict['Attributes'] = [ports[port_name]]
+                leDict['Direction'] = vec_field + [0]
+
             if 'impedance_R' in cur_port:
                 leDict['R'] = cur_port['impedance_R']
             if 'impedance_L' in cur_port:
