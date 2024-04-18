@@ -331,9 +331,9 @@ class PALACE_Model_RF_Base(PALACE_Model):
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))
 
-        unit_conv = QUtilities.get_units(self.model.design)
-        pos1 = self.model.design.components[qObjName1].pins[pin1]['middle'] * unit_conv
-        pos2 = self.model.design.components[qObjName2].pins[pin2]['middle'] * unit_conv
+        unit_conv = QUtilities.get_units(self.metal_design)
+        pos1 = self.metal_design.components[qObjName1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.metal_design.components[qObjName2].pins[pin2]['middle'] * unit_conv
         v_parl = pos2-pos1
         v_parl /= np.linalg.norm(v_parl)
 
