@@ -99,34 +99,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = []
-        for m, cur_port in enumerate(self._ports):
-            port_name, vec_field = cur_port['port_name'], cur_port['vec_field']
-            leDict = {
-                    "Index": m+1,                    
-                }
-            if port_name + 'a' in ports:
-                leDict['Elements'] = [
-                        {
-                        "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_field + [0]
-                        },
-                        {
-                        "Attributes": [ports[port_name + 'b']],
-                        "Direction": [-x for x in vec_field] + [0]
-                        }
-                    ]
-            else:
-                leDict['Attributes'] = [ports[port_name]]
-                leDict['Direction'] = vec_field + [0]
-
-            if 'impedance_R' in cur_port:
-                leDict['R'] = cur_port['impedance_R']
-            if 'impedance_L' in cur_port:
-                leDict['L'] = cur_port['impedance_L']
-            if 'impedance_C' in cur_port:
-                leDict['C'] = cur_port['impedance_C']
-            config_ports.append(leDict)
+        config_ports = self._process_ports(ports)
         config_ports[0]["Excitation"] = True
 
         #Define python dictionary to convert to json file
