@@ -8,7 +8,7 @@ class PVDVTU_Slice:
         self.slc = pv_slice
     
     def get_params(self):
-        return slc.array_names
+        return self.slc.array_names
     
     def get_data(self, param_name):
         return self.slc[param_name]

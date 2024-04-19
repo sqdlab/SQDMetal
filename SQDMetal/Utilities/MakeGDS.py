@@ -84,10 +84,10 @@ class MakeGDS:
                                                         ((cx+0.5*sx)*leUnits/gds_units, (cy+0.5*sy)*leUnits/gds_units)),
                                         gds_metal, "not", layer=layer+neg_layer_offset, max_points=1000000)
 
-            self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or"))    #max_points = 199 here...
+            self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer))    #max_points = 199 here...
             self._layer_metals[layer] = gds_metal
             if gds_rect_neg:
-                self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or"))    #max_points = 199 here...
+                self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or", layer=layer+neg_layer_offset))    #max_points = 199 here...
                 self._layer_metals[layer+neg_layer_offset] = gds_rect_neg
 
     def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
@@ -97,7 +97,7 @@ class MakeGDS:
 
         new_metal = gdspy.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=output_layer, precision=1e-6, max_points=1000000)
 
-        self.cell.add(gdspy.boolean(new_metal, new_metal, "or"))    #max_points = 199 here...
+        self.cell.add(gdspy.boolean(new_metal, new_metal, "or", layer=output_layer))    #max_points = 199 here...
         self._layer_metals[output_layer] = new_metal
 
     def export(self, file_name):
