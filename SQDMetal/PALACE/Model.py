@@ -271,62 +271,67 @@ class PALACE_Model_RF_Base(PALACE_Model):
             COMSOL_Model.init_engine()
             cmsl = COMSOL_Model('res')
 
-            #Create COMSOL RF sim object
-            sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
-            cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
+            try:
+                #Create COMSOL RF sim object
+                sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
+                cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
 
-            #Add metallic layers
-            for cur_layer in metallic_layers:
-                if cur_layer.get('type') == 'design_layer':
-                    cmsl.add_metallic(**cur_layer)
-                elif cur_layer.get('type') == 'Uclip':
-                    if cur_layer['clip_type'] == 'inplaneLauncher':
-                        sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
-                    elif cur_layer['clip_type'] == 'inplaneRoute':
-                        sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
-            if not ground_plane['omit']:
-                cmsl.add_ground_plane(threshold=ground_plane['threshold'])
-            #cmsl.fuse_all_metals()
+                #Add metallic layers
+                for cur_layer in metallic_layers:
+                    if cur_layer.get('type') == 'design_layer':
+                        cmsl.add_metallic(**cur_layer)
+                    elif cur_layer.get('type') == 'Uclip':
+                        if cur_layer['clip_type'] == 'inplaneLauncher':
+                            sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                        elif cur_layer['clip_type'] == 'inplaneRoute':
+                            sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                if not ground_plane['omit']:
+                    cmsl.add_ground_plane(threshold=ground_plane['threshold'])
+                #cmsl.fuse_all_metals()
 
-            #assign ports
-            for cur_port in self._ports:
-                if cur_port['type'] == 'launcher':
-                    sim_sParams.create_port_CPW_on_Launcher(cur_port['qObjName'], cur_port['len_launch'])
-                elif cur_port['type'] == 'route':
-                    sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
-                elif cur_port['type'] == 'single_rect':
-                   sim_sParams.create_port_2_conds(cur_port['qObjName1'], cur_port['pin1'], cur_port['qObjName2'], cur_port['pin2'], cur_port['rect_width']) 
-            
-            for fine_mesh in self._fine_meshes:
-                if fine_mesh['type'] == 'box':
-                    x_bnds = fine_mesh['x_bnds']
-                    y_bnds = fine_mesh['y_bnds']
-                    cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
-                elif fine_mesh['type'] == 'comp_bounds':
-                    cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
+                #assign ports
+                for cur_port in self._ports:
+                    if cur_port['type'] == 'launcher':
+                        sim_sParams.create_port_CPW_on_Launcher(cur_port['qObjName'], cur_port['len_launch'])
+                    elif cur_port['type'] == 'route':
+                        sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
+                    elif cur_port['type'] == 'single_rect':
+                        sim_sParams.create_port_2_conds(cur_port['qObjName1'], cur_port['pin1'], cur_port['qObjName2'], cur_port['pin2'], cur_port['rect_width']) 
+                
+                for fine_mesh in self._fine_meshes:
+                    if fine_mesh['type'] == 'box':
+                        x_bnds = fine_mesh['x_bnds']
+                        y_bnds = fine_mesh['y_bnds']
+                        cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
+                    elif fine_mesh['type'] == 'comp_bounds':
+                        cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
 
-            #build model
-            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
+                #build model
+                cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
 
-            #plot model
-            # cmsl.plot()
+                #plot model
+                # cmsl.plot()
 
-            #save comsol file
-            #cmsl.save(self.name)
+                #save comsol file
+                #cmsl.save(self.name)
 
-            if self.create_files == True:
-                #create directory to store simulation files
-                self._create_directory(self.name)
+                if self.create_files == True:
+                    #create directory to store simulation files
+                    self._create_directory(self.name)
 
-                #create config file
-                self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
+                    #create config file
+                    self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
 
-                #create batch file
-                if self.mode == 'HPC':
-                    self.create_batch_file()
+                    #create batch file
+                    if self.mode == 'HPC':
+                        self.create_batch_file()
 
-            #save mesh
-            self._save_mesh_comsol(comsol_obj = cmsl)
+                #save mesh
+                self._save_mesh_comsol(comsol_obj = cmsl)
+
+            except Exception as error:
+                cmsl.save("ERROR_" + self.name)
+                assert False, f"COMSOL threw an error (file has been saved): {error}"
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))

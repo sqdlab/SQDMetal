@@ -63,7 +63,7 @@ sudo rm -r .spack/
 
 Alternatively, [edit the compilers.yaml file](https://stackoverflow.com/questions/67899951/change-version-of-gcc-which-does-not-support-compiling-c-programs-using-the-co) to the latest GCC version.
 
-If OpenMPI processes fail to spawn (i.e. Palace does not start), try running the following [command in terminal](https://askubuntu.com/questions/730/how-do-i-set-environment-variables):
+If OpenMPI processes fail to spawn (i.e. Palace does not start and/or throws the error `local rank failed   --> Returned value Not found (-13) instead of ORTE_SUCCESS`), try running the following [command in terminal](https://askubuntu.com/questions/730/how-do-i-set-environment-variables):
 
 ```bash
 export PMIX_MCA_gds=hash
