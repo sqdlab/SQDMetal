@@ -40,9 +40,18 @@ The second command will find the path of the Palace binary. Basically it's somew
 
 Executing the above block should show the command-line switches required for Palace. Finally, install [Paraview](https://www.paraview.org/):
 
-```
+```bash
 sudo apt install paraview
 ```
+
+Finally, in the Python virtual environment, if it has not been already installed, run:
+
+```bash
+pip install pyvista
+```
+
+This is required to open the simulation field data via the API functions.
+
 
 **Troubleshooting**
 

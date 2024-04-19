@@ -4,6 +4,7 @@ from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -206,5 +207,18 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
         headers = raw_data.columns
         raw_data = raw_data.to_numpy()
-        #It should be: m, Re(f), Im(f), Q        
+
+        lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
+        if os.path.exists(lePlots):
+            leView = PVDVTU_Viewer(lePlots)
+            for m in range(leView.num_datasets):
+                leSlice = leView.get_data_slice(m)
+                fig = leSlice.plot(np.linalg.norm(leSlice.get_data('E_real'), axis=1), 'coolwarm', True)
+                fig.savefig(self._output_data_dir + f'/eig{m}_ErealMag.png')
+                plt.close(fig)
+            fig = leSlice.plot_mesh()
+            fig.savefig(self._output_data_dir + '/mesh.png')
+            plt.close(fig)
+
+        #It should be: m, Re(f), Im(f), Q
         return {'f_real': raw_data[:,1]*1e9, 'f_imag': raw_data[:,2]*1e9, 'Q': raw_data[:,3]}
