@@ -214,8 +214,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         for m in range(int((raw_data.shape[0]-1)/2)):
             #Header will be like: |S[1][1]| (dB)
             key = headers[2*m+1].strip().split('|')[1].replace('[','').replace(']','')
-            amp = raw_data[2*m+1]
-            phs = raw_data[2*m+2]
+            amp = np.array(raw_data[2*m+1], dtype=np.float64)
+            phs = np.array(raw_data[2*m+2], dtype=np.float64)
             sParam = 10**(amp/20)*np.exp(1j*phs/180*np.pi)
             ret_data[key] = sParam
         
