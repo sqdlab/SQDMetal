@@ -16,6 +16,7 @@ class PALACE_Model:
         self._sim_config = ""
         self._input_dir = ""
         self._output_subdir = ""
+        self.set_farfield()
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -76,6 +77,12 @@ class PALACE_Model:
                           argument is negative, the argument is ignored.
         '''
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
+
+    def set_farfield(self, ff_type='absorbing'):
+        #ff_type can be: 'absorbing' or 'pec'
+        ff_type = ff_type.lower()
+        assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
+        self._ff_type = ff_type
 
     def run(self):
         assert self._sim_config != "", "Must run prepare_simulation at least once."

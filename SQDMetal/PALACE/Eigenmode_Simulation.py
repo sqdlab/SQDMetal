@@ -147,11 +147,6 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                    "Absorbing":
-                {
-                    "Attributes": far_field,
-                    "Order": 1
-                },
                 "LumpedPort": config_ports
             },
             "Solver":
@@ -173,6 +168,13 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self._ff_type == 'absorbing':
+            config['Boundaries']['Absorbing'] = {
+                    "Attributes": far_field,
+                    "Order": 1
+                }
+        else:
+            config['Boundaries']['PEC']['Attributes'] += far_field
 
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
