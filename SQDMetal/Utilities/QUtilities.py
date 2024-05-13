@@ -170,7 +170,7 @@ class QUtilities:
             * 'start'  - Starting point of line segment
             * 'end'    - Ending point of line segment
             * 'centre' - Centre of the circle drawing the fillet arc
-            * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc (in radians)
+            * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc (in radians) on the corner (not from the centre)
             * 'angleDelta' - Angle traversed by the fillet arc (in radians) using the typical polar angle direction convention in R2...
             * 'dist'   - Arclength of the fillet
         '''
@@ -215,6 +215,35 @@ class QUtilities:
         line_segs += [{'start':curPt, 'end':points[-1], 'dir':(points[-1]-curPt)/distLast, 'dist':distLast}]
 
         return line_segs
+
+    @staticmethod
+    def calc_filleted_path(points, rFillet, precision, resolution=4):
+        '''
+        Returns the coordinates of a given path after filleting (like in Qiskit-Metal).
+
+        Inputs:
+            * points - Numpy array of points given as (x,y) on every row.
+            * rFillet - Radius of fillets on every corner.
+            * precision - The numeric precision in which to calculate bad fillets taken usually as design.template_options.PRECISION
+
+        The function returns list of points (x,y) for the points defining the filleted path.
+        '''
+        line_segs = QUtilities.calc_lines_and_fillets_on_path(points, rFillet, precision)
+        print(line_segs)
+        final_pts = []
+        for cur_seg in line_segs:
+            if 'centre' in cur_seg:
+                cx, cy = cur_seg['centre']
+                if cur_seg['angleDelta'] > 0:
+                    phi = np.pi - cur_seg['angleDelta']
+                else:
+                    phi = -(np.pi+cur_seg['angleDelta'])
+                curv_pts = [(rFillet*np.cos(angle)+cx, rFillet*np.sin(angle)+cy) for angle in np.linspace(cur_seg['angleStart'], cur_seg['angleStart']+phi, resolution)]
+                final_pts += curv_pts
+            else:
+                final_pts.append(cur_seg['start'])
+                final_pts.append(cur_seg['end'])
+        return np.array(final_pts)
 
     @staticmethod
     def get_metals_in_layer(design, layer_id, **kwargs):
