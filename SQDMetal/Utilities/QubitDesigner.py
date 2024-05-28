@@ -145,8 +145,8 @@ class TransmonBase:
         elem = 1.60217663e-19
         h = 6.62607015e-34
         CJeff = self._eff_CJ(C_J, C_g, C_r)
-        Ec = (2*elem)**2 / (2*CJeff)
-        return (QubiFreqHertz * h + Ec/4)**2 / (2*Ec)
+        Ec = elem**2 / (2*CJeff)
+        return (QubiFreqHertz * h + Ec)**2 / (8*Ec)
     
     def _g_hertz(self, C_g, C_J, QubiFreqHertz, C_r, L_r):
         elem = 1.60217663e-19
@@ -154,14 +154,14 @@ class TransmonBase:
         Z_0 = 376.730313668
         alpha = 0.0072973525693
         CJeff = self._eff_CJ(C_J, C_g, C_r)
-        Ec = (2*elem)**2 / (2*CJeff) / h
+        Ec = elem**2 / (2*CJeff) / h
         E_J_hertz = self._EJ_from_QubitFreqHertz(QubiFreqHertz, C_J, C_g, C_r) / h
 
         Creff = self._eff_Cr(C_J, C_g, C_r)
         Z_r = np.sqrt(L_r/Creff)
         w_res = 1/np.sqrt(L_r*Creff)
 
-        return (w_res * C_g)/(C_J+C_g/C_r*(C_J+C_r)) * (2*E_J_hertz/Ec)**(1/4) * np.sqrt(Z_r/Z_0) * np.sqrt(2*np.pi*alpha) / (2*np.pi)
+        return (w_res * C_g)/(C_J+C_g/C_r*(C_J+C_r)) * (0.5*E_J_hertz/Ec)**(1/4) * np.sqrt(Z_r/Z_0) * np.sqrt(2*np.pi*alpha) / (2*np.pi)
     
     def _chi_hertz(self, C_g, C_J, QubiFreqHertz, f_res, C_r, L_r):
         elem = 1.60217663e-19
@@ -183,8 +183,8 @@ class TransmonBase:
         elem = 1.60217663e-19
         h = 6.62607015e-34
         CJeff = self._eff_CJ(C_J, C_g, C_r)
-        Ec = (2*elem)**2 / (2*CJeff)
-        return Ec/(4*h)
+        Ec = (elem)**2 / (2*CJeff)
+        return Ec/h
 
     def get_free_params(self):
         raise NotImplementedError()
@@ -235,7 +235,7 @@ class XmonDesigner(TransmonBase):
 
         func = lambda x: abs(self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
 
-        sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
+        sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='TNC', tol=1e-5)
         x = sol.x
 
 
@@ -243,9 +243,12 @@ class XmonDesigner(TransmonBase):
         chi = self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres)
         anh = self._anharmonicity_hertz(sol.x[1], sol.x[2], Cres)
 
+        x[mps['chi']] = chi
+        x[mps['Ej/Ec']] = self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']])
+
         sigfigs = 5
 
-        print(f"Cost Function Error: {func(sol.x)/2*100}%")
+        print(f"Cost Function Error: {func(x)/2*100}%")
         self.resonator.print()
         print("Qubit:")
         print(f"\tFrequency: {GenUtilities.add_units(sol.x[0],sigfigs)}Hz")
@@ -324,7 +327,12 @@ class FloatingTransmonDesigner(TransmonBase):
         print(f"\tbeta: {GenUtilities.add_units(x[mps['beta']],sigfigs, True)}" + self.chk_constr_resp('beta', x,constrs,mps))
 
 if __name__ == '__main__':
-    # XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({'fQubit':9.5e9, 'C_g':(0.1e-15,10e-15), 'C_J':(10e-15,150e-15), 'chi':(-10e6,-0.1e6), 'Ej/Ec':(1,100)})
+    XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({
+    'fQubit':5.5e9,
+    'C_g':8.1e-15,#(0.1e-15,8.1e-15),
+    'C_J':22e-15,
+    'chi':(-10e6,-0.0e6),
+    'Ej/Ec':(1,100)})
     FloatingTransmonDesigner(ResonatorHalfWave(7.5e9)).optimise({'fQubit':(1e9, 10e9), 
                                                                   'C_q1':(30.862e-15),
                                                                   'C_q2':(31.974e-15),
