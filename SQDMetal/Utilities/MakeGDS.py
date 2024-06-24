@@ -62,7 +62,7 @@ class MakeGDS:
         gdspy.current_library.cells.clear()
 
         leUnits = QUtilities.get_units(self._design)
-        self.lib = gdspy.GdsLibrary(precision=self.precision)
+        self.lib = gdspy.GdsLibrary()   #precision=self.precision - disabling it for now; there is some bug in this argument...
 
         self.cell = self.lib.new_cell('Main')
 
@@ -123,6 +123,7 @@ class MakeGDS:
 
         self.cell.add(new_metal)
         self._layer_metals[output_layer] = new_metal
+        return output_layer
 
     def export(self, file_name):
         self.lib.write_gds(file_name)
