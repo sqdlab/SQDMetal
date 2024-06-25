@@ -8,6 +8,68 @@ from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import shapely
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
+
+class PolyRectangle(QComponent):
+    """Create a rectangle with a border of some thickness. Can either be solid metal or just a ground-plane cut-out.
+
+    Inherits QComponent class.
+
+    Square marker either has a Metal or ground cutout Geometry as specified by is_ground_cutout:
+        * is_ground_cutout - If True, the border is a ground cutout, otherwise it is a metallic square.
+
+    As usual, the centre-positioning can be done dynamically via (pos_x,pos_y) and (end_x,end_y) with orientation being ignored.
+        
+    Pins:
+        There are pins N, E, W and S on the rectangle on the centre across every edges of the outer border
+
+    Sketch:
+        It's a rectangle with 4 pins...
+        ::
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Solitary square marker
+
+    Default Options:
+        * pos_x='0um',pos_y='0um'
+        * end_x='10um',end_y='10um'
+        * is_ground_cutout=False
+    """
+
+    default_options = Dict(pos_x='0um',pos_y='0um', end_x='10um',end_y='10um',
+                           is_ground_cutout=False,
+                           cpw_width='10um')
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        rectangle = ShapelyEx.rectangle(p.pos_x, p.pos_y, p.end_x, p.end_y)
+
+        left = min(p.pos_x, p.end_x)
+        right = max(p.pos_x, p.end_x)
+        top = max(p.pos_y, p.end_y)
+        bottom = min(p.pos_y, p.end_y)
+
+        pinN = shapely.LineString([[left, top], [right, top]])
+        pinS = shapely.LineString([[right, bottom], [left, bottom]])
+        pinE = shapely.LineString([[right, bottom], [right, top]])
+        pinW = shapely.LineString([[left, bottom], [left, top]])
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(rectangle=rectangle),
+                           layer=p.layer,
+                           subtract=p.is_ground_cutout)
+        self.add_pin('N', pinN.coords[::], width=p.cpw_width)
+        self.add_pin('S', pinS.coords[::], width=p.cpw_width)
+        self.add_pin('E', pinE.coords[::-1], width=p.cpw_width)
+        self.add_pin('W', pinW.coords[::], width=p.cpw_width)
 
 class PolyBorderRectangle(QComponent):
     """Create a rectangle with a border of some thickness. Can either be solid metal or just a ground-plane cut-out.
