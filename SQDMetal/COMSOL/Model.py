@@ -127,7 +127,8 @@ class COMSOL_Model:
         elements that are contiguous are merged into single blobs.
 
         Inputs:
-            - layer_id - The index of the layer from which to take the metallic polygons
+            - layer_id - The index of the layer from which to take the metallic polygons. If this is given as a LIST, then the metals in the specified
+                         layer (0 being ground plane) will be fused and then added into COMSOL.
             - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
                           combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
                           argument is negative, the argument is ignored.
@@ -141,9 +142,19 @@ class COMSOL_Model:
                                       capacitance matrix simulations).
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
+            - multilayer_fuse - (Optional) Defaults to False. Flattens everything into a single layer (careful when using this with evap_mode).
+            - smooth_radius - (Optional) Defaults to 0. If above 0, then the corners of the metallic surface will be smoothed via this radius. Only works
+                              if multilayer_fuse is set to True.
+            - ground_cutout - (Optional) MUST BE SPECIFIED if layer_id is 0. It is a tuple (x1, x2, y1, y2) for the x and y bounds
         '''
         thresh = kwargs.get('threshold', -1)
         kwargs['restrict_rect'] = self.restrict_rect
+        xL = self.chip_centre[0] - self.chip_len*0.5
+        xR = self.chip_centre[0] + self.chip_len*0.5
+        yL = self.chip_centre[1] - self.chip_wid*0.5
+        yR = self.chip_centre[1] + self.chip_wid*0.5
+        kwargs['ground_cutout'] = (xL, xR, yL, yR)
+        kwargs['resolution'] = self._resolution
         metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, layer_id, **kwargs)
 
         metal_sel_obj_names = {}
@@ -301,6 +312,26 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", f"wp1_{select_name}")
         return select_3D_name
 
+    def _get_gnd_plane_gaps(self, fuse_threshold):
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates(self._resolution)
+
+        filt = gsdf.loc[gsdf['subtract'] == True]
+
+        unit_conv = QUtilities.get_units(self.design)
+
+        if filt.shape[0] > 0:
+            space_polys = shapely.unary_union(filt['geometry'].buffer(0))
+            space_polys = shapely.affinity.scale(space_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+            space_polys = ShapelyEx.fuse_polygons_threshold(space_polys, fuse_threshold)
+            if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
+                space_polys = [x for x in space_polys.geoms]
+            else:
+                space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
+            return space_polys
+        else:
+            return []
+
     def add_ground_plane(self, **kwargs):
         '''
         Adds metallic ground-plane from the Qiskit-Metal design object onto the surface layer of the chip simulation.
@@ -309,15 +340,16 @@ class COMSOL_Model:
             - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
                           combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
                           argument is negative, the argument is ignored.
+            - fuse_threshold - (Optional) Defaults to 1e-12. This is the minimum distance between metallic elements, below which they are considered
+                               to be a single polygon and thus, the polygons are merged with the gap filled. This accounts for floating-point errors
+                               that make adjacent elements fail to merge as a single element, due to infinitesimal gaps between them.
         '''
 
         #Assumes that all masks are simply closed without any interior holes etc... Why would you need one anyway?
         thresh = kwargs.get('threshold', -1)
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates(self._resolution)
-
-        filt = gsdf.loc[gsdf['subtract'] == True]
+        space_polys = self._get_gnd_plane_gaps(kwargs.get('fuse_threshold',1e-12))
+        
         #Now create a plane sheet covering the entire chip
         pol_name = "polgndBase"
         xL = self.chip_centre[0] - self.chip_len*0.5
@@ -325,15 +357,7 @@ class COMSOL_Model:
         yL = self.chip_centre[1] - self.chip_wid*0.5
         yR = self.chip_centre[1] + self.chip_wid*0.5
         self._create_poly(pol_name, [[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
-        if filt.shape[0] > 0:
-            unit_conv = QUtilities.get_units(self.design)
-                
-            space_polys = shapely.unary_union(filt['geometry'].buffer(0))
-            if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
-                space_polys = [x for x in space_polys.geoms]
-            else:
-                space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
-            space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
+        if len(space_polys) > 0:
             pol_name_cuts = []
             for ind,cur_cut in enumerate(space_polys):
                 pol_name_cut = f"polGND{ind}"

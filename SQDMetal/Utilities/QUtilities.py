@@ -254,7 +254,8 @@ class QUtilities:
 
         Inputs:
             - design - Qiskit-Metal deisgn object
-            - layer_id - The index of the layer from which to take the metallic polygons
+            - layer_id - The index of the layer from which to take the metallic polygons. If this is given as a LIST, then the metals in the specified
+                         layer (0 being ground plane) will be fused and then added into COMSOL.
             - restrict_rect - (Optional) List highlighting the clipping rectangle [xmin,ymin,xmax,ymax]
             - resolution - (Optional) Defaults to 4. This is the number of points along a curved section of a path object in Qiskit-Metal.
             - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
@@ -271,6 +272,10 @@ class QUtilities:
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
             - unit_conv - (Optional) Unit conversion factor to convert the Qiskit-Metal design units. Defaults to converting the units into metres.
+            - multilayer_fuse - (Optional) Defaults to False. Flattens everything into a single layer (careful when using this with evap_mode).
+            - smooth_radius - (Optional) Defaults to 0. If above 0, then the corners of the metallic surface will be smoothed via this radius. Only works
+                              if multilayer_fuse is set to True.
+            - ground_cutout - (Optional) MUST BE SPECIFIED if layer_id is 0. It is a tuple (x1, x2, y1, y2) for the x and y bounds
         
         Outputs a tuple containing:
             - metal_polys_all - All separate metallic islands
@@ -285,34 +290,57 @@ class QUtilities:
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
-        filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
-        if filt.shape[0] == 0:
-            return
+        if not isinstance(layer_id, (list, tuple)):
+            layer_id = [layer_id]
 
-        unit_conv = kwargs.get('unit_conv', QUtilities.get_units(design))
-        
+        metal_evap_polys = []
         fuse_threshold = kwargs.get('fuse_threshold', 1e-12)
+        unit_conv = kwargs.get('unit_conv', QUtilities.get_units(design))
+        for cur_layer_id in layer_id:          
+            if cur_layer_id > 0:
+                filt = gsdf.loc[(gsdf['layer'] == cur_layer_id) & (gsdf['subtract'] == False)]
+                if filt.shape[0] == 0:
+                    continue
+                #Merge the metallic elements
+                metal_polys = shapely.unary_union(filt['geometry'].buffer(0))   #Buffer makes geometry valid to prevent this error: https://stackoverflow.com/questions/74779301/unable-to-assign-free-hole-to-a-shell-error-when-flattening-polygons
+                metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+                metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
+            else:
+                filt = gsdf.loc[gsdf['subtract'] == True]
+                if filt.shape[0] == 0:
+                    continue
+                space_polys = shapely.unary_union(filt['geometry'].buffer(0))
+                space_polys = shapely.affinity.scale(space_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+                space_polys = ShapelyEx.fuse_polygons_threshold(space_polys, fuse_threshold)
+                assert 'ground_cutout' in kwargs, "Must supply ground_cutout if specifying layer 0."
+                xL, xR, yL, yR = kwargs.get('ground_cutout')
+                poly_sheet = shapely.Polygon([[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
+                space_whole = shapely.unary_union(space_polys)
+                #
+                metal_polys = poly_sheet.difference(space_whole)
 
-        #Merge the metallic elements
-        metal_polys = shapely.unary_union(filt['geometry'].buffer(0))   #Buffer makes geometry valid to prevent this error: https://stackoverflow.com/questions/74779301/unable-to-assign-free-hole-to-a-shell-error-when-flattening-polygons
-        metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
-        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
-        restrict_rect = kwargs.get('restrict_rect', None)
-        if isinstance(restrict_rect, list):
-            metal_polys = shapely.clip_by_rect(metal_polys, *restrict_rect)
-        #Calculate the individual evaporated elements if required
-        evap_mode = kwargs.get('evap_mode', 'separate_delete_below')
-        group_by_evaporations = kwargs.get('group_by_evaporations', False)
-        if group_by_evaporations and evap_mode != 'merge':
-            metal_evap_polys_separate = pvd_shadows.get_all_shadows(metal_polys, layer_id, 'separate')
-            #Convert all MultiPolygons into individual polygons...
-            if not isinstance(metal_evap_polys_separate, list):
-                metal_evap_polys_separate = [metal_evap_polys_separate]
-        #Calculate evaporated shadows
-        evap_trim = kwargs.get('evap_trim', 20e-9)
-        metal_evap_polys = pvd_shadows.get_all_shadows(metal_polys, layer_id, evap_mode, layer_trim_length=evap_trim)
-        #Convert all MultiPolygons into individual polygons...
-        if not isinstance(metal_evap_polys, list):
+            restrict_rect = kwargs.get('restrict_rect', None)
+            if isinstance(restrict_rect, list):
+                metal_polys = shapely.clip_by_rect(metal_polys, *restrict_rect)
+            #Calculate the individual evaporated elements if required
+            evap_mode = kwargs.get('evap_mode', 'separate_delete_below')
+            group_by_evaporations = kwargs.get('group_by_evaporations', False)
+            if group_by_evaporations and evap_mode != 'merge':
+                metal_evap_polys_separate = pvd_shadows.get_all_shadows(metal_polys, cur_layer_id, 'separate')
+                #Convert all MultiPolygons into individual polygons...
+                if not isinstance(metal_evap_polys_separate, list):
+                    metal_evap_polys_separate = [metal_evap_polys_separate]
+            #Calculate evaporated shadows
+            evap_trim = kwargs.get('evap_trim', 20e-9)
+            metal_evap_polys += [pvd_shadows.get_all_shadows(metal_polys, cur_layer_id, evap_mode, layer_trim_length=evap_trim)]
+        if len(metal_evap_polys) == 0:
+            return
+        if kwargs.get('multilayer_fuse', False):
+            metal_evap_polys = ShapelyEx.fuse_polygons_threshold(metal_evap_polys, fuse_threshold)
+            #
+            rndDist = kwargs.get('smooth_radius', 0)
+            if rndDist > 0:
+                metal_evap_polys = metal_evap_polys.buffer(rndDist*0.5, join_style=1, quad_segs=resolution).buffer(-rndDist, join_style=1).buffer(rndDist*0.5, join_style=1, quad_segs=resolution)
             metal_evap_polys = [metal_evap_polys]
 
         metal_polys_all = []
