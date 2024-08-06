@@ -550,7 +550,7 @@ class QUtilities:
         return die_coords
     
     @staticmethod
-    def place_launchpads(design, cpw_gap, cpw_width, die_origin, die_dimension, die_number=None, dimension="600um", inset="0um", taper="300um", print_checks=True):
+    def place_launchpads(design, cpw_gap, cpw_width, die_origin, die_dimension, die_number=None, dimension="600um", inset="0um", taper="300um", lead_length="25um", print_checks=True):
         '''
         Function for calculating launchpad parameters, placing launchpads on the design, and returning launchpad objects as a tuple containing the left and right launchpads of each die as (lp_L, lp_R). Using Qiskit Metal's `LaunchpadWirebonds`.
 
@@ -570,8 +570,8 @@ class QUtilities:
             - launchpad_objects - tuple containing the LaunchpadWirebond objects (lp_L, lp_R)
         '''
 
-        # type checks on inputs
-        for i in [dimension, inset, taper, cpw_gap, cpw_width]: assert isinstance(i, str)
+        # check inputs
+        for i in [dimension, inset, taper, cpw_gap, cpw_width, lead_length]: assert isinstance(i, str)
         assert isinstance(die_origin, (tuple, list)) and len(die_origin)==2
         for i in die_origin: assert isinstance(i, (int, float))
 
@@ -601,7 +601,8 @@ class QUtilities:
             pad_gap=f"{lp_gap * 1e6}um",
             trace_width=cpw_width,
             trace_gap=cpw_gap,
-            taper_height=taper
+            taper_height=taper,
+            lead_length=lead_length
         )
 
         lp_R_ops = Dict(
@@ -613,7 +614,8 @@ class QUtilities:
             pad_gap=f"{lp_gap * 1e6}um",
             trace_width=cpw_width,
             trace_gap=cpw_gap,
-            taper_height=taper
+            taper_height=taper,
+            lead_length=lead_length
         )
 
         # place launchpads
@@ -623,9 +625,9 @@ class QUtilities:
         # print statement after placing
         if print_checks: 
             if die_number is not None:
-                print(f'Launchpads placed on die {die_number} at \t({die_origin[0] * 1e6:.0f}, {die_origin[1] * 1e6:.0f})\t[µm]')
+                print(f'Launchpads placed on die {die_number} at \t({die_origin[0] * 1e6:.0f}, {die_origin[1] * 1e6:.0f})\t[µm] \tnames: ({lp_L.name}, {lp_R.name})')
             else:
-                print(f'Launchpads placed.')
+                print(f'Launchpads placed: ({lp_L.name}, {lp_R.name})')
 
         launchpad_objects = (lp_L, lp_R)
 
