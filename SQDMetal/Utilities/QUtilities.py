@@ -1,6 +1,7 @@
 # from pint import UnitRegistry
 import shapely
 import numpy as np
+import itertools
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
@@ -515,3 +516,39 @@ class QUtilities:
                  vec_ori + vec_perp * (cpw_wid*0.5 + cpw_gap) - vec_launch*gap_sep]
         
         return Uclip
+
+    @staticmethod
+    def calc_die_centres(chip_dim, die_dim, num_die):
+        '''
+        Calculates centre coordinates (x, y) of multiple die on a chip.
+
+         Inputs:
+            - chip_dim - tuple containing chip dimensions (x, y) in meters
+            - die_dim - tuple containing die dimensions (x, y) in meters
+            - num_die - tuple containing the number of die (num_x, num_y) in x and y
+        
+        Output:
+            - die_coords - a list of tuples containing all die centre positions (relative to (0,0) in the chip centre)
+        '''
+
+        # check input data is in correct format of (x, y)
+        assert len(chip_dim)==len(die_dim)==len(num_die)==2
+
+        die_coords = []
+
+        # calculate unused border (x, y)
+        patterned_area = (QUtilities.parse_value_length(chip_dim[0]) * (1 - (num_die[0])), 
+                        QUtilities.parse_value_length(chip_dim[1]) * (1 - (num_die[1])))
+        
+        xy_min = (-0.5 * (num_die[0]) * QUtilities.parse_value_length(die_dim[0]),
+                  -0.5 * (num_die[1]) * QUtilities.parse_value_length(die_dim[1]))
+
+        # x, y coordinates of column-centres 
+        for i, k in itertools.product(range(num_die[0]), range(num_die[1])):
+            die_coords.append((xy_min[0] + (QUtilities.parse_value_length(die_dim[0]) * (0.5 + i)),
+                                    xy_min[1] + (QUtilities.parse_value_length(die_dim[1]) * (0.5 + k))))
+
+        # check coordinate list matches number of die
+        assert len(die_coords)==(num_die[0] * num_die[1])
+
+        return die_coords
