@@ -2,6 +2,7 @@
 import shapely
 import numpy as np
 import itertools
+from qiskit_metal import Dict
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
@@ -518,37 +519,114 @@ class QUtilities:
         return Uclip
 
     @staticmethod
-    def calc_die_centres(chip_dim, die_dim, num_die):
+    def calc_die_coords(chip_dim, die_dim, num_die):
         '''
         Calculates centre coordinates (x, y) of multiple die on a chip.
 
-         Inputs:
-            - chip_dim - tuple containing chip dimensions (x, y) in meters
-            - die_dim - tuple containing die dimensions (x, y) in meters
+        Inputs:
+            - chip_dim - tuple containing chip dimensions (x, y) strings with units (Qiskit Metal style - e.g. "20mm")
+            - die_dim - tuple containing die dimensions (x, y) strings with units (Qiskit Metal style - e.g. "4.0mm")
             - num_die - tuple containing the number of die (num_x, num_y) in x and y
         
         Output:
-            - die_coords - a list of tuples containing all die centre positions (relative to (0,0) in the chip centre)
+            - die_coords - a list of tuples of floats containing all die centre positions (relative to (0,0) in the chip centre) in units of meters
         '''
 
         # check input data is in correct format of (x, y)
         assert len(chip_dim)==len(die_dim)==len(num_die)==2
-
-        die_coords = []
-
-        # calculate unused border (x, y)
-        patterned_area = (QUtilities.parse_value_length(chip_dim[0]) * (1 - (num_die[0])), 
-                        QUtilities.parse_value_length(chip_dim[1]) * (1 - (num_die[1])))
-        
+    
+        # calculate minimum patterened x and y coordinates
         xy_min = (-0.5 * (num_die[0]) * QUtilities.parse_value_length(die_dim[0]),
                   -0.5 * (num_die[1]) * QUtilities.parse_value_length(die_dim[1]))
 
-        # x, y coordinates of column-centres 
+        # calculate die centres
+        die_coords = []
         for i, k in itertools.product(range(num_die[0]), range(num_die[1])):
             die_coords.append((xy_min[0] + (QUtilities.parse_value_length(die_dim[0]) * (0.5 + i)),
-                                    xy_min[1] + (QUtilities.parse_value_length(die_dim[1]) * (0.5 + k))))
-
-        # check coordinate list matches number of die
-        assert len(die_coords)==(num_die[0] * num_die[1])
-
+                               xy_min[1] + (QUtilities.parse_value_length(die_dim[1]) * (0.5 + k))))
+            
+        assert len(die_coords)==(num_die[0] * num_die[1]) # check coordinate list matches number of die
+        
         return die_coords
+    
+    @staticmethod
+    def place_launchpads(design, cpw_gap, cpw_width, die_origin, die_dimension, die_number=None, dimension="600um", inset="0um", taper="300um", print_checks=True):
+        '''
+        Function for calculating launchpad parameters, placing launchpads on the design, and returning launchpad objects as a tuple containing the left and right launchpads of each die as (lp_L, lp_R). Using Qiskit Metal's `LaunchpadWirebonds`.
+
+        Inputs:
+            - design - Qiskit Metal design object
+            - cpw_gap - transmission line gap as string with units (e.g. "5um")
+            - cpw_width - transmission line central conductor width as string with units (e.g. "5um")
+            - die_origin - centre coordinates of die as tuple (float(x), float(y)) in units of meters
+            - die dimension - tuple containing die dimensions (x, y) in units of meters
+            - die_number - die number (int) for launchpad object naming (defaults to None)
+            - dimension - horizontal length of launchpad as string with units (defaults to "600um")
+            - inset - distance from edge of die to start of launchpad gap in x as a string with units (defaults to "0um")
+            - taper - length of taper from launchpad to transmission line as a string with units (defaults to "300um")
+            - print_checks - flag if user wants to print statements after launchpads are written to design (defaults to True)
+        
+        Output:
+            - launchpad_objects - tuple containing the LaunchpadWirebond objects (lp_L, lp_R)
+        '''
+
+        # type checks on inputs
+        for i in [dimension, inset, taper, cpw_gap, cpw_width]: assert isinstance(i, str)
+        assert isinstance(die_origin, (tuple, list)) and len(die_origin)==2
+        for i in die_origin: assert isinstance(i, (int, float))
+
+        # check that user has passed a die number
+        if die_number==None:
+            print(f'No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input.')
+
+        # calculate launchpad scaling
+        lp_scale_factor = QUtilities.parse_value_length(dimension) / QUtilities.parse_value_length(cpw_width)
+        lp_width = QUtilities.parse_value_length(cpw_width) * lp_scale_factor
+        lp_gap = QUtilities.parse_value_length(cpw_gap) * lp_scale_factor
+
+        # calculate launchpad positions relative to chip origin
+        lp_x = (die_origin[0]
+            + (QUtilities.parse_value_length(die_dimension[0]) / 2)
+            - QUtilities.parse_value_length(inset)
+            - QUtilities.parse_value_length(dimension)
+            - QUtilities.parse_value_length(taper)
+            - QUtilities.parse_value_length(lp_gap))
+
+        # set launchpad options
+        lp_L_ops = Dict(
+            pos_x=f"-{lp_x * 1e6}um",
+            pos_y=f"{die_origin[1] * 1e6}um",
+            pad_width=f"{lp_width * 1e6}um",
+            pad_height=dimension,
+            pad_gap=f"{lp_gap * 1e6}um",
+            trace_width=cpw_width,
+            trace_gap=cpw_gap,
+            taper_height=taper
+        )
+
+        lp_R_ops = Dict(
+            pos_x=f"{lp_x * 1e6}um",
+            pos_y=f"{die_origin[1] * 1e6}um",
+            orientation="-180",
+            pad_width=f"{lp_width * 1e6}um",
+            pad_height=dimension,
+            pad_gap=f"{lp_gap * 1e6}um",
+            trace_width=cpw_width,
+            trace_gap=cpw_gap,
+            taper_height=taper
+        )
+
+        # place launchpads
+        lp_L = LaunchpadWirebond(design, f"lp_L_die{die_number}", options=lp_L_ops)
+        lp_R = LaunchpadWirebond(design, f"lp_R_die{die_number}", options=lp_R_ops)
+
+        # print statement after placing
+        if print_checks: 
+            if die_number is not None:
+                print(f'Launchpads placed on die {die_number} at \t({die_origin[0] * 1e6:.0f}, {die_origin[1] * 1e6:.0f})\t[µm]')
+            else:
+                print(f'Launchpads placed.')
+
+        launchpad_objects = (lp_L, lp_R)
+
+        return launchpad_objects
