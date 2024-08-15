@@ -991,7 +991,7 @@ class QUtilities:
         # calculate width per resonator (according to num_resonators)
         x_increment_res = (tl_extent / num_resonators) + QUtilities.parse_value_length(min_res_gap)
 
-        if print_statements: print(f'\nNOW PRINTING: Die {die_index}\n')
+        if print_statements: print(f'\nNOW PRINTING: Die {die_index + 1}\n')
 
         # initialise lists
         x_positions, resonator_names, resonator_vals = [], [], []
