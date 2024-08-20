@@ -136,7 +136,7 @@ class MakeGDS:
                 self._layer_metals[layer] = gds_metal
 
         # fuse layers for a single-layer design (GND, metal)
-        if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
+        if (len(all_layers)==2) and (self.export_type in ["posi tive", "negative"]):
             if self.export_type=="positive":
                 self.add_boolean_layer(0, 0, "and", output_layer=0)
             if self.export_type=="negative":

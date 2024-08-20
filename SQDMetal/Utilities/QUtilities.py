@@ -916,7 +916,7 @@ class QUtilities:
         chip_name="main",
         LC_calculations=True,
         print_statements=True,
-        fillet="100um"
+        fillet="85um"
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
