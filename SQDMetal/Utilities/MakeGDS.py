@@ -97,11 +97,7 @@ class MakeGDS:
         all_layers.append((0, chip))
         #
         #
-        if self.export_layers==None:
-            leLayers = np.unique(gsdf['layer'])
-        else:
-            assert isinstance(leLayers, [int, list]), "Export layers are not valid, please pass either a single integer or list of integers."
-            leLayers = self.export_layers
+        leLayers = np.unique(gsdf['layer'])
 
         print(f'Export type: {self.export_type}\n')
 
@@ -147,7 +143,25 @@ class MakeGDS:
                 self.add_boolean_layer(11, 12, "and", output_layer=0)
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
         
-        # TODO: add layer export functionality if not None
+        # layer exports (works best when export_type=="All")
+        if self.export_layers!=None:
+            layer_list = list(self.cell.get_layers())
+            # assert self.export_layers in layer_list, "Cohsen export layers are not present in the design. Choose again."
+            if isinstance(self.export_layers, list):
+                assert set(self.export_layers).issubset(layer_list), "Chosen export layers are not present in the design."
+                to_delete = list(set(layer_list) - set(self.export_layers))
+                if isinstance(to_delete, list):
+                    for i in list(to_delete):
+                        self.cell.remove_polygons(lambda pts, layer, datatype: layer==i)
+                else:
+                    self.cell.remove_polygons(lambda pts, layer, datatype: layer==to_delete)
+            else:
+                assert self.export_layers in layer_list, "Chosen export layer is not present in the design."
+                to_export = []
+                to_export.append(int(self.export_layers))
+                to_delete = list(set(layer_list) - set(to_export))
+                self.cell.remove_polygons(lambda pts, layer, datatype: layer==to_delete)
+
 
     def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
         assert operation in ["and", "or", "xor", "not"], "Operation must be: \"and\", \"or\", \"xor\", \"not\""
