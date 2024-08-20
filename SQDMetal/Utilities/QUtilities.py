@@ -915,7 +915,8 @@ class QUtilities:
         res_vertical="1500um",
         chip_name="main",
         LC_calculations=True,
-        print_statements=True
+        print_statements=True,
+        fillet="100um"
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
@@ -941,7 +942,7 @@ class QUtilities:
             - chip name - defaults to "main"
             - LC_calculation - boolean to activate capicatance and inductance calculations and outputs (defaults to True)
             - print_statements - boolean to activate print statements containing resonator names, lengths and frequencies (defaults to True)
-
+            - fillet - choose fillet size as string with units (defaults to "100um")
         Outputs:
             - resonators - list containing resonator QComponents
             - resontor_vals - list containing 3-tuples of (length, effective permittivity, filling factor)
@@ -1078,13 +1079,13 @@ class QUtilities:
             end_pin_id = next(iter(res_end_pin.pin_names))
 
             # set resonator options
-            res_options = Dict(# orientation=-90, 
+            res_options = Dict(
                             total_length=l_quarterwave_mm, 
                             constr_radius="100um",
                             constr_width_max="0um",
                             trace_width=width, 
                             trace_gap=gap,
-                            fillet="70um",
+                            fillet=fillet,
                             fillet_padding="10um",
                             start_left=True,
                             layer='1',
