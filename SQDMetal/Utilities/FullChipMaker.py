@@ -188,3 +188,5 @@ class MultiDieChip:
         gds_export.export(full_export_path)
 
         print(f"Exported at {full_export_path}")
+
+        return design
