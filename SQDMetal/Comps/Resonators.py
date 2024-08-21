@@ -103,7 +103,7 @@ class ResonatorMeander(QComponent):
 
     @staticmethod
     def draw_resonator(l, L, r, wid_constr, f, start_left, trace_width, x, y, angle):
-        err_msg = "Overconstrained the meander. Only 2 of the 3 constraints may be set: constr_radius, constr_width_max and constr_extend_length."
+        err_msg = "Overconstrained the meander. Only 2 of the 3 constraints may be set: constr_radius, constr_width_max and constr_extend_length. Currently constr_wid_max and constr_extend_length will not work as the chosen constraints - other combinations will."
         if r > 0 and wid_constr > 0:
             assert L == 0, err_msg
             smax = wid_constr - 2*r

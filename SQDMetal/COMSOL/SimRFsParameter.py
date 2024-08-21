@@ -12,18 +12,6 @@ import scipy.optimize
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
-    class Lumped_Element:
-        def __init__(self, selection, elem_type, value):
-            self._sel = selection
-            self._elem_type = elem_type
-            self.value = value
-            self._setter = None
-        
-        def set_value(self, val):
-            self.value = val
-            if not self._setter is None:
-                self._setter.set('Lelement', jtypes.JDouble(val))
-
     def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
         self.model = model
         self.jc = model._get_java_comp()
@@ -68,15 +56,68 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study[0]).set("neigsactive", jtypes.JBoolean(True))
             self.jc.study(self._study).feature(self._sub_study[0]).set("neigs", f"{self.modal_min_freq_num_eigs[1]}")
             #Only store the port solutions for Multi-Modal...
-            lst_ports = [item for sublist in self._ports for item in sublist[:2]]
+            lst_ports = ["geom1_"+cur_port['polys'][0] for cur_port in self._ports]
             self.jc.study(self._study).feature(self._sub_study[1]).set("usestoresel", "selection");
             self.jc.study(self._study).feature(self._sub_study[1]).set("storesel", jtypes.JArray(jtypes.JString)(lst_ports))
         self._soln = self.model._add_solution("solRFsparams")
         self.jc.sol().create(self._soln)
-        self.jc.sol(self._soln).createAutoSequence(self._study)
+        if True:#self.adaptive != 'None':
+            self.jc.sol(self._soln).createAutoSequence(self._study)
+        else:
+            self.jc.sol(self._soln).study(self._study)
+            self._temporary_freq_domain_AutoSequence()
         # if self.adaptive == 'None':
         #     self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
         self.dset_name = self.model._get_dset_name()
+
+    def _temporary_freq_domain_AutoSequence(self):
+        self.jc.sol(self._soln).create("st1", "StudyStep")
+        self.jc.sol(self._soln).feature("st1").set("study", self._study)
+        self.jc.sol(self._soln).feature("st1").set("studystep", "freq")
+        self.jc.sol(self._soln).create("v1", "Variables")
+        self.jc.sol(self._soln).feature("v1").set("control", "freq")
+        self.jc.sol(self._soln).create("s1", "Stationary")
+        self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
+        self.jc.sol(self._soln).feature("s1").create("p1", "Parametric")
+        self.jc.sol(self._soln).feature("s1").feature().remove("pDef")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pname", jtypes.JArray(jtypes.JString)(["freq"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plistarr", jtypes.JArray(jtypes.JString)(["1.0, 2.0, 3.0"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("punit", jtypes.JArray(jtypes.JString)(["GHz"]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pcontinuationmode", "no")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("preusesol", "auto")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("pdistrib", "off")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plot", "on")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("plotgroup", "Default")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("probesel", "all")
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("probes", jtypes.JArray(jtypes.JString)([]))
+        self.jc.sol(self._soln).feature("s1").feature("p1").set("control", "freq")
+        self.jc.sol(self._soln).feature("s1").set("linpmethod", "sol")
+        self.jc.sol(self._soln).feature("s1").set("linpsol", "zero")
+        self.jc.sol(self._soln).feature("s1").set("control", "freq")
+        self.jc.sol(self._soln).feature("s1").feature("aDef").set("complexfun", jtypes.JBoolean(True))
+        self.jc.sol(self._soln).feature("s1").create("fc1", "FullyCoupled")
+        self.jc.sol(self._soln).feature("s1").create("i1", "Iterative")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("linsolver", "gmres")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("prefuntype", "right")
+        self.jc.sol(self._soln).feature("s1").feature("i1").set("itrestart", "300")
+        self.jc.sol(self._soln).feature("s1").feature("i1").label("Suggested Iterative Solver (emw)")
+        self.jc.sol(self._soln).feature("s1").feature("i1").create("mg1", "Multigrid")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").set("iter", "1")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").create("sv1", "SORVector")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("prefun", "sorvec")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("iter", jtypes.JInt(2))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("relax", jtypes.JInt(1))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("pr").feature("sv1").set("sorvecdof", jtypes.JArray(jtypes.JString)(["comp1_E"]))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").create("sv1", "SORVector")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("prefun", "soruvec")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("iter", jtypes.JInt(2))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("relax", jtypes.JInt(1))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("po").feature("sv1").set("sorvecdof", jtypes.JArray(jtypes.JString)(["comp1_E"]))
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("cs").create("d1", "Direct")
+        self.jc.sol(self._soln).feature("s1").feature("i1").feature("mg1").feature("cs").feature("d1").set("linsolver", "pardiso")
+        self.jc.sol(self._soln).feature("s1").feature("fc1").set("linsolver", "i1")
+        self.jc.sol(self._soln).feature("s1").feature().remove("fcDef")
+        self.jc.sol(self._soln).attach("stdRFsparams")
 
     def _run_premesh(self):
         #Create physics and study for RF analysis (e.g. s-parameters)
@@ -86,11 +127,10 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         for cur_elem_id, cur_lelem in enumerate(self.lumped_elems):
             elem_name = "lelem" + str(cur_elem_id)
             self.jc.component("comp1").physics(self.phys_emw).create(elem_name, "LumpedElement", 2)
-            elem_bnds = self.model._get_selection_boundaries(cur_lelem._sel[0])
+            elem_bnds = self.model._get_selection_boundaries(cur_lelem[0])
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).selection().set(jtypes.JArray(jtypes.JInt)(elem_bnds))
-            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem._elem_type)
-            cur_lelem._setter = self.jc.component("comp1").physics(self.phys_emw).feature(elem_name)
-            cur_lelem.set_value(cur_lelem.value)
+            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem[2])
+            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
 
         #Note that PEC1 is the default exterior boundary condition
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
@@ -100,16 +140,32 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         for cur_port_id,cur_port in enumerate(self._ports):
             port_name = "lport" + str(cur_port_id)
             self.jc.component("comp1").physics(self.phys_emw).create(port_name, "LumpedPort", 2)
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'MultiElementUniform')
-            port_bndsA = self.model._get_selection_boundaries(cur_port[0])
-            port_bndsB = self.model._get_selection_boundaries(cur_port[1])
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().set(jtypes.JArray(jtypes.JInt)(port_bndsA+port_bndsB))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').selection().set(jtypes.JArray(jtypes.JInt)(port_bndsA))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').selection().set(jtypes.JArray(jtypes.JInt)(port_bndsB))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port[2][0],cur_port[2][1],0.0]))
-            self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port[2][0],-cur_port[2][1],0.0]))
+            if cur_port['type'] == 'CPW':
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'MultiElementUniform')
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').selection().named('geom1_'+cur_port['polys'][1])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').selection().named('geom1_'+cur_port['polys'][2])
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue1').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([cur_port['vec_perp'][0],cur_port['vec_perp'][1],0.0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).feature('ue2').set('ahUniformElement', jtypes.JArray(jtypes.JDouble)([-cur_port['vec_perp'][0],-cur_port['vec_perp'][1],0.0]))
+            else:
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).set('PortType', 'Uniform')
+                self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
             #
             self.port_names.append(port_name)
+
+    def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6):
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = self.model.design.components[qObjName1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.model.design.components[qObjName2].pins[pin2]['middle'] * unit_conv
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= rect_width*0.5
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"port{len(self._ports)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
+        select_3D_name = self.model._setup_selection_boundaries(len(self._ports), f"port{len(self._ports)}", 'port')
+        cur_port = {'type':'Single', 'polys': [select_3D_name]}
+        self._ports += [cur_port]
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
         '''
@@ -125,16 +181,26 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.model.design, qObjName, len_launch)
 
+        cur_port = {'type':'CPW'}
+
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
-        cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameA = self.model._setup_selection_boundaries(len(self._ports), pol_name + "a", 'porta')
 
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
-        cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameB = self.model._setup_selection_boundaries(len(self._ports), pol_name + "b", 'portb')
+
+        sel_all_name = f'uniselPort{len(self._ports)}'
+        self.jc.component("comp1").geom("geom1").create(sel_all_name, "UnionSelection")
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).label(sel_all_name)
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("entitydim", jtypes.JInt(2))
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("input", jtypes.JArray(jtypes.JString)([select_3D_nameA, select_3D_nameB]))
+
+        cur_port['polys'] = [sel_all_name, select_3D_nameA, select_3D_nameB]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
         #of ground from the CPW for portA.
-        cur_launch += [vec_perp]
-        self._ports += [cur_launch]
+        cur_port['vec_perp'] = vec_perp
+        self._ports += [cur_port]
     
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6):
         '''
@@ -151,43 +217,47 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.model.design, qObjName, pin_name, len_launch)
 
+        cur_port = {'type':'CPW', 'polys': []}
+
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "a", launchesA)
-        cur_launch = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameA = self.model._setup_selection_boundaries(len(self._ports), pol_name + "a", 'porta')
 
         sel_x, sel_y, sel_r = self.model._create_poly(pol_name + "b", launchesB)
-        cur_launch += [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+        select_3D_nameB = self.model._setup_selection_boundaries(len(self._ports), pol_name + "b", 'portb')
+
+        sel_all_name = f'uniselPort{len(self._ports)}'
+        self.jc.component("comp1").geom("geom1").create(sel_all_name, "UnionSelection")
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).label(sel_all_name)
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("entitydim", jtypes.JInt(2))
+        self.jc.component("comp1").geom("geom1").feature(sel_all_name).set("input", jtypes.JArray(jtypes.JString)([select_3D_nameA, select_3D_nameB]))
+
+        cur_port['polys'] = [sel_all_name, select_3D_nameA, select_3D_nameB]
 
         #Each port is defined as: [portA-selection-name, portB-selection-name, vec_CPW2GND_1] where vec_CPW2GND_1 is a db.DVector pointing in the direction
         #of ground from the CPW for portA.
-        cur_launch += [vec_perp]
-        self._ports += [cur_launch]
+        cur_port['vec_perp'] = vec_perp
+        self._ports += [cur_port]
 
-    def create_lumped_element(self, vec_start, vec_end, width, value, elem_type='Inductor'):
-        '''
-        Creates a lumped element. Note that it must be vertical or horizontal between conductors...
-        Inputs:
-            - vec_start - A DPoint for the start of the rectangle (in Klayout units)
-            - vec_end   - A DPoint for the end of the rectangle (in Klayout units)
-            - width     - Width of the rectangle in metres
-            - value     - Value of the component raw units (e.g. Henries for Inductors)
-        '''
-        vec_start *= self.model.kLy2metre
-        vec_end *= self.model.kLy2metre
-        
-        vec_elem = vec_end - vec_start
-        vec_perp = db.DVector(vec_elem.y,-vec_elem.x) / vec_elem.length()
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+        self.model._add_cond(Uclip)
 
-        pol_name = "lumped_elem" + str(len(self.lumped_elems))
-        
-        launches = [vec_start - vec_perp * width*0.5, vec_start + vec_perp * width*0.5,
-                    vec_start + vec_perp * width*0.5 + vec_elem, vec_start - vec_perp * width*0.5 + vec_elem]
-        launches = [[p.x,p.y] for p in launches]
-        sel_x, sel_y, sel_r = self.model._create_poly(pol_name, launches)
-        cur_lumped_elem = [self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y)]
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+        self.model._add_cond(Uclip)
 
-        new_elem = COMSOL_Simulation_RFsParameters.Lumped_Element(cur_lumped_elem, elem_type, value)
-        self.lumped_elems += [new_elem]
-        return new_elem
+    def create_lumped_inductance(self, qObj1, pin1, qObj2, pin2, width, value):
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = self.model.design.components[qObj1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.model.design.components[qObj2].pins[pin2]['middle'] * unit_conv
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= width*0.5
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
+
+        self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), value, 'Inductor'])
 
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
@@ -234,7 +304,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
     def _get_required_physics(self):
         return [self.phys_emw]
 
-    def run(self, recompute=True):
+    def run(self, recompute=True, is_dB=False):
         '''
         Run simulation to get s-parameters after running the simulation. Returns a 3-row array in which the rows are: frequency values, S11s, S21s.
         MUST RUN AFTER COMPILING SIMULATION (i.e. after running build_geom_mater_elec_mesh...)
@@ -252,10 +322,19 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         freqs = np.array(freqs[0])[:,1]
         s1Remains = []
         for cur_ind in range(0,len(self._ports)):
-            self.jc.result().numerical("ev1").set("expr", f"emw.S{cur_ind+1}1dB")
-            cur_sVals = self.jc.result().numerical("ev1").getData()
-            #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
-            cur_sVals = np.array(cur_sVals[0])[:,1]
+            if is_dB:
+                self.jc.result().numerical("ev1").set("expr", f"emw.S{cur_ind+1}1dB")
+                cur_sVals = self.jc.result().numerical("ev1").getData()
+                #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
+                cur_sVals = np.array(cur_sVals[0])[:,1]
+            else:
+                #For some reason the returned arrays are rows of the same data apparently repeated across the columns...
+                self.jc.result().numerical("ev1").set("expr", f"real(emw.S{cur_ind+1}1)")
+                cur_sValsR = self.jc.result().numerical("ev1").getData()
+                self.jc.result().numerical("ev1").set("expr", f"imag(emw.S{cur_ind+1}1)")
+                cur_sValsI = self.jc.result().numerical("ev1").getData()
+                #
+                cur_sVals = np.array(cur_sValsR[0])[:,0] + 1j*np.array(cur_sValsI[0])[:,0]
             s1Remains += [cur_sVals]
         self.jc.result().numerical().remove("ev1")
 

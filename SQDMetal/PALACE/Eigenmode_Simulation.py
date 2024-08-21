@@ -4,11 +4,13 @@ from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
 import gmsh
+import pandas as pd
 
 class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
@@ -26,9 +28,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "mesh_max": 100e-3,
                  "mesh_min": 10e-3,
                  "mesh_sampling": 120,
-                 "sim_memory": '300G',
-                 "sim_time": '14:00:00',
-                 "HPC_nodes": '4',
+                 "comsol_meshing": "Extremely fine",
+                 "HPC_Parameters_JSON": ""
                 }
 
     #Parent Directory path
@@ -47,12 +48,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing)
-        
-        
-    def run(self):
-        pass  
-
+        super().__init__(meshing, mode, user_options)
 
     def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -88,9 +84,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                ports[port_name + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
-                ports[port_name + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
+                if cur_port['elem_type'] == 'cpw':
+                    ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue2').selection().entities())[0]
+                    ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue1').selection().entities())[0]
+                else:
+                    ports[cur_port['port_name']] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
 
             #define length scale
             l0 = 1
@@ -102,37 +100,23 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = []
-        for m, cur_port in enumerate(self._ports):
-            port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-            config_ports.append({
-                    "Index": m+1,
-                    "R": 50.00,  # Ω, 2-element uniform
-                    "Elements":
-                    [
-                        {
-                        "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_perps[0]
-                        },
-                        {
-                        "Attributes": [ports[port_name + 'b']],
-                        "Direction": vec_perps[1]
-                        }
-                    ]
-                })
+        config_ports = self._process_ports(ports)
         config_ports[0]["Excitation"] = True
 
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
+        filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         config = {
             "Problem":
             {
                 "Type": "Eigenmode",
                 "Verbose": 2,
-                "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
+                "Output": filePrefix  + "outputFiles"
             },
             "Model":
             {
-                "Mesh": "/scratch/project/palace-sqdlab/inputFiles/"  + self.name + "/" + self.name + file_ext,
+                "Mesh":  filePrefix + self.name + file_ext,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -163,11 +147,6 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                    "Absorbing":
-                {
-                    "Attributes": far_field,
-                    "Order": 1
-                },
                 "LumpedPort": config_ports
             },
             "Solver":
@@ -189,6 +168,13 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self._ff_type == 'absorbing':
+            config['Boundaries']['Absorbing'] = {
+                    "Attributes": far_field,
+                    "Order": 1
+                }
+        else:
+            config['Boundaries']['PEC']['Attributes'] += far_field
 
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
@@ -205,46 +191,36 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)
     
+    def set_freq_search(self, min_freq_Hz, num_freq):
+        self.user_options["starting_freq"] = min_freq_Hz / 1e9
+        self.user_options["number_of_freqs"] = num_freq
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Solver']['Eigenmode']['Target'] = min_freq_Hz / 1e9
+            config_json['Solver']['Eigenmode']['N'] = num_freq
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
 
+    def retrieve_data(self):
+        raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
 
-    def create_batch_file(self):
-        
-        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
-        #so I can get the slurm job number to use for testing
+        lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
+        if os.path.exists(lePlots):
+            leView = PVDVTU_Viewer(lePlots)
+            for m in range(leView.num_datasets):
+                leSlice = leView.get_data_slice(m)
+                fig = leSlice.plot(np.linalg.norm(leSlice.get_data('E_real'), axis=1), 'coolwarm', True)
+                fig.savefig(self._output_data_dir + f'/eig{m}_ErealMag.png')
+                plt.close(fig)
+            fig = leSlice.plot_mesh()
+            fig.savefig(self._output_data_dir + '/mesh.png')
+            plt.close(fig)
 
-        sbatch = {
-                "header": "#!/bin/bash --login",
-                "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "# SBATCH --output=" + self.name + ".out",
-                "error_out": "#SBATCH --error=" + self.name + ".err",
-                "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
-                "tasks": "#SBATCH --ntasks-per-node=20",
-                "cpus": "#SBATCH --cpus-per-task=1",
-                "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
-                "time": "#SBATCH --time=" + self.user_options['sim_time'],
-                "account": "#SBATCH --account=a_fedorov",
-                "foss": "module load foss/2021a",
-                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
-                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
-        }
-    
-        #check simulation mode and return appropriate parent directory 
-        parent_simulation_dir = self._check_simulation_mode()
-
-        #create sbatch file name
-        sim_file_name = self.name + '.sbatch'
-
-        #destination for config file
-        simulation_dir = parent_simulation_dir + str(self.name)
-
-        #save to created directory
-        file = os.path.join(simulation_dir, sim_file_name)
-
-        #write sbatch dictionary to file
-        with open(file, "w+", newline = '\n') as f:
-            for value in sbatch.values():
-                f.write('{}\n'.format(value))
+        #It should be: m, Re(f), Im(f), Q
+        return {'f_real': raw_data[:,1]*1e9, 'f_imag': raw_data[:,2]*1e9, 'Q': raw_data[:,3]}

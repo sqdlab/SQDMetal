@@ -215,6 +215,7 @@ class WireElbowParallelPinPin(QRoute):
         * fillet - Radius of the turns on the elbows
         * pin_pad - Minimum distance to traverse before turning from a given pin (making it non-zero helps ensure it passes the 'bad-fillet'
                     checks in Qiskit-Metal). Ignored in the 2 Elbows, anti-parallel case shown below...
+        * end_gap   - gap to ground plane at the end of the wire (useful for open-ended terminations)
     The parameters trace_width and trace_gap define the CPW dimensions.
 
     The positioning can be done dynamically via:
@@ -246,9 +247,10 @@ class WireElbowParallelPinPin(QRoute):
         * frac_pos_elbow=0.5
         * fillet='20um'
         * pin_pad='2um'
+        * end_gap='0um'
     """
 
-    default_options = Dict(frac_pos_elbow=0.5, fillet='20um', pin_pad='2um')
+    default_options = Dict(frac_pos_elbow=0.5, fillet='20um', pin_pad='2um', end_gap='0um')
 
     def make(self):
         p = self.p
@@ -288,9 +290,26 @@ class WireElbowParallelPinPin(QRoute):
         path[:,0] += startPt[0]
         path[:,1] += startPt[1]
 
+        line = shapely.LineString(np.vstack(path))
+        if p.end_gap > 0:
+            norm_vec = path[-1]-path[-2]
+            norm_vec = norm_vec / np.linalg.norm(norm_vec) * p.end_gap
+            path[-1] = path[-1] + norm_vec
+            line_gap = shapely.LineString(np.vstack(path))
+        else:
+            line_gap = line
+
         self.set_pin("start")
         self.set_pin("end")
-        self.make_elements(path)
+        self.add_qgeometry('path', {'trace': line},
+                           width=p.trace_width,
+                           fillet=p.fillet,
+                           layer=p.layer)
+        self.add_qgeometry('path', {'cut': line_gap},
+                               width=p.trace_width + 2 * p.trace_gap,
+                               fillet=p.fillet,
+                               layer=p.layer,
+                               subtract=True)
 
 
 class WireElbowSingle(QRoute):
@@ -490,6 +509,7 @@ class WireTaperProbePinStretch(QComponent):
                         will be taken. Otherwise, the initial CPW gap will be taken from orig_gap.
         * probe_gap1  - Gap between the two probes in the taper at origin
         * probe_gap2  - Gap between the two probes in the taper at the end of the extension
+        * layer_probe2 - If greater than -1, it will place the second probe into this layer.
         
     The parameters trace_width and trace_gap define the final CPW dimensions.
 
@@ -509,14 +529,14 @@ class WireTaperProbePinStretch(QComponent):
              g     #  W         
              g    ##L W         P = Pin to attach taper
              g  ####  W         W = trace_width
-              ###  2            G = trace_gap
-              1    2            g = orig_gap
-            P 1    2            D = dist_extend
-              1    2            1 = probe_gap1
-              ###  2            2 = probe_gap2
+         w    ###  2            G = trace_gap
+         w    1    2            g = orig_gap
+         w  P 1    2            D = dist_extend
+         w    1    2            1 = probe_gap1
+         w    ###  2            2 = probe_gap2
                 ####  W         L = New pin to attach a probe wire
                   ##R W         R = New pin to attach a probe wire
-                   #  W
+                   #  W         w = The width parameter of pin P
               <..D.>
               @@@@
               @@@@@@
@@ -537,13 +557,15 @@ class WireTaperProbePinStretch(QComponent):
         * orig_gap='10um'
         * probe_gap1='2um'
         * probe_gap2='4um'
+        * layer_probe2=-1
     """
     default_options = Dict(trace_width='20um',
                            trace_gap='10um',
                            dist_extend='30um',
                            orig_gap='10um',
                            probe_gap1='2um',
-                           probe_gap2='4um')
+                           probe_gap2='4um',
+                           layer_probe2=-1)
 
     def __init__(self, design,
                     name: str = None,
@@ -605,8 +627,14 @@ class WireTaperProbePinStretch(QComponent):
         
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
-                           dict(taper1=taper1, taper2=taper2),
+                           dict(taper1=taper1),
                            layer=p.layer)
+
+        if p.layer_probe2 < 0:
+            p.layer_probe2 = p.layer
+        self.add_qgeometry('poly',
+                           dict(taper2=taper2),
+                           layer=p.layer_probe2)
 
         #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',

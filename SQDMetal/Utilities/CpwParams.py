@@ -11,7 +11,7 @@ class CpwParams:
     
     @classmethod
     def fromQDesign(cls, design, chip_name='main'):
-        matr = design.chips[chip_name].material
+        matr = design.chips[chip_name].material[0]
         er = Material(matr).permittivity
         h = QUtilities.parse_value_length(design.chips[chip_name].size['size_z'])
         return CpwParams(er, h)
@@ -46,13 +46,30 @@ class CpwParams:
         er = self.rel_permittivity
         h = self.dielectric_thickness
 
-        def func(gap, wid, er, h):
-            return CpwParams.calc_impedance(wid, )
-
         x0 = [trace_width]
 
         res = scipy.optimize.minimize(lambda x: np.abs(CpwParams.calc_impedance(trace_width, x[0], er, h)-target_impedance), x0, method='Nelder-Mead', tol=1e-6)
 
         return res.x[0]
 
+    def get_width_from_gap(self, trace_gap, target_impedance=50):
+        er = self.rel_permittivity
+        h = self.dielectric_thickness
 
+        x0 = [trace_gap]
+
+        res = scipy.optimize.minimize(lambda x: np.abs(CpwParams.calc_impedance(x[0], trace_gap, er, h)-target_impedance), x0, method='Nelder-Mead', tol=1e-6)
+
+        return res.x[0]
+
+    def get_width_from_space(self, gnd_plane_gap, target_impedance=50):
+        #Space is the distance between the CPW ground planes
+
+        er = self.rel_permittivity
+        h = self.dielectric_thickness
+
+        x0 = [gnd_plane_gap*0.5]
+
+        res = scipy.optimize.minimize(lambda x: np.abs(CpwParams.calc_impedance(x[0], 0.5*(gnd_plane_gap-x[0]), er, h)-target_impedance), x0, method='Nelder-Mead', tol=1e-6)
+
+        return res.x[0]

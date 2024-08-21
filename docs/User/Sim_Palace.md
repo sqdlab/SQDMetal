@@ -13,13 +13,13 @@ Make sure to install the `gmsh` in the Python environment. Now to run simulation
 
 This method has been tested to work on Kubuntu. Ensure GIT has been installed via:
 
-```
+```bash
 sudo apt-get install git
 ```
 
 Now install the  [Spack Package Manager](https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html) by running in console (in some directory of preference - e.g. somewhere in the home directory):
 
-```
+```bash
 git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git ~/spack
 cd ~/spack
 . share/spack/setup-env.sh
@@ -27,7 +27,7 @@ cd ~/spack
 
 Now run:
 
-```
+```bash
 spack install palace
 find -name palace*
 ```
@@ -40,15 +40,48 @@ The second command will find the path of the Palace binary. Basically it's somew
 
 Executing the above block should show the command-line switches required for Palace. Finally, install [Paraview](https://www.paraview.org/):
 
-```
+```bash
 sudo apt install paraview
 ```
+
+Finally, in the Python virtual environment, if it has not been already installed, run:
+
+```bash
+pip install pyvista
+```
+
+This is required to open the simulation field data via the API functions.
+
+
+**Troubleshooting**
+
+Errors can appear after updating the Linux system. Simply reinstall palace as above (starting from the `setup-env.sh` command). However, first run:
+
+```bash
+sudo rm -r .spack/
+```
+
+Alternatively, [edit the compilers.yaml file](https://stackoverflow.com/questions/67899951/change-version-of-gcc-which-does-not-support-compiling-c-programs-using-the-co) to the latest GCC version.
+
+If OpenMPI processes fail to spawn (i.e. Palace does not start and/or throws the error `local rank failed   --> Returned value Not found (-13) instead of ORTE_SUCCESS`), try running the following [command in terminal](https://askubuntu.com/questions/730/how-do-i-set-environment-variables):
+
+```bash
+export PMIX_MCA_gds=hash
+```
+
+In the case of a Jupyter Notebook (i.e. running the commands in *SQDMetal*), add this to the initialisation cell:
+
+```python
+import os
+os.environ["PMIX_MCA_gds"]="hash"
+```
+
 
 ### HPC cluster
 
 Working installation instructions for the Australian Bunya cluster are given [here](HPC_documentation.md).
 
-## Usage
+## Usage (local PC)
 
 
 ```python
@@ -97,4 +130,19 @@ eigen_sim.fine_mesh_along_path(100e-6, 'TL', mesh_sampling=130, mesh_min=7e-3, m
 eigen_sim.fine_mesh_in_rectangle(-0.14e-3, -1.33e-3, 0.14e-3, -1.56e-3, mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
 
 eigen_sim.prepare_simulation()
+```
+
+## Usage (HPC)
+
+Here, some extra parameters need to be supplied. Specifically the path to a JSON file (supplied in the user option: `"HPC_Parameters_JSON"`) containing the parameters. Here is a template:
+
+```json
+{
+    "HPC_nodes": 4,
+    "sim_memory": "300G",
+    "sim_time": "20:00:00",
+    "account_name": "sam",
+    "palace_location": "/scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin",
+    "input_dir": "/scratch/project/palace-sqdlab/inputFiles/"
+}
 ```

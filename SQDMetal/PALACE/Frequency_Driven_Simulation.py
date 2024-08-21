@@ -8,6 +8,7 @@ import numpy as np
 import json
 import os
 import gmsh
+import pandas as pd
 
 class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
@@ -16,24 +17,16 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "fillet_resolution": 4,
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
-                 "min_freq": 5.7,
-                 "max_freq": 7.6,
-                 "freq_step": 0.0001,
                  "solns_to_save": 4,
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
-                 "solver_maxits": 100,
+                 "solver_maxits": 300,
                  "mesh_max": 100e-3,
                  "mesh_min": 10e-3,
                  "mesh_sampling": 120,
-                 "sim_memory": '300G',
-                 "sim_time": '14:00:00',
-                 "HPC_nodes": '4',
+                 "comsol_meshing": "Extremely fine",
+                 "HPC_Parameters_JSON": ""
                 }
-    
-
-    #Parent Directory path
-    simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
     def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = {}, 
@@ -49,11 +42,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing)
-        
-        
-    def run(self):
-        pass  
+        super().__init__(meshing, mode, user_options)
+        self.freqs = None
 
 
     def create_config_file(self, **kwargs):
@@ -90,9 +80,11 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                ports[port_name + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[1]
-                ports[port_name + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
+                if cur_port['elem_type'] == 'cpw':
+                    ports[cur_port['port_name'] + 'a'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue2').selection().entities())[0]
+                    ports[cur_port['port_name'] + 'b'] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").feature('ue1').selection().entities())[0]
+                else:
+                    ports[cur_port['port_name']] = list(comsol._model.java.component("comp1").physics("emw").feature(f"lport{m}").selection().entities())[0]
 
             #define length scale
             l0 = 1
@@ -104,37 +96,29 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = []
-        for m, cur_port in enumerate(self._ports):
-            port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-            config_ports.append({
-                    "Index": m+1,
-                    "R": 50.00,  # Ω, 2-element uniform
-                    "Elements":
-                    [
-                        {
-                        "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_perps[0]
-                        },
-                        {
-                        "Attributes": [ports[port_name + 'b']],
-                        "Direction": vec_perps[1]
-                        }
-                    ]
-                })
+        config_ports = self._process_ports(ports)
         config_ports[0]["Excitation"] = True
 
+        if isinstance(self.freqs, tuple):
+            fStart,fStop,fStep = self.freqs
+        else:
+            print("Warning: Frequencies have not been set properly...")
+            fStart,fStop,fStep = (1,10,1)
+
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
+        filePrefix = self._get_folder_prefix()
         config = {
             "Problem":
             {
                 "Type": "Driven",
                 "Verbose": 2,
-                "Output": "/scratch/project/palace-sqdlab/outputFiles/" + self.name
+                "Output": self._output_dir
             },
             "Model":
             {
-                "Mesh": "/scratch/project/palace-sqdlab/inputFiles/"  + self.name + "/" + self.name + file_ext,
+                "Mesh":  filePrefix + self.name + file_ext,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -165,11 +149,6 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                    "Absorbing":
-                {
-                    "Attributes": far_field,
-                    "Order": 1
-                },
                 "LumpedPort": config_ports
             },
             "Solver":
@@ -177,10 +156,10 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 "Order": self.user_options["solver_order"],
                 "Driven":
                 {
-                    "MinFreq": self.user_options["min_freq"],  # starting freequency
-                    "MaxFreq": self.user_options["max_freq"],  # end frequency
-                    "FreqStep": self.user_options["freq_step"],  # step size
-                    "SaveStep": self.user_options["save_step"] # Number of frequency steps for computed field modes to save to disk for visualization with ParaView
+                    "MinFreq": fStart,  # starting freequency
+                    "MaxFreq": fStop,  # end frequency
+                    "FreqStep": fStep,  # step size
+                    "SaveStep": self.user_options["solns_to_save"] # Number of frequency steps for computed field modes to save to disk for visualization with ParaView
                 },
                 "Linear":
                 {
@@ -191,6 +170,13 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self._ff_type == 'absorbing':
+            config['Boundaries']['Absorbing'] = {
+                    "Attributes": far_field,
+                    "Order": 1
+                }
+        else:
+            config['Boundaries']['PEC']['Attributes'] += far_field
 
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
@@ -207,46 +193,32 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)
     
+    def set_freq_values(self, startGHz, endGHz, stepGHz):
+        self.freqs = (startGHz, endGHz, stepGHz)
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Solver']['Driven']['MinFreq'] = startGHz
+            config_json['Solver']['Driven']['MaxFreq'] = endGHz
+            config_json['Solver']['Driven']['FreqStep'] = stepGHz
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
 
+    def retrieve_data(self):
+        raw_data = pd.read_csv(self._output_data_dir + '/port-S.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy().T
 
-    def create_batch_file(self):
+        ret_data = {'freqs' : raw_data[0]*1e9}
+        for m in range(int((raw_data.shape[0]-1)/2)):
+            #Header will be like: |S[1][1]| (dB)
+            key = headers[2*m+1].strip().split('|')[1].replace('[','').replace(']','')
+            amp = np.array(raw_data[2*m+1], dtype=np.float64)
+            phs = np.array(raw_data[2*m+2], dtype=np.float64)
+            sParam = 10**(amp/20)*np.exp(1j*phs/180*np.pi)
+            ret_data[key] = sParam
         
-        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
-        #so I can get the slurm job number to use for testing
-
-        sbatch = {
-                "header": "#!/bin/bash --login",
-                "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "# SBATCH --output=" + self.name + ".out",
-                "error_out": "#SBATCH --error=" + self.name + ".err",
-                "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=" + self.user_options["HPC_nodes"],
-                "tasks": "#SBATCH --ntasks-per-node=20",
-                "cpus": "#SBATCH --cpus-per-task=1",
-                "memory": "#SBATCH --mem=" + self.user_options["sim_memory"],
-                "time": "#SBATCH --time=" + self.user_options['sim_time'],
-                "account": "#SBATCH --account=a_fedorov",
-                "foss": "module load foss/2021a",
-                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
-                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": "srun /scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin " +
-                            "/scratch/project/palace-sqdlab/inputFiles/" + self.name + "/" + self.name + ".json"
-        }
-    
-        #check simulation mode and return appropriate parent directory 
-        parent_simulation_dir = self._check_simulation_mode()
-
-        #create sbatch file name
-        sim_file_name = self.name + '.sbatch'
-
-        #destination for config file
-        simulation_dir = parent_simulation_dir + str(self.name)
-
-        #save to created directory
-        file = os.path.join(simulation_dir, sim_file_name)
-
-        #write sbatch dictionary to file
-        with open(file, "w+", newline = '\n') as f:
-            for value in sbatch.values():
-                f.write('{}\n'.format(value))
+        return ret_data

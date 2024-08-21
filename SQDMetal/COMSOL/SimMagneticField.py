@@ -39,7 +39,10 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         self.model._model.java.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
         self.model._model.java.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self.model._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
-        self.model._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)(["condAll", self.current_feed_UBend]))
+        conds = ["condAll"]
+        if self.current_feed_UBend:
+            conds += ["condAll", self.current_feed_UBend]
+        self.model._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)(conds))
         self.model._model.java.component("comp1").geom("geom1").run("condAll")
 
         self._study = self.model._add_study("stdCapMat")
@@ -59,7 +62,7 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         self.jc.component("comp1").physics(self.phys_mf).feature("scu1").selection().named("geom1_condPlusUBend")
         self.jc.component("comp1").physics(self.phys_mf).feature("scu1").set("Js0", jtypes.JArray(jtypes.JString)(["ecis.JsX", "ecis.JsY", "ecis.JsZ"]))
         self.jc.component("comp1").physics(self.phys_mf).create("mi2", "MagneticInsulation", 2)
-        self.jc.component("comp1").physics(self.phys_mf).feature("mi2").selection().named("geom1_condFeedLnP")
+        self.jc.component("comp1").physics(self.phys_mf).feature("mi2").selection().named(f"geom1_{self.current_feed_Pad}")
 
         self.jc.component("comp1").material("Metal").selection().named("geom1_condPlusUBend")
 
@@ -102,6 +105,48 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         self.current_feed_Pad = self.model._setup_selection_boundaries("FeedLnP", pol_name + "feedPad")
         vec_gnd = vec_ori - vec_launch*src_gnd_gap
         self._sel_term_gnd = self.model._create_boundary_selection_sphere(min(cpw_wid, width_U)*0.1, vec_gnd[0], vec_gnd[1], is_edge = True)
+
+    def set_current_feed_point_point_verticalU(self, x1, y1, x2, y2, uWidth):
+        wpName = "wpCurrentFeed"
+        self.jc.component("comp1").geom("geom1").feature().create(wpName, "WorkPlane")
+        self.jc.component("comp1").geom("geom1").feature(wpName).set("unite", jtypes.JBoolean(True))
+        self.jc.component("comp1").geom("geom1").feature(wpName).set("planetype", "normalvector")
+        self.jc.component("comp1").geom("geom1").feature(wpName).set("normalvector", jtypes.JArray(jtypes.JDouble)([y1-y2, x2-x1, 0.0]))
+        self.jc.component("comp1").geom("geom1").feature(wpName).set("normalcoord", jtypes.JArray(jtypes.JDouble)([(x1+x2)*0.5, (y1+y2)*0.5, 0.0]))
+        self.jc.component("comp1").geom("geom1").feature(wpName).set("rot", jtypes.JDouble(90))
+
+        dist = np.sqrt((x2-x1)**2+(y2-y1)**2)
+        poly_coords = [[dist/2+uWidth/2, 0],
+                       [dist/2+uWidth/2, uWidth*2],
+                       [-dist/2-uWidth/2, uWidth*2],
+                       [-dist/2-uWidth/2, 0],
+                       [-dist/2+uWidth/2, 0],
+                       [-dist/2+uWidth/2, uWidth],
+                       [dist/2-uWidth/2, uWidth],
+                       [dist/2-uWidth/2, 0]
+                       ]
+
+        polyUname = "currentFeedU"
+        selPolyNameWP = "cSelCurrentFeedU"
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().create(polyUname, "Polygon")
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set('selresult', 'on') #To generate automatic selections...
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set('selresultshow', 'bnd')
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set("source", "table")
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set('table', jtypes.JArray(jtypes.JDouble,2)(poly_coords))    #This is much faster...
+        #
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().selection().create(selPolyNameWP, "CumulativeSelection")
+        self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set("contributeto", selPolyNameWP)
+        #
+        select_3D_name = f"selCurrentFeedVerticalU"
+        self.jc.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
+        self.jc.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
+        self.jc.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
+        self.jc.component("comp1").geom("geom1").feature(select_3D_name).set("input", f"{wpName}_{selPolyNameWP}")
+
+        self._sel_term_src = self.model._create_boundary_selection_sphere(uWidth*0.1, x1, y1, is_edge=True)
+        self._sel_term_gnd = self.model._create_boundary_selection_sphere(uWidth*0.1, x2, y2, is_edge=True)
+        self.current_feed_UBend = None
+        self.current_feed_Pad = select_3D_name
 
     def set_Bfield_integration_area(self, coords):
         uBend = [[p[0],p[1]] for p in coords]

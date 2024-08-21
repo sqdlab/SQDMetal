@@ -65,7 +65,7 @@ class Palace_Gmsh_Renderer:
         gmsh.initialize()
         gmsh.model.add('qiskit_to_gmsh')
 
-        unit_conv = 1   #Because it is stuck in mm?!
+        unit_conv = 1   #TODO: Because it is stuck in mm?!
 
         #Handle the ground plane...
         qmpl = QiskitShapelyRenderer(None, self.design, None)
@@ -90,17 +90,23 @@ class Palace_Gmsh_Renderer:
             metal_polys[0] = ground_plain
             num_polys += 1
         for cur_layer in metallic_layers:
-            cur_layer['unit_conv'] = unit_conv
-            cur_layer['resolution'] = fillet_resolution
-            metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
-            unique_ids = np.unique(metal_sel_ids)
-            for m in range(unique_ids.size):
-                metal_polys[m+num_polys] = []
-            for m in range(len(metal_polys_all)):
-                metal_polys[metal_sel_ids[m]+num_polys] += [metal_polys_all[m]]
-            for m in range(unique_ids.size):
-                metal_polys[m+num_polys] = shapely.geometry.multipolygon.MultiPolygon(metal_polys[m+num_polys])
-            num_polys += unique_ids.size
+            if cur_layer['type'] == 'design_layer':
+                cur_layer['unit_conv'] = unit_conv
+                cur_layer['resolution'] = fillet_resolution
+                metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
+                unique_ids = np.unique(metal_sel_ids)
+                for m in range(unique_ids.size):
+                    metal_polys[m+num_polys] = []
+                for m in range(len(metal_polys_all)):
+                    metal_polys[metal_sel_ids[m]+num_polys] += [metal_polys_all[m]]
+                for m in range(unique_ids.size):
+                    metal_polys[m+num_polys] = shapely.geometry.multipolygon.MultiPolygon(metal_polys[m+num_polys])
+                num_polys += unique_ids.size
+            elif cur_layer['type'] == 'Uclip':
+                if cur_layer['clip_type'] == 'inplane':
+                    Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.design, cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra']*1e3) #TODO: Stuck in mm?!
+                metal_polys[num_polys] = shapely.Polygon(Uclip)
+                num_polys += 1
         #Fuse all contiguous polygons into single groups
         def get_poly_cardinality(poly):
             if isinstance(poly, shapely.geometry.multipolygon.MultiPolygon):
@@ -120,7 +126,6 @@ class Palace_Gmsh_Renderer:
             if not found_match:
                 new_polys[len(new_polys)] = metal_polys[m]
 
-
         return self._sim_prep(simulation.replace('_',' '), new_polys, sim_constructs)
 
     def _sim_prep(self, type_name, metal_polys, sim_constructs):
@@ -136,9 +141,13 @@ class Palace_Gmsh_Renderer:
             else:
                 lePolys = [cur_poly]
             for cur_poly in lePolys:
+
+                p = gpd.GeoSeries(cur_poly)
+                p.plot()
                 metal_simplified = cur_poly.simplify(1e-6)
                 gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior.coords[:])
-                if len(metal_simplified.interiors) >= 1:
+                print(gmsh_exterior)
+                if False and len(metal_simplified.interiors) >= 1:
                     interiors = []
                     for _,interior in enumerate(metal_simplified.interiors):
                         gmsh_interior = self._draw_polygon_from_coords(interior.coords[:])
@@ -149,6 +158,7 @@ class Palace_Gmsh_Renderer:
                     metal_list.append((m, 2,gmsh_surface[0][1]))
                 else:
                     metal_list.append((m, 2,gmsh_exterior))
+        print('done')
 
         #update geometries
         gmsh.model.geo.synchronize()
@@ -166,6 +176,8 @@ class Palace_Gmsh_Renderer:
         for m in metal_polys:
             cur_metals = [x[2] for x in metal_list if x[0] == m]
             leMetals.append( gmsh.model.addPhysicalGroup(2, cur_metals, name = 'metal'+str(m)) )
+        print('hi')
+        print(leMetals)
 
         #create list to fragment with chip base
         fragment_list = [(x[1], x[2]) for x in metal_list]

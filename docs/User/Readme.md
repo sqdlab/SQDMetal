@@ -19,10 +19,12 @@ Custom *Qiskit-Metal* compatible parts:
 
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
+- [GDS Exporter](GDS.md)
+- [Qubit Designer](Qubit_Designer.md)
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)
-- [Simulations using Palace](Sim_Palace.md.md)
+- [Simulations using Palace](Sim_Palace.md)
 
 Installation Instructions:
 - [PALACE installation on UQ HPC (Bunya)](HPC_documentation.md)

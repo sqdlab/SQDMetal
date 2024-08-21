@@ -29,9 +29,12 @@ sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive='Multiple', modal_m
 #(A) - Initialise model from Qiskit-Metal design object: design
 cmsl.initialize_model(design, [sim_capMats, sim_sParams], bottom_grounded=True)
 
-#(B) - Add metallic layers
+#(B) - Add metallic layers (use 0 if selecting ground plane)
 cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
 cmsl.add_metallic(2, evap_mode='separate_delete_intersections', group_by_evaporations=True)
+#Alternative syntax to combine multiple layers (via a list) in one go. In doing so, smooth_radius can be used to round off the corners
+cmsl.add_metallic([3,4], threshold=2e-9, fuse_threshold=2e-9, smooth_radius=0.5e-6, multilayer_fuse=True)
+
 #(C) - OPTIONAL: add ground plane
 cmsl.add_ground_plane()
 

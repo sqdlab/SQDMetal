@@ -1,21 +1,33 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
+from SQDMetal.COMSOL.Model import COMSOL_Model
+from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 import numpy as np
-import os
+import os, subprocess
 import gmsh
+import json
 
 class PALACE_Model:
-    def __init__(self, meshing):
+    def __init__(self, meshing, mode, options):
         self.meshing = meshing
         self._metallic_layers = []
         self._ground_plane = {'omit': True}
         self._fine_meshes = []
+        self._sim_config = ""
+        self._input_dir = ""
+        self._output_subdir = ""
+        self.set_farfield()
+
+        if mode == 'HPC':
+            with open(options["HPC_Parameters_JSON"], "r") as f:
+                self.hpc_options = json.loads(f.read())
+        else:
+            self.palace_dir = options.get('palace_dir', 'palace')                
+            self.hpc_options = {"input_dir":""}
 
     def create_batch_file(self):
         pass
     def create_config_file(self):
-        pass
-    def run(self):
         pass
     def _prepare_simulation(self, metallic_layers, ground_plane):
         raise NotImplementedError()
@@ -46,6 +58,7 @@ class PALACE_Model:
                           PVD_Shadows for more details on its definition.
         '''
         self._metallic_layers += [{
+            'type': 'design_layer',
             'layer_id': layer_id,
             'threshold': kwargs.get('threshold', -1),
             'fuse_threshold': kwargs.get('fuse_threshold', 1e-12),
@@ -65,6 +78,79 @@ class PALACE_Model:
         '''
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
 
+    def set_farfield(self, ff_type='absorbing'):
+        #ff_type can be: 'absorbing' or 'pec'
+        ff_type = ff_type.lower()
+        assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
+        self._ff_type = ff_type
+
+    def run(self):
+        assert self._sim_config != "", "Must run prepare_simulation at least once."
+
+        config_file = self._sim_config
+        leFile = os.path.basename(os.path.realpath(config_file))
+        leDir = os.path.dirname(os.path.realpath(config_file))
+
+        log_location = f"{self._output_data_dir}/out.log"
+        with open("temp.sh", "w+") as f:
+            f.write(f"cd \"{leDir}\"\n")
+            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{log_location}\"\n")
+        os.makedirs(self._output_data_dir)
+        with open(log_location, 'w') as fp:
+            pass
+
+        self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        try:
+            self.cur_process.wait()
+        except KeyboardInterrupt:
+            self.cur_process.kill()
+        self.cur_process = None
+
+        return self.retrieve_data()
+
+    def retrieve_data(self):
+        pass
+
+    def create_batch_file(self):
+        
+        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
+        #so I can get the slurm job number to use for testing
+
+        sbatch = {
+                "header": "#!/bin/bash --login",
+                "job_name": "#SBATCH --job-name=" + self.name,
+                "output_loc": "# SBATCH --output=" + self.name + ".out",
+                "error_out": "#SBATCH --error=" + self.name + ".err",
+                "partition": "#SBATCH --partition=general",
+                "nodes": "#SBATCH --nodes=" + self.hpc_options["HPC_nodes"],
+                "tasks": "#SBATCH --ntasks-per-node=20",
+                "cpus": "#SBATCH --cpus-per-task=1",
+                "memory": "#SBATCH --mem=" + self.hpc_options["sim_memory"],
+                "time": "#SBATCH --time=" + self.hpc_options['sim_time'],
+                "account": "#SBATCH --account=" + self.hpc_options['account_name'],
+                "foss": "module load foss/2021a",
+                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
+                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
+                "run_command": f"srun {self.hpc_options['palace_location']} " + self.hpc_options["input_dir"] + self.name + "/" + self.name + ".json"
+        }
+    
+        #check simulation mode and return appropriate parent directory 
+        parent_simulation_dir = self._check_simulation_mode()
+
+        #create sbatch file name
+        sim_file_name = self.name + '.sbatch'
+
+        #destination for config file
+        simulation_dir = parent_simulation_dir + str(self.name)
+
+        #save to created directory
+        file = os.path.join(simulation_dir, sim_file_name)
+
+        #write sbatch dictionary to file
+        with open(file, "w+", newline = '\n') as f:
+            for value in sbatch.values():
+                f.write('{}\n'.format(value))
+
     def _check_simulation_mode(self):
         '''method to check the type of simualtion being run and return
             the parent directory to store the simulation files'''
@@ -73,8 +159,8 @@ class PALACE_Model:
 
         if self.mode == "HPC":
             parent_simulation_dir = self.sim_parent_directory
-        elif self.mode == "simPC":
-            parent_simulation_dir = self.simPC_parent_simulation_dir
+        elif self.mode == "simPC" or self.mode == "PC":
+            parent_simulation_dir = self.sim_parent_directory
         else:
             Exception('Invalid simulation mode entered.')
         
@@ -118,15 +204,30 @@ class PALACE_Model:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
-            file_name = self.name + "/" + self.name + ".mphbin"
+            comsol_obj.save(parent_simulation_dir + self.name + "/" + self.name)
     
             # Path
-            path = os.path.join(parent_simulation_dir, file_name)
+            path = os.path.abspath(parent_simulation_dir) + "/" + self.name + "/" + self.name + ".mphbin"
 
             #COMSOL export commands
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
+    def _get_folder_prefix(self):
+        return self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+
+    def set_local_output_subdir(self, name, update_config_file=True):
+        self._output_subdir = str(name)
+        self._output_dir = self._get_folder_prefix()  + "outputFiles"
+        if self._output_subdir != "":
+            self._output_dir += "/" + self._output_subdir
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Problem']['Output'] = self._output_dir
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
+            self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
 class PALACE_Model_RF_Base(PALACE_Model):
     def _prepare_simulation(self, metallic_layers, ground_plane):
@@ -138,15 +239,14 @@ class PALACE_Model_RF_Base(PALACE_Model):
             pgr = Palace_Gmsh_Renderer(self.metal_design)
 
             #Prepare the ports...
-            assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher function."
+            assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
             for cur_port in self._ports:
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                lePorts += [(port_name + 'a', launchesA)]
-                lePorts += [(port_name + 'b', launchesB)]
+                lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
+                lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, self.user_options['fillet_resolution'], 'eigenmode_simulation')
+            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, options['fillet_resolution'], 'eigenmode_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -178,47 +278,83 @@ class PALACE_Model_RF_Base(PALACE_Model):
             COMSOL_Model.init_engine()
             cmsl = COMSOL_Model('res')
 
-            #Create COMSOL RF sim object
-            sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
-            cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
+            try:
+                #Create COMSOL RF sim object
+                sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
+                cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
 
-            #Add metallic layers
-            for cur_layer in metallic_layers:
-                layer_id = cur_layer.get('layer_id')
-                cmsl.add_metallic(layer_id, **cur_layer)
-            if not ground_plane['omit']:
-                cmsl.add_ground_plane(threshold=ground_plane['threshold'])
-            #cmsl.fuse_all_metals()
+                #Add metallic layers
+                for cur_layer in metallic_layers:
+                    if cur_layer.get('type') == 'design_layer':
+                        cmsl.add_metallic(**cur_layer)
+                    elif cur_layer.get('type') == 'Uclip':
+                        if cur_layer['clip_type'] == 'inplaneLauncher':
+                            sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                        elif cur_layer['clip_type'] == 'inplaneRoute':
+                            sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                if not ground_plane['omit']:
+                    cmsl.add_ground_plane(threshold=ground_plane['threshold'])
+                #cmsl.fuse_all_metals()
 
-            #assign ports
-            for cur_port in self._ports:
-                port_name, qObjName, launchesA, launchesB, vec_perps = cur_port
-                sim_sParams.create_port_CPW_on_Launcher(qObjName)
-            
-            #build model
-            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
+                #assign ports
+                for cur_port in self._ports:
+                    if cur_port['type'] == 'launcher':
+                        sim_sParams.create_port_CPW_on_Launcher(cur_port['qObjName'], cur_port['len_launch'])
+                    elif cur_port['type'] == 'route':
+                        sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
+                    elif cur_port['type'] == 'single_rect':
+                        sim_sParams.create_port_2_conds(cur_port['qObjName1'], cur_port['pin1'], cur_port['qObjName2'], cur_port['pin2'], cur_port['rect_width']) 
+                
+                for fine_mesh in self._fine_meshes:
+                    if fine_mesh['type'] == 'box':
+                        x_bnds = fine_mesh['x_bnds']
+                        y_bnds = fine_mesh['y_bnds']
+                        cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
+                    elif fine_mesh['type'] == 'comp_bounds':
+                        cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
 
-            #plot model
-            cmsl.plot()
+                #build model
+                cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
 
-            #save comsol file
-            #cmsl.save(self.name)
+                #plot model
+                # cmsl.plot()
 
-            if self.create_files == True:
-                #create directory to store simulation files
-                self._create_directory(self.name)
+                #save comsol file
+                #cmsl.save(self.name)
 
-                #create config file
-                self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
+                if self.create_files == True:
+                    #create directory to store simulation files
+                    self._create_directory(self.name)
 
-                #create batch file
-                if self.mode == 'HPC':
-                    self.create_batch_file()
+                    #create config file
+                    self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
 
-            #save mesh
-            self._save_mesh_comsol(comsol_obj = cmsl)
+                    #create batch file
+                    if self.mode == 'HPC':
+                        self.create_batch_file()
 
-    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6):
+                #save mesh
+                self._save_mesh_comsol(comsol_obj = cmsl)
+
+            except Exception as error:
+                cmsl.save("ERROR_" + self.name)
+                assert False, f"COMSOL threw an error (file has been saved): {error}"
+
+    def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+        port_name = "rf_port_" + str(len(self._ports))
+
+        unit_conv = QUtilities.get_units(self.metal_design)
+        pos1 = self.metal_design.components[qObjName1].pins[pin1]['middle'] * unit_conv
+        pos2 = self.metal_design.components[qObjName2].pins[pin2]['middle'] * unit_conv
+        v_parl = pos2-pos1
+        v_parl /= np.linalg.norm(v_parl)
+
+        #TODO: Refactor into a utility function to create the polygon...
+        self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'qObjName1':qObjName1, 'pin1':pin1, 'qObjName2':qObjName2, 'pin2':pin2, 'rect_width': rect_width,
+                         'vec_field': self._check_port_orientation(v_parl)[0],#v_parl.tolist(),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+
+    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         '''
         Creates an RF port on a CPW inlet. The elements form fins to ground from the central CPW stripline. Note that the first port will automatically be
         the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports
@@ -232,10 +368,62 @@ class PALACE_Model_RF_Base(PALACE_Model):
         
         launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1e3)  #Units of mm...
 
-        #Each port is defined as: [port_name, portA-coords, portB-coords, vec_CPW2GND_1] where vec_CPW2GND_1 is a vector pointing in the direction
-        #of ground from the CPW for portA (given as +X, -X, +Y or -Y for AWS Palace...).
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
-        self._ports += [(port_name, qObjName, launchesA + [launchesA[-1]], launchesB + [launchesB[-1]], self._check_port_orientation(vec_perp))]
+        self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[-1]],
+                         'portBcoords': launchesB + [launchesB[-1]],
+                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),    #TODO: Change this once SPACK updates beyond August 2023
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+
+    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+        port_name = "rf_port_" + str(len(self._ports))
+        
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1e3)  #Units of mm...
+
+        #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
+        self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[-1]],
+                         'portBcoords': launchesB + [launchesB[-1]],
+                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+
+    def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
+        #Enumerate port_ind from 1...
+        #TODO: Override if different for Eigenmode...
+        self._ports[port_ind-1]['impedance_R'] = impedance_R
+        self._ports[port_ind-1]['impedance_L'] = impedance_L
+        self._ports[port_ind-1]['impedance_C'] = impedance_C
+        if self._sim_config != "":
+            with open(self._sim_config, "r") as f:
+                config_json = json.loads(f.read())
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['R'] = impedance_R
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['L'] = impedance_L
+            config_json['Boundaries']['LumpedPort'][port_ind-1]['C'] = impedance_C
+            with open(self._sim_config, "w") as f:
+                json.dump(config_json, f, indent=2)
+
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        self._metallic_layers += [{
+            'type': 'Uclip',
+            'clip_type':'inplaneLauncher',
+            'qObjName':qObjName,
+            'thickness_side':thickness_side,
+            'thickness_back':thickness_back,
+            'separation_gap':separation_gap,
+            'unit_conv_extra':unit_conv_extra
+        }]
+
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+        self._metallic_layers += [{
+            'type': 'Uclip',
+            'clip_type':'inplaneRoute',
+            'route_name':route_name,
+            'pin_name':pin_name,
+            'thickness_side':thickness_side,
+            'thickness_back':thickness_back,
+            'separation_gap':separation_gap,
+            'unit_conv_extra':unit_conv_extra
+        }]
 
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
         leUnits = QUtilities.get_units(self.metal_design)
@@ -254,9 +442,51 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
             'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
             'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
-            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
         })
+
+    def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
+        self._fine_meshes.append({
+            'type': 'comp_bounds',
+            'list_comp_names': list_comp_names,
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
+        })
+
+    def _process_ports(self, ports):
+        #Assumes that ports is a dictionary that contains the port names (with separate keys with suffixes a and b for multi-element ports)
+        #where each value is a list of element IDs corresponding to the particular port...
+        config_ports = []
+        for m, cur_port in enumerate(self._ports):
+            port_name, vec_field = cur_port['port_name'], cur_port['vec_field']
+            leDict = {
+                    "Index": m+1,                    
+                }
+            if port_name + 'a' in ports:
+                leDict['Elements'] = [
+                        {
+                        "Attributes": [ports[port_name + 'a']],
+                        "Direction": vec_field[0] #vec_field + [0]    #TODO: Change this after SPACK updates Palace beyond August 2023
+                        },
+                        {
+                        "Attributes": [ports[port_name + 'b']],
+                        "Direction": vec_field[1] #[-x for x in vec_field] + [0]
+                        }
+                    ]
+            else:
+                leDict['Attributes'] = [ports[port_name]]
+                leDict['Direction'] = vec_field# + [0]
+
+            if 'impedance_R' in cur_port:
+                leDict['R'] = cur_port['impedance_R']
+            if 'impedance_L' in cur_port:
+                leDict['L'] = cur_port['impedance_L']
+            if 'impedance_C' in cur_port:
+                leDict['C'] = cur_port['impedance_C']
+            config_ports.append(leDict)
+        return config_ports
 
     def _check_port_orientation(self, vec_perp):
         thresh = 0.9999
@@ -274,4 +504,5 @@ class PALACE_Model_RF_Base(PALACE_Model):
             return '-Y', '+Y'
         
         assert False, f"AWS Palace requires RF Lumped Ports to be aligned with the x/y axes. Here the port is pointing: {vec_perp}."
+
 

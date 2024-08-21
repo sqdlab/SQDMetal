@@ -54,10 +54,11 @@ class COMSOL_Model:
                                 (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
                                 QUtilities.parse_value_length(design.chips['main']['size']['center_z'])]
         else:
-            self.restrict_rect = None
             self.chip_len = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
             self.chip_wid = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
             self.chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+            self.restrict_rect = [self.chip_centre[0]-0.5*self.chip_len, self.chip_centre[1]-0.5*self.chip_wid,
+                                  self.chip_centre[0]+0.5*self.chip_len, self.chip_centre[1]+0.5*self.chip_wid]
 
         self.chip_thickness = np.abs(QUtilities.parse_value_length(design.chips['main']['size']['size_z']))
 
@@ -126,7 +127,8 @@ class COMSOL_Model:
         elements that are contiguous are merged into single blobs.
 
         Inputs:
-            - layer_id - The index of the layer from which to take the metallic polygons
+            - layer_id - The index of the layer from which to take the metallic polygons. If this is given as a LIST, then the metals in the specified
+                         layer (0 being ground plane) will be fused and then added into COMSOL.
             - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
                           combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
                           argument is negative, the argument is ignored.
@@ -140,8 +142,19 @@ class COMSOL_Model:
                                       capacitance matrix simulations).
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
+            - multilayer_fuse - (Optional) Defaults to False. Flattens everything into a single layer (careful when using this with evap_mode).
+            - smooth_radius - (Optional) Defaults to 0. If above 0, then the corners of the metallic surface will be smoothed via this radius. Only works
+                              if multilayer_fuse is set to True.
+            - ground_cutout - (Optional) MUST BE SPECIFIED if layer_id is 0. It is a tuple (x1, x2, y1, y2) for the x and y bounds
         '''
         thresh = kwargs.get('threshold', -1)
+        kwargs['restrict_rect'] = self.restrict_rect
+        xL = self.chip_centre[0] - self.chip_len*0.5
+        xR = self.chip_centre[0] + self.chip_len*0.5
+        yL = self.chip_centre[1] - self.chip_wid*0.5
+        yR = self.chip_centre[1] + self.chip_wid*0.5
+        kwargs['ground_cutout'] = (xL, xR, yL, yR)
+        kwargs['resolution'] = self._resolution
         metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, layer_id, **kwargs)
 
         metal_sel_obj_names = {}
@@ -179,10 +192,21 @@ class COMSOL_Model:
         #Settle the conductor selections...
         for cur_id in metal_sel_obj_names:
             cur_sel_index = len(self._conds)
-            select_3D_name = self._setup_selection_boundaries(cur_sel_index, metal_sel_obj_names[cur_id])            
+            select_3D_name = self._setup_selection_boundaries(cur_sel_index, metal_sel_obj_names[cur_id])
             self._conds.append( ("geom1_", select_3D_name) )  #Prefix for accessing out of the geometry node...
             #Could optimise this line...
             self._cond_polys.append( ( shapely.unary_union([metal_polys_all[m] for m in range(len(metal_polys_all)) if metal_sel_ids[m] == cur_id]), cur_sel_index ) )
+
+    def _add_cond(self, poly_coords):
+        cur_sel_index = self._num_polys
+
+        selObjName = f"Uclip{cur_sel_index}"
+        self._create_poly(selObjName, poly_coords)
+        select_3D_name = self._setup_selection_boundaries(len(self._conds), selObjName)
+        self._conds.append( ("geom1_", select_3D_name) )  #Prefix for accessing out of the geometry node...
+        self._cond_polys.append((shapely.Polygon(poly_coords), cur_sel_index))
+
+        self._num_polys += 1
 
     @staticmethod
     def get_poly_cardinality(poly):
@@ -274,19 +298,39 @@ class COMSOL_Model:
             cur_poly = fin_poly
         return cur_poly
 
-    def _setup_selection_boundaries(self, index, select_obj_name):
+    def _setup_selection_boundaries(self, index, select_obj_name, sel_3D_prefix='cond'):
         if not isinstance(select_obj_name, list):
             select_obj_name = [select_obj_name] 
-        select_name = f"sel{index}"
+        select_name = f"sel{sel_3D_prefix}{index}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(select_name, "ExplicitSelection")
         for cur_sel_name in select_obj_name:
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(select_name).selection("selection").set(cur_sel_name, 1)
-        select_3D_name = f"cond{index}"
+        select_3D_name = f"{sel_3D_prefix}{index}"
         self._model.java.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", f"wp1_{select_name}")
         return select_3D_name
+
+    def _get_gnd_plane_gaps(self, fuse_threshold):
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates(self._resolution)
+
+        filt = gsdf.loc[gsdf['subtract'] == True]
+
+        unit_conv = QUtilities.get_units(self.design)
+
+        if filt.shape[0] > 0:
+            space_polys = shapely.unary_union(filt['geometry'].buffer(0))
+            space_polys = shapely.affinity.scale(space_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+            space_polys = ShapelyEx.fuse_polygons_threshold(space_polys, fuse_threshold)
+            if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
+                space_polys = [x for x in space_polys.geoms]
+            else:
+                space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
+            return space_polys
+        else:
+            return []
 
     def add_ground_plane(self, **kwargs):
         '''
@@ -296,15 +340,16 @@ class COMSOL_Model:
             - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
                           combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
                           argument is negative, the argument is ignored.
+            - fuse_threshold - (Optional) Defaults to 1e-12. This is the minimum distance between metallic elements, below which they are considered
+                               to be a single polygon and thus, the polygons are merged with the gap filled. This accounts for floating-point errors
+                               that make adjacent elements fail to merge as a single element, due to infinitesimal gaps between them.
         '''
 
         #Assumes that all masks are simply closed without any interior holes etc... Why would you need one anyway?
         thresh = kwargs.get('threshold', -1)
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates(self._resolution)
-
-        filt = gsdf.loc[gsdf['subtract'] == True]
+        space_polys = self._get_gnd_plane_gaps(kwargs.get('fuse_threshold',1e-12))
+        
         #Now create a plane sheet covering the entire chip
         pol_name = "polgndBase"
         xL = self.chip_centre[0] - self.chip_len*0.5
@@ -312,28 +357,38 @@ class COMSOL_Model:
         yL = self.chip_centre[1] - self.chip_wid*0.5
         yR = self.chip_centre[1] + self.chip_wid*0.5
         self._create_poly(pol_name, [[xL,yL], [xR,yL], [xR,yR], [xL,yR]])
-        if filt.shape[0] > 0:
-            unit_conv = QUtilities.get_units(self.design)
-                
-            space_polys = shapely.unary_union(filt['geometry'].buffer(0))
-            if isinstance(space_polys, shapely.geometry.multipolygon.MultiPolygon):
-                space_polys = [x for x in space_polys.geoms]
-            else:
-                space_polys = [space_polys] #i.e. it's just a lonely Polygon object...
-            space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
-            pol_name_ints = []
-            for ind,cur_int in enumerate(space_polys):
-                pol_name_int = f"polGND{ind}"
-                pol_name_ints.append(pol_name_int)
-                #Convert coordinates into metres...
-                cur_poly_int = np.array(cur_int.exterior.coords[:])
-                cur_poly_int = self._simplify_geom(cur_poly_int, thresh)
-                sel_x, sel_y, sel_r = self._create_poly(pol_name_int, cur_poly_int[:-1])
-            #Subtract interiors from the polygon
+        if len(space_polys) > 0:
+            pol_name_cuts = []
+            for ind,cur_cut in enumerate(space_polys):
+                pol_name_cut = f"polGND{ind}"
+                pol_name_cuts.append(pol_name_cut)
+                cur_poly_cut = np.array(cur_cut.exterior.coords[:])
+                cur_poly_cut = self._simplify_geom(cur_poly_cut, thresh)
+                #
+                poly_interiors = cur_cut.interiors
+                if len(poly_interiors) > 0:
+                    pol_name_ints = []
+                    for ind,cur_int in enumerate(poly_interiors):
+                        pol_name_int = f"{pol_name_cut}S{ind}"
+                        pol_name_ints.append(pol_name_int)
+                        #Convert coordinates into metres...
+                        cur_poly_int = np.array(cur_int.coords[:])
+                        cur_poly_int = self._simplify_geom(cur_poly_int, thresh)
+                        sel_x, sel_y, sel_r = self._create_poly(pol_name_int, cur_poly_int[:-1])
+                    #Subtract interiors from the polygon
+                    pol_ext_name = f"{pol_name_cut}E"
+                    sel_x, sel_y, sel_r = self._create_poly(pol_ext_name, cur_poly_cut[:-1])
+                    diff_name = pol_name_cut
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_ext_name)
+                    self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_ints)
+                else:
+                    sel_x, sel_y, sel_r = self._create_poly(pol_name_cut, cur_poly_cut[:-1])
+            #Subtract cuts from the polygon
             diff_name = f"difGND"
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_name)
-            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_ints)
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_cuts)
             #Setup the resulting selection...
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresult", jtypes.JBoolean(True))
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).set("selresultshow", "bnd")
@@ -404,12 +459,19 @@ class COMSOL_Model:
         #
         self._fine_mesh += [{'type':'all', 'poly':shapely.LineString(leCoords), 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
+    def fine_mesh_around_comp_boundaries(self, list_comp_names, minElementSize=1e-7, maxElementSize=5e-6, **kwargs):
+        kwargs['restrict_rect'] = self.restrict_rect
+        list_polys = QUtilities.get_perimetric_polygons(self.design, list_comp_names, **kwargs)
+        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False)
+
     def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
         ind = len(self._fine_mesh)
         pol_names = []
         leLines = []
         for m, poly in enumerate(list_polys):
             leCoords = np.array(poly.exterior.coords[:])
+            if leCoords.size == 0:
+                continue
             if qmUnits:
                 leCoords *= QUtilities.get_units(self.design)
             leLines += [shapely.LineString(leCoords)]
