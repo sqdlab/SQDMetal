@@ -1,7 +1,7 @@
 import gdspy
 import shapely
 import numpy as np
-import datetime
+from datetime import datetime
 from types import NoneType
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
