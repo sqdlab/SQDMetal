@@ -27,12 +27,12 @@ class MultiDieChip:
                             film_thickness="100nm",
                             chip_dimension=("20mm", "20mm"), 
                             chip_border="500um",     
-                            die_dimension=("7.0mm", "4.0mm"),    
+                            die_dimension=("7.1mm", "4.4mm"),    
                             die_num=[1,1],
                             fill_chip=True,
                             markers_on=True,
                             text_label="",
-                            text_size=800,
+                            text_size=600,
                             text_position=None,
                             print_all_infos=True
                             ):
@@ -150,7 +150,7 @@ class MultiDieChip:
                 launchpad_to_res="250um",
                 min_res_gap="50um",
                 LC_calculations=True,
-                print_statements=True
+                print_statements=print_all_infos
                 )
             
             resonators_list.append(resonators)
@@ -168,21 +168,25 @@ class MultiDieChip:
                 die_index=i))
 
             # draw markers
-            QUtilities.place_markers(design=design, die_origin=origin, die_dim=die_dimension)
+            if markers_on: 
+                QUtilities.place_markers(design=design, die_origin=origin, die_dim=die_dimension)
+
+        print('\n\n~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # setup GDS export (positive)
         gds_export = MakeGDS(design, export_type='positive')
 
         # add text label
-        gds_export.add_text(text_label="Full chip maker test", size=600, position=(0.05, 0.93))
+        if text_position==None:
+            gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.93))
+        else:
+            gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
 
         # setup export path based on user inputs
         if export_path=="":
             full_export_path = os.path.join(f"{export_filename}_{t}.gds")
         else:
             full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
-
-        print('\n\n~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # do export
         gds_export.export(full_export_path)
