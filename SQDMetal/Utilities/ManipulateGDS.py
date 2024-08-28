@@ -1,6 +1,4 @@
 import gdspy
-import os
-from SQDMetal.Utilities.MakeGDS import MakeGDS
 from SQDMetal.Utilities.QUtilities import QUtilities
 
 class ManipulateGDS:
@@ -9,7 +7,10 @@ class ManipulateGDS:
         Class that will load a GDS file and perform actions such as making an array of the passed design (or a subsection of)
 
         Inputs:
-            import_path_gds - path to GDS file for import
+            import_path_gds - Path to GDS file for import
+            export_path_gds - Path to export GDS
+            import_cells - (Optional) Cells to import (must be cells present in the passed GDS), defaults to all
+            origin - (Defaults to (0,0)) Tuple containing relative origin to import the design
         '''
         # clear gds library
         gdspy.current_library.cells.clear()
@@ -30,9 +31,14 @@ class ManipulateGDS:
         else:
             print(f'Imported:\n\t{import_cells}\n')
 
+
     def flatten_cells(self, cell_keys=None, export=False):
         """
         Takes `cell_keys` (or all cells by default) from a GdsLibrary object and flattens them as seperate layers to a single cell export object.
+
+        Inputs:
+            - cell_keys - (Optional) List of cell names to extract from the passed GDS file
+            - export - (Defaults to False) Choose whether to export the generated file, or just to operate on the design (default)
         """
     
         self.cell_flattened = self.lib.new_cell('Flattened')
@@ -61,11 +67,31 @@ class ManipulateGDS:
             print(f"\nOutputting cell 'Flattened' ({len(self.cell_flattened.get_polygonsets())} polygons)\n\t--> {self.outfile}\n\n")  
 
             self.lib.write_gds(self.outfile, cells=['Flattened'])
+        else:
+            print(f"\nCells {cell_keys} were flattened to a single cell called 'Flattened.\n\n")
         
 
 
     def make_array_onChip(self, columns, rows, 
-                          spacing=("0um", "0um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None):
+                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None):
+        '''
+        Makes an array of a design input and exports it as a new GDS. 
+
+        Inputs:
+            - columns - number of columns in the array
+            - rows - number of rows in the array
+            - spacing - (Defaults to ("50um", "50um")) Tuple containing x- and y-spacing of the array as strings with units
+            - chip_dimension - (Defaults to ("20mm", "20mm")) Dimension of the chip on which to array the structure (WIP)
+            - export - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design
+            - export_path - (Optional) Export path (if different from self)
+            - use_cells - (Optional) List of cells from the input GDS to include in the arrayed structure
+        
+        Output:
+            - cell_array - gdspy cell array containing arrayed structures
+        '''
+
+        # TODO: add option to autofill chip (requires additional arguments on chip_border (number as a string with units), fill_chip (boolean))
+
         # import assertions
         assert (isinstance(chip_dimension, tuple) and isinstance(chip_dimension[0], str)), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."    
         
@@ -99,20 +125,6 @@ class ManipulateGDS:
 
         # TODO: add centering by default (i.e. so that the whole array is centred on (0,0))
 
+        print(f"\nFrom {self.infile}:\n\tA {columns} x {rows} array of the design was made\n\tSpacing: {spacing}\n\nThe array was exported to:\n\t{self.outfile}.")
+
         return self.cell_array
-
-
-f = ManipulateGDS(
-                  import_path_gds="/Users/uqzdegna/Documents/Uni/PhD/qDesignDesk/junctions/manhattan_one_geo_v1.gds",
-                  export_path_gds="/Users/uqzdegna/Documents/Uni/PhD/qDesignDesk/junctions/ManipulateGDS_test.gds",
-                  origin=(0, 4000)
-                  )
-
-m = f.make_array_onChip(columns=16,
-                        rows=16,
-                        export=True, 
-                        spacing=("500um", "500um"),
-                        use_cells=['TOP_main_2', 'TOP_main_1'],
-                        export_path="/Users/uqzdegna/Documents/Uni/PhD/qDesignDesk/junctions/ManipulateGDS_array.gds")
-
-exit()

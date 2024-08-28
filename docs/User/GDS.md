@@ -1,6 +1,11 @@
-# GDS Exporter
+# GDS operations
 
-The GDSII format is used in lithography. This is a better implementation of the Qiskit-Metal GDS renderer as:
+This documentation covers the basic functionality of GDS-related operations in `SQDMetal`, namely [exporting](#gds-exporter), [adding text to a design](#adding-text-to-the-export), and [manipulating an existing GDS file](#gds-manipulator).
+
+
+## GDS Exporter
+
+The GDSII format is used in lithography. `SQDMetal.Utilities.MakeGDS` is a better implementation of the Qiskit-Metal GDS renderer as:
 
 - It eliminates potential creases or cracks forming due to floating-point errors
 - Provides additional functionality such as boolean operations to add/combine layers
@@ -44,9 +49,9 @@ top_layer = gdsexp.add_boolean_layer(2,2,'or')
 leGDS.export('rounded.gds')
 ```
 
-### Adding text to the export
+#### Adding text to the export
 
-You can also add text with the `add_text()` function as follows:
+You can also add text with the `MakeGDS.add_text()` function as follows:
 
 ```python
 from SQDMetal.Utilities.MakeGDS import MakeGDS
@@ -66,3 +71,45 @@ The `add_text()` function inputs are described as:
 - `size` - (defaults to 800) Text size
 - `position` - (Optional) Tuple containing position (normalised to 1); e.g. (0,0) is bottom left, (1,1) is top right. The default position is in the bottom left.
 
+
+## GDS Manipulator
+
+You can import and array an existing GDS design using the `SQDMetal.Utilities.ManipulateGDS` class as shown in the following example (be sure to replace the relevant path arguments -- `import_path_gds` and `export_path_gds` -- with your own paths):
+
+```python
+from SQDMetal.Utilities.ManipulateGDS import ManipulateGDS
+
+#Import the existing GDS `import_design.gds`, choose the export file, and shift the origin of the imported file.
+f = ManipulateGDS(
+                  import_path_gds="/path_to_design/import_design.gds",
+                  export_path_gds="/path_to_design/export_design.gds",
+                  origin=(0, 4000)
+                  )
+
+# make a 16 x 16 array of the design from `import_design.gds` with 500 um spacing in the array. Here we only import the cells 'TOP_main_2' and 'TOP_main_1' from `import_design.gds`. The array will export to the path given in the ManipulateGDS() initialisation above.
+m = f.make_array_onChip(columns=16,
+                        rows=16,
+                        export=True, 
+                        spacing=("500um", "500um"),
+                        use_cells=['TOP_main_2', 'TOP_main_1']
+                        )
+
+```
+
+The arguments for initialisation of a `ManipulateGDS()` object are: 
+
+- `import_path_gds` - Path to GDS file for import
+- `export_path_gds` - Path to export GDS
+- `import_cells` - (Optional) Cells to import (must be cells present in the passed GDS), defaults to all
+- `origin` - (Defaults to (0,0)) Tuple containing relative origin to import the design
+
+
+The arguments for `make_array_onChip()` are:
+
+- `columns` - number of columns in the array
+- `rows` - number of rows in the array
+- `spacing` - (Defaults to ("50um", "50um")) Tuple containing x- and y-spacing of the array as strings with units
+- `chip_dimension` - (Defaults to ("20mm", "20mm")) Dimension of the chip on which to array the structure (WIP)
+- `export` - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design
+- `export_path` - (Optional) Export path (if different from self)
+- `use_cells` - (Optional) List of cells from the input GDS to include in the arrayed structure
