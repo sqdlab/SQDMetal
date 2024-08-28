@@ -36,7 +36,45 @@ class MultiDieChip:
                             text_position=None,
                             print_all_infos=True
                             ):
+        '''
+        Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
+
+        Inputs:
+            - export_filename - Filename for gds export (e.g. "test")
+            - export_path - Path for export (e.g. 'exports'); the file will then be output to /exports/test.gds
+            - export_type - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
+            - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
+            - num_resonators - (Defaults to 5) Number of resonators per die
+            - cpw_width - (Defaults to "9um") Width of the central trace on the feedline and resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`
+            - coupling_gap - (Defaults to "20um") Amount of ground plane in the coupling gap between the feedline and the resonator
+            - tl_y - (Defaults to "0um") The die-relative y-value for the main straight of the feedline (NOTE: currently only "0um" is supported)
+            - res_vertical - (Defaults to "1500um") Vertical length of resonator meanders
+            - lp_to_res - (Defaults to "300um") Minimum distance between the launchpad taper and the coupling length of the left-most resonator
+            - lp_inset - (Defaults to "0um") Inset of the launchpads along the x-axis relative to the die boundaries
+            - lp_dimension - (Defaults to "600um") Width of the launchpads' conductive centre pad (the launchpad gap scales accordingly)
+            - lp_taper - (Defaults to "300um") Length of the taper from launchpad to feedline
+            - substrate_material - (Defaults to "silicon") Substrate material (currently only "silicon" and "sapphire" are supported)
+            - substrate_thickness - (Defaults to "0.5mm") Substrate thickness
+            - film_thickness - (Defaults to "100nm") Film thickness
+            - chip_dimension - (Defaults to ("20mm", "20mm")) Dimensions of the chip as an (x, y) Tuple
+            - chip_border - (Defaults to "500um") Chip border to leave un-patterned
+            - die_dimension - (Defaults to ("7.1mm", "4.4mm")) Dimensions of the die as an (x, y) Tuple
+            - die_num - (Defaults to [1, 1])) Die layout in [x, y] as a length-2 list
+            - fill_chip - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides die_num if True)
+            - markers_on - (Defaults to True) Print dicing markers on export
+            - text_label - (Optional) Text label to print on chip
+            - text_size - (Defaults to 600) Text size
+            - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
+            - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
         
+        Outputs:
+            - design - Qiskit Metal design object for the generated chip
+        '''
+
+        # TODO: add option for scaling of resonator dimensions compared to feedline dimensions (i.e. so the feedline can be larger)
+
+        # TODO: add support for other `tl_y` values
+
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
 
         print(f"{t}\nBuilding chip \"{export_filename}\" with the following options:\n")
@@ -174,7 +212,7 @@ class MultiDieChip:
         print('\n\n~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # setup GDS export (positive)
-        gds_export = MakeGDS(design, export_type='positive')
+        gds_export = MakeGDS(design, export_type=export_type)
 
         # add text label
         if text_position==None:

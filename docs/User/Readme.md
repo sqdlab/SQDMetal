@@ -21,6 +21,7 @@ Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
 - [GDS Exporter](GDS.md)
 - [Qubit Designer](Qubit_Designer.md)
+- [Full Chip Maker](FullChipMaker.md)
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)
