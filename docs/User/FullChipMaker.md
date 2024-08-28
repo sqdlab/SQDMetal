@@ -32,10 +32,8 @@ The above call mostly uses the default function values (which can be found in th
 ![Example output from the make_resonator_chip function in the MultiDieChip class.](FullChipMaker.png)
 
 The full list of inputs are as follows:
-
-Inputs:
 - `export_filename` - Filename for gds export (e.g. "test")
-- `export_path` - Path for export (e.g. 'exports'); the file will then be output to /exports/test.gds
+- `export_path` - Path for export (e.g. 'exports'); the file will then be output to `/exports/test.gds`
 - `export_type` - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
 - `frequency_range` - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
 - `num_resonators` - (Defaults to 5) Number of resonators per die
@@ -53,8 +51,8 @@ Inputs:
 - `chip_dimension` - (Defaults to ("20mm", "20mm")) Dimensions of the chip as an (x, y) Tuple
 - `chip_border` - (Defaults to "500um") Chip border to leave un-patterned
 - `die_dimension` - (Defaults to ("7.1mm", "4.4mm")) Dimensions of the die as an (x, y) Tuple
-- `die_num` - (Defaults to [1, 1])) Die layout in [x, y] as a length-2 list
-- `fill_chip` - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides die_num if True)
+- `die_num` - (Defaults to [1, 1]) Die layout in [x, y] as a length-2 list
+- `fill_chip` - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides `die_num` if True)
 - `markers_on` - (Defaults to True) Print dicing markers on export
 - `text_label` - (Optional) Text label to print on chip
 - `text_size` - (Defaults to 600) Text size
