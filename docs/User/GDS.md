@@ -53,9 +53,16 @@ from SQDMetal.Utilities.MakeGDS import MakeGDS
 
 leGDS = MakeGDS(design)
 
-#Add a text label
+#Add a text label in the top left of the design
 leGDS.add_text(text_label="Add your label here", layer=10, size=600, position=(0.1, 0.9))
 
 #Export design with text label on layer 10
 leGDS.export('design_with_text.gds')
 ```
+
+The `add_text()` function inputs are described as:
+- `text_label` - Text label to add
+- `layer` - (Defaults to 0) Layer number to export the text to (if none, write to layer 0)
+- `size` - (defaults to 800) Text size
+- `position` - (Optional) Tuple containing position (normalised to 1); e.g. (0,0) is bottom left, (1,1) is top right. The default position is in the bottom left.
+
