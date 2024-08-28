@@ -61,7 +61,7 @@ class MakeGDS:
 
     def refresh(self):
         '''
-        Deletes everything and rebuilds metallic layers from scratch with the ground plane being in layer zero. The negative versions of the layers are given in layers starting from highest layer index plus 10. Can choose to export all layers (negative and positive patterns), or only positive or negative patterns.
+        Deletes everything and rebuilds metallic layers from scratch with the ground plane being in layer zero. The negative versions of the layers are given in layers starting from highest layer index plus 10. Export all layers (negative plus positive patterns), or only positive or negative patterns.
         '''
         assert self.export_type in ["all", "negative", "positive"], "Export type must be: \"all\", \"negative\", or \"positive\""
 
@@ -136,7 +136,7 @@ class MakeGDS:
                 self._layer_metals[layer] = gds_metal
 
         # fuse layers for a single-layer design (GND, metal)
-        if (len(all_layers)==2) and (self.export_type in ["posi tive", "negative"]):
+        if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
             if self.export_type=="positive":
                 self.add_boolean_layer(0, 0, "and", output_layer=0)
             if self.export_type=="negative":

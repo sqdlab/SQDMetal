@@ -1134,8 +1134,7 @@ class QUtilities:
         # TODO: add automatic component/pin naming from launchpad list which should be passed as an input
 
         # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
-        if tl_y == "0nm" or "0um" or "0mm" or "0cm" or "0m":
-
+        if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
             tl_options = Dict(
                 pin_inputs=Dict(
                     start_pin=Dict(component=f'lp_L_die{die_index+1}', pin='tie'),
@@ -1144,14 +1143,13 @@ class QUtilities:
                 trace_width=width,
                 trace_gap=gap,
             )
-            
             tl = RouteStraight(design=design, 
                             name=f"tl_die{die_index}", 
                             options=tl_options)
-            
-        else:
+        elif tl_y not in ["0nm", "0um", "0mm", "0cm", "0m"]:
             raise Exception("Sorry, for now the transmission line must be at y=0um. Functionality for other placements coming soon")
-            # TODO: add functionality for non-centred transmission line
+
+            
 
         return tl
     
