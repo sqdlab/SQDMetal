@@ -44,7 +44,7 @@ top_layer = gdsexp.add_boolean_layer(2,2,'or')
 leGDS.export('rounded.gds')
 ```
 
-#### Adding text to the export
+### Adding text to the export
 
 You can also add text with the `add_text()` function as follows:
 
