@@ -9,7 +9,7 @@ from datetime import datetime
 
 class MultiDieChip:
     @staticmethod
-    def make_resonator_chip(export_filename, 
+    def make_resonator_chip(export_filename=None, 
                             export_path="", 
                             export_type="all",
                             frequency_range=(6e9, 7e9), 
@@ -79,7 +79,8 @@ class MultiDieChip:
 
         print(f"{t}\nBuilding chip \"{export_filename}\" with the following options:\n")
         print(locals())
-        print('\n\n')
+        print('\n')
+        print('~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # assign other values form input parameters
         substrate = Material(substrate_material)
@@ -140,13 +141,17 @@ class MultiDieChip:
             + (25 * 1e-6)
         )
 
+
+        print(f'Chip Size: {chip_dimension[0]} x {chip_dimension[1]}')
+        print(f'Die Size: {die_dimension[0]} x {die_dimension[1]}')
+        print('Resonator frequencies')
+        print(f'\t{[f'{i*1e-9}GHz' for i in freq_list]]}')
         print('CPW properties:')
         print(f'\tCPW gap: {gap}')
         print(f'\tCPW width: {cpw_width}')
         print(f'\tCPW impedance: {cpw_impedance:.2f} Ohm')
         print('\nLaunchpad properties:')
         print(f'\tLaunchpad extent: {lp_extent * 1e6:.2f}um\n\n')
-
         print('~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # place and store launchpads, resonators, transmission lines
@@ -169,6 +174,7 @@ class MultiDieChip:
                     dimension=lp_dimension,
                     inset=lp_inset,
                     taper=lp_taper,
+                    print_checks=print_all_infos
                 )
             )
 
@@ -220,15 +226,17 @@ class MultiDieChip:
         else:
             gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
 
-        # setup export path based on user inputs
-        if export_path=="":
-            full_export_path = os.path.join(f"{export_filename}_{t}.gds")
-        else:
-            full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
+        # only export if a filename is passed
+        if export_filename != None:
+            # setup export path based on user inputs
+            if export_path=="":
+                full_export_path = os.path.join(f"{export_filename}_{t}.gds")
+            else:
+                full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
 
-        # do export
-        gds_export.export(full_export_path)
+            # do export
+            gds_export.export(full_export_path)
+            print(f"Exported at {full_export_path}")
 
-        print(f"Exported at {full_export_path}")
-
+        # return design regardless of whether the GDS was exported or not
         return design

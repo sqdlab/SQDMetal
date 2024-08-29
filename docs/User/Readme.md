@@ -19,7 +19,7 @@ Custom *Qiskit-Metal* compatible parts:
 
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
-- [GDS Exporter](GDS.md)
+- [GDS Exporter and Manipulator](GDS.md)
 - [Qubit Designer](Qubit_Designer.md)
 - [Full Chip Maker](FullChipMaker.md)
 
