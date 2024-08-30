@@ -73,7 +73,7 @@ class ManipulateGDS:
 
 
     def make_array_onChip(self, columns, rows, 
-                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None):
+                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None, add_labels=True, label_string=None):
         '''
         Makes an array of a design input and exports it as a new GDS. 
 
@@ -85,6 +85,8 @@ class ManipulateGDS:
             - export - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design
             - export_path - (Optional) Export path (if different from self)
             - use_cells - (Optional) List of cells from the input GDS to include in the arrayed structure
+            - add_label - (Defaults to True) Add a label beneath each arrayed structure
+            - label_string - (Optional) If None, defaults to R1C1, R1C2 etc. (R{row_index}C{column_index}). Otherwise, if a single string is passed, this will be printed with an incrementing number. Otherwise, a list corresponding in length to the total number of arrayed structures can be passed and will be printed along row 1 from left to right, then row 2 etc.
         
         Output:
             - cell_array - gdspy cell array containing arrayed structures
@@ -93,7 +95,9 @@ class ManipulateGDS:
         # TODO: add option to autofill chip (requires additional arguments on chip_border (number as a string with units), fill_chip (boolean))
 
         # import assertions
-        assert (isinstance(chip_dimension, tuple) and isinstance(chip_dimension[0], str)), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."    
+        assert (isinstance(chip_dimension, tuple) and isinstance(chip_dimension[0], str)), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."   
+        if isinstance(label_string, list):
+            assert len(label_string)==(columns * rows), "If you are passing a list of labels, please ensure it is the same length as the total number of arrayed structures (i.e. rows * columns)." 
         
         # default: copy all cells. Else use function input (if any), finally use class init input (if any)
         if use_cells != None:
@@ -114,6 +118,21 @@ class ManipulateGDS:
                                 ).get_polygonsets()
         self.cell_array.add(arrays_of_polygonsets)
 
+        # do labelling (origin is in bottom left)
+        labels = []
+        if add_labels:
+            for i in range(rows):
+                for j in range(columns):
+                    if label_string==None:
+                        labels.append(f'R{i}C{j}')
+                    elif isinstance(label_string, str):
+                        labels.append(f'{label_string}_{i}{j}') 
+        if isinstance(label_string, list): 
+            labels = label_string
+
+        # add labels to design
+
+                        
         # export if option is set
         if export:
             if export_path == None: 
@@ -125,6 +144,6 @@ class ManipulateGDS:
 
         # TODO: add centering by default (i.e. so that the whole array is centred on (0,0))
 
-        print(f"\nFrom {self.infile}:\n\tA {columns} x {rows} array of the design was made\n\tSpacing: {spacing}\n\nThe array was exported to:\n\t{self.outfile}.")
+        print(f"\nFrom {self.infile}:\n\tA {columns} x {rows} array of the design was made\n\tSpacing: {spacing}\n\nThe array was exported to:\n\t{self.outfile}")
 
         return self.cell_array
