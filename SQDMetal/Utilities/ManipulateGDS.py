@@ -1,5 +1,7 @@
 import gdspy
 from SQDMetal.Utilities.QUtilities import QUtilities
+from matplotlib.font_manager import FontProperties
+from matplotlib.textpath import TextPath
 
 class ManipulateGDS:
     def __init__(self, import_path_gds, export_path_gds, import_cells=None, origin=(0,0)):
@@ -73,9 +75,9 @@ class ManipulateGDS:
 
 
     def make_array_onChip(self, columns, rows, 
-                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None, add_labels=True, label_string=None):
+                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None, add_labels=True, label_string=None, label_offset=None, label_size=50):
         '''
-        Makes an array of a design input and exports it as a new GDS. 
+        Makes an array of a design input and exports it as a new GDS. Labels each arrayed structure. 
 
         Inputs:
             - columns - number of columns in the array
@@ -87,6 +89,8 @@ class ManipulateGDS:
             - use_cells - (Optional) List of cells from the input GDS to include in the arrayed structure
             - add_label - (Defaults to True) Add a label beneath each arrayed structure
             - label_string - (Optional) If None, defaults to R1C1, R1C2 etc. (R{row_index}C{column_index}). Otherwise, if a single string is passed, this will be printed with an incrementing number. Otherwise, a list corresponding in length to the total number of arrayed structures can be passed and will be printed along row 1 from left to right, then row 2 etc.
+            - label_offset - (Optional) Describes how far beneath the origin for each array point the label is. Defaults to half of spacing in y. Can be passed as a string with units (e.g. 300um).
+            - label_size - (Defaults to 50) Text size for the printed labels
         
         Output:
             - cell_array - gdspy cell array containing arrayed structures
@@ -98,7 +102,19 @@ class ManipulateGDS:
         assert (isinstance(chip_dimension, tuple) and isinstance(chip_dimension[0], str)), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."   
         if isinstance(label_string, list):
             assert len(label_string)==(columns * rows), "If you are passing a list of labels, please ensure it is the same length as the total number of arrayed structures (i.e. rows * columns)." 
+
+        # parse values
+        sp_x = QUtilities.parse_value_length(spacing[0])
+        sp_y = QUtilities.parse_value_length(spacing[1])
+        if label_offset != None: 
+            lbl_offset = QUtilities.parse_value_length(label_offset)
+        else:
+            lbl_offset = sp_y/2
         
+        # set font
+        # TODO: add as argument
+        fp = FontProperties(family="serif", style="italic")
+
         # default: copy all cells. Else use function input (if any), finally use class init input (if any)
         if use_cells != None:
             self.flatten_cells(cell_keys=use_cells) 
@@ -119,31 +135,108 @@ class ManipulateGDS:
         self.cell_array.add(arrays_of_polygonsets)
 
         # do labelling (origin is in bottom left)
-        labels = []
         if add_labels:
-            for i in range(rows):
-                for j in range(columns):
-                    if label_string==None:
-                        labels.append(f'R{i}C{j}')
-                    elif isinstance(label_string, str):
-                        labels.append(f'{label_string}_{i}{j}') 
-        if isinstance(label_string, list): 
-            labels = label_string
+            self.cell_text = self.lib.new_cell("Text")
+            index = 0
+            text = []
+            if isinstance(label_string, list): 
+                labels = label_string
+            if add_labels:
+                for i in range(rows):
+                    for j in range(columns):
+                        # assign labels
+                        if label_string==None:
+                            label = f'R{i}C{j}'
+                        elif isinstance(label_string, str):
+                            label = f'{label_string}_{i}{j}' 
+                        else:
+                            label = label_string[index]
 
-        # add labels to design
+                        # calculate label position
+                        current_origin_x = j * sp_x
+                        current_origin_y = (rows - i) * sp_y
+                        label_position = (current_origin_x, (current_origin_y-lbl_offset))
 
-                        
+                        print(f'{label} --> {label_position}')
+
+                        # add text to gds on layer 999
+                        # text = gdspy.PolygonSet(self.render_text(text=label, size=10, position=label_position, font_prop=fp), layer=999)
+                        text = gdspy.Text(label, label_size, label_position, layer=11)
+
+                        self.cell_text.add(text)
+
+                        index += 1
+
         # export if option is set
         if export:
             if export_path == None: 
                 array_export = self.outfile
             else:
                 array_export = export_path
-            self.lib.write_gds(array_export, cells=['Array'])
-            print(f"\nOutputting cell 'Array' ({len(self.cell_array.get_polygonsets())} polygons)\n\t--> {array_export}\n\n")
+            
+            if not add_labels:
+                self.lib.write_gds(array_export, cells=['Array'])
+                print(f"\nOutputting cell 'Array' ({len(self.cell_array.get_polygonsets())} polygons)\n\t--> {array_export}\n")
+            if add_labels: 
+                self.lib.write_gds(array_export, cells=['Array', 'Text'])
+                print(f"\nOutputting cell: 'Array' ({len(self.cell_array.get_polygonsets())} polygons)\nOutputting cell: 'Text' ({len(self.cell_text.get_polygonsets())} polygons)\n\t--> {array_export}\n")
 
         # TODO: add centering by default (i.e. so that the whole array is centred on (0,0))
 
         print(f"\nFrom {self.infile}:\n\tA {columns} x {rows} array of the design was made\n\tSpacing: {spacing}\n\nThe array was exported to:\n\t{self.outfile}")
 
         return self.cell_array
+    
+
+    # for rendering system fonts
+    def render_text(self, text, 
+                    size=None, 
+                    position=(0, 0), 
+                    font_prop=None, 
+                    tolerance=0.1):
+        
+        path = TextPath(position, text, size=size, prop=font_prop)
+        polys = []
+        xmax = position[0]
+        for points, code in path.iter_segments():
+            if code == path.MOVETO:
+                c = gdspy.Curve(*points, tolerance=tolerance)
+            elif code == path.LINETO:
+                c.L(*points)
+            elif code == path.CURVE3:
+                c.Q(*points)
+            elif code == path.CURVE4:
+                c.C(*points)
+            elif code == path.CLOSEPOLY:
+                poly = c.get_points()
+                if poly.size > 0:
+                    if poly[:, 0].min() < xmax:
+                        i = len(polys) - 1
+                        while i >= 0:
+                            if gdspy.inside(
+                                poly[:1], [polys[i]], precision=0.1 * tolerance
+                            )[0]:
+                                p = polys.pop(i)
+                                poly = gdspy.boolean(
+                                    [p],
+                                    [poly],
+                                    "xor",
+                                    precision=0.1 * tolerance,
+                                    max_points=0,
+                                ).polygons[0]
+                                break
+                            elif gdspy.inside(
+                                polys[i][:1], [poly], precision=0.1 * tolerance
+                            )[0]:
+                                p = polys.pop(i)
+                                poly = gdspy.boolean(
+                                    [p],
+                                    [poly],
+                                    "xor",
+                                    precision=0.1 * tolerance,
+                                    max_points=0,
+                                ).polygons[0]
+                            i -= 1
+                    xmax = max(xmax, poly[:, 0].max())
+                    polys.append(poly)
+        return polys

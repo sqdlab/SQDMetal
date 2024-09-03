@@ -1149,8 +1149,6 @@ class QUtilities:
         elif tl_y not in ["0nm", "0um", "0mm", "0cm", "0m"]:
             raise Exception("Sorry, for now the transmission line must be at y=0um. Functionality for other placements coming soon")
 
-            
-
         return tl
     
     @staticmethod
