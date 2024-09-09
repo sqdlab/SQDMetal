@@ -77,6 +77,8 @@ class MultiDieChip:
 
         # TODO: add support for other `tl_y` values
 
+        # TODO: add automatic Palace sim
+
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
 
         print(f"{t}\nBuilding chip \"{export_filename}\" with the following options:\n")
