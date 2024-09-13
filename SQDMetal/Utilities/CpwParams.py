@@ -11,7 +11,7 @@ class CpwParams:
     
     @classmethod
     def fromQDesign(cls, design, chip_name='main'):
-        matr = design.chips[chip_name].material
+        matr = design.chips[chip_name].material[0]
         er = Material(matr).permittivity
         h = QUtilities.parse_value_length(design.chips[chip_name].size['size_z'])
         return CpwParams(er, h)
