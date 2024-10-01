@@ -91,11 +91,12 @@ class PALACE_Model:
         leFile = os.path.basename(os.path.realpath(config_file))
         leDir = os.path.dirname(os.path.realpath(config_file))
 
+        if not os.path.exists(self._output_data_dir):
+            os.makedirs(self._output_data_dir)
         log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
             f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{log_location}\"\n")
-        os.makedirs(self._output_data_dir)
         with open(log_location, 'w') as fp:
             pass
 
@@ -181,7 +182,7 @@ class PALACE_Model:
   
         # Create the directory
         if not os.path.exists(path):
-            os.mkdir(path)
+            os.makedirs(path)
             print("Directory '% s' created" % directory)
 
 
@@ -246,7 +247,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, options['fillet_resolution'], 'eigenmode_simulation')
+            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, self.user_options['fillet_resolution'], 'eigenmode_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
