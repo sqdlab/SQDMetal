@@ -17,6 +17,8 @@ Custom *Qiskit-Metal* compatible parts:
 - Markers
 - Holes
 
+[Worked examples of simulations](WorkedExamples/README.md)
+
 Utility modules:
 - [Accounting for shadow evaporation](PVD.md)
 - [GDS Exporter](GDS.md)

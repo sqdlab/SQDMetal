@@ -147,7 +147,7 @@ class Palace_Gmsh_Renderer:
                 metal_simplified = cur_poly.simplify(1e-6)
                 gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior.coords[:])
                 print(gmsh_exterior)
-                if False and len(metal_simplified.interiors) >= 1:
+                if len(metal_simplified.interiors) >= 1:
                     interiors = []
                     for _,interior in enumerate(metal_simplified.interiors):
                         gmsh_interior = self._draw_polygon_from_coords(interior.coords[:])

@@ -175,6 +175,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
         else:
             config['Boundaries']['PEC']['Attributes'] += far_field
+        # if self.meshing == 'GMSH':
+        #     config['Solver']['Linear']['Type'] = "Default"
+        #     config['Solver']['Linear']['KSPType'] = "GMRES"
 
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
