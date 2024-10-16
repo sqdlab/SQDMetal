@@ -227,3 +227,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
         #It should be: m, Re(f), Im(f), Q
         return {'f_real': raw_data[:,1]*1e9, 'f_imag': raw_data[:,2]*1e9, 'Q': raw_data[:,3]}
+
+    def retrieve_field_plots(self):
+        lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
+        return PVDVTU_Viewer(lePlots)
