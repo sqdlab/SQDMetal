@@ -146,7 +146,6 @@ class Palace_Gmsh_Renderer:
                 p.plot()
                 metal_simplified = cur_poly.simplify(1e-6)
                 gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior.coords[:])
-                print(gmsh_exterior)
                 if len(metal_simplified.interiors) >= 1:
                     interiors = []
                     for _,interior in enumerate(metal_simplified.interiors):
@@ -158,7 +157,6 @@ class Palace_Gmsh_Renderer:
                     metal_list.append((m, 2,gmsh_surface[0][1]))
                 else:
                     metal_list.append((m, 2,gmsh_exterior))
-        print('done')
 
         #update geometries
         gmsh.model.geo.synchronize()
@@ -176,8 +174,7 @@ class Palace_Gmsh_Renderer:
         for m in metal_polys:
             cur_metals = [x[2] for x in metal_list if x[0] == m]
             leMetals.append( gmsh.model.addPhysicalGroup(2, cur_metals, name = 'metal'+str(m)) )
-        print('hi')
-        print(leMetals)
+        
 
         #create list to fragment with chip base
         fragment_list = [(x[1], x[2]) for x in metal_list]
