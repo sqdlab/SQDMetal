@@ -21,6 +21,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
+                 "mesh_max": 120e-3,                                
+                 "mesh_min": 10e-3,                                 
+                 "mesh_sampling": 130,                              
+                 "fillet_resolution":12,
                  "HPC_Parameters_JSON": ""
     }
 
@@ -226,6 +230,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         if self._output_subdir == "":
             self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        post_procs = []
+        for x in Terminal:
+            post_procs.append({"Index":x["Index"], "Attributes":x["Attributes"], "Type": "Electric"})
         config = {
                     "Problem":
                     {
@@ -270,8 +277,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                             Terminal,
                         "Postprocessing":  # Capacitance from charge instead of energy
                         {
-                        "Capacitance":
-                            Terminal,
+                        "SurfaceFlux": post_procs,
                         }
                     },
                     "Solver":
