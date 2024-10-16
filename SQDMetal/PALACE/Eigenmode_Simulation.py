@@ -217,16 +217,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         if os.path.exists(lePlots):
             leView = PVDVTU_Viewer(lePlots)
             for m in range(leView.num_datasets):
-                leSlice = leView.get_data_slice(m)
-                fig = leSlice.plot(np.linalg.norm(leSlice.get_data('E_real'), axis=1), 'coolwarm', True)
-                fig.savefig(self._output_data_dir + f'/eig{m}_ErealMag.png')
+                try: 
+                    leSlice = leView.get_data_slice(m)
+                    fig = leSlice.plot(np.linalg.norm(leSlice.get_data('E_real'), axis=1), 'coolwarm', True)
+                    fig.savefig(self._output_data_dir + f'/eig{m}_ErealMag.png')
+                    plt.close(fig)
+                except Exception as e:
+                    print(f"Error in plotting: {e}")
+            try:
+                fig = leSlice.plot_mesh()
+                fig.savefig(self._output_data_dir + '/mesh.png')
                 plt.close(fig)
-            fig = leSlice.plot_mesh()
-            fig.savefig(self._output_data_dir + '/mesh.png')
-            plt.close(fig)
-
-        #It should be: m, Re(f), Im(f), Q
-        return {'f_real': raw_data[:,1]*1e9, 'f_imag': raw_data[:,2]*1e9, 'Q': raw_data[:,3]}
+            except Exception as e:
+                print(f"Error in plotting: {e}")
 
     def retrieve_field_plots(self):
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'

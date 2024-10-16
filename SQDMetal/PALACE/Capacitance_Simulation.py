@@ -3,7 +3,6 @@ from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
-from SQDMetal.Utilities.QUtilities import QUtilities
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -22,10 +21,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "mesh_max": 120e-3,                                
-                 "mesh_min": 10e-3,                                 
-                 "mesh_sampling": 130,                              
-                 "fillet_resolution":12,
                  "HPC_Parameters_JSON": ""
     }
 
@@ -170,26 +165,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
-    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
-        self._fine_meshes.append({
-            'type': 'box',
-            'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
-            'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
-            'max_size': kwargs.get('max_size', self.user_options['mesh_max'])
-        })
 
-    def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
-        leUnits = QUtilities.get_units(self.metal_design)
-        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
-        self._fine_meshes.append({
-            'type': 'path',
-            'path': lePath * 1e3, #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
-            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
-        })
 
     def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -247,6 +223,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         config = {
                     "Problem":
@@ -329,3 +307,4 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
         self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)

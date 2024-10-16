@@ -6,6 +6,7 @@ import numpy as np
 import os, subprocess
 import gmsh
 import json
+import platform
 
 class PALACE_Model:
     def __init__(self, meshing, mode, options):
@@ -24,6 +25,7 @@ class PALACE_Model:
         else:
             self.palace_dir = options.get('palace_dir', 'palace')                
             self.hpc_options = {"input_dir":""}
+        self._num_cpus = options.get('num_cpus', 16)
 
     def create_batch_file(self):
         pass
@@ -84,6 +86,18 @@ class PALACE_Model:
         assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
         self._ff_type = ff_type
 
+    def _is_native_arm64():
+        '''
+        Helper method written by Sadman Ahmed Shanto @shanto268 in this issue: https://github.com/sqdlab/SQDMetal/issues/9
+        '''
+        try:
+            # Run the sysctl command to check the native architecture
+            result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, check=True)
+            return "M" in result.stdout  # M is for Apple M1/M2 chips
+        except subprocess.CalledProcessError as e:
+            print(f"Error checking native architecture: {e}")
+            return False
+
     def run(self):
         assert self._sim_config != "", "Must run prepare_simulation at least once."
 
@@ -96,11 +110,26 @@ class PALACE_Model:
         log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{log_location}\"\n")
+            f.write(f"\"{self.palace_dir}\" -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+
+        # Set execute permission on temp.sh
+        os.chmod("temp.sh", 0o755)
+
         with open(log_location, 'w') as fp:
             pass
 
-        self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        # Get the current running architecture
+        running_arch = platform.machine()
+
+        # If the machine is native arm64 but running under x86_64, run temp.sh under arm64
+        if self._is_native_arm64() and running_arch == "x86_64":
+            print("Running arm64 process from x86_64 environment...")
+            self.cur_process = subprocess.Popen(["arch", "-arm64", "bash", "./temp.sh"], shell=False)
+        else:
+            # Run the temp.sh script as usual
+            print("Running temp.sh script under current architecture...")
+            self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        
         try:
             self.cur_process.wait()
         except KeyboardInterrupt:
