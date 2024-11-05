@@ -30,11 +30,13 @@ design.chips['main']['evaporations'] = Dict(
         undercut='200nm',
         pvd1 = Dict(
         angle_phi = '-90',
-        angle_theta = '45'
+        angle_theta = '45',
+        metal_thickness = '10nm'
         ),
         pvd2 = Dict(
         angle_phi = '0',
-        angle_theta = '45'
+        angle_theta = '45',
+        metal_thickness = '100nm'
         )
     )
 )
@@ -47,6 +49,7 @@ Note the following:
 - The `Dict` object given for a particular layer must specify the mask layer thicknesses (via the keys `'top_layer'` and `'bottom_layer'`) and the `'undercut'` distance.
 - PVD step may consist of multiple angled evaporations, each of which is given under the keys enumerating from 1 onwards (two evaporations in the above example `'pvd1'` and `'pvd2'`).
 - The evaporation angles for angled evaporation is given by the azimuthal and polar angles *ɸ* and *θ* respectively.
+- The `metal_thickness` is optional. If given, it will account for the metal's thickness in the subsequent evaporation step.
 
 The angles constitute the spherical polar angle from which the evaporated ray arrives:
 

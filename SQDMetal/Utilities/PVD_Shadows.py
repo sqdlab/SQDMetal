@@ -18,6 +18,14 @@ class PVD_Shadows:
     def update_pvd_profiles(self):
         unit_conv, unit_conv_name = self.get_units()
 
+        #Calculate chip-bounds
+        cur_dict = parse_value(self.design.chips[self._chip_name].size, self.design.chips[self._chip_name].size.keys())
+        self._chip_bounds = [((cur_dict['center_x']-cur_dict['size_x']/2)*unit_conv, (cur_dict['center_y']-cur_dict['size_y']/2)*unit_conv),
+                             ((cur_dict['center_x']+cur_dict['size_x']/2)*unit_conv, (cur_dict['center_y']-cur_dict['size_y']/2)*unit_conv),
+                             ((cur_dict['center_x']+cur_dict['size_x']/2)*unit_conv, (cur_dict['center_y']+cur_dict['size_y']/2)*unit_conv),
+                             ((cur_dict['center_x']-cur_dict['size_x']/2)*unit_conv, (cur_dict['center_y']+cur_dict['size_y']/2)*unit_conv)]
+        self._chip_bounds = shapely.Polygon(self._chip_bounds)
+
         #Setup dictionary indexed as layer index and then a list of the evaporation steps of which each step is a dictionary of required parameters...
         self.evap_profiles = {}
         if 'evaporations' in self.design.chips[self._chip_name]:
@@ -25,11 +33,28 @@ class PVD_Shadows:
                 cur_dict = parse_value(self.design.chips[self._chip_name].evaporations[cur_layer], self.design.chips[self._chip_name].evaporations[cur_layer].keys())
                 cur_layer_ind = int(cur_layer.lower().split("layer")[-1])
                 pvds = sorted([x for x in cur_dict if x.startswith('pvd')])
-                pvds = [(cur_dict[x]['angle_phi']/180*np.pi, cur_dict[x]['angle_theta']/180*np.pi) for x in pvds]
+                pvds = [cur_dict[x] for x in pvds]
                 self.evap_profiles[cur_layer_ind] = self._get_cur_pvd_profile(cur_dict['bottom_layer'] * unit_conv,
                                                         cur_dict['top_layer'] * unit_conv,
                                                         cur_dict['undercut'] * unit_conv,
-                                                        pvds)
+                                                        pvds, unit_conv)
+
+    def _get_cur_pvd_profile(self, thickness_L, thickness_U, undercut, pvd_infos, unit_conv):
+        ret_list = []
+        for cur_pvd_info in pvd_infos:
+            angle_phi = cur_pvd_info['angle_phi']/180*np.pi
+            angle_theta = cur_pvd_info['angle_theta']/180*np.pi
+            metal_thickness = cur_pvd_info.get('metal_thickness',0)*unit_conv
+            #
+            cur_profile = {}
+            cur_profile['leading_dist'] = (thickness_L+thickness_U)*np.tan(angle_theta)
+            cur_profile['tailing_dist'] = (thickness_L)*np.tan(angle_theta)
+            cur_profile['tan_theta'] = np.tan(angle_theta)
+            cur_profile['cur_evap_dir'] = -np.array([np.cos(angle_phi), np.sin(angle_phi)])
+            cur_profile['metal_thickness'] = metal_thickness
+            cur_profile['undercut'] = undercut
+            ret_list.append(cur_profile)
+        return ret_list
 
     def get_units(self):
         unit_conv = self.design.get_units()
@@ -44,17 +69,6 @@ class PVD_Shadows:
             assert False, f"Unrecognised units: {unit_conv}"
         return unit_conv, unit_conv_name
 
-    def _get_cur_pvd_profile(self, thickness_L, thickness_U, undercut, evap_angles_phi_theta):
-        ret_list = []
-        for cur_evap_angles in evap_angles_phi_theta:
-            cur_profile = {}
-            cur_profile['leading_dist'] = (thickness_L+thickness_U)*np.tan(cur_evap_angles[1])
-            cur_profile['tailing_dist'] = (thickness_L)*np.tan(cur_evap_angles[1])
-            cur_profile['cur_evap_dir'] = -np.array([np.cos(cur_evap_angles[0]), np.sin(cur_evap_angles[0])])
-            cur_profile['undercut'] = undercut
-            ret_list.append(cur_profile)
-        return ret_list
-
     def plot_all_layers(self, mode='separate', **kwargs):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
@@ -65,6 +79,7 @@ class PVD_Shadows:
         layer_ids = np.unique(gsdf['layer'])
         plot_polys = []
         names = []
+        new_metal_layers = [(0, shapely.Polygon(self._chip_bounds))]
         for layer_id in layer_ids:
             filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
             if filt.shape[0] == 0:
@@ -76,7 +91,7 @@ class PVD_Shadows:
                 if plot_mask:
                     plot_polys += [metal_polys]
                     names += [f"Layer {layer_id} Mask"]
-                leShadows = self.get_all_shadows(metal_polys, layer_id, mode, **kwargs)
+                leShadows = self.get_all_shadows(metal_polys, layer_id, mode, list_evap_metals=new_metal_layers, **kwargs)
                 plot_polys += leShadows
                 names += [f"Layer {layer_id}, Step {x}" for x in range(len(leShadows))]
             else:
@@ -171,11 +186,14 @@ class PVD_Shadows:
         return np.array(cur_max_int.exterior.coords[:]), cur_max_int
 
     def get_all_shadows(self, cur_poly, layer_id, mode='merge', **kwargs):
+        list_evap_metals = kwargs.get('list_evap_metals', [(0, shapely.Polygon(self._chip_bounds))])
+
         if not layer_id in self.evap_profiles:
             return cur_poly
         profiles = []
         for dict_evap_params in self.evap_profiles[layer_id]:
-            profiles += [self.get_poly_shadow(cur_poly, dict_evap_params)]
+            profiles += [self._get_poly_shadow(cur_poly, dict_evap_params, list_evap_metals)]
+            list_evap_metals = self._add_metallic_layer(list_evap_metals, profiles[-1], dict_evap_params['metal_thickness'])
         if mode == 'merge':
             return [shapely.unary_union(profiles)]
         elif mode == 'separate':
@@ -196,7 +214,7 @@ class PVD_Shadows:
                     profiles[n] = profiles[n].difference(intersec)
             return profiles
 
-    def get_poly_shadow(self, cur_poly, dict_evap_params):
+    def _get_poly_shadow(self, cur_poly, dict_evap_params, list_evap_metals):
         leading_dist = dict_evap_params['leading_dist']
         tailing_dist = dict_evap_params['tailing_dist']
         if leading_dist == 0:   #Basically a vertical evaporation...
@@ -248,7 +266,56 @@ class PVD_Shadows:
         #Select regions that are lit
         total_light = [x[0] for x in region_sums if x[1] > 0]
 
-        return self.process_geometry(shapely.intersection(shapely.geometry.multipolygon.MultiPolygon(total_light), allowed_region))
+        final_calc_metals = self.process_geometry(shapely.intersection(shapely.geometry.multipolygon.MultiPolygon(total_light), allowed_region))
+
+        #Account for thickness of previously evaporated layers...
+        if len(list_evap_metals) == 0:
+            return final_calc_metals    #Surface is uniform in height...       
+        allowed_polys = [self.process_geometry(x[1]) for x in list_evap_metals]
+
+        # gdf = gpd.GeoDataFrame({'names':[x[0] for x in list_evap_metals]}, geometry=gpd.geoseries.GeoSeries([x[1] for x in list_evap_metals]))
+        # fig, ax = plt.subplots(1)
+        # gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True)
+        # ax.set_xlabel(f'Position ({unit_conv_name})')
+        # ax.set_ylabel(f'Position ({unit_conv_name})')
+
+        for m in range(len(list_evap_metals)-1, 0,-1):
+            extSegs, intSegs = self.get_line_segments(list_evap_metals[m][1])
+            lineSegs = extSegs + intSegs
+            for n in range(m-1,-1,-1):
+                height_diff = list_evap_metals[m][0] - list_evap_metals[n][0]
+                dist_offset = height_diff * dict_evap_params['tan_theta']
+                for cur_line_seg in lineSegs:
+                    allowed_polys[n] = self._subtract_shadows(allowed_polys[n], cur_line_seg, cur_evap_dir, dist_offset)
+
+        # gdf = gpd.GeoDataFrame({'names':[x[0] for x in list_evap_metals]}, geometry=gpd.geoseries.GeoSeries([x for x in allowed_polys]))
+        # fig, ax = plt.subplots(1)
+        # gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True)
+        
+        allowed_polys = shapely.unary_union(allowed_polys)
+        self.allowed_polys = final_calc_metals
+        return self.process_geometry(shapely.intersection(allowed_polys, final_calc_metals))
+
+    def _subtract_shadows(self, poly, line_seg, vec_light, dist_offset):
+        vx, vy = vec_light
+        p0, p1 = line_seg
+
+        #Check light is not parallel with edge...
+        vec_edge = (p1[0]-p0[0], p1[1]-p0[1])
+        if np.abs(vx*vec_edge[1]-vy*vec_edge[0]) < 1e-9:
+            return poly
+        
+        vx *= dist_offset
+        vy *= dist_offset
+        
+        cut_poly = shapely.Polygon([(p0[0],p0[1]),(p0[0]+vx,p0[1]+vy),(p1[0]+vx,p1[1]+vy),(p1[0],p1[1])])
+        culled_poly = shapely.difference(poly, cut_poly)
+
+        # gdf = gpd.GeoDataFrame({'names':['culledPoly']}, geometry=gpd.geoseries.GeoSeries([culled_poly]))
+        # fig, ax = plt.subplots(1)
+        # gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True)
+
+        return culled_poly
 
     def process_geometry(self, geom):
         if geom.is_empty:
@@ -383,3 +450,18 @@ class PVD_Shadows:
             elif intersec_inds[0] == 0 and intersec_inds[1] == 3:
                 intersecs.append((xmin, ymax))
         return Polygon(np.array(intersecs))
+
+    def _add_metallic_layer(self, cur_metal_layers, new_metal_layer, new_metal_layer_height):
+        #cur_metal_layers is a list of tuples where the first element is the height and the second element is the polygon...
+        new_metal_layers = []
+        for cur_height,cur_metal_poly in cur_metal_layers:
+            polyInt = shapely.intersection(cur_metal_poly, new_metal_layer)
+            non_int_orig_poly = shapely.difference(cur_metal_poly, polyInt)
+            if non_int_orig_poly.area > 1e-25:
+                new_metal_layers.append( (cur_height, non_int_orig_poly) )
+            if polyInt.area > 1e-15:
+                new_metal_layers.append((cur_height + new_metal_layer_height, polyInt))
+        
+        new_metal_layers = sorted(new_metal_layers, key=lambda x: x[0])
+
+        return new_metal_layers
