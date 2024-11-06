@@ -1139,11 +1139,6 @@ class QUtilities:
             - tl - transmission line QComponent
         """
 
-        # anchor_cur = np.array([f"{die_origin[0] * 1e6:.1f}um", 
-        #                        f"{tl_y_cur * 1e6:.1f}um"])
-        # print(f"TL anchor for die {die_index + 1} at {anchor_cur}.")
-        # print(launchpads[0][0].get_pin('tie')['middle'][0])
-
         # assign launchpads
         lp_L = launchpads[die_index][0].name
         lp_L_pin = next(iter(launchpads[die_index][0].pins))

@@ -21,7 +21,7 @@ To import, use:
 from SQDMetal.Utilities.FullChipMaker import MultiDieChip
 ```
 
-You can now generate a `.gds` file for the full multi-die chip with the function `make_resonator_chip` as follows:
+You can generate a `.gds` file for the full multi-die chip with the function `make_resonator_chip` as follows:
 
 ```python
 d = MultiDieChip.make_resonator_chip(export_filename="FullChipMakerDemo", export_path='gds_designs', cpw_width="25um",export_type="positive", text_label="Just a demo :)", chip_dimension=("8.4mm", "10.6mm"), text_size=400, text_position=(0.2, 0.9))
@@ -58,6 +58,7 @@ The full list of inputs are as follows:
 - `text_size` - (Defaults to 600) Text size
 - `text_position` - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
 - `print_all_infos` - (Defaults to True) Choose whether to print info as the `.gds` is being generated
+- `date_stamp_on_export` - (Defaults to True) If True, will print date and time of export in exported .gds filename
 
 
 
