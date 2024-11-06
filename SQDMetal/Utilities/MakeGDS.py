@@ -8,7 +8,7 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class MakeGDS:
-    def __init__(self, design, threshold=1e-9, precision=1e-9, curve_resolution=22, smooth_radius=0, export_type='all', export_layers=None):
+    def __init__(self, design, threshold=1e-9, precision=1e-9, curve_resolution=22, smooth_radius=0, export_type='all', export_layers=None, print_statements=True):
         '''
         Inputs:
             design      - The QiskitMetal design object...
@@ -29,6 +29,7 @@ class MakeGDS:
         self.gds_units = 1e-6
         self.export_type = export_type
         self.export_layers = export_layers
+        self.print_statements = print_statements
         self.refresh()
 
     def _shapely_to_gds(self, metals, layer):
@@ -99,7 +100,8 @@ class MakeGDS:
         #
         leLayers = np.unique(gsdf['layer'])
 
-        print(f'Export type: {self.export_type}\n')
+        if self.print_statements:
+            print(f'Export type: {self.export_type}\n')
 
         # create layer list (positive layers)
         for layer in leLayers:
@@ -143,10 +145,10 @@ class MakeGDS:
                 self.add_boolean_layer(11, 12, "and", output_layer=0)
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
         
-        # layer exports (works best when export_type=="All")
+        # layer exports (works best when export_type=="all")
         if self.export_layers!=None:
             layer_list = list(self.cell.get_layers())
-            # assert self.export_layers in layer_list, "Cohsen export layers are not present in the design. Choose again."
+            # assert self.export_layers in layer_list, "Chosen export layers are not present in the design. Choose again."
             if isinstance(self.export_layers, list):
                 assert set(self.export_layers).issubset(layer_list), "Chosen export layers are not present in the design."
                 to_delete = list(set(layer_list) - set(self.export_layers))
@@ -184,11 +186,11 @@ class MakeGDS:
         Add a text label to the gds export on a given layer at a given position.
 
         Inputs:
+            text_label  - text label to add
             layer       - layer number to export the text to (if none, write to layer 0)
             size        - text size
             position    - tuple containing position (normalised to 1);
                           e.g. (0,0) is bottom left, (1,1) is top right
-            action      - perform a boolean operation on the layer the text is added to ('add', 'subtract')
         """
         assert isinstance(text_label, str), "Please pass a string as the text label."
         assert isinstance(position, (tuple, NoneType)), "Please pass the position as an (x,y) tuple"
