@@ -8,6 +8,7 @@ from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.straight_path import RouteStraight
+from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 from qiskit_metal.analyses import cpw_calculations
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
@@ -826,6 +827,8 @@ class QUtilities:
                 f"No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input."
             )
 
+        if print_checks: print(f'\nNOW PRINTING: Die {die_number}\n')
+
         # calculate launchpad scaling
         lp_scale_factor = QUtilities.parse_value_length(
             dimension
@@ -906,10 +909,11 @@ class QUtilities:
         die_dimension,
         die_index,
         launchpad_extent,
+        feedline_upscale=1.0,
         film_thickness="100nm",
         coupling_gap="20um",
         transmission_line_y="0um",
-        launchpad_to_res="200um",
+        launchpad_to_res="300um",
         res_shift_x="225um",
         min_res_gap="150um",
         res_vertical="1500um",
@@ -932,6 +936,7 @@ class QUtilities:
             - die_index - die number (int) for resonator object naming
             - launchpad_extent - total width of the launchpad including inset from edge of die in units of meters
         Inputs (optional):
+            - feedline_upscale - upscale factor for feedline gap/width compared to resonators (defaults to 1.0)
             - film thickness - as a string with units (defaults to "100nm")
             - coupling gap - amount of ground plane between transmission line and resonator coupling length as a string with units (defaults to "20um")
             - transmission_line_y - y-position of tranmission line in relation to die centre as a string with units (defaults to "0um")
@@ -992,8 +997,6 @@ class QUtilities:
         # calculate width per resonator (according to num_resonators)
         x_increment_res = (tl_extent / num_resonators) + QUtilities.parse_value_length(min_res_gap)
 
-        if print_statements: print(f'\nNOW PRINTING: Die {die_index + 1}\n')
-
         # initialise lists
         x_positions, resonator_names, resonator_vals = [], [], []
         if LC_calculations: capacitances, inductances = [], []
@@ -1006,7 +1009,7 @@ class QUtilities:
         for i, res in enumerate(resonator_names):
 
             # calculate x_position and add to list
-            x_pos_cur = x0 - (tl_extent / 2) + (i * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
+            x_pos_cur = x0 - (tl_extent / 2) + ((i + 0.25) * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
             x_positions.append(x_pos_cur)
 
             # calculate capacitance and inductance if requested
@@ -1031,7 +1034,7 @@ class QUtilities:
             resonator_vals.append([l_fullwave, er_eff, F])
 
             # calculate y value of resonator start
-            res_y_val = (y0 + tl_y - cg - w - 2*g)
+            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w) - (feedline_upscale * g) - cg - (0.5 * w) - g
             res_y_um = f'{res_y_val * 1e6:.3f}um'
 
             # calculate y value of resonator end
@@ -1116,7 +1119,7 @@ class QUtilities:
             return resonators, resonator_vals, resonator_names
     
     @staticmethod
-    def place_transmission_line_from_launchpads(design, tl_y, gap, width, die_index):
+    def place_transmission_line_from_launchpads(design, tl_y, gap, width, launchpads, die_index, die_origin=[0, 0], start_straight="100um", fillet="85um", anchor_inset="250um"):
         """
         Function to place transmission lines between launchpad pins on a multi-die chip. Each transmission line is named as "tl_die{die_index}".
 
@@ -1125,30 +1128,75 @@ class QUtilities:
             - tl_y - y coordinate for the primary routing of the transmission line, relative to the die centre as a string with units
             - gap - transmission line gap as a string with units
             - width - transmission line width as a string with units
+            - launchpads - QComponents for launchpads
             - die_index - index of the current die for QComponent naming
+            - die_origin - (Default to ["0um", "0um"]) origin coordinates of current die as a list of strings with units
+            - start_straight - (Defaults to "80um") Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to "50um"
+            - fillet - (Defaults to "50um") Fillet size on transmission line
+            - anchor_inset - (Defaults to "250um") Distance in x between launchpad connection and anchor
         
         Outputs:
             - tl - transmission line QComponent
         """
 
-        # TODO: add automatic component/pin naming from launchpad list which should be passed as an input
+        # anchor_cur = np.array([f"{die_origin[0] * 1e6:.1f}um", 
+        #                        f"{tl_y_cur * 1e6:.1f}um"])
+        # print(f"TL anchor for die {die_index + 1} at {anchor_cur}.")
+        # print(launchpads[0][0].get_pin('tie')['middle'][0])
 
-        # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
-        if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
-            tl_options = Dict(
+        # assign launchpads
+        lp_L = launchpads[die_index][0].name
+        lp_L_pin = next(iter(launchpads[die_index][0].pins))
+        lp_R = launchpads[die_index][1].name
+        lp_R_pin = next(iter(launchpads[die_index][1].pins))
+        lp_L_pin_x = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][0] * 1e-3 # convert to m
+        lp_R_pin_x = launchpads[die_index][1].get_pin(lp_R_pin)['middle'][0] * 1e-3 # convert to m
+
+        # calculate positions of anchors
+        tl_y_cur = QUtilities.parse_value_length(tl_y) + die_origin[1]
+        anchor_L_x = lp_L_pin_x + (2 * QUtilities.parse_value_length(fillet)) + QUtilities.parse_value_length(start_straight)
+        anchor_R_x = lp_R_pin_x - (2 * QUtilities.parse_value_length(fillet)) - QUtilities.parse_value_length(start_straight)
+        anchor_L = np.array([f"{anchor_L_x * 1e6:.1f}um", 
+                               f"{tl_y_cur * 1e6:.1f}um"])
+        anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", 
+                               f"{tl_y_cur * 1e6:.1f}um"])
+        anchors = {1: anchor_L, 2: anchor_R}
+
+        # transmission line options
+        tl_options = Dict(
                 pin_inputs=Dict(
-                    start_pin=Dict(component=f'lp_L_die{die_index+1}', pin='tie'),
-                    end_pin=Dict(component=f'lp_R_die{die_index+1}', pin='tie'),
+                    start_pin=Dict(component=lp_L, pin=lp_L_pin),
+                    end_pin=Dict(component=lp_R, pin=lp_R_pin)
                 ),
                 trace_width=width,
                 trace_gap=gap,
             )
+
+        # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
+        if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
             tl = RouteStraight(design=design, 
                             name=f"tl_die{die_index}", 
                             options=tl_options)
-        elif tl_y not in ["0nm", "0um", "0mm", "0cm", "0m"]:
-            raise Exception("Sorry, for now the transmission line must be at y=0um. Functionality for other placements coming soon")
-
+            print(f'We drew a straight transmission line connecting the two launchpads.')
+        else:
+            print(f"Anchor left:  {anchor_L}\nAnchor right: {anchor_R}")
+            # draw a routed tranmission line through the specified tl_y point using RoutePathfinder
+            try:
+                # tl_options.anchors = {1: anchor_cur}
+                tl_options.anchors = anchors
+                tl_options.advanced.avoid_collision = 'true'
+                tl_options.fillet = fillet
+                tl_options.lead.start_straight = start_straight
+                tl_options.lead.end_straight = start_straight
+                tl = RoutePathfinder(
+                                design=design, 
+                                name=f"tl_die{die_index}", 
+                                options=tl_options,
+                    )
+            except:
+                raise Exception("Anchor-based routing failed - see Qiskit metal logs.")
+            else:
+                print(f'We drew a routed transmission line connecting the two launchpads according to the above anchors.')
         return tl
     
     @staticmethod

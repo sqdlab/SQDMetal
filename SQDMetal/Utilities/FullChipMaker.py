@@ -12,6 +12,7 @@ class MultiDieChip:
     def make_resonator_chip(export_filename=None, 
                             export_path="", 
                             export_type="all",
+                            export_threshold=1e-9,
                             frequency_range=(6e9, 7e9), 
                             num_resonators=5, 
                             cpw_width="9um", 
@@ -35,7 +36,8 @@ class MultiDieChip:
                             text_label="",
                             text_size=600,
                             text_position=None,
-                            print_all_infos=True
+                            print_all_infos=True,
+                            date_stamp_on_export=True
                             ):
         '''
         Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
@@ -44,6 +46,7 @@ class MultiDieChip:
             - export_filename - Filename for gds export (e.g. "test")
             - export_path - Path for export (e.g. 'exports'); the file will then be output to /exports/test.gds
             - export_type - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
+            - export_threshold - (Defaults to 1e-9) The smallest feature width that can exist; anything smaller will get culled out. This is to help remove artefacts from floating-point inaccuracies. It is given in metre
             - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
             - num_resonators - (Defaults to 5) Number of resonators per die
             - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width
@@ -68,14 +71,11 @@ class MultiDieChip:
             - text_size - (Defaults to 600) Text size
             - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
             - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
+            - date_stamp_on_export - (Defaults to True) If True, will print date and time of export in exported .gds filename
         
         Outputs:
             - design - Qiskit Metal design object for the generated chip
         '''
-
-        # TODO: add option for scaling of resonator dimensions compared to feedline dimensions (i.e. so the feedline can be larger)
-
-        # TODO: add support for other `tl_y` values
 
         # TODO: add automatic Palace sim
 
@@ -131,7 +131,7 @@ class MultiDieChip:
             )
         # total_die_num = die_num[0] * die_num[1] # total number of die
 
-        # list of tuples containing die centre coordinates
+        # list of tuples containing die centre coordinates (floats in units of meters)
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
 
         # calculate frequencies
@@ -203,9 +203,11 @@ class MultiDieChip:
                 die_index=i,
                 film_thickness=film_thickness,
                 launchpad_extent=lp_extent,
+                feedline_upscale=feedline_upscale,
                 coupling_gap=coupling_gap,
                 transmission_line_y=tl_y,
                 launchpad_to_res=lp_to_res,
+                res_vertical=res_vertical,
                 min_res_gap="50um",
                 LC_calculations=True,
                 print_statements=print_all_infos
@@ -222,8 +224,10 @@ class MultiDieChip:
                 design=design,
                 tl_y=tl_y,
                 gap=feedline_cpw_gap,
+                launchpads=launchpads,
                 width=feedline_cpw_width,
-                die_index=i))
+                die_index=i,
+                die_origin=origin))
 
             # draw markers
             if markers_on: 
@@ -235,7 +239,8 @@ class MultiDieChip:
         # setup GDS export (positive)
         gds_export = MakeGDS(design, 
                              export_type=export_type, 
-                             print_statements=print_all_infos)
+                             print_statements=print_all_infos,
+                             threshold=export_threshold)
 
         # add text label
         if text_position==None:
@@ -247,10 +252,15 @@ class MultiDieChip:
         if export_filename != None:
             # setup export path based on user inputs
             if export_path=="":
-                full_export_path = os.path.join(f"{export_filename}_{t}.gds")
+                if date_stamp_on_export == True: 
+                    full_export_path = os.path.join(f"{export_filename}_{t}.gds")
+                else:
+                    full_export_path = os.path.join(f"{export_filename}.gds") 
             else:
-                full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
-
+                if date_stamp_on_export == True: 
+                    full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
+                else:
+                    full_export_path = os.path.join(export_path, f"{export_filename}.gds")
             # do export
             gds_export.export(full_export_path)
             print(f"Exported at {full_export_path}")

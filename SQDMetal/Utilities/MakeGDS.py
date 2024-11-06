@@ -145,10 +145,10 @@ class MakeGDS:
                 self.add_boolean_layer(11, 12, "and", output_layer=0)
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
         
-        # layer exports (works best when export_type=="All")
+        # layer exports (works best when export_type=="all")
         if self.export_layers!=None:
             layer_list = list(self.cell.get_layers())
-            # assert self.export_layers in layer_list, "Cohsen export layers are not present in the design. Choose again."
+            # assert self.export_layers in layer_list, "Chosen export layers are not present in the design. Choose again."
             if isinstance(self.export_layers, list):
                 assert set(self.export_layers).issubset(layer_list), "Chosen export layers are not present in the design."
                 to_delete = list(set(layer_list) - set(self.export_layers))

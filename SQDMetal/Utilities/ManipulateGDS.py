@@ -2,6 +2,7 @@ import gdspy
 from SQDMetal.Utilities.QUtilities import QUtilities
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
+from time import gmtime, strftime
 
 class ManipulateGDS:
     def __init__(self, import_path_gds, export_path_gds, import_cells=None, origin=(0,0)):
@@ -43,8 +44,13 @@ class ManipulateGDS:
             - export - (Defaults to False) Choose whether to export the generated file, or just to operate on the design (default)
         """
     
-        self.cell_flattened = self.lib.new_cell('Flattened')
-        self.cell_temp = self.lib.new_cell('Temp')
+        gdspy.current_library.cells.clear()
+
+        timestamp = strftime("%Y%m%d_%H%M", gmtime())
+        cell_name = f'Flattened_{timestamp}'
+
+        self.cell_flattened = self.lib.new_cell(cell_name)
+        self.cell_temp = self.lib.new_cell(f'Temp_{timestamp}')
 
         if not isinstance(cell_keys, list):
             print(f'Single cell: {cell_keys}')
@@ -66,11 +72,11 @@ class ManipulateGDS:
             self.cell_temp.remove_polygons(lambda pts, layer, datatype: layer==layer_idx)
         self.lib.remove(cell='Temp')
         if export:
-            print(f"\nOutputting cell 'Flattened' ({len(self.cell_flattened.get_polygonsets())} polygons)\n\t--> {self.outfile}\n\n")  
+            print(f"\nOutputting cell {cell_name} ({len(self.cell_flattened.get_polygonsets())} polygons)\n\t--> {self.outfile}\n\n")  
 
-            self.lib.write_gds(self.outfile, cells=['Flattened'])
+            self.lib.write_gds(self.outfile, cells=[cell_name])
         else:
-            print(f"\nCells {cell_keys} were flattened to a single cell called 'Flattened.\n\n")
+            print(f"\nCells {cell_keys} were flattened to a single cell called {cell_name}.\n\n")
         
 
 
@@ -97,6 +103,8 @@ class ManipulateGDS:
         '''
 
         # TODO: add option to autofill chip (requires additional arguments on chip_border (number as a string with units), fill_chip (boolean))
+
+        gdspy.current_library.cells.clear()
 
         # import assertions
         assert (isinstance(chip_dimension, tuple) and isinstance(chip_dimension[0], str)), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."   
@@ -155,7 +163,7 @@ class ManipulateGDS:
                         # calculate label position
                         current_origin_x = j * sp_x
                         current_origin_y = (rows - i) * sp_y
-                        label_position = (current_origin_x, (current_origin_y-lbl_offset))
+                        label_position = f'({current_origin_x:.2f}, ({current_origin_y-lbl_offset:.2f}))'
 
                         print(f'{label} --> {label_position}')
 
