@@ -1,7 +1,8 @@
 # User Documentation
 
-Custom *Qiskit-Metal* compatible parts:
-- Overview
+## Custom components
+
+[**Component gallery**](Comps_All.ipynb) of custom *Qiskit-Metal* compatible parts, which include:
 - Circuit components:
     - Capacitors
     - Flux lines
@@ -17,13 +18,17 @@ Custom *Qiskit-Metal* compatible parts:
 - Markers
 - Holes
 
-[Worked examples of simulations](WorkedExamples/README.md)
+## Helper utility modules
 
 Utility modules:
-- [Accounting for shadow evaporation](PVD.md)
+- [Accounting for shadow evaporation](PVD.md) with [worked example](WorkedExamples/PVD_simulation.ipynb)
 - [GDS Exporter and Manipulator](GDS.md)
 - [Qubit Designer](Qubit_Designer.md)
 - [Full Chip Maker](FullChipMaker.md)
+
+## Simulations
+
+[Worked examples of simulations](WorkedExamples/README.md)
 
 Modules to aid in simulations:
 - [Simulations using COMSOL](Sim_Comsol.md)

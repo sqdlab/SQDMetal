@@ -2,6 +2,7 @@
 
 Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [Qiskit-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
 
+- Extra components with more flexible user-friendly options (see [gallery](docs/User/Comps_All.ipynb))
 - Visualising and simulating effects of shadow evaporation techniques used to fabricate qubits
 - RF and DC simulations using **COMSOL** (including calculation of capacitance matrices, ~~inductance matrices~~ and RF s-parameters)
 - RF and DC simulations using cluster-friendly **AWS PALACE** (including **meshing via either COMSOL or Gmsh**)

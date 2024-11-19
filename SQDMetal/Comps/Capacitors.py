@@ -82,7 +82,6 @@ class CapacitorInterdigital(QComponent):
         Cap 3 Interdigital
 
     Default Options:
-        * trace_width: '10um
         * pos_x='0um',pos_y='0um'
         * end_x='50um',end_y='0um'
         * cpw_width='10um'
@@ -596,7 +595,7 @@ class CapacitorGap(QComponent):
     Pins:
         There are two pins on the capacitor at either end
         The pins attach directly to the built in lead length and only needs a width defined
-        * trace_width - center trace width of the trace lead line and cap fingers
+        * cpw_width - center trace width of the trace lead line and cap fingers
 
     Sketch:
         Below is a sketch of the capacitor
@@ -606,7 +605,7 @@ class CapacitorGap(QComponent):
             @@@@   |   @@@@            @   = Ground Plane               @@@@@   |   @@@@@
             @@@@   |   @@@@            -,| = Conductors                 @@@@@   |   @@@@@
             @@@@   -    @@@ LD                                          @@      |   IP @@
-            @@@   ---    @@ LD         LD = len_diag                    @      ---  LD  @
+            @@@   ---    @@ LD         LD = len_diag                    @    -------LF  @
             @@   -----    @ LD                                          @    -------LF  @
             @   -------   @ LF         LF = len_flat                    @    -------LF  @     IP = init_pad
             @   -------   @ LF                                          @           CG  @
@@ -616,7 +615,7 @@ class CapacitorGap(QComponent):
          GW @@@@@@@@@@@@@@@ CG         GW = gnd_width                   @           CG  @
          GW @@@@@@@@@@@@@@@ CG                                          @    -------LF  @
             @             @ CG                                          @    -------LF  @
-            @             @ CG                                          @      ---  LD  @
+            @             @ CG                                          @    -------LF  @
             @   -------   @ LF                                          @@      |   IP @@
             @   -------   @ LF                                          @@@@@   |   @@@@@
             @@   -----    @ LD                                          @@@@@   |   @@@@@
@@ -633,9 +632,9 @@ class CapacitorGap(QComponent):
         Cap 3 Interdigital
 
     Default Options:
-        * trace_width: '10um
         * pos_x='0um',pos_y='0um'
         * end_x='50um',end_y='0um'
+        * cap_width='20um'
         * len_diag='5um'
         * len_flat='5um'
         * cap_gap='3um'
@@ -1103,7 +1102,7 @@ class CapacitorGapMeander(QComponent):
             @@@@   |   @@@@
 
             The 'o' above for the resonator is specified as:
-                                 _____
+                     _____
                    r/  P  \ r              W       r = mean_constr_radius
                    |       |               W       W = mean_constr_width_max
              _____/r       |        ____   W

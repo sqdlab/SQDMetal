@@ -508,6 +508,46 @@ class QUtilities:
         return metal_polys_all, metal_sel_ids
 
     @staticmethod
+    def plot_highlight_component(component_name, design, **kwargs):
+        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
+        arrow_width = kwargs.get('arrow_width', 0.001)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates()
+        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
+        # obstacles = shapely.unary_union(gsdf['geometry'])
+        
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1)
+
+        gsdf_gaps = gsdf[gsdf['subtract']]
+        cols = gsdf_gaps['component'] == design.components[component_name].id
+        cols = [('#808080' if x else '#C5C9C7') for x in cols]
+        gsdf_gaps.plot(color=cols, ax=ax)
+
+
+        gsdf_metals = gsdf[~gsdf['subtract']]
+        cols = gsdf_metals['component'] == design.components[component_name].id
+        cols = [('#069AF3' if x else 'lightblue') for x in cols]
+        gsdf_metals.plot(color=cols, ax=ax)
+
+        xLims = ax.get_xlim()
+        yLims = ax.get_ylim()
+        min_dist = min(xLims[1]-xLims[0], yLims[1]-yLims[0])
+        vec_len = min_dist*len_pin_arrow_frac_axis
+
+        for cur_pin in design.components[component_name].pins:
+            vec_pt = design.components[component_name].pins[cur_pin]['middle']
+            vec_norm = design.components[component_name].pins[cur_pin]['normal']
+            vec_norm *= vec_len/np.linalg.norm(vec_norm)
+            ax.arrow(*vec_pt, *vec_norm, width=arrow_width, color='red')
+            vec_text = vec_pt+vec_norm/2
+            txt = ax.text(*vec_text, cur_pin, horizontalalignment='center', verticalalignment='center', color='red')
+            txt.set_bbox(dict(facecolor='white', alpha=0.7, edgecolor='white'))
+
+    @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
         thresh = kwargs.get("threshold", -1)
         resolution = kwargs.get("resolution", 4)
