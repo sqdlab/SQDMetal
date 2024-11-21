@@ -1208,7 +1208,7 @@ class CapacitorGapMeander(QComponent):
         r = p.mean_constr_radius
         wid_constr = p.mean_constr_width_max
         f = p.mean_fillet_padding
-        lePath, pin1, pin2 = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.mean_gnd_start_left, p.mean_gnd_width, len_trace*0.5, -p.cap_width*0.5, 90)
+        lePath, pin1, pin2, r = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.mean_gnd_start_left, p.mean_gnd_width, len_trace*0.5, -p.cap_width*0.5, 90)
 
         if not discard_leads:
             pad1 = [(0, p.cpw_width*0.5+p.offset_lead1),

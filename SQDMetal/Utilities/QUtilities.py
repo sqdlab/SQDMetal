@@ -318,7 +318,7 @@ class QUtilities:
         line_segs = QUtilities.calc_lines_and_fillets_on_path(
             points, rFillet, precision
         )
-        print(line_segs)
+        # print(line_segs)
         final_pts = []
         for cur_seg in line_segs:
             if "centre" in cur_seg:
