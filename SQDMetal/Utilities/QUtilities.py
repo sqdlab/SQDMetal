@@ -15,7 +15,7 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Comps import Markers
 from SQDMetal.Utilities.QubitDesigner import ResonatorQuarterWave
-
+import matplotlib.pyplot as plt
 
 class QUtilities:
     @staticmethod
@@ -513,7 +513,7 @@ class QUtilities:
         arrow_width = kwargs.get('arrow_width', 0.001)
 
         qmpl = QiskitShapelyRenderer(None, design, None)
-        gsdf = qmpl.get_net_coordinates()
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
         # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
         # obstacles = shapely.unary_union(gsdf['geometry'])
         
