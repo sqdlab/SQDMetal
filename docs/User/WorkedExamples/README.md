@@ -1,5 +1,11 @@
 # Worked examples
 
+## COMSOL
+
+Here are some self-contained worked examples in notebooks:
+
+- [Inductance simulations in COMSOL](COMSOL_Inductance.ipynb)
+
 ## Palace
 
 Here are some self-contained worked examples in notebooks:

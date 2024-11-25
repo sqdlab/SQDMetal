@@ -40,7 +40,7 @@ class QUtilities:
         # So do this instead...
         if isinstance(strVal, int) or isinstance(strVal, float):
             return strVal
-        strVal = strVal.strip()
+        strVal = strVal.strip().replace(' ', '')
         assert len(strVal) > 1, f"Length '{strVal}' is invalid (no units?)."
         if strVal[-2:] == "mm":
             return float(strVal[:-2] + "e-3")
@@ -56,6 +56,7 @@ class QUtilities:
             return float(strVal[:-2])
         else:
             assert len(strVal) > 1, f"Length '{strVal}' is invalid."
+            return strVal
 
     @staticmethod
     def get_comp_bounds(design, objs, units_metres=False):
@@ -619,12 +620,19 @@ class QUtilities:
 
         startPt = design.components[route_name].pins[pin_name]["middle"] * unit_conv
         padDir = -1.0 * design.components[route_name].pins[pin_name]["normal"]
+
         padWid = QUtilities.parse_value_length(
             design.components[route_name].options.trace_width
         )
         padGap = QUtilities.parse_value_length(
             design.components[route_name].options.trace_gap
         )
+
+        #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        if isinstance(padWid, str):
+            padWid = QUtilities.parse_value_length(design.variables[padWid])
+        if isinstance(padGap, str):
+            padGap = QUtilities.parse_value_length(design.variables[padGap])
 
         return (
             startPt * unit_conv_extra,
