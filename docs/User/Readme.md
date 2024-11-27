@@ -2,7 +2,7 @@
 
 ## Custom components
 
-[**Component gallery**](Comps_All.ipynb) of custom *Qiskit-Metal* compatible parts, which include:
+[**Component gallery**](https://nbviewer.org/github/sqdlab/SQDMetal/blob/main/docs/User/Comps_All.ipynb) of custom *Qiskit-Metal* compatible parts, which include:
 - Circuit components:
     - Capacitors
     - Flux lines
@@ -17,6 +17,8 @@
     - Wires
 - Markers
 - Holes
+
+An overview of the conventions used is highlighted [here](Comp.md).
 
 ## Helper utility modules
 
