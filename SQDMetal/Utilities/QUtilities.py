@@ -512,6 +512,7 @@ class QUtilities:
     def plot_highlight_component(component_name, design, **kwargs):
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
+        push_to_back = kwargs.get('push_to_back', False)
 
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
@@ -523,16 +524,28 @@ class QUtilities:
         else:
             fig, ax = plt.subplots(1)
 
+        cur_comp_id = design.components[component_name].id
+
         gsdf_gaps = gsdf[gsdf['subtract']]
-        cols = gsdf_gaps['component'] == design.components[component_name].id
+        sort_inds = np.argsort(gsdf_gaps['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_gaps = gsdf_gaps.iloc[sort_inds]
+        cols = gsdf_gaps['component'] == cur_comp_id
         cols = [('#808080' if x else '#C5C9C7') for x in cols]
-        gsdf_gaps.plot(color=cols, ax=ax)
+        if gsdf_gaps.size > 0:
+            gsdf_gaps.plot(color=cols, ax=ax)
 
 
         gsdf_metals = gsdf[~gsdf['subtract']]
-        cols = gsdf_metals['component'] == design.components[component_name].id
+        sort_inds = np.argsort(gsdf_metals['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_metals = gsdf_metals.iloc[sort_inds]
+        cols = gsdf_metals['component'] == cur_comp_id
         cols = [('#069AF3' if x else 'lightblue') for x in cols]
-        gsdf_metals.plot(color=cols, ax=ax)
+        if gsdf_metals.size > 0:
+            gsdf_metals.plot(color=cols, ax=ax)
 
         xLims = ax.get_xlim()
         yLims = ax.get_ylim()

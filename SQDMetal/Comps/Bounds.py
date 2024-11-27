@@ -19,7 +19,7 @@ class BoundRectangle(QComponent):
     Inherits QComponent class.
 
     Rectangle created via:
-        * bnd_objects - A comma-separated string of objects to which this rectangle is to tightly bound.
+        * bnd_objects - A list of objects to which this rectangle is to tightly bound.
         * is_ground_cut - If True, this bounding box becomes a ground cut-out; otherwise, it's a metal piece.
 
     Default Options:
@@ -41,11 +41,10 @@ class BoundRectangle(QComponent):
         p = self.p
         #########################################################
 
-        str_objs = self.options.bnd_objects
+        obj_names = self.options.bnd_objects
+        assert isinstance(obj_names, (list, tuple)), "Must give bnd_objects as a list of strings."
 
-        objs = str_objs.split(',')
-        objs = [x.strip() for x in objs]
-        minX, minY, maxX, maxY = QUtilities.get_comp_bounds(self.design, objs)
+        minX, minY, maxX, maxY = QUtilities.get_comp_bounds(self.design, obj_names)
         poly = shapely.Polygon([(minX, minY), (maxX, minY), (maxX, maxY), (minX, maxY)])
 
         #subtracts out ground plane on the layer it's on
