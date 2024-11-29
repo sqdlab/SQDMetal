@@ -150,33 +150,138 @@ class BoundGroundShield(QComponent):
                            polyDict,
                            layer=p.layer)
 
-        # polys = metal_polys.buffer(p.gnd_width/2)
-        # lines = []
-        # if isinstance(polys, shapely.geometry.multipolygon.MultiPolygon):
-        #     for cur_poly in list(polys.geoms):
-        #         lines += [cur_poly.exterior.coords[:]]
-        #         for cur_int in cur_poly.interiors:
-        #             lines += [cur_int.coords[:]]
-        # else:
-        #     lines += [polys.exterior.coords[:]]
-        #     for cur_int in polys.interiors:
-        #         lines += [cur_int.coords[:]]
-        
-        # lines = [shapely.LineString(x) for x in lines]
+class BoundGroundShieldScaleGap(QComponent):
+    """Specialised operation to draw a perimetric envelope ground shield around a set of objects that scales with the gap
+    to metal distances. This is only really applicable if one is not going to pattern the default ground plane.
 
-        # for cur_excl_pin in p.exclude_pins:
-        #     comp_name, pin_name, dist_excl = cur_excl_pin.comp_name, cur_excl_pin.pin_name, cur_excl_pin.dist_excl
-        #     pin_point = self.design.components[comp_name].pins[pin_name]
-        #     startPt = pin_point['middle']        
-        #     start_norm = pin_point['normal']
-        #     startPt
+    Inherits QComponent class.
 
-        # for m,cur_line in enumerate(lines):
-        #     cur_line = shapely.difference(cur_line, ex_metal_polys)
-        #     self.add_qgeometry('path', {'trace': cur_line},
-        #                 width=p.gnd_width,
-        #                 fillet=0,
-        #                 layer=p.layer)
+    The CPW wire parameters are given via:
+        * gnd_to_gap_scale - width of the ground envelope scaled to the gap size (measured to nearest metallic element)
+        * include_geoms - list of names of the components to which the ground envelope is to be drawn
+        * exclude_geoms - list of names of the components whose regions are to be discarded when drawing the ground shield
+        * exclude_pins  - list of tuples given as: (component name, component pin name, exclusion_distance). A box of size
+                          exclusion_distance is drawn around these pins. These regions are excluded when drawing the ground
+                          shield envelope.
+        * curve_resolution - Defaults to 32. This is the number of corners per curved surface used when pre-rendering the
+                             geometric structures (i.e. using QiskitShapelyRenderer) when calculating the ground shield
+                             envelopes
+
+    Pins:
+        There are no inherent pins in this object, but they can be added manually via constructs like RouteJoint
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        A Ground Shield pattern drawn around a set of objects.
+
+    Default Options:
+        * gnd_to_gap_scale=3
+        * include_geoms=[]
+        * exclude_geoms=[]
+        * exclude_pins=[]
+        * curve_resolution=32
+    """
+
+    default_options = Dict(gnd_to_gap_scale=3,
+                           include_geoms=[],
+                           exclude_geoms=[],
+                           exclude_pins=[],
+                           curve_resolution=32)
+
+    def make(self):
+        p = self.p
+
+        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        gsdf = qmpl.get_net_coordinates(resolution=p.curve_resolution)
+        filt = gsdf#.loc[gsdf['subtract'] == True]
+
+        if len(p.exclude_geoms) > 0:
+            leGeoms = [self.design.components[x].id for x in self.options.exclude_geoms]
+            exfilt = filt[filt['component'].isin(leGeoms)]
+        if len(p.include_geoms) > 0:
+            leGeoms = [self.design.components[x].id for x in self.options.include_geoms]
+            filt = filt[filt['component'].isin(leGeoms)]
+
+        units = QUtilities.get_units(self.design)
+
+        filt_gaps = filt.loc[gsdf['subtract'] == True]
+        gap_polys = shapely.unary_union(filt_gaps['geometry'])
+        gap_polys = ShapelyEx.fuse_polygons_threshold(gap_polys, 1e-12/units)
+        #
+        filt_metals = filt.loc[gsdf['subtract'] == False]
+        metal_polys = shapely.unary_union(filt_metals['geometry'])
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, 1e-12/units)
+
+        if isinstance(gap_polys, shapely.geometry.multipolygon.MultiPolygon):
+            gap_polys = list(gap_polys.geoms)
+        else:
+            gap_polys = [gap_polys]
+        new_gap_polys = []
+        for m, cur_poly in enumerate(gap_polys):
+            if not isinstance(cur_poly, shapely.Polygon):
+                continue
+            le_ext_coords = cur_poly.exterior.coords[:]
+            new_ext_coords = []
+            for cur_ext_coord in le_ext_coords:
+                pt1, pt2 = shapely.ops.nearest_points(metal_polys, shapely.Point(*cur_ext_coord))
+                pt1 = np.array([pt1.x, pt1.y])
+                cur_coord = np.array(cur_ext_coord)
+                new_ext_coords.append(p.gnd_to_gap_scale * (cur_coord - pt1) + cur_coord)
+            #
+            leInteriors = []
+            for cur_interior in cur_poly.interiors:
+                le_int_coords = cur_interior.coords[:]                
+                new_int_coords = []
+                for cur_int_coord in le_int_coords:
+                    pt1, pt2 = shapely.ops.nearest_points(metal_polys, shapely.Point(*cur_int_coord))
+                    pt1 = np.array([pt1.x, pt1.y])
+                    cur_coord = np.array(cur_int_coord)
+                    new_int_coords.append(p.gnd_to_gap_scale * (cur_coord - pt1) + cur_coord)
+                leInteriors.append(new_int_coords)
+            #
+            new_gap_polys.append(shapely.Polygon(new_ext_coords, leInteriors))
+        polys = shapely.MultiPolygon(new_gap_polys)
+        self.temp = metal_polys
+
+        polys = shapely.difference(polys, gap_polys)
+        self.temp2 = gap_polys
+
+        if len(p.exclude_geoms) > 0:
+            ex_metal_polys = shapely.unary_union(exfilt['geometry'])
+            ex_metal_polys = ShapelyEx.fuse_polygons_threshold(ex_metal_polys, 1e-12/units)
+            polys = shapely.difference(polys, ex_metal_polys)
+
+        exPins = []
+        for cur_excl_pin in p.exclude_pins:
+            comp_name, pin_name, dist_excl = cur_excl_pin   #The parser already converts units on dist_excl...
+            pin_point = self.design.components[comp_name].pins[pin_name]
+            startPt = pin_point['middle']        
+            vec_norm = pin_point['normal']
+            vec_norm /= np.linalg.norm(vec_norm)
+            vec_perp = np.array([vec_norm[1], -vec_norm[0]])
+            leExclPath = [startPt + vec_perp*dist_excl/2,
+                          startPt + vec_perp*dist_excl/2 + vec_norm*dist_excl,
+                          startPt - vec_perp*dist_excl/2 + vec_norm*dist_excl,
+                          startPt - vec_perp*dist_excl/2]
+            exPins.append(shapely.Polygon(leExclPath))
+        if len(exPins) > 0:
+            exPins = shapely.unary_union(exPins)
+            polys = shapely.difference(polys, exPins)
+
+        if isinstance(polys, shapely.geometry.multipolygon.MultiPolygon):
+            polys = list(polys.geoms)
+        else:
+            polys = [polys]
+        polyDict = {}
+        for m, cur_poly in enumerate(polys):
+            polyDict[f'poly{m}'] = cur_poly
+        #
+        self.add_qgeometry('poly',
+                           polyDict,
+                           layer=p.layer)
+
 
 
 
