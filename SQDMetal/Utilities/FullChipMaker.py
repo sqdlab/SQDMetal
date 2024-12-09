@@ -8,6 +8,9 @@ import os
 from datetime import datetime
 
 class MultiDieChip:
+
+    # TODO: fix merge threshold
+
     @staticmethod
     def make_resonator_chip(export_filename=None, 
                             export_path="", 
@@ -67,7 +70,7 @@ class MultiDieChip:
             - die_num - (Defaults to [1, 1])) Die layout in [x, y] as a length-2 list
             - fill_chip - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides die_num if True)
             - markers_on - (Defaults to True) Print dicing markers on export
-            - text_label - (Optional) Text label to print on chip
+            - text_label - (Optional) Text label to print on chip. Prints a default message if text_label="". Set text_label=None for no text label.
             - text_size - (Defaults to 600) Text size
             - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
             - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
@@ -78,6 +81,12 @@ class MultiDieChip:
         '''
 
         # TODO: add automatic Palace sim
+        # TODO: add per-die labels for easy ID during fabrication
+        # TODO: fix stitching errors
+        #       something like:
+        #       polygon_list = [...]  # list with all polygons
+        #       result = gdspy.boolean(polygon_list, None, "or")
+        #       cell.add(result)
 
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
 
@@ -129,7 +138,6 @@ class MultiDieChip:
                 (QUtilities.parse_value_length(chip_dimension[1]) - QUtilities.parse_value_length(chip_border))
                 // QUtilities.parse_value_length(die_dimension[1])
             )
-        # total_die_num = die_num[0] * die_num[1] # total number of die
 
         # list of tuples containing die centre coordinates (floats in units of meters)
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
@@ -240,13 +248,15 @@ class MultiDieChip:
         gds_export = MakeGDS(design, 
                              export_type=export_type, 
                              print_statements=print_all_infos,
-                             threshold=export_threshold)
+                             threshold=export_threshold,
+                             precision=export_threshold)
 
         # add text label
-        if text_position==None:
-            gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.93))
-        else:
-            gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
+        if text_label != None:
+            if text_position==None:
+                gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.93))
+            else:
+                gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
 
         # only export if a filename is passed
         if export_filename != None:
