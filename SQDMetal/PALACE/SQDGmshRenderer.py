@@ -146,8 +146,7 @@ class Palace_Gmsh_Renderer:
                 p.plot()
                 metal_simplified = cur_poly.simplify(1e-6)
                 gmsh_exterior = self._draw_polygon_from_coords(metal_simplified.exterior.coords[:])
-                print(gmsh_exterior)
-                if False and len(metal_simplified.interiors) >= 1:
+                if len(metal_simplified.interiors) >= 1:
                     interiors = []
                     for _,interior in enumerate(metal_simplified.interiors):
                         gmsh_interior = self._draw_polygon_from_coords(interior.coords[:])
@@ -158,7 +157,6 @@ class Palace_Gmsh_Renderer:
                     metal_list.append((m, 2,gmsh_surface[0][1]))
                 else:
                     metal_list.append((m, 2,gmsh_exterior))
-        print('done')
 
         #update geometries
         gmsh.model.geo.synchronize()
@@ -176,8 +174,7 @@ class Palace_Gmsh_Renderer:
         for m in metal_polys:
             cur_metals = [x[2] for x in metal_list if x[0] == m]
             leMetals.append( gmsh.model.addPhysicalGroup(2, cur_metals, name = 'metal'+str(m)) )
-        print('hi')
-        print(leMetals)
+        
 
         #create list to fragment with chip base
         fragment_list = [(x[1], x[2]) for x in metal_list]
@@ -263,52 +260,21 @@ class Palace_Gmsh_Renderer:
 
 
     def _draw_chip_base(self):
-        '''This method draws the chip base into gmsh given the dimensions defined by the user in qiskit metal'''
+        '''Creates the dielectric chip volume in GMSH from the dimensions specified in Qiskit Metal.
 
-        #half values of the sizes
-        half_size_x = self.size_x/2
-        half_size_y = self.size_y/2
+        Args:
+            None.
 
-        #store coordinates for the top surface of the chip
-        surface_1 = {'point1': [self.center_x + half_size_x, self.center_y + half_size_y, self.center_z],
-                     'point2': [self.center_x + half_size_x, self.center_y - half_size_y, self.center_z],
-                     'point3': [self.center_x - half_size_x, self.center_y - half_size_y, self.center_z],
-                     'point4': [self.center_x - half_size_x, self.center_y + half_size_y, self.center_z]}
+        Returns:
+            Tuple of integers with the first value specifying the dimension and the second value the ID of the object in GMSH.
         
-        #define lists to store points, lines and surfaces
-        points = []
-        lines = []
-        surfaces = []
-
-        #add points for chip base
-        for i,value in enumerate(surface_1):
-            point = gmsh.model.occ.addPoint(surface_1[value][0], surface_1[value][1], surface_1[value][2])
-            points.append(point)
-
-        #draw lines for chip base
-        for j,value in enumerate(points):
-            if(j<len(points)-1):
-                line = gmsh.model.occ.add_line(points[j], points[j+1])
-                lines.append(line)        
-        line = gmsh.model.occ.add_line(points[len(points)-1], points[0])
-        lines.append(line)        
-
-        #create curved loop
-        curve_loop = gmsh.model.occ.add_curve_loop(lines)
-        
-        #create_surface
-        base_surface = gmsh.model.occ.add_plane_surface([curve_loop])
-
-        #create volume from top surface using extrude function in gmsh
-        dielectric_box = gmsh.model.occ.extrude([(2, base_surface)],0,0,self.size_z)
-
-        #update model with the created geometry items
+        '''
+        chip_base = gmsh.model.occ.addBox(self.center_x-self.length_x/2, self.center_y-self.length_y/2, self.center_z-self.length_z/2, self.length_x, self.length_y, self.length_z)
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
+        return chip_base
 
-        return dielectric_box
 
-        
     def _draw_polygon(self, polygon):
         '''takes a shapely polygon object or pandas series 
             in as an argument and then draws it in Gmsh and returns the surface ID''' 

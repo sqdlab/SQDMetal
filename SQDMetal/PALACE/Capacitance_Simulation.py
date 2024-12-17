@@ -21,6 +21,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
+                 "mesh_max": 120e-3,                                
+                 "mesh_min": 10e-3,                                 
+                 "mesh_sampling": 130,                              
+                 "fillet_resolution":12,
                  "HPC_Parameters_JSON": ""
     }
 
@@ -53,7 +57,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             pgr = Palace_Gmsh_Renderer(self.metal_design)
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, [], self.user_options['fillet_resolution'], 'capacitance_simulation')
+            gmsh_render_attrs = pgr._prepare_design(self._metallic_layers, self._ground_plane, [], self.user_options['fillet_resolution'], 'capacitance_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -67,10 +71,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                     self.create_batch_file()
                 
                 #create mesh
-                pgr._intelligent_mesh('capacitance_simulation', 
-                                min_size = self.user_options['mesh_min'], 
-                                max_size = self.user_options['mesh_max'], 
-                                mesh_sampling = self.user_options['mesh_sampling'])
+                # pgr._intelligent_mesh('capacitance_simulation', 
+                #                 min_size = self.user_options['mesh_min'], 
+                #                 max_size = self.user_options['mesh_max'], 
+                #                 mesh_sampling = self.user_options['mesh_sampling'])
+                pgr.fine_mesh(self._fine_meshes)
 
                 self._save_mesh_gmsh()
 
@@ -117,23 +122,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #save mesh
             self._save_mesh_comsol(comsol_obj = cmsl)
 
-
-
-    def _check_simulation_mode(self):
-        
-        parent_simulation_dir = None
-
-        if self.mode == "HPC":
-            parent_simulation_dir = self.HPC_parent_simulation_dir
-        elif self.mode == "simPC":
-            parent_simulation_dir = self.simPC_parent_simulation_dir
-        else:
-            Exception('Invalid simulation mode entered.')
-        
-        return parent_simulation_dir
-
-
-
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
@@ -147,8 +135,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             path = os.path.join(parent_simulation_dir, directory)
     
             # Create the directory
-            os.mkdir(path)
-            print("Directory '% s' created" % directory)
+            if not os.path.exists(path):
+                os.mkdir(path)
+                print("Directory '% s' created" % directory)
 
 
 
@@ -188,7 +177,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         if self.meshing == 'GMSH':
 
             #GMSH renderer object needed to get boundary conditions for config file
-            PGR = kwargs['Palace_Gmsh_Renderer_object']
+            gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
             material_air = [gmsh_render_attrs['air_box']]
@@ -238,7 +227,12 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        post_procs = []
+        for x in Terminal:
+            post_procs.append({"Index":x["Index"], "Attributes":x["Attributes"], "Type": "Electric"})
         config = {
                     "Problem":
                     {
@@ -283,8 +277,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                             Terminal,
                         "Postprocessing":  # Capacitance from charge instead of energy
                         {
-                        "Capacitance":
-                            Terminal,
+                        "SurfaceFlux": post_procs,
                         }
                     },
                     "Solver":
@@ -320,3 +313,4 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
         self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)

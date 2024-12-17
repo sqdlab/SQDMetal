@@ -15,7 +15,7 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Comps import Markers
 from SQDMetal.Utilities.QubitDesigner import ResonatorQuarterWave
-
+import matplotlib.pyplot as plt
 
 class QUtilities:
     @staticmethod
@@ -40,7 +40,7 @@ class QUtilities:
         # So do this instead...
         if isinstance(strVal, int) or isinstance(strVal, float):
             return strVal
-        strVal = strVal.strip()
+        strVal = strVal.strip().replace(' ', '')
         assert len(strVal) > 1, f"Length '{strVal}' is invalid (no units?)."
         if strVal[-2:] == "mm":
             return float(strVal[:-2] + "e-3")
@@ -56,6 +56,7 @@ class QUtilities:
             return float(strVal[:-2])
         else:
             assert len(strVal) > 1, f"Length '{strVal}' is invalid."
+            return strVal
 
     @staticmethod
     def get_comp_bounds(design, objs, units_metres=False):
@@ -318,7 +319,7 @@ class QUtilities:
         line_segs = QUtilities.calc_lines_and_fillets_on_path(
             points, rFillet, precision
         )
-        print(line_segs)
+        # print(line_segs)
         final_pts = []
         for cur_seg in line_segs:
             if "centre" in cur_seg:
@@ -508,6 +509,59 @@ class QUtilities:
         return metal_polys_all, metal_sel_ids
 
     @staticmethod
+    def plot_highlight_component(component_name, design, **kwargs):
+        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
+        arrow_width = kwargs.get('arrow_width', 0.001)
+        push_to_back = kwargs.get('push_to_back', False)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
+        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
+        # obstacles = shapely.unary_union(gsdf['geometry'])
+        
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1)
+
+        cur_comp_id = design.components[component_name].id
+
+        gsdf_gaps = gsdf[gsdf['subtract']]
+        sort_inds = np.argsort(gsdf_gaps['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_gaps = gsdf_gaps.iloc[sort_inds]
+        cols = gsdf_gaps['component'] == cur_comp_id
+        cols = [('#808080' if x else '#C5C9C7') for x in cols]
+        if gsdf_gaps.size > 0:
+            gsdf_gaps.plot(color=cols, ax=ax)
+
+
+        gsdf_metals = gsdf[~gsdf['subtract']]
+        sort_inds = np.argsort(gsdf_metals['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_metals = gsdf_metals.iloc[sort_inds]
+        cols = gsdf_metals['component'] == cur_comp_id
+        cols = [('#069AF3' if x else 'lightblue') for x in cols]
+        if gsdf_metals.size > 0:
+            gsdf_metals.plot(color=cols, ax=ax)
+
+        xLims = ax.get_xlim()
+        yLims = ax.get_ylim()
+        min_dist = min(xLims[1]-xLims[0], yLims[1]-yLims[0])
+        vec_len = min_dist*len_pin_arrow_frac_axis
+
+        for cur_pin in design.components[component_name].pins:
+            vec_pt = design.components[component_name].pins[cur_pin]['middle']
+            vec_norm = design.components[component_name].pins[cur_pin]['normal']
+            vec_norm *= vec_len/np.linalg.norm(vec_norm)
+            ax.arrow(*vec_pt, *vec_norm, width=arrow_width, color='red')
+            vec_text = vec_pt+vec_norm/2
+            txt = ax.text(*vec_text, cur_pin, horizontalalignment='center', verticalalignment='center', color='red')
+            txt.set_bbox(dict(facecolor='white', alpha=0.7, edgecolor='white'))
+
+    @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
         thresh = kwargs.get("threshold", -1)
         resolution = kwargs.get("resolution", 4)
@@ -579,12 +633,19 @@ class QUtilities:
 
         startPt = design.components[route_name].pins[pin_name]["middle"] * unit_conv
         padDir = -1.0 * design.components[route_name].pins[pin_name]["normal"]
+
         padWid = QUtilities.parse_value_length(
             design.components[route_name].options.trace_width
         )
         padGap = QUtilities.parse_value_length(
             design.components[route_name].options.trace_gap
         )
+
+        #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        if isinstance(padWid, str):
+            padWid = QUtilities.parse_value_length(design.variables[padWid])
+        if isinstance(padGap, str):
+            padGap = QUtilities.parse_value_length(design.variables[padGap])
 
         return (
             startPt * unit_conv_extra,

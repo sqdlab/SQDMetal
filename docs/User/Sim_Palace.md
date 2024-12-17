@@ -20,19 +20,20 @@ sudo apt-get install git
 Now install the  [Spack Package Manager](https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html) by running in console (in some directory of preference - e.g. somewhere in the home directory):
 
 ```bash
-git clone --depth=100 --branch=releases/v0.21 https://github.com/spack/spack.git ~/spack
+cd ~/
+git clone -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git
 cd ~/spack
 . share/spack/setup-env.sh
 ```
 
-Now run:
+Now run (can omit `@develop` if the default preferred version is desired):
 
 ```bash
-spack install palace
+spack install palace@develop
 find -name palace*
 ```
 
-The second command will find the path of the Palace binary. Basically it's somewhere like:
+The second command will find the path of the Palace binary. Basically it's somewhere like (remember to add the `~/` for the full absolute path):
 
 ```
 ./spack/opt/spack/linux-ubuntu23.04-zen2/gcc-12.3.0/palace-0.11.2-v3z2x65yy2n6p7ryhwnzzxhroauejven/bin/palace
@@ -56,26 +57,37 @@ This is required to open the simulation field data via the API functions.
 **Troubleshooting**
 
 Errors can appear after updating the Linux system. Simply reinstall palace as above (starting from the `setup-env.sh` command). However, first run:
-
 ```bash
 sudo rm -r .spack/
 ```
-
 Alternatively, [edit the compilers.yaml file](https://stackoverflow.com/questions/67899951/change-version-of-gcc-which-does-not-support-compiling-c-programs-using-the-co) to the latest GCC version.
 
 If OpenMPI processes fail to spawn (i.e. Palace does not start and/or throws the error `local rank failed   --> Returned value Not found (-13) instead of ORTE_SUCCESS`), try running the following [command in terminal](https://askubuntu.com/questions/730/how-do-i-set-environment-variables):
-
 ```bash
 export PMIX_MCA_gds=hash
 ```
 
 In the case of a Jupyter Notebook (i.e. running the commands in *SQDMetal*), add this to the initialisation cell:
-
 ```python
 import os
 os.environ["PMIX_MCA_gds"]="hash"
 ```
 
+If it throws an error for `libCEED` (see [here](https://github.com/awslabs/palace/issues/257) for details), run:
+```bash
+spack install libxsmm@=main
+```
+Now proceed with the installation by running the palace installation command once more.
+
+**Upgrading**
+
+Delete all traces of `spack` via:
+
+```bash
+sudo rm -r .spack/
+sudo rm -r spack/
+```
+Then start from the beginning to reinstall to the latest version of `spack` and subsequently the latest version of `palace`.
 
 ### HPC cluster
 

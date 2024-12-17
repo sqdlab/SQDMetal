@@ -6,6 +6,7 @@ import numpy as np
 import os, subprocess
 import gmsh
 import json
+import platform
 
 class PALACE_Model:
     def __init__(self, meshing, mode, options):
@@ -24,6 +25,7 @@ class PALACE_Model:
         else:
             self.palace_dir = options.get('palace_dir', 'palace')                
             self.hpc_options = {"input_dir":""}
+        self._num_cpus = options.get('num_cpus', 16)
 
     def create_batch_file(self):
         pass
@@ -84,6 +86,18 @@ class PALACE_Model:
         assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
         self._ff_type = ff_type
 
+    def _is_native_arm64(self):
+        '''
+        Helper method written by Sadman Ahmed Shanto @shanto268 in this issue: https://github.com/sqdlab/SQDMetal/issues/9
+        '''
+        try:
+            # Run the sysctl command to check the native architecture
+            result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, check=True)
+            return "M" in result.stdout  # M is for Apple M1/M2 chips
+        except subprocess.CalledProcessError as e:
+            # print(f"Error checking native architecture: {e}")
+            return False
+
     def run(self):
         assert self._sim_config != "", "Must run prepare_simulation at least once."
 
@@ -91,15 +105,31 @@ class PALACE_Model:
         leFile = os.path.basename(os.path.realpath(config_file))
         leDir = os.path.dirname(os.path.realpath(config_file))
 
+        if not os.path.exists(self._output_data_dir):
+            os.makedirs(self._output_data_dir)
         log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np 16 {leFile} | tee \"{log_location}\"\n")
-        os.makedirs(self._output_data_dir)
+            f.write(f"\"{self.palace_dir}\" -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+
+        # Set execute permission on temp.sh
+        os.chmod("temp.sh", 0o755)
+
         with open(log_location, 'w') as fp:
             pass
 
-        self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        # Get the current running architecture
+        running_arch = platform.machine()
+
+        # If the machine is native arm64 but running under x86_64, run temp.sh under arm64
+        if self._is_native_arm64() and running_arch == "x86_64":
+            # print("Running arm64 process from x86_64 environment...")
+            self.cur_process = subprocess.Popen(["arch", "-arm64", "bash", "./temp.sh"], shell=False)
+        else:
+            # Run the temp.sh script as usual
+            # print("Running temp.sh script under current architecture...")
+            self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        
         try:
             self.cur_process.wait()
         except KeyboardInterrupt:
@@ -181,7 +211,7 @@ class PALACE_Model:
   
         # Create the directory
         if not os.path.exists(path):
-            os.mkdir(path)
+            os.makedirs(path)
             print("Directory '% s' created" % directory)
 
 
@@ -229,6 +259,27 @@ class PALACE_Model:
                 json.dump(config_json, f, indent=2)
             self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
+    def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
+        leUnits = QUtilities.get_units(self.metal_design)
+        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
+        self._fine_meshes.append({
+            'type': 'path',
+            'path': lePath * 1e3, #Get it into mm...
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
+            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+        })
+
+    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
+        self._fine_meshes.append({
+            'type': 'box',
+            'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
+            'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
+            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max'])
+        })
+
 class PALACE_Model_RF_Base(PALACE_Model):
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''
@@ -246,7 +297,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, options['fillet_resolution'], 'eigenmode_simulation')
+            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, self.user_options['fillet_resolution'], 'eigenmode_simulation')
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -424,27 +475,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'separation_gap':separation_gap,
             'unit_conv_extra':unit_conv_extra
         }]
-
-    def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
-        leUnits = QUtilities.get_units(self.metal_design)
-        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
-        self._fine_meshes.append({
-            'type': 'path',
-            'path': lePath * 1e3, #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
-            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
-        })
-
-    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
-        self._fine_meshes.append({
-            'type': 'box',
-            'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
-            'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
-            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
-        })
 
     def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
         self._fine_meshes.append({

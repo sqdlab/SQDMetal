@@ -24,6 +24,7 @@ dependencies:
   - pyyaml==6.0
   - pip==23.0
   - cython<3.0.0
+  - gdspy==1.6.12
   - pip:
       - pyaedt==0.6.46
       - gmsh==4.11.1

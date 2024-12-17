@@ -181,7 +181,7 @@ class WirePins(QRoute):
             else:
                 comp, pin = cur_pin, 'a'
             pins += [self.design.components[comp].pins[pin]['middle']]
-        
+
         line = shapely.LineString(np.vstack(pins))
         if p.end_gap > 0:
             norm_vec = pins[-1]-pins[-2]
@@ -219,7 +219,7 @@ class WireElbowParallelPinPin(QRoute):
     The parameters trace_width and trace_gap define the CPW dimensions.
 
     The positioning can be done dynamically via:
-        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...'), end_pin=Dict(component=f'...',pin='...')) - Specifying start and end
+        * pin_inputs=Dict(start_pin=Dict(component='...',pin='...'), end_pin=Dict(component='...',pin='...')) - Specifying start and end
           positions via a component pins
 
     Sketch:
@@ -459,6 +459,9 @@ class WireTaperPinStretch(QComponent):
         width = start_point['width']
         if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
             gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
+            #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+            if isinstance(gap, str):
+                gap = QUtilities.parse_value_length(self.design.variables[gap])
             gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
             gap = p.orig_gap
@@ -593,6 +596,9 @@ class WireTaperProbePinStretch(QComponent):
         width = start_point['width']
         if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
             gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
+            #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+            if isinstance(gap, str):
+                gap = QUtilities.parse_value_length(self.design.variables[gap])
             gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
             gap = p.orig_gap

@@ -19,6 +19,8 @@ class QiskitShapelyRenderer(QMplRenderer):
         self.options.resolution = str(resolution)
         self.render_tables(None)
 
+        if len(self.dfs) == 0:
+            return gpd.GeoDataFrame(columns=["component", "name", "geometry", "layer", "subtract"])
         gsdf = gpd.GeoDataFrame(pd.concat(self.dfs, ignore_index=True))
 
         #Discard polygons that are simulation constructs (i.e. "junction" types)
