@@ -981,15 +981,16 @@ class QUtilities:
         chip_name="main",
         LC_calculations=True,
         print_statements=True,
-        fillet="85um"
+        fillet="85um",
+        radius="100um"
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
 
         Inputs:
             - design - Qiskit Metal design object
-            - gap - transmission line gap as string with units (e.g. "5um")
-            - width - transmission line central conductor width as string with units (e.g. "5um")
+            - gap - transmission line gap as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
+            - width - transmission line central conductor width as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
             - num_resonators - number of resonators to be placed on each die
             - frequencies - list of frequencies in Hz (must be same length as num_resonators)
             - die_origin - centre coordinates of die as tuple (float(x), float(y)) in units of meters
@@ -1018,12 +1019,10 @@ class QUtilities:
             - inductances - list containing calculated inductances of resonators
         """
 
-        # check inputs
+        # check inputs with assertions
         assert num_resonators == len(frequencies)
         assert isinstance(launchpad_extent, (float, int))
         for i in [
-            gap,
-            width,
             die_dimension[0],
             die_dimension[1],
             transmission_line_y,
@@ -1033,20 +1032,32 @@ class QUtilities:
             film_thickness
         ]:
             assert isinstance(i, str)
+        for i in [gap, width, fillet, radius]:
+            assert QUtilities.is_string_or_list_of_strings(i)
         for i in [die_origin, die_dimension]:
             assert isinstance(i, (tuple, list))
         assert len(die_origin) == 2 and len(die_dimension) == 2
         assert isinstance(die_index, int)
+        if isinstance(gap, list):
+            assert isinstance(width, list), f"If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
+            assert ((len(gap) == num_resonators) and (len(width) == num_resonators))
 
-        # parse strings to float values
-        w = QUtilities.parse_value_length(width)
-        g = QUtilities.parse_value_length(gap)
-        h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
-        ft = QUtilities.parse_value_length(film_thickness)
-        tl_y = QUtilities.parse_value_length(transmission_line_y)
-        cg = QUtilities.parse_value_length(coupling_gap)
-        x0 = QUtilities.parse_value_length(die_origin[0])
-        y0 = QUtilities.parse_value_length(die_origin[1])
+        # check if width/gap and/or fillet is a list (for scaled)   
+        if (isinstance(width, list) or isinstance(gap, list)):
+            scaled_geometry = True 
+            print(f"Options for scaled gap/width geometry detected.") if print_statements else 0 
+        else:
+            scaled_geometry = False
+        if isinstance(fillet, list):
+            scaled_fillet = True 
+            print(f"Options for scaled fillet size detected.") if print_statements else 0 
+        else:
+            scaled_fillet = False
+        if isinstance(radius, list):
+            scaled_radius = True 
+            print(f"Options for scaled curve radius detected.") if print_statements else 0
+        else:
+            scaled_radius = False
 
         # calculate x-projected length of useable transmission line [m]
         tl_extent = (
@@ -1066,9 +1077,27 @@ class QUtilities:
             # name resonators
             resonator_names.append(f"die{die_index}_res{i+1}_{frequencies[i] * 1e-9:.2f}GHz")
 
+        # parse string valued arguments to floats
+        h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
+        ft = QUtilities.parse_value_length(film_thickness)
+        tl_y = QUtilities.parse_value_length(transmission_line_y)
+        cg = QUtilities.parse_value_length(coupling_gap)
+        x0 = QUtilities.parse_value_length(die_origin[0])
+        y0 = QUtilities.parse_value_length(die_origin[1])
+
+        # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
 
+            # setup values for scaled/constant geometry
+            width_cur = width[i] if (scaled_geometry == True) else width
+            gap_cur = gap[i] if (scaled_geometry == True) else gap
+            if scaled_geometry == True:
+                # parse strings to float values (width and gap - per resonator)
+                w = QUtilities.parse_value_length(width[i])
+                g = QUtilities.parse_value_length(gap[i])
+            radius_cur = radius[i] if (scaled_radius == True) else radius
+            
             # calculate x_position and add to list
             x_pos_cur = x0 - (tl_extent / 2) + ((i + 0.25) * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
             x_positions.append(x_pos_cur)
@@ -1117,8 +1146,8 @@ class QUtilities:
                 options=Dict(
                     pos_x=res_x_um, 
                     pos_y=res_y_um, 
-                    width=width, 
-                    gap=gap, 
+                    width=width_cur, 
+                    gap=gap_cur, 
                     termination_gap="10um", 
                     orientation="180"
                 )
@@ -1131,8 +1160,8 @@ class QUtilities:
                 options=Dict(
                     pos_x=res_x_um, 
                     pos_y=res_end_y_um, 
-                    width=width, 
-                    gap=gap, 
+                    width=width_cur, 
+                    gap=gap_cur, 
                     termination_gap="0um", 
                     orientation="-90"
                 )
@@ -1142,14 +1171,20 @@ class QUtilities:
             start_pin_id = next(iter(res_start_pin.pin_names))
             end_pin_id = next(iter(res_end_pin.pin_names))
 
+            # check for scaled filleting
+            if scaled_fillet == True:
+                fillet_cur = fillet[i]
+            else: 
+                fillet_cur = fillet
+
             # set resonator options
             res_options = Dict(
                             total_length=l_quarterwave_mm, 
-                            constr_radius="100um",
+                            constr_radius=radius_cur,
                             constr_width_max="0um",
-                            trace_width=width, 
-                            trace_gap=gap,
-                            fillet=fillet,
+                            trace_width=width_cur, 
+                            trace_gap=gap_cur,
+                            fillet=fillet_cur,
                             fillet_padding="10um",
                             start_left=True,
                             layer='1',
@@ -1290,3 +1325,11 @@ class QUtilities:
         else: 
             raise Exception("Only marker_type=\"cross\" is currently available.")
             # TODO: add other marker types as options
+    
+    @staticmethod
+    def is_string_or_list_of_strings(var):
+        if isinstance(var, str):
+            return True
+        elif isinstance(var, list) and all(isinstance(item, str) for item in var):
+            return True
+        return False
