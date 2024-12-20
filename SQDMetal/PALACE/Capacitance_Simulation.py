@@ -1,5 +1,4 @@
 from SQDMetal.PALACE.Model import PALACE_Model
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
@@ -21,11 +20,13 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "mesh_max": 120e-3,                                
-                 "mesh_min": 10e-3,                                 
-                 "mesh_sampling": 130,                              
-                 "fillet_resolution":12,
-                 "HPC_Parameters_JSON": ""
+                 "mesh_max": 100e-6,
+                 "mesh_min": 10e-6,
+                 "taper_dist_min": 30e-6,
+                 "taper_dist_max": 200e-6,              
+                 "gmsh_dist_func_discretisation": 130,
+                 "HPC_Parameters_JSON": "",
+                 "fuse_threshold": 1e-9
     }
 
     # Parent Directory path

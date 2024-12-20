@@ -29,3 +29,10 @@ class ShapelyEx:
             return shapely.Polygon(coords)
         else:
             return coords
+
+    @staticmethod
+    def shapely_to_list(shapely_poly):
+        if isinstance(shapely_poly, shapely.geometry.multipolygon.MultiPolygon):
+            return [x for x in shapely_poly.geoms]
+        else:
+            return [shapely_poly] #i.e. it's just a lonely Polygon object...

@@ -1,5 +1,4 @@
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
@@ -25,11 +24,14 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "mesh_max": 100e-3,
-                 "mesh_min": 10e-3,
-                 "mesh_sampling": 120,
+                 "mesh_max": 100e-6,
+                 "mesh_min": 10e-6,
+                 "taper_dist_min": 30e-6,
+                 "taper_dist_max": 200e-6,
+                 "gmsh_dist_func_discretisation": 120,
                  "comsol_meshing": "Extremely fine",
-                 "HPC_Parameters_JSON": ""
+                 "HPC_Parameters_JSON": "",
+                 "fuse_threshold": 1e-9
                 }
 
     #Parent Directory path
@@ -137,7 +139,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                         "Attributes": material_dielectric,  # Dielectric
                         "Permeability": dielectric.permeability,
                         "Permittivity": dielectric.permittivity,
-                        "LossTan": 1.2e-5
+                        "LossTan": dielectric.loss_tangent
                     }
                 ]
             },

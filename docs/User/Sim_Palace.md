@@ -98,7 +98,6 @@ Working installation instructions for the Australian Bunya cluster are given [he
 
 ```python
 from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 
 #Eigenmode Simulation Options
 user_defined_options = {

@@ -8,6 +8,7 @@ class Material:
         if name == "":
             self.permittivity = kwargs.pop('permittivity', 1)   #Relative Permittivity
             self.permeability = kwargs.pop('permeability', 1)   #Relative Permeability
+            self.loss_tangent = kwargs.pop('loss_tangent', 0)   #Dielectric Loss Tangent
             for m in kwargs:
                 assert False, f"Option {m} is not recognised"
         else:
@@ -22,9 +23,11 @@ class Material:
             if name == "silicon" or name == "siliconcold" or name == "siliconcryo":
                 self.permittivity = 11.45
                 self.permeability = 1
+                self.loss_tangent = 1.2e-6
             elif name == "siliconwarm":
                 self.permittivity = 11.7
                 self.permeability = 1
+                self.loss_tangent = 1.2e-6  #TODO: Change this to actual value!
             ################################
             #
             #SAPPHIRE
@@ -34,9 +37,11 @@ class Material:
             elif name == "sapphire" or name == "sapphireperp" or name == "sapphireperpendicular":
                 self.permittivity = 9.4
                 self.permeability = 1
+                self.loss_tangent = 1.2e-6  #TODO: Change this to actual value!
             elif name == "sapphireparallel":
                 self.permittivity = 11.35
                 self.permeability = 1
+                self.loss_tangent = 1.2e-6  #TODO: Change this to actual value!
             ################################
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."

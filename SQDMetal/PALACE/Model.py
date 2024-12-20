@@ -1,7 +1,8 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
+from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
+from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 import numpy as np
 import os, subprocess
 import gmsh
@@ -264,8 +265,7 @@ class PALACE_Model:
         lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
         self._fine_meshes.append({
             'type': 'path',
-            'path': lePath * 1e3, #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'path': lePath,
             'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
             'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
         })
@@ -273,11 +273,22 @@ class PALACE_Model:
     def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
         self._fine_meshes.append({
             'type': 'box',
-            'x_bnds': (x1 * 1e3, x2 * 1e3), #Get it into mm...
-            'y_bnds': (y1 * 1e3, y2 * 1e3), #Get it into mm...
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
+            'x_bnds': (x1, x2),
+            'y_bnds': (y1, y2),
             'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
-            'max_size': kwargs.get('max_size', self.user_options['mesh_max'])
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']),
+            'taper_dist_min': kwargs.get('taper_dist_min', self.user_options['taper_dist_min']),
+            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
+        })
+
+    def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
+        self._fine_meshes.append({
+            'type': 'comp_bounds',
+            'list_comp_names': list_comp_names,
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']),
+            'taper_dist_min': kwargs.get('taper_dist_min', self.user_options['taper_dist_min']),
+            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
         })
 
 class PALACE_Model_RF_Base(PALACE_Model):
@@ -285,10 +296,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
         '''set-up the simulation'''
         
         if self.meshing == 'GMSH':
-
-            #Create the gmsh renderer to convert qiskit metal geomentry to gmsh geometry
-            pgr = Palace_Gmsh_Renderer(self.metal_design)
-
             #Prepare the ports...
             assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
@@ -296,8 +303,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
                 lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
-            #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, lePorts, self.user_options['fillet_resolution'], 'eigenmode_simulation')
+            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"])
+            #
+            gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
+            gmb.build_mesh()
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -309,13 +319,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 # #create batch file
                 # if self.mode == 'HPC':
                 #     self.create_batch_file()
-                
-                #create mesh
-                # pgr._intelligent_mesh('eigenmode_simulation', 
-                #                 min_size = self.user_options['mesh_min'], 
-                #                 max_size = self.user_options['mesh_max'], 
-                #                 mesh_sampling = self.user_options['mesh_sampling'])
-                pgr.fine_mesh(self._fine_meshes)
 
                 self._save_mesh_gmsh()
 
@@ -360,7 +363,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     if fine_mesh['type'] == 'box':
                         x_bnds = fine_mesh['x_bnds']
                         y_bnds = fine_mesh['y_bnds']
-                        cmsl.fine_mesh_in_rectangle(x_bnds[0]/1e3, y_bnds[0]/1e3, x_bnds[1]/1e3, y_bnds[1]/1e3, fine_mesh['min_size'], fine_mesh['max_size'])
+                        cmsl.fine_mesh_in_rectangle(x_bnds[0], y_bnds[0], x_bnds[1], y_bnds[1], fine_mesh['min_size'], fine_mesh['max_size'])
                     elif fine_mesh['type'] == 'comp_bounds':
                         cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
 
@@ -421,8 +424,8 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
-                         'portAcoords': launchesA + [launchesA[-1]],
-                         'portBcoords': launchesB + [launchesB[-1]],
+                         'portAcoords': launchesA + [launchesA[0]],
+                         'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),    #TODO: Change this once SPACK updates beyond August 2023
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
@@ -433,8 +436,8 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
-                         'portAcoords': launchesA + [launchesA[-1]],
-                         'portBcoords': launchesB + [launchesB[-1]],
+                         'portAcoords': launchesA + [launchesA[0]],
+                         'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
@@ -475,15 +478,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'separation_gap':separation_gap,
             'unit_conv_extra':unit_conv_extra
         }]
-
-    def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
-        self._fine_meshes.append({
-            'type': 'comp_bounds',
-            'list_comp_names': list_comp_names,
-            'mesh_sampling': kwargs.get('mesh_sampling', self.user_options['mesh_sampling']),
-            'min_size': kwargs.get('min_size', self.user_options['mesh_min']/1e3),
-            'max_size': kwargs.get('max_size', self.user_options['mesh_max']/1e3)
-        })
 
     def _process_ports(self, ports):
         #Assumes that ports is a dictionary that contains the port names (with separate keys with suffixes a and b for multi-element ports)
