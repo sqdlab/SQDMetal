@@ -8,6 +8,8 @@ import json
 import os
 import io
 import gmsh
+from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
+from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 
 class PALACE_Capacitance_Simulation(PALACE_Model):
 
@@ -53,12 +55,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         '''set-up the simulation'''
 
         if self.meshing == 'GMSH':
-
-            #Create the gmsh renderer to convert qiskit metal geomentry to gmsh geometry
-            pgr = Palace_Gmsh_Renderer(self.metal_design)
-
-            #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(self._metallic_layers, self._ground_plane, [], self.user_options['fillet_resolution'], 'capacitance_simulation')
+            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"])
+            #
+            gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
+            gmb.build_mesh()
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -68,15 +69,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 self.create_config_file(gmsh_render_attrs = gmsh_render_attrs)
 
                 #create batch file
-                if self.mode == 'HPC':
-                    self.create_batch_file()
-                
-                #create mesh
-                # pgr._intelligent_mesh('capacitance_simulation', 
-                #                 min_size = self.user_options['mesh_min'], 
-                #                 max_size = self.user_options['mesh_max'], 
-                #                 mesh_sampling = self.user_options['mesh_sampling'])
-                pgr.fine_mesh(self._fine_meshes)
+                # if self.mode == 'HPC':
+                #     self.create_batch_file()
 
                 self._save_mesh_gmsh()
 
@@ -231,6 +225,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         if self._output_subdir == "":
             self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        self._mesh_name = filePrefix + self.name + file_ext
         post_procs = []
         for x in Terminal:
             post_procs.append({"Index":x["Index"], "Attributes":x["Attributes"], "Type": "Electric"})
@@ -243,7 +238,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                     },
                     "Model":
                     {
-                        "Mesh":  filePrefix + self.name + file_ext,
+                        "Mesh":  self._mesh_name,
                         "L0": l0,  # mm
                         "Refinement":
                         {
@@ -264,7 +259,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                                 "Attributes": material_dielectric,  # Dielectric
                                 "Permeability": dielectric.permeability,
                                 "Permittivity": dielectric.permittivity,
-                                "LossTan": 1.2e-5
+                                "LossTan": dielectric.loss_tangent
                             }
                         ]
                     },
@@ -313,5 +308,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self.path_mesh = os.path.join(simulation_dir, self._mesh_name)
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)

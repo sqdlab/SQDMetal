@@ -187,6 +187,21 @@ class GMSH_Geometry_Builder:
                 cur_mesh_attrb['taper_dist_max'] = cur_fine_mesh['taper_dist_max'] * 1e3
                 #
                 fine_mesh_elems.append(cur_mesh_attrb)
+            elif cur_fine_mesh['type'] == 'path':
+                cur_mesh_attrb = {}
+                #Get it in mm...
+                lePoints = [gmsh.model.geo.addPoint(x[0]*1e3,x[1]*1e3, 0) for x in cur_fine_mesh['path']]
+                leLines = [gmsh.model.geo.addLine(lePoints[m-1], lePoints[m]) for m in range(1, len(lePoints))]
+                gmsh.model.occ.synchronize()
+                gmsh.model.geo.synchronize()
+                #
+                cur_mesh_attrb['path'] = leLines
+                cur_mesh_attrb['mesh_min'] = cur_fine_mesh['min_size'] * 1e3
+                cur_mesh_attrb['mesh_max'] = cur_fine_mesh['max_size'] * 1e3
+                cur_mesh_attrb['taper_dist_min'] = cur_fine_mesh['taper_dist_min'] * 1e3
+                cur_mesh_attrb['taper_dist_max'] = cur_fine_mesh['taper_dist_max'] * 1e3
+                #
+                fine_mesh_elems.append(cur_mesh_attrb)
 
 
         ret_dict = {
@@ -282,7 +297,6 @@ class GMSH_Geometry_Builder:
 
         polygons_list = []
         for m,poly in enumerate(polygons):
-            p = gpd.GeoSeries(poly) #convert to geoseries
             poly_simplified = poly.simplify(1e-9) #this removes points that are spaced too closely together
             cur_coords = poly_simplified.exterior.coords[:-1]
             if len(cur_coords) == 0:

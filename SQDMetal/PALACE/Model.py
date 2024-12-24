@@ -261,13 +261,16 @@ class PALACE_Model:
             self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
+        print("Try not to use fine_mesh_along_path for now. A bug makes multiple calls of this mesh around the edges...")
         leUnits = QUtilities.get_units(self.metal_design)
         lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
         self._fine_meshes.append({
             'type': 'path',
             'path': lePath,
-            'min_size': kwargs.get('mesh_min', self.user_options['mesh_min']),
-            'max_size': kwargs.get('mesh_max', self.user_options['mesh_max'])
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']),
+            'taper_dist_min': kwargs.get('taper_dist_min', self.user_options['taper_dist_min']),
+            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
         })
 
     def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):

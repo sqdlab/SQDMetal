@@ -31,7 +31,14 @@ class GMSH_Mesh_Builder:
         for m, cur_fine_mesh in enumerate(self._fine_meshes):
             #create distance field and threshold field - see Gmsh documentation - python tutorial 10 for more detail
             gmsh.model.mesh.field.add("Distance", 2*m+1)
-            gmsh.model.mesh.field.setNumbers(2*m+1, "SurfacesList", [x[1] for x in cur_fine_mesh['region']])
+            #
+            if 'region' in cur_fine_mesh:
+                gmsh.model.mesh.field.setNumbers(2*m+1, "SurfacesList", [x[1] for x in cur_fine_mesh['region']])
+            elif 'path' in cur_fine_mesh:
+                gmsh.model.mesh.field.setNumbers(2*m+1, "CurvesList", cur_fine_mesh['path'])
+            else:
+                assert False, "The fine-mesh parameter does not have a supported object to reference/mesh - e.g. a region or path key..."
+            #
             gmsh.model.mesh.field.setNumber(2*m+1, "Sampling", self.user_options.get('gmsh_dist_func_discretisation', 150))
 
             #A threshold field built in conjunction with the distance field
@@ -45,7 +52,7 @@ class GMSH_Mesh_Builder:
             
             fields_to_min.append(thresh_field_id)
         min_field_id = thresh_field_id+1
-        gmsh.model.mesh.field.add("Min", )
+        gmsh.model.mesh.field.add("Min", min_field_id)
         gmsh.model.mesh.field.setNumbers(min_field_id, "FieldsList", fields_to_min)
 
 

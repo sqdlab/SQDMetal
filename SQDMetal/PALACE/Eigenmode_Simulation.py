@@ -109,6 +109,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         if self._output_subdir == "":
             self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        self._mesh_name = filePrefix + self.name + file_ext
         config = {
             "Problem":
             {
@@ -118,7 +119,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             },
             "Model":
             {
-                "Mesh":  filePrefix + self.name + file_ext,
+                "Mesh":  self._mesh_name,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -196,6 +197,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self.path_mesh = os.path.join(simulation_dir, self._mesh_name)
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)
     
