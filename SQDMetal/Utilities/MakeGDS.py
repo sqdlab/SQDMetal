@@ -40,11 +40,11 @@ class MakeGDS:
         gds_metal = None
         for cur_poly in temp_cur_metals:
             if gds_metal:
-                gds_metal = gdspy.boolean(gdspy.Polygon(cur_poly.exterior.coords[:]), gds_metal, "or", layer=layer, max_points=0)
+                gds_metal = gdspy.boolean(gdspy.Polygon(cur_poly.exterior.coords[:]), gds_metal, "or", layer=layer, max_points=0, precision=self.precision)
             else:
                 gds_metal = gdspy.Polygon(cur_poly.exterior.coords[:], layer=layer)
             for cur_int in cur_poly.interiors:
-                gds_metal = gdspy.boolean(gds_metal,gdspy.Polygon(cur_int.coords[:]), "not", layer=layer, max_points=0)
+                gds_metal = gdspy.boolean(gds_metal,gdspy.Polygon(cur_int.coords[:]), "not", layer=layer, max_points=0, precision=self.precision)
         return gds_metal
 
     def _round_corners(self, gds_metal, output_layer):
@@ -115,6 +115,7 @@ class MakeGDS:
         for cur_layer in all_layers:
             # 0: ground, 1: fused metals (i.e. centre conductor)
             layer, metals = cur_layer
+
             gds_metal = self._shapely_to_gds(metals, layer)    
             if self.smooth_radius > 0:
                 gds_metal = self._round_corners(gds_metal, layer)
@@ -134,16 +135,27 @@ class MakeGDS:
 
             # positive layer
             if self.export_type in ("positive", "all"): 
-                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer))    #max_points = 199 here...
+                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))    #max_points = 199 here...
                 self._layer_metals[layer] = gds_metal
+
+        print(f"Layers before merging: {self.cell.get_layers()}")
 
         # fuse layers for a single-layer design (GND, metal)
         if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
             if self.export_type=="positive":
-                self.add_boolean_layer(0, 0, "and", output_layer=0)
+                if (all_layers[0][0] == 0) and (all_layers[1][0] == 1):
+                    self.add_boolean_layer(0, 1, "or", output_layer=0)
+                    self.add_boolean_layer(0, 0, "and", output_layer=0)
+                    self.delete_layers(1)
+                    #self.add_boolean_layer(2, 2, "or", output_layer=0)
+                    #self.delete_layers(2)
+                else:
+                    self.add_boolean_layer(0, 0, "and", output_layer=0)
             if self.export_type=="negative":
                 self.add_boolean_layer(11, 12, "and", output_layer=0)
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
+                # self.merge_polygons_in_layer(0) 
+            self.cell.flatten()
         
         # layer exports (works best when export_type=="all")
         if self.export_layers!=None:
@@ -163,23 +175,37 @@ class MakeGDS:
                 to_export.append(int(self.export_layers))
                 to_delete = list(set(layer_list) - set(to_export))
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer==to_delete)
-
+        
+    def merge_polygons_in_layer(self, layer):
+        # copy polygons to new layer 444
+        self.add_boolean_layer(layer, layer, "or", output_layer=444)
+        # delete original layer
+        self.delete_layers(layer)
+        # get polygon list
+        pol_dict = self.cell.get_polygons(by_spec=(444, 0))
+        # merge polygons and add to original layer
+        merged = gdspy.boolean(pol_dict, None, "or", layer=layer)
+        self.cell.add(merged)
+        # delete layer 444
+        self.delete_layers(444)
 
     def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
         assert operation in ["and", "or", "xor", "not"], "Operation must be: \"and\", \"or\", \"xor\", \"not\""
         if output_layer == None:
             output_layer = max([x for x in self._layer_metals]) + 1
-
         new_metal = gdspy.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=output_layer, precision=1e-6, max_points=0)
+
         if self.smooth_radius > 0:
             new_metal = self._round_corners(new_metal, output_layer)
 
-        new_metal = gdspy.boolean(new_metal, new_metal, "or", layer=output_layer)    #max_points = 199 here...
+        new_metal = gdspy.boolean(new_metal, new_metal, "or", layer=output_layer, max_points=199, precision=self.precision)    #max_points = 199 here...
 
         self.cell.add(new_metal)
         self._layer_metals[output_layer] = new_metal
         return output_layer
     
+
+
     # add a text label (default to bottom left)
     def add_text(self, text_label="", layer=0, size=800, position=None):
         """
@@ -236,6 +262,17 @@ class MakeGDS:
             text = gdspy.Text(text_gds, size, text_position, layer=layer)
             self.cell.add(text)
             self._layer_metals[layer] = text
+    
+    def delete_layers(self, layers_to_delete):
+        try:
+            len(layers_to_delete)
+        except:
+            # single layer
+            self.cell.remove_polygons(lambda pts, layer, datatype: layer==layers_to_delete)
+        else:
+            # multiple layers
+            for i in layers_to_delete:
+                self.cell.remove_polygons(lambda pts, layer, datatype: layer==i)
 
     def export(self, file_name):
         self.lib.write_gds(file_name)

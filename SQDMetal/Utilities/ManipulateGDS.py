@@ -3,6 +3,7 @@ from SQDMetal.Utilities.QUtilities import QUtilities
 from matplotlib.font_manager import FontProperties
 from matplotlib.textpath import TextPath
 from time import gmtime, strftime
+import warnings
 
 class ManipulateGDS:
     def __init__(self, import_path_gds, export_path_gds, import_cells=None, origin=(0,0)):
@@ -81,7 +82,7 @@ class ManipulateGDS:
 
 
     def make_array_onChip(self, columns, rows, 
-                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None, add_labels=True, label_string=None, label_offset=None, label_size=50):
+                          spacing=("50um", "50um"), chip_dimension=("20mm", "20mm"), export=True, export_path=None, use_cells=None, add_labels=False, label_string=None, label_offset=None, label_size=50):
         '''
         Makes an array of a design input and exports it as a new GDS. Labels each arrayed structure. 
 
@@ -93,7 +94,7 @@ class ManipulateGDS:
             - export - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design
             - export_path - (Optional) Export path (if different from self)
             - use_cells - (Optional) List of cells from the input GDS to include in the arrayed structure
-            - add_label - (Defaults to True) Add a label beneath each arrayed structure
+            - add_label - (Defaults to False) Add a label beneath each arrayed structure (WIP)
             - label_string - (Optional) If None, defaults to R1C1, R1C2 etc. (R{row_index}C{column_index}). Otherwise, if a single string is passed, this will be printed with an incrementing number. Otherwise, a list corresponding in length to the total number of arrayed structures can be passed and will be printed along row 1 from left to right, then row 2 etc.
             - label_offset - (Optional) Describes how far beneath the origin for each array point the label is. Defaults to half of spacing in y. Can be passed as a string with units (e.g. 300um).
             - label_size - (Defaults to 50) Text size for the printed labels
@@ -101,6 +102,11 @@ class ManipulateGDS:
         Output:
             - cell_array - gdspy cell array containing arrayed structures
         '''
+
+        # warning that labels do not work currently
+        if add_labels == True:
+            warnings.warn("Labels are not working currently! Setting add_labels = False and continuing the array process.\n\n")
+            add_labels = False
 
         # TODO: add option to autofill chip (requires additional arguments on chip_border (number as a string with units), fill_chip (boolean))
 
@@ -142,8 +148,10 @@ class ManipulateGDS:
                                 ).get_polygonsets()
         self.cell_array.add(arrays_of_polygonsets)
 
+        # TODO: get text working
+
         # do labelling (origin is in bottom left)
-        if add_labels:
+        if add_labels == True:
             self.cell_text = self.lib.new_cell("Text")
             index = 0
             text = []
@@ -167,6 +175,8 @@ class ManipulateGDS:
 
                         print(f'{label} --> {label_position}')
 
+                        
+
                         # add text to gds on layer 999
                         # text = gdspy.PolygonSet(self.render_text(text=label, size=10, position=label_position, font_prop=fp), layer=999)
                         text = gdspy.Text(label, label_size, label_position, layer=11)
@@ -176,7 +186,7 @@ class ManipulateGDS:
                         index += 1
 
         # export if option is set
-        if export:
+        if export == True:
             if export_path == None: 
                 array_export = self.outfile
             else:

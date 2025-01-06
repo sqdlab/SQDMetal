@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 
 class MultiDieChip:
+
     @staticmethod
     def make_resonator_chip(export_filename=None, 
                             export_path="", 
@@ -52,7 +53,7 @@ class MultiDieChip:
             - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width
             - feedline_upscale - (Defaults to 1.0) scale of the feedline gap and width as a multiple of the resonator dimensions
             - coupling_gap - (Defaults to "20um") Amount of ground plane in the coupling gap between the feedline and the resonator
-            - tl_y - (Defaults to "0um") The die-relative y-value for the main straight of the feedline (NOTE: currently only "0um" is supported)
+            - tl_y - (Defaults to "0um") The die-relative y-value for the main straight of the feedline
             - res_vertical - (Defaults to "1500um") Vertical length of resonator meanders
             - lp_to_res - (Defaults to "300um") Minimum distance between the launchpad taper and the coupling length of the left-most resonator
             - lp_inset - (Defaults to "0um") Inset of the launchpads along the x-axis relative to the die boundaries
@@ -67,7 +68,7 @@ class MultiDieChip:
             - die_num - (Defaults to [1, 1])) Die layout in [x, y] as a length-2 list
             - fill_chip - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides die_num if True)
             - markers_on - (Defaults to True) Print dicing markers on export
-            - text_label - (Optional) Text label to print on chip
+            - text_label - (Optional) Text label to print on chip. Prints a default message if text_label="". Set text_label=None for no text label.
             - text_size - (Defaults to 600) Text size
             - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
             - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
@@ -77,7 +78,13 @@ class MultiDieChip:
             - design - Qiskit Metal design object for the generated chip
         '''
 
+        # check if chip geometry is constant or scaled per-resonator
+        assert QUtilities.is_string_or_list_of_strings(cpw_width)
+        scaled_geometry = isinstance(cpw_width, list)
+        assert (len(cpw_width) == num_resonators) if (scaled_geometry == True) else 0
+
         # TODO: add automatic Palace sim
+        # TODO: add per-die labels for easy ID during fabrication
 
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
 
@@ -111,13 +118,20 @@ class MultiDieChip:
         cpw_params = c.fromQDesign(design=design)
 
         # calculate gap from specified width for 50 Ohm impedence
-        gap = str(f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(cpw_width)) * 1e6:.2f}um")
+        if scaled_geometry == True:
+            gap = [str(f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(i)) * 1e6:.2f}um") for i in cpw_width]
+            width_0 = cpw_width[0]
+            gap_0 = gap[0]
+        else:
+            gap = str(f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(cpw_width)) * 1e6:.2f}um")
+            gap_0 = gap
+            width_0 = cpw_width
 
         # calculate gap width ratio
-        width_to_gap_ratio = QUtilities.parse_value_length(cpw_width) / QUtilities.parse_value_length(gap)
+        width_to_gap_ratio = QUtilities.parse_value_length(width_0) / QUtilities.parse_value_length(gap_0)
 
         # calculate cpw impedance
-        cpw_impedance = CpwParams.calc_impedance(tr_wid=QUtilities.parse_value_length(cpw_width), tr_gap=QUtilities.parse_value_length(gap), er=er, h=QUtilities.parse_value_length(substrate_thickness))
+        cpw_impedance = CpwParams.calc_impedance(tr_wid=QUtilities.parse_value_length(width_0), tr_gap=QUtilities.parse_value_length(gap_0), er=er, h=QUtilities.parse_value_length(substrate_thickness))
 
         # calculate number of die in x and y if fill_chip is True
         if fill_chip:
@@ -129,7 +143,6 @@ class MultiDieChip:
                 (QUtilities.parse_value_length(chip_dimension[1]) - QUtilities.parse_value_length(chip_border))
                 // QUtilities.parse_value_length(die_dimension[1])
             )
-        # total_die_num = die_num[0] * die_num[1] # total number of die
 
         # list of tuples containing die centre coordinates (floats in units of meters)
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
@@ -148,11 +161,11 @@ class MultiDieChip:
 
         # calculate feedline dimensions (if different from resonators)
         if feedline_upscale != 1.0:
-            feedline_cpw_width = f'{(QUtilities.parse_value_length(cpw_width) * feedline_upscale) * 1e6}um'
-            feedline_cpw_gap = f'{(QUtilities.parse_value_length(gap) * feedline_upscale) * 1e6}um'
+            feedline_cpw_width = f'{(QUtilities.parse_value_length(width_0) * feedline_upscale) * 1e6}um'
+            feedline_cpw_gap = f'{(QUtilities.parse_value_length(gap_0) * feedline_upscale) * 1e6}um'
         else:
-            feedline_cpw_width = cpw_width
-            feedline_cpw_gap = gap
+            feedline_cpw_width = width_0
+            feedline_cpw_gap = gap_0
 
         print(f'Chip Size: {chip_dimension[0]} x {chip_dimension[1]}')
         print(f'Die Size: {die_dimension[0]} x {die_dimension[1]}')
@@ -240,13 +253,15 @@ class MultiDieChip:
         gds_export = MakeGDS(design, 
                              export_type=export_type, 
                              print_statements=print_all_infos,
-                             threshold=export_threshold)
+                             threshold=export_threshold,
+                             precision=export_threshold)
 
         # add text label
-        if text_position==None:
-            gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.93))
-        else:
-            gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
+        if text_label != None:
+            if text_position==None:
+                gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.9))
+            else:
+                gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
 
         # only export if a filename is passed
         if export_filename != None:
@@ -263,7 +278,7 @@ class MultiDieChip:
                     full_export_path = os.path.join(export_path, f"{export_filename}.gds")
             # do export
             gds_export.export(full_export_path)
-            print(f"Exported at {full_export_path}")
+            print(f"Exported at {os.path.abspath(full_export_path)}")
 
         # return design regardless of whether the GDS was exported or not
         return design
