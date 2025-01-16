@@ -175,9 +175,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
-            material_air = [gmsh_render_attrs['air_box']]
-            material_dielectric = [gmsh_render_attrs['dielectric']]
-            far_field = [gmsh_render_attrs['far_field']]
+            material_air = gmsh_render_attrs['air_box']
+            material_dielectric = gmsh_render_attrs['dielectric']
+            far_field = gmsh_render_attrs['far_field']
             
             #metals to compute capacitances for
             Terminal = []

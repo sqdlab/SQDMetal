@@ -46,3 +46,42 @@ class Material:
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
 
+class MaterialInterface:
+    def __init__(self, name="", **kwargs):
+        if name == "":
+            self.permittivity = kwargs.pop('permittivity', 1)   #Relative Permittivity
+            self.permeability = kwargs.pop('permeability', 1)   #Relative Permeability
+            self.loss_tangent = kwargs.pop('loss_tangent', 0)   #Dielectric Loss Tangent
+            for m in kwargs:
+                assert False, f"Option {m} is not recognised"
+        else:
+            #The names can have capitals and can be delimited via spaces, underscores or camelcase
+            orig_name = name
+            name = name.lower().replace(" ", "").replace("_", "").replace("-", "")
+            ################################
+            #
+            #SILICON-AIR
+            #
+            if name == "siliconair" or name == "siliconvacuum" or name == "airsilicon" or name == "vacuumsilicon":
+                self.permittivity = 10.0
+                self.permeability = 1
+                self.loss_tangent = 0.9e-3
+            ################################
+            #
+            #ALUMINIUM-OXIDE
+            #
+            elif name == "aluminiumair" or name == "aluminiumvacuum" or name == "airaluminium" or name == "vacuumaluminium" or name == "aluminiumoxide":
+                self.permittivity = 10.0
+                self.permeability = 1
+                self.loss_tangent = 0.5e-3  #TODO: Change this to actual value!
+            ################################
+            #
+            #SILICON-ALUMINIUM
+            #
+            elif name == "siliconaluminium" or name == "aluminiumsilicon":
+                self.permittivity = 10.0
+                self.permeability = 1
+                self.loss_tangent = 0.3e-3
+            ################################
+            else:
+                assert False, f"Material \"{orig_name}\" unrecognised."

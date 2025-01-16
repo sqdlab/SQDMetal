@@ -61,10 +61,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
-            material_air = [gmsh_render_attrs['air_box']]
-            material_dielectric = [gmsh_render_attrs['dielectric']]
+            material_air = gmsh_render_attrs['air_box']
+            material_dielectric = gmsh_render_attrs['dielectric']
+            dielectric_gaps = gmsh_render_attrs['dielectric_gaps']
             PEC_metals = gmsh_render_attrs['metals']
-            far_field = [gmsh_render_attrs['far_field']]
+            far_field = gmsh_render_attrs['far_field']
             ports = gmsh_render_attrs['ports']
 
             #define length scale
@@ -171,6 +172,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self.meshing == 'GMSH':
+            self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         if self._ff_type == 'absorbing':
             config['Boundaries']['Absorbing'] = {
                     "Attributes": far_field,

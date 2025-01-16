@@ -1,4 +1,5 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.Materials import MaterialInterface
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
@@ -19,6 +20,7 @@ class PALACE_Model:
         self._input_dir = ""
         self._output_subdir = ""
         self.set_farfield()
+        self._EPR_setup = False
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -111,7 +113,7 @@ class PALACE_Model:
         log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
 
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
@@ -423,7 +425,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         '''
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1e3)  #Units of mm...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
@@ -435,7 +437,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1e3)  #Units of mm...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
@@ -532,4 +534,46 @@ class PALACE_Model_RF_Base(PALACE_Model):
         
         assert False, f"AWS Palace requires RF Lumped Ports to be aligned with the x/y axes. Here the port is pointing: {vec_perp}."
 
+    def setup_EPR_interfaces(self, substrate_air : MaterialInterface, substrate_metal : MaterialInterface, metal_air : MaterialInterface, **kwargs):
+        self.substrate_air = substrate_air
+        self.substrate_metal = substrate_metal
+        self.metal_air = metal_air
+        self._EPR_setup = True
+        self.substrate_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+        self.substrate_metal_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+        self.metal_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+
+    def _setup_EPR_boundaries(self, dict_json, id_dielectric_gaps, id_metals, **kwargs):
+        if not self._EPR_setup:
+            return
+        len_scale = kwargs.get('len_scale', 1e-3)    #Only supports GMSH
+        dict_json['Boundaries']['Postprocessing'] = {
+                   "Dielectric":
+                    [
+                        {
+                        "Index": 1,
+                        "Attributes": id_dielectric_gaps,
+                        "Type": "SA",
+                        "Thickness": self.substrate_air_thickness/len_scale,
+                        "Permittivity": self.substrate_air.permittivity,
+                        "LossTan": self.substrate_air.loss_tangent
+                        },
+                        {
+                        "Index": 2,
+                        "Attributes": id_metals,
+                        "Type": "MS",
+                        "Thickness": self.substrate_metal_thickness/len_scale,  
+                        "Permittivity": self.substrate_metal.permittivity,
+                        "LossTan": self.substrate_metal.loss_tangent
+                        },
+                        {
+                        "Index": 3,
+                        "Attributes": id_metals,
+                        "Type": "MA",
+                        "Thickness": self.metal_air_thickness/len_scale, 
+                        "Permittivity": self.metal_air.permittivity,
+                        "LossTan": self.metal_air.loss_tangent
+                        }
+                    ] 
+                }
 

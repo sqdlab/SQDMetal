@@ -95,12 +95,11 @@ class GMSH_Geometry_Builder:
         #         jj_physical_group = gmsh.model.addPhysicalGroup(2, [junction], name = jj_name)
         #         jj_dict[jj_name] = (jj_physical_group, jj_inductance)
 
-
         #Process simulation constructs - e.g. ports
         lePortPolys = {}
         aux_list = []
         for cur_sim_poly in sim_constructs:
-            sim_poly = self._draw_polygon_in_GMSH_from_coords(np.array(cur_sim_poly[1])[:-1]) #i.e. ignore closed loop part as function closes it automatically
+            sim_poly = self._draw_polygon_in_GMSH_from_coords(np.array(cur_sim_poly[1])[:-1]*1e3) #i.e. ignore closed loop part as function closes it automatically and use mm
             lePortPoly = gmsh.model.addPhysicalGroup(2, [sim_poly], name = cur_sim_poly[0])
             fragment_list.append((2, sim_poly))
             aux_list.append((2, sim_poly))
@@ -114,10 +113,10 @@ class GMSH_Geometry_Builder:
         if len(aux_list) > 0:
             cut_list = aux_list #ports_list + junction_list
             dielectric_gap_list_for_cut = [(x[0],x[1]) for x in dielectric_gap_list]
-            dielectric_gap_list,lemap = gmsh.model.occ.cut(dielectric_gap_list_for_cut, cut_list, removeObject=True, removeTool=False)
+            dielectric_gap_list,lemap = gmsh.model.occ.cut(dielectric_gap_list_for_cut, cut_list, removeObject=False, removeTool=False)
 
-            gmsh.model.occ.synchronize()
-            gmsh.model.geo.synchronize()
+        gmsh.model.occ.synchronize()
+        gmsh.model.geo.synchronize()
 
         fragment_list = [(x[0],x[1]) for x in fragment_list]
         chip, chip_map = gmsh.model.occ.fragment([(3,chip_base)], fragment_list, removeObject=True, removeTool=True)
@@ -205,15 +204,21 @@ class GMSH_Geometry_Builder:
 
 
         ret_dict = {
-            'air_box'   : leAirBox,
-            'metals'    : metal_cap_physical_group,
-            'far_field' : leFarField,
+            'air_box'   : self._conv_to_lists(leAirBox),
+            'metals'    : self._conv_to_lists(metal_cap_physical_group),
+            'far_field' : self._conv_to_lists(leFarField),
             'ports'     : lePortPolys,
-            'dielectric': leDielectric,
-            'dielectric_gaps': leDielectricGaps,
+            'dielectric': self._conv_to_lists(leDielectric),
+            'dielectric_gaps': self._conv_to_lists(leDielectricGaps),
             'fine_mesh_elems': fine_mesh_elems
         }
         return ret_dict
+
+    def _conv_to_lists(self, data):
+        if isinstance(data, list):
+            return data
+        else:
+            return [data]
 
     def _process_qiskit_geometries(self, metallic_layers, ground_plane, fuse_threshold, **kwargs):
         fuse_threshold /= 1e-3  #Convert to mm...
