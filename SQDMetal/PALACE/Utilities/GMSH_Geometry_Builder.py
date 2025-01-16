@@ -76,7 +76,7 @@ class GMSH_Geometry_Builder:
         bottom_grounded = True
         air_box = self._draw_air_box(bottom_grounded)
 
-        fragment_list = metal_list + dielectric_gap_list
+        fragment_list = []
 
 
         # #create JJ's as lumped ports, if they exist
@@ -113,7 +113,8 @@ class GMSH_Geometry_Builder:
         if len(aux_list) > 0:
             cut_list = aux_list #ports_list + junction_list
             dielectric_gap_list_for_cut = [(x[0],x[1]) for x in dielectric_gap_list]
-            dielectric_gap_list,lemap = gmsh.model.occ.cut(dielectric_gap_list_for_cut, cut_list, removeObject=False, removeTool=False)
+            dielectric_gap_list,lemap = gmsh.model.occ.cut(dielectric_gap_list_for_cut, cut_list, removeObject=True, removeTool=False)
+        fragment_list = metal_list + dielectric_gap_list + fragment_list
 
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
