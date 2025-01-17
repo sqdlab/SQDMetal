@@ -410,7 +410,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
         #TODO: Refactor into a utility function to create the polygon...
         self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'qObjName1':qObjName1, 'pin1':pin1, 'qObjName2':qObjName2, 'pin2':pin2, 'rect_width': rect_width,
-                         'vec_field': self._check_port_orientation(v_parl)[0],#v_parl.tolist(),
+                         'vec_field': v_parl.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
@@ -431,7 +431,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
-                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),    #TODO: Change this once SPACK updates beyond August 2023
+                         'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
@@ -443,7 +443,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
-                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),
+                         'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
     def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
@@ -497,11 +497,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 leDict['Elements'] = [
                         {
                         "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_field[0] #vec_field + [0]    #TODO: Change this after SPACK updates Palace beyond August 2023
+                        "Direction": vec_field + [0]
                         },
                         {
                         "Attributes": [ports[port_name + 'b']],
-                        "Direction": vec_field[1] #[-x for x in vec_field] + [0]
+                        "Direction": [-x for x in vec_field] + [0]
                         }
                     ]
             else:
@@ -516,23 +516,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 leDict['C'] = cur_port['impedance_C']
             config_ports.append(leDict)
         return config_ports
-
-    def _check_port_orientation(self, vec_perp):
-        thresh = 0.9999
-
-        xDot = np.dot(vec_perp, [1,0])
-        if xDot > thresh:
-            return '+X', '-X'
-        elif xDot < -thresh:
-            return '-X', '+X'
-        
-        yDot = np.dot(vec_perp, [0,1])
-        if yDot > thresh:
-            return '+Y', '-Y'
-        elif yDot < -thresh:
-            return '-Y', '+Y'
-        
-        assert False, f"AWS Palace requires RF Lumped Ports to be aligned with the x/y axes. Here the port is pointing: {vec_perp}."
 
     def setup_EPR_interfaces(self, substrate_air : MaterialInterface, substrate_metal : MaterialInterface, metal_air : MaterialInterface, **kwargs):
         self.substrate_air = substrate_air
