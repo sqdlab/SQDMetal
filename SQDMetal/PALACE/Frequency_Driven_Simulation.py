@@ -100,7 +100,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         #Process Ports
         config_ports = self._process_ports(ports)
-        config_ports[0]["Excitation"] = True
+        if self._rf_port_excitation > 0:
+            config_ports[self._rf_port_excitation-1]["Excitation"] = True
 
         if isinstance(self.freqs, tuple):
             fStart,fStop,fStep = self.freqs

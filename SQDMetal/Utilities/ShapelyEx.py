@@ -1,4 +1,5 @@
 import shapely
+import numpy as np
 
 class ShapelyEx:
     @staticmethod
@@ -25,6 +26,18 @@ class ShapelyEx:
         y_1 = min(y1,y2)
         y_2 = max(y1,y2)
         coords = [(x_1, y_2), (x_2, y_2), (x_2, y_1), (x_1, y_1)]
+        if make_poly:
+            return shapely.Polygon(coords)
+        else:
+            return coords
+
+    @staticmethod
+    def rectangle_from_line(pos1,pos2, rect_width, make_poly=True):
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= rect_width*0.5
+        coords = np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl])
         if make_poly:
             return shapely.Polygon(coords)
         else:
