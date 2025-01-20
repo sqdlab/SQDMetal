@@ -453,7 +453,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         else:
             assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
 
-        #TODO: Consider adding JJ capacitance as well?
+        C_J = kwargs.get('C_J', 0)
 
         port_name = "rf_port_" + str(len(self._ports))
 
@@ -470,7 +470,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width * unit_conv,
                          'vec_field': v_parl.tolist(),
                          'portCoords': portCoords,
-                         'impedance_R':0, 'impedance_L':L_ind, 'impedance_C':0}]
+                         'impedance_R':0, 'impedance_L':L_ind, 'impedance_C':C_J}]
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         '''
