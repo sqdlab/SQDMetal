@@ -14,10 +14,10 @@ In the following sections we will describe exactly what we mean by this question
 The Hamiltonian of a linear distributed system which describes an electromagnetic environment is given by:
 
 $$
-\hat{H} = \sum_{m=1}^{M} \hbar \omega_m \hat{a_m}^{\dag} \hat{a_m}
+\hat{H} = \sum_{m=1}^{M} \hbar \omega_m \hat{a_m}^{\dagger} \hat{a_m}
 $$
 
-where $m$ represents the electromagnetic mode, $\omega_m$ are the angular frequencies of the modes and $\hat{a}_m^{\dag}$ and $\hat{a}_m$ are the bosonic creation and annihilation operators for the given mode. If we are using linear elements in our circuit, such as coplanar waverguides (CPWs), transmission lines or CPW resonators, we can always describe the total energy in our system with the Hamiltonian stated above.
+where $m$ represents the electromagnetic mode, $\omega_m$ are the angular frequencies of the modes and $\hat{a}_m^{\dagger}$ and $\hat{a}_m$ are the bosonic creation and annihilation operators for the given mode. If we are using linear elements in our circuit, such as coplanar waverguides (CPWs), transmission lines or CPW resonators, we can always describe the total energy in our system with the Hamiltonian stated above.
 
 The energy participaition ratio (EPR) method works by describing a superconducting circuit as a linear electromagnetic environment with $\textbf{non-linear\ elements}$ embedded within it. Usually these non-linear elements will be Josephson junctions (JJs), however other non-linear elements like nanowires or supeconducting weaklinks exist. For the rest of this descritpion of the EPR method the only non-linear element we will refer to will be Jospehson junctions.
 
@@ -84,8 +84,8 @@ We can separate the energy $\mathcal{E}(\Phi)$ into a linear and non-linear piec
 $$
 \begin{aligned}
 \mathcal{E}(\Phi) &= \mathcal{E}(\Phi)^{\text{lin}} + \mathcal{E}(\Phi)^{\text{nlin}}\\
-        &\approx \underbrace{\frac{E_J}{2} \left( \frac{\Phi}{\phi_0} \right)^2}_{\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\Phi}{\phi_0} \right)^4}_{\text{non-linear}}\\
-        &\approx \underbrace{\frac{\Phi^2}{2L_J}}_{\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\Phi}{\phi_0} \right)^4}_{\text{non-linear}}\\
+        &\approx \underbrace{\frac{E_J}{2} \left( \frac{\Phi}{\phi_0} \right)^2}_ {\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\Phi}{\phi_0} \right)^4}_ {\text{non-linear}}\\
+        &\approx \underbrace{\frac{\Phi^2}{2L_J}}_ {\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\Phi}{\phi_0} \right)^4}_{\text{non-linear}}\\
 \end{aligned}
 $$
 
@@ -105,7 +105,7 @@ The Hamiltonian of the transmon consists not only of the inductive energy of the
 
 $$
 \begin{aligned}
-    \hat{H}_4 =\underbrace{\frac{\hat{Q}^2}{2C_\Sigma}}_{\text{cap energy}}+ \underbrace{\frac{\hat{\Phi}^2}{2L_J} - \frac{E_J}{24} \left( \frac{\hat{\Phi}}{\phi_0} \right)^4 }_{\text{ind energy}}
+    \hat{H}_ 4 =\underbrace{\frac{\hat{Q}^2}{2C_\Sigma}}_ {\text{cap energy}}+ \underbrace{\frac{\hat{\Phi}^2}{2L_J} - \frac{E_J}{24} \left( \frac{\hat{\Phi}}{\phi_0} \right)^4 }_{\text{ind energy}}
 \end{aligned}
 $$
 
@@ -113,7 +113,7 @@ where $\hat{Q}$ is the charge operator, $C_\Sigma = C_{\text{pad}} + C_{J}$, is 
 
 $$
 \begin{aligned}
-    \hat{H}_4 = \underbrace{\frac{\hat{Q}^2 }{2C_\Sigma}+ \frac{\hat{\Phi}^2}{2L_J}}_{\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\hat{\Phi}}{\phi_0} \right)^4 }_{\text{non-linear}}.
+    \hat{H}_ 4 = \underbrace{\frac{\hat{Q}^2 }{2C_\Sigma}+ \frac{\hat{\Phi}^2}{2L_J}}_ {\text{linear}} \underbrace{- \frac{E_J}{24} \left( \frac{\hat{\Phi}}{\phi_0} \right)^4 }_{\text{non-linear}}.
 \end{aligned}
 $$
 
@@ -129,7 +129,7 @@ where $ \Phi_{\text{zpf}}$ is the zero point fluctuations of a given mode in our
 
 $$
 \begin{aligned}
-\hat{H}_4 = \underbrace{ \hbar \omega \hat{a}^{\dag} \hat{a}}_{\text{linear}}\  \ \underbrace{- \frac{E_J\ \Phi_{\text{zpf}}^4}{24\ \phi_0^4} \left( \hat{a}^\dagger + \hat{a} \right)^4 }_{\text{non-linear}}.
+\hat{H}_ 4 = \underbrace{ \hbar \omega \hat{a}^{\dagger} \hat{a}}_ {\text{linear}}\  \ \underbrace{- \frac{E_J\ \Phi_{\text{zpf}}^4}{24\ \phi_0^4} \left( \hat{a}^\dagger + \hat{a} \right)^4 }_{\text{non-linear}}.
 \end{aligned}
 $$
 
@@ -143,19 +143,19 @@ Note that because we have broken the transmon Hamiltonian up into a linear and n
 
 $$
 \begin{aligned}
-    \hat{H}_{\text{full}} = \sum_{m=1}^{M} \hbar \omega_m \hat{a}^{\dag}_m \hat{a}_m - \frac{E_J\ }{24\ \phi_0^4}  \sum_{m=1}^{M} \sum_{j=1}^{J}  (\Phi_{j,m}^{\text{zpf}})^4 \left( \hat{a}_m^\dagger + \hat{a}_m \right)^4
+    \hat{H}_ {\text{full}} = \sum_{m=1}^{M} \hbar \omega_m \hat{a}^{\dagger}_ m \hat{a}_ m - \frac{E_J\ }{24\ \phi_0^4}  \sum_{m=1}^{M} \sum_{j=1}^{J}  (\Phi_{j,m}^{\text{zpf}})^4 \left( \hat{a}_m^\dagger + \hat{a}_m \right)^4
 \end{aligned}
 $$
 
 The above expression is broken up into the linear piece: 
 $$
-\hat{H}_{\text{lin}} =  \sum_{m=1}^{M} \hbar \omega_m \hat{a}^{\dag}_m \hat{a}_m 
+\hat{H}_ {\text{lin}} =  \sum_{m=1}^{M} \hbar \omega_m \hat{a}^{\dagger}_m \hat{a}_m 
 $$
 
 and non-linear piece:
 
 $$
-\hat{H}_{\text{full}} = - \frac{E_J\ }{24\ \phi_0^4}  \sum_{m=1}^{M} \sum_{j=1}^{J}  (\Phi_{j,m}^{\text{zpf}})^4 \left( \hat{a}_m^\dagger + \hat{a}_m \right)^4
+\hat{H}_ {\text{full}} = - \frac{E_J\ }{24\ \phi_0^4}  \sum_{m=1}^{M} \sum_{j=1}^{J}  (\Phi_{j,m}^{\text{zpf}})^4 \left( \hat{a}_m^\dagger + \hat{a}_m \right)^4
 $$
 
 
@@ -175,7 +175,7 @@ The calculation is performed as follows:
 
 $$
 \begin{aligned}
-    \text{p}_m = \frac{\langle \psi_m | \frac{1}{2 L_J} \hat{\Phi}^2| \psi_m \rangle}{\langle \psi_m | \frac{1}{2}\hat{H}_{\text{lin}}| \psi_m \rangle}
+    \text{p}_ m = \frac{\langle \psi_m | \frac{1}{2 L_J} \hat{\Phi}^2| \psi_m \rangle}{\langle \psi_m | \frac{1}{2}\hat{H}_{\text{lin}}| \psi_m \rangle}
 \end{aligned}
 $$
 
@@ -183,7 +183,7 @@ where we consider consider $|\psi_m \rangle $ as a number state (fock state) of 
 
 $$
 \begin{aligned}
-    \text{p}_m = \frac{ \frac{1}{ L_J} (\Phi_{m}^{\text{zpf}})^2}{ \frac{1}{2} \hbar \omega_m},
+    \text{p}_ m = \frac{ \frac{1}{ L_J} (\Phi_{m}^{\text{zpf}})^2}{ \frac{1}{2} \hbar \omega_m},
 \end{aligned}
 $$
 
