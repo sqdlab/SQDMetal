@@ -466,8 +466,6 @@ class WireTaperPinStretch(QComponent):
         else:
             gap = p.orig_gap
 
-        print(gap)
-
         taper = [
                 (0, width*0.5),
                 (p.dist_extend, p.trace_width*0.5),
