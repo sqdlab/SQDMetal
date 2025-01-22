@@ -11,6 +11,7 @@ import gmsh
 import json
 import platform
 import shapely
+import shutil
 
 class PALACE_Model:
     def __init__(self, meshing, mode, options):
@@ -32,6 +33,24 @@ class PALACE_Model:
             self.palace_dir = options.get('palace_dir', 'palace')                
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
+
+        #Assuming that metal_design attribute already exists
+
+        restrict_rect = options.get('segment_rectangle', None)   #Given as [x1,y1,x2,y2]
+        if isinstance(restrict_rect, list) or isinstance(restrict_rect, np.ndarray) or isinstance(restrict_rect, tuple):
+            self.restrict_rect = [min([restrict_rect[0], restrict_rect[2]]), min([restrict_rect[1], restrict_rect[3]]),
+                                  max([restrict_rect[0], restrict_rect[2]]), max([restrict_rect[1], restrict_rect[3]])]
+            self.chip_len = self.restrict_rect[2]-self.restrict_rect[0]
+            self.chip_wid = self.restrict_rect[3]-self.restrict_rect[1]
+            self.chip_centre = [(self.restrict_rect[0]+self.restrict_rect[2])*0.5,
+                                (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
+                                QUtilities.parse_value_length(self.metal_design.chips['main']['size']['center_z'])]
+        else:
+            self.chip_len = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_x'])
+            self.chip_wid = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_y'])
+            self.chip_centre = [QUtilities.parse_value_length(self.metal_design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+            self.restrict_rect = [self.chip_centre[0]-0.5*self.chip_len, self.chip_centre[1]-0.5*self.chip_wid,
+                                  self.chip_centre[0]+0.5*self.chip_len, self.chip_centre[1]+0.5*self.chip_wid]
 
     def create_batch_file(self):
         pass
@@ -141,6 +160,8 @@ class PALACE_Model:
         except KeyboardInterrupt:
             self.cur_process.kill()
         self.cur_process = None
+
+        shutil.copy(self._sim_config, self._output_data_dir + f'/config.json')
 
         return self.retrieve_data()
 

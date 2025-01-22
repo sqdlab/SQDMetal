@@ -242,3 +242,47 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
     def retrieve_field_plots(self):
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
         return PVDVTU_Viewer(lePlots)
+
+    def retrieve_EPR_data(self):
+        return PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(self._sim_config, self._output_data_dir)
+
+    @staticmethod
+    def retrieve_EPR_data_from_file(json_sim_config, output_directory):
+        if os.path.exists(output_directory + '/config.json'):
+            #Newer version stores configuration in output directory... Use this as it is the exact one used in this simulation...
+            json_sim_config = output_directory + '/config.json'
+        with open(json_sim_config, "r") as f:
+            config_json = json.loads(f.read())
+        assert 'Boundaries' in config_json, "\"Boundaries\" not found in the JSON configuration."
+        leDict = config_json['Boundaries']
+        assert 'Postprocessing' in leDict, "\"Postprocessing\" not found in the JSON configuration."
+        leDict = leDict['Postprocessing']
+        assert 'Dielectric' in leDict, "\"Dielectric\" not found in the JSON configuration."
+        leDict = leDict['Dielectric']
+        epr_dict = {}
+        for cur_dict in leDict:
+            epr_dict[cur_dict['Type']] = cur_dict['Index']
+
+        raw_data = pd.read_csv(output_directory + '/eig.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()        
+        col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
+        col_Ief = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Im{f}')][0]
+        col_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
+
+        raw_dataEPR = pd.read_csv(output_directory + '/surface-Q.csv')
+        headersEPR = raw_dataEPR.columns
+        raw_dataEPR = raw_dataEPR.to_numpy()
+
+        ret_list = []
+        for m,cur_row in enumerate(raw_data):
+            cur_mode = {}
+            cur_mode['Frequency'] = (cur_row[col_Ref] + 1j*cur_row[col_Ief]) * 1e9
+            cur_mode['Q'] = cur_row[col_Q]
+            for cur_interface in epr_dict:
+                cur_mode[cur_interface] = {}
+                cur_mode[cur_interface]['p'] = raw_dataEPR[m,2*epr_dict[cur_interface]-1]
+                cur_mode[cur_interface]['Q'] = raw_dataEPR[m,2*epr_dict[cur_interface]]
+            ret_list.append(cur_mode)
+        
+        return ret_list

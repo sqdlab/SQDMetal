@@ -207,6 +207,7 @@ class GMSH_Geometry_Builder:
         ret_dict = {
             'air_box'   : self._conv_to_lists(leAirBox),
             'metals'    : self._conv_to_lists(metal_cap_physical_group),
+            'metalsShapely'    : metals,
             'far_field' : self._conv_to_lists(leFarField),
             'ports'     : lePortPolys,
             'dielectric': self._conv_to_lists(leDielectric),
@@ -256,6 +257,7 @@ class GMSH_Geometry_Builder:
             if cur_layer['type'] == 'design_layer':
                 cur_layer['unit_conv'] = unit_conv
                 cur_layer['resolution'] = self.fillet_resolution
+                cur_layer['threshold'] = kwargs.get('threshold', 1e-9)
                 metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
                 unique_ids = np.unique(metal_sel_ids)
                 for m in range(unique_ids.size):
@@ -300,10 +302,9 @@ class GMSH_Geometry_Builder:
         return new_polys, dielectric_gaps
 
     def _create_gmsh_geometry_from_shapely_polygons(self, polygons):
-
         polygons_list = []
         for m,poly in enumerate(polygons):
-            poly_simplified = poly.simplify(1e-9) #this removes points that are spaced too closely together
+            poly_simplified = poly.simplify(1e-9) #this removes points that are spaced too closely together - TODO: investigate why this is still required?
             cur_coords = poly_simplified.exterior.coords[:-1]
             if len(cur_coords) == 0:
                 continue
