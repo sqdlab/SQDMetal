@@ -246,6 +246,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
     def retrieve_EPR_data(self):
         return PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(self._sim_config, self._output_data_dir)
 
+    def retrieve_mode_port_EPR(self):
+        return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
+
     @staticmethod
     def retrieve_EPR_data_from_file(json_sim_config, output_directory):
         if os.path.exists(output_directory + '/config.json'):
@@ -265,7 +268,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
         raw_data = pd.read_csv(output_directory + '/eig.csv')
         headers = raw_data.columns
-        raw_data = raw_data.to_numpy()        
+        raw_data = raw_data.to_numpy()
         col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
         col_Ief = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Im{f}')][0]
         col_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
@@ -286,3 +289,18 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             ret_list.append(cur_mode)
         
         return ret_list
+
+    @staticmethod
+    def retrieve_mode_port_EPR_from_file(output_directory):
+        #Returns matrix where modes on rows, ports on columns
+
+        raw_data = pd.read_csv(output_directory + '/port-EPR.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
+
+        raw_dataE = pd.read_csv(output_directory + '/eig.csv')
+        headers = raw_dataE.columns
+        raw_dataE = raw_dataE.to_numpy()
+        col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
+
+        return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
