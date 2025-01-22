@@ -1,4 +1,6 @@
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
+from SQDMetal.Utilities.Materials import MaterialInterface
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
@@ -8,6 +10,8 @@ import os, subprocess
 import gmsh
 import json
 import platform
+import shapely
+import shutil
 
 class PALACE_Model:
     def __init__(self, meshing, mode, options):
@@ -19,6 +23,8 @@ class PALACE_Model:
         self._input_dir = ""
         self._output_subdir = ""
         self.set_farfield()
+        self._EPR_setup = False
+        self._rf_port_excitation = -1
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -27,6 +33,24 @@ class PALACE_Model:
             self.palace_dir = options.get('palace_dir', 'palace')                
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
+
+        #Assuming that metal_design attribute already exists
+
+        restrict_rect = options.get('segment_rectangle', None)   #Given as [x1,y1,x2,y2]
+        if isinstance(restrict_rect, list) or isinstance(restrict_rect, np.ndarray) or isinstance(restrict_rect, tuple):
+            self.restrict_rect = [min([restrict_rect[0], restrict_rect[2]]), min([restrict_rect[1], restrict_rect[3]]),
+                                  max([restrict_rect[0], restrict_rect[2]]), max([restrict_rect[1], restrict_rect[3]])]
+            self.chip_len = self.restrict_rect[2]-self.restrict_rect[0]
+            self.chip_wid = self.restrict_rect[3]-self.restrict_rect[1]
+            self.chip_centre = [(self.restrict_rect[0]+self.restrict_rect[2])*0.5,
+                                (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
+                                QUtilities.parse_value_length(self.metal_design.chips['main']['size']['center_z'])]
+        else:
+            self.chip_len = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_x'])
+            self.chip_wid = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_y'])
+            self.chip_centre = [QUtilities.parse_value_length(self.metal_design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+            self.restrict_rect = [self.chip_centre[0]-0.5*self.chip_len, self.chip_centre[1]-0.5*self.chip_wid,
+                                  self.chip_centre[0]+0.5*self.chip_len, self.chip_centre[1]+0.5*self.chip_wid]
 
     def create_batch_file(self):
         pass
@@ -111,7 +135,7 @@ class PALACE_Model:
         log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"\"{self.palace_dir}\" -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
 
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
@@ -136,6 +160,8 @@ class PALACE_Model:
         except KeyboardInterrupt:
             self.cur_process.kill()
         self.cur_process = None
+
+        shutil.copy(self._sim_config, self._output_data_dir + f'/config.json')
 
         return self.retrieve_data()
 
@@ -303,8 +329,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
             assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
             for cur_port in self._ports:
-                lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
-                lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
+                if cur_port['elem_type'] == 'single':
+                    lePorts += [(cur_port['port_name'], cur_port['portCoords'])]
+                else:
+                    lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
+                    lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"])
@@ -360,7 +389,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     elif cur_port['type'] == 'route':
                         sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
                     elif cur_port['type'] == 'single_rect':
-                        sim_sParams.create_port_2_conds(cur_port['qObjName1'], cur_port['pin1'], cur_port['qObjName2'], cur_port['pin2'], cur_port['rect_width']) 
+                        sim_sParams.create_port_2_conds_by_position(cur_port['pos1'], cur_port['pos2'], cur_port['rect_width']) 
                 
                 for fine_mesh in self._fine_meshes:
                     if fine_mesh['type'] == 'box':
@@ -397,6 +426,11 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 cmsl.save("ERROR_" + self.name)
                 assert False, f"COMSOL threw an error (file has been saved): {error}"
 
+    def set_port_excitation(self, port_index):
+        assert port_index > 0 and port_index <= len(self._ports), "Invalid index of port for excitation. Check if ports with R>0 have been correctly defined."
+        assert self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
+        self._rf_port_excitation = port_index
+
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))
 
@@ -406,10 +440,58 @@ class PALACE_Model_RF_Base(PALACE_Model):
         v_parl = pos2-pos1
         v_parl /= np.linalg.norm(v_parl)
 
-        #TODO: Refactor into a utility function to create the polygon...
-        self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'qObjName1':qObjName1, 'pin1':pin1, 'qObjName2':qObjName2, 'pin2':pin2, 'rect_width': rect_width,
-                         'vec_field': self._check_port_orientation(v_parl)[0],#v_parl.tolist(),
+        portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width, False)
+
+        self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width,
+                         'vec_field': v_parl.tolist(),
+                         'portCoords': portCoords,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+        if self._rf_port_excitation == -1 and impedance_R > 0:
+            self._rf_port_excitation = len(self._ports)
+
+    def create_port_JosephsonJunction(self, qObjName, **kwargs):
+        junction_index = kwargs.get('junction_index', 0)
+
+        comp_id = self.metal_design.components['junction'].id
+        gsdf = self.metal_design.qgeometry.tables['junction']
+        gsdf = gsdf.loc[gsdf["component"] == comp_id]
+        ls = gsdf['geometry'].iloc[junction_index]
+        assert isinstance(ls, shapely.geometry.linestring.LineString), "The junction must be defined as a LineString object. Check the code for the part to verify this..."
+
+        coords = [x for x in ls.coords]
+        assert len(coords) == 2, "Currently only junctions with two points (i.e. a rectangle) are supported."
+        rect_width = gsdf['width'].iloc[junction_index]
+
+        if 'E_J_Hertz' in kwargs:
+            elem_charge = 1.60218e-19
+            hbar = 1.05457e-34
+            h = hbar*2*np.pi
+            phi0 = hbar/(2*elem_charge)
+            E_J = kwargs.pop('E_J_Hertz') * h
+            L_ind = phi0**2 / E_J
+        elif 'L_J' in kwargs:
+            L_ind = kwargs.pop('L_J')
+        else:
+            assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
+
+        C_J = kwargs.get('C_J', 0)
+
+        port_name = "rf_port_" + str(len(self._ports))
+
+        unit_conv = QUtilities.get_units(self.metal_design)
+        pos1 = np.array(coords[0]) * unit_conv
+        pos2 = np.array(coords[1]) * unit_conv
+        v_parl = pos2-pos1
+        v_parl /= np.linalg.norm(v_parl)
+
+        portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width * unit_conv, False)
+        portCoords = [x for x in portCoords]
+        portCoords = portCoords + [portCoords[0]]   #Close loop...
+
+        self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width * unit_conv,
+                         'vec_field': v_parl.tolist(),
+                         'portCoords': portCoords,
+                         'impedance_R':0, 'impedance_L':L_ind, 'impedance_C':C_J}]
 
     def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         '''
@@ -423,26 +505,30 @@ class PALACE_Model_RF_Base(PALACE_Model):
         '''
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1e3)  #Units of mm...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
-                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),    #TODO: Change this once SPACK updates beyond August 2023
+                         'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+        if self._rf_port_excitation == -1 and impedance_R > 0:
+            self._rf_port_excitation = len(self._ports)
 
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1e3)  #Units of mm...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
-                         'vec_field': self._check_port_orientation(vec_perp),#vec_perp.tolist(),
+                         'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+        if self._rf_port_excitation == -1 and impedance_R > 0:
+            self._rf_port_excitation = len(self._ports)
 
     def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
         #Enumerate port_ind from 1...
@@ -495,16 +581,16 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 leDict['Elements'] = [
                         {
                         "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_field[0] #vec_field + [0]    #TODO: Change this after SPACK updates Palace beyond August 2023
+                        "Direction": vec_field + [0]
                         },
                         {
                         "Attributes": [ports[port_name + 'b']],
-                        "Direction": vec_field[1] #[-x for x in vec_field] + [0]
+                        "Direction": [-x for x in vec_field] + [0]
                         }
                     ]
             else:
                 leDict['Attributes'] = [ports[port_name]]
-                leDict['Direction'] = vec_field# + [0]
+                leDict['Direction'] = vec_field + [0]
 
             if 'impedance_R' in cur_port:
                 leDict['R'] = cur_port['impedance_R']
@@ -515,21 +601,46 @@ class PALACE_Model_RF_Base(PALACE_Model):
             config_ports.append(leDict)
         return config_ports
 
-    def _check_port_orientation(self, vec_perp):
-        thresh = 0.9999
+    def setup_EPR_interfaces(self, substrate_air : MaterialInterface, substrate_metal : MaterialInterface, metal_air : MaterialInterface, **kwargs):
+        self.substrate_air = substrate_air
+        self.substrate_metal = substrate_metal
+        self.metal_air = metal_air
+        self._EPR_setup = True
+        self.substrate_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+        self.substrate_metal_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+        self.metal_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
 
-        xDot = np.dot(vec_perp, [1,0])
-        if xDot > thresh:
-            return '+X', '-X'
-        elif xDot < -thresh:
-            return '-X', '+X'
-        
-        yDot = np.dot(vec_perp, [0,1])
-        if yDot > thresh:
-            return '+Y', '-Y'
-        elif yDot < -thresh:
-            return '-Y', '+Y'
-        
-        assert False, f"AWS Palace requires RF Lumped Ports to be aligned with the x/y axes. Here the port is pointing: {vec_perp}."
-
+    def _setup_EPR_boundaries(self, dict_json, id_dielectric_gaps, id_metals, **kwargs):
+        if not self._EPR_setup:
+            return
+        len_scale = kwargs.get('len_scale', 1e-3)    #Only supports GMSH
+        dict_json['Boundaries']['Postprocessing'] = {
+                   "Dielectric":
+                    [
+                        {
+                        "Index": 1,
+                        "Attributes": id_dielectric_gaps,
+                        "Type": "SA",
+                        "Thickness": self.substrate_air_thickness/len_scale,
+                        "Permittivity": self.substrate_air.permittivity,
+                        "LossTan": self.substrate_air.loss_tangent
+                        },
+                        {
+                        "Index": 2,
+                        "Attributes": id_metals,
+                        "Type": "MS",
+                        "Thickness": self.substrate_metal_thickness/len_scale,  
+                        "Permittivity": self.substrate_metal.permittivity,
+                        "LossTan": self.substrate_metal.loss_tangent
+                        },
+                        {
+                        "Index": 3,
+                        "Attributes": id_metals,
+                        "Type": "MA",
+                        "Thickness": self.metal_air_thickness/len_scale, 
+                        "Permittivity": self.metal_air.permittivity,
+                        "LossTan": self.metal_air.loss_tangent
+                        }
+                    ] 
+                }
 
