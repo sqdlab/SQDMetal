@@ -462,9 +462,11 @@ class WireTaperPinStretch(QComponent):
             #In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
                 gap = QUtilities.parse_value_length(self.design.variables[gap])
-            gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
+                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
             gap = p.orig_gap
+
+        print(gap)
 
         taper = [
                 (0, width*0.5),
@@ -599,7 +601,7 @@ class WireTaperProbePinStretch(QComponent):
             #In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
                 gap = QUtilities.parse_value_length(self.design.variables[gap])
-            gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
+                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
             gap = p.orig_gap
 
