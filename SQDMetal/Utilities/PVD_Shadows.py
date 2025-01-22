@@ -69,7 +69,7 @@ class PVD_Shadows:
             assert False, f"Unrecognised units: {unit_conv}"
         return unit_conv, unit_conv_name
 
-    def plot_all_layers(self, mode='separate', **kwargs):
+    def plot_all_layers(self, mode='separate', plot_overlap = False ,**kwargs):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
         unit_conv, unit_conv_name = self.get_units()
@@ -97,9 +97,39 @@ class PVD_Shadows:
             else:
                 plot_polys += [metal_polys]
                 names += [f"Layer {layer_id}"]
-        gdf = gpd.GeoDataFrame({'names':names}, geometry=plot_polys)
+        #split layers or steps and create geodataframe
+        layers = [name.split(",")[0] for name in names]
+        steps = [name.split(",")[1].strip() if "," in name else "Mask" for name in names]
+
+        gdf = gpd.GeoDataFrame({'names':names, 'layers': layers, 'steps': steps}, geometry=plot_polys)
+        gdf_filt = gdf[(gdf['steps'] != 'Mask') & (~gdf['layers'].str.contains('Mask'))] #ignore mask region to find the right overlap regions
+
+        
         fig, ax = plt.subplots(1)
-        gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True)
+        unique_layers = gdf_filt['layers'].unique()
+        unique_steps = gdf_filt['steps'].unique()
+
+        assert len(unique_layers) == 2 or (len(unique_layers) == 1 and len(unique_steps) == 2), \
+        "Error: The input data must contain either two unique layers or one layer with two unique steps."
+
+        if plot_overlap == True:
+            #separate the GeoDataFrame by layer or step
+            if len(unique_layers) == 2: 
+                layer1 = gdf[gdf['layers'] == unique_layers[0]]
+                layer2 = gdf[gdf['layers'] == unique_layers[1]]
+                overlap = gpd.overlay(layer1, layer2, how='intersection') #find the overlapping regions
+            else:
+                step1 = gdf[gdf['steps'] == unique_steps[0]]
+                step2 = gdf[gdf['steps'] == unique_steps[1]]
+                overlap = gpd.overlay(step1, step2, how='intersection')
+
+            gdf.set_crs("EPSG:3857", inplace=True)
+            total_overlap_area = overlap.geometry.area.sum()*1e12 #calculate the sum of area of the overlapping regions
+            print(f"Total area of overlapping regions: {total_overlap_area:.6f} µm²")
+            overlap.plot(ax=ax, facecolor='none', edgecolor='black', hatch='//', alpha=1, linestyle='--',linewidth=1.2, label='Overlap')
+
+        gdf.boundary.plot(ax=ax, color='black', linestyle='--', linewidth=1, alpha=0.25)
+        gdf.plot(ax = ax, column='layers', cmap='jet', alpha=0.35, categorical=True, legend=True)
         ax.set_xlabel(f'Position (m)')
         ax.set_ylabel(f'Position (m)')
 
