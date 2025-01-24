@@ -5,6 +5,7 @@ from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
 from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
+from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 import numpy as np
 import os, subprocess
 import gmsh
@@ -253,7 +254,7 @@ class PALACE_Model:
             # Path
             path = os.path.join(parent_simulation_dir, file_name)
             gmsh.write(path)
-            
+            GMSH_Navigator(path).export_to_png()
             
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
