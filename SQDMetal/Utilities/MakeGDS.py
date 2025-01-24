@@ -138,8 +138,6 @@ class MakeGDS:
                 self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))    #max_points = 199 here...
                 self._layer_metals[layer] = gds_metal
 
-        print(f"Layers before merging: {self.cell.get_layers()}")
-
         # fuse layers for a single-layer design (GND, metal)
         if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
             if self.export_type=="positive":
