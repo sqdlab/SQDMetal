@@ -253,8 +253,11 @@ class PALACE_Model:
     
             # Path
             path = os.path.join(parent_simulation_dir, file_name)
+            if os.path.exists(path):
+                os.remove(path)
             gmsh.write(path)
-            GMSH_Navigator(path).export_to_png()
+            self._mesh_path = path
+            GMSH_Navigator(self._mesh_path).export_to_png()
             
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''

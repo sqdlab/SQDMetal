@@ -44,7 +44,7 @@ class GMSH_Navigator:
         gmsh.option.setNumber('Mesh.SurfaceFaces', 1)
         gmsh.fltk.run()
 
-    def export_to_png(self, filt_names = ['metal', 'rf_port', 'dielectric_gaps']):
+    def export_to_png(self, filt_names = ['metal', 'rf_port', 'dielectric_gaps'], file_path=""):
         #Get mesh-coordinates using code from:
         #   - https://stackoverflow.com/questions/73882211/how-to-get-all-edges-and-faces-triangles-in-a-mesh-and-their-nodes-3d-co-ordi
         #   - https://bthierry.pages.math.cnrs.fr/tutorial/gmsh/api/detail/
@@ -77,6 +77,7 @@ class GMSH_Navigator:
             ax.add_collection(lc)
             ax.autoscale()
         
-        file_path = '.'.join(self._file_path.split('.')[:-1]) + '.png'
+        if file_path == "":
+            file_path = '.'.join(self._file_path.split('.')[:-1]) + '.png'
         fig.savefig(file_path)
         plt.close(fig)

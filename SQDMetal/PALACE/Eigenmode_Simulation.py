@@ -3,6 +3,7 @@ from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
@@ -232,12 +233,15 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                     plt.close(fig)
                 except Exception as e:
                     print(f"Error in plotting: {e}")
-            try:
-                fig = leSlice.plot_mesh()
-                fig.savefig(self._output_data_dir + '/mesh.png')
-                plt.close(fig)
-            except Exception as e:
-                print(f"Error in plotting: {e}")
+            if self.meshing == 'GMSH':
+                GMSH_Navigator(self._mesh_path).export_to_png(file_path=self._output_data_dir + '/mesh.png')
+            else:
+                try:
+                    fig = leSlice.plot_mesh()
+                    fig.savefig(self._output_data_dir + '/mesh.png')
+                    plt.close(fig)
+                except Exception as e:
+                    print(f"Error in plotting: {e}")
 
     def retrieve_field_plots(self):
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
