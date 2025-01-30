@@ -17,7 +17,8 @@ import qiskit_metal
 
 class GMSH_Geometry_Builder:
 
-    def __init__(self, design, fillet_resolution):
+    def __init__(self, design, fillet_resolution, gmsh_verbosity=1):
+        #gmsh_verbosity: 0: silent except for fatal errors, 1: +errors, 2: +warnings, 3: +direct, 4: +information, 5: +status, 99: +debug
         
         self.design = design
         self.fillet_resolution = fillet_resolution
@@ -37,6 +38,9 @@ class GMSH_Geometry_Builder:
         gmsh.finalize()
         gmsh.initialize()
         gmsh.model.add('qiskit_to_gmsh')
+        self._verbosity = gmsh_verbosity
+        gmsh.option.setNumber('General.Verbosity', self._verbosity)
+        gmsh.option.setNumber("General.Terminal", self._verbosity)
 
       
     def construct_geometry_in_GMSH(self, metallic_layers, ground_plane, sim_constructs, fine_meshes, fuse_threshold, **kwargs):
@@ -230,6 +234,8 @@ class GMSH_Geometry_Builder:
         gmsh.finalize()
         gmsh.initialize()
         gmsh.model.add('qiskit_to_gmsh')
+        gmsh.option.setNumber('General.Verbosity', self._verbosity)
+        gmsh.option.setNumber("General.Terminal", self._verbosity)
 
         unit_conv = 1   #TODO: Because it is stuck in mm?!
 

@@ -32,7 +32,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "taper_dist_max": 200e-6,              
                  "gmsh_dist_func_discretisation": 130,
                  "HPC_Parameters_JSON": "",
-                 "fuse_threshold": 1e-9
+                 "fuse_threshold": 1e-9,
+                 "gmsh_verbosity": 1
     }
 
     # Parent Directory path
@@ -60,7 +61,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         '''set-up the simulation'''
 
         if self.meshing == 'GMSH':
-            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'])
+            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"])
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)

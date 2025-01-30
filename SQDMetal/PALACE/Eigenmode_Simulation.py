@@ -32,7 +32,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "gmsh_dist_func_discretisation": 120,
                  "comsol_meshing": "Extremely fine",
                  "HPC_Parameters_JSON": "",
-                 "fuse_threshold": 1e-9
+                 "fuse_threshold": 1e-9,
+                 "gmsh_verbosity": 1
                 }
 
     #Parent Directory path
