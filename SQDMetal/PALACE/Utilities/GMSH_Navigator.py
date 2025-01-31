@@ -5,12 +5,17 @@ from matplotlib import collections  as mc
 import numpy as np
 
 class GMSH_Navigator:
-    def __init__(self, mesh_file, units=0.001):
+    def __init__(self, mesh_file, units=0.001, gmsh_verbosity=1):
         gmsh.initialize()
+        gmsh.option.setNumber('General.Verbosity', gmsh_verbosity)
+        gmsh.option.setNumber("General.Terminal", gmsh_verbosity)
         gmsh.model.remove()
         gmsh.finalize()
         gmsh.initialize()
+        gmsh.option.setNumber('General.Verbosity', gmsh_verbosity)
+        gmsh.option.setNumber("General.Terminal", gmsh_verbosity)
         gmsh.open(mesh_file)
+
         #
         self._file_path = mesh_file
         self._units = units
