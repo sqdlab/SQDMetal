@@ -180,3 +180,45 @@ class PolyBorderRectangle(QComponent):
         self.add_pin('s', pins.coords[::-1], width=p.cpw_width)
         self.add_pin('e', pine.coords[::-1], width=p.cpw_width)
         self.add_pin('w', pinw.coords[::-1], width=p.cpw_width)
+
+class PolyShapely(QComponent):
+    """Create a shapely polygon given the shapely string representation. Units will be in the default qiskit-metal units.
+
+    Inherits QComponent class.
+
+    The polygon either has a Metal or ground cutout Geometry as specified by is_ground_cutout:
+        * strShapely - The string required to generate a shapely Polygon or MultiPolygon...
+        * is_ground_cutout - If True, the border is a ground cutout, otherwise it is a metallic square.
+        
+    Pins:
+        No pins designated with this polygon
+
+    Sketch:
+        It's a shapely polygon...
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Solitary square marker
+
+    Default Options:
+        * strShapely = ''
+        * is_ground_cutout=False
+    """
+
+    default_options = Dict(strShapely='', is_ground_cutout=False)
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        lePoly = shapely.wkt.loads(p.strShapely)
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(shapelyPoly=lePoly),
+                           layer=p.layer,
+                           subtract=p.is_ground_cutout)
