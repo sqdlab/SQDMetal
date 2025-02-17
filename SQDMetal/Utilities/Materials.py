@@ -62,7 +62,7 @@ class MaterialInterface:
             #
             #SILICON-AIR
             #
-            if name == "siliconair" or name == "siliconvacuum" or name == "airsilicon" or name == "vacuumsilicon":
+            if name == "siliconair" or name == "siliconvacuum" or name == "airsilicon" or name == "vacuumsilicon" or name == "siliconoxide":
                 self.permittivity = 10.0
                 self.permeability = 1
                 self.loss_tangent = 0.9e-3
@@ -83,5 +83,20 @@ class MaterialInterface:
                 self.permeability = 1
                 self.loss_tangent = 0.3e-3
             ################################
+            #
+            #SILICON-TANTALUM
+            #
+            elif name == "silicontantalum" or name == "tantalumsilicon":
+                self.permittivity = 10.0
+                self.permeability = 1
+                self.loss_tangent = 0.3e-3
+            ################################
+            #
+            #TANTALUM-OXIDE
+            #
+            elif name == "tantalumair" or name == "tantalumvacuum" or name == "airtantalum" or name == "vacuumtantalum" or name == "tantalumoxide":
+                self.permittivity = 10.0
+                self.permeability = 1
+                self.loss_tangent = 0.3e-3
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
