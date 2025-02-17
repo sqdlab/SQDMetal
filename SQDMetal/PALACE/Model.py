@@ -360,7 +360,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
             if self.view_design_gmsh_gui == True:
                 #plot design in gmsh gui
-                pgr.view_design_components()
+                pgr.view_design_components() # TODO: error here: pgr not defined
                     
         if self.meshing == 'COMSOL':
 

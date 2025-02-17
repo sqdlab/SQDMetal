@@ -62,10 +62,14 @@ class MaterialInterface:
             #
             #SILICON-AIR
             #
+            #References
+            #[1] https://www.epjap.org/articles/epjap/pdf/2004/10/ap04128.pdf
+            #[2] https://ieeexplore.ieee.org/abstract/document/6419
+            #[3] https://link.springer.com/article/10.1134/S106378341402022X
             if name == "siliconair" or name == "siliconvacuum" or name == "airsilicon" or name == "vacuumsilicon" or name == "siliconoxide":
-                self.permittivity = 10.0
+                self.permittivity = 3.85 #10.0
                 self.permeability = 1
-                self.loss_tangent = 0.9e-3
+                self.loss_tangent = 0.006 #0.9e-3
             ################################
             #
             #ALUMINIUM-OXIDE
@@ -86,17 +90,24 @@ class MaterialInterface:
             #
             #SILICON-TANTALUM
             #
+            #References
+            #[1] https://www.epjap.org/articles/epjap/pdf/2004/10/ap04128.pdf
+            #[2] https://ieeexplore.ieee.org/abstract/document/6419781
+            #[3] https://link.springer.com/article/10.1134/S106378341402022X
             elif name == "silicontantalum" or name == "tantalumsilicon":
-                self.permittivity = 10.0
+                self.permittivity = 3.85 # assuming this interface is silicon oxide
                 self.permeability = 1
-                self.loss_tangent = 0.3e-3
+                self.loss_tangent = 0.006
             ################################
             #
             #TANTALUM-OXIDE
             #
+            #References
+            #[1] https://pubs.aip.org/aip/jap/article/54/11/6502/13154/Electrical-properties-of-amorphous-tantalum
+            #[2] https://ieeexplore.ieee.org/document/1717770
             elif name == "tantalumair" or name == "tantalumvacuum" or name == "airtantalum" or name == "vacuumtantalum" or name == "tantalumoxide":
-                self.permittivity = 10.0
+                self.permittivity = 20.0
                 self.permeability = 1
-                self.loss_tangent = 0.3e-3
+                self.loss_tangent = 0.005
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
