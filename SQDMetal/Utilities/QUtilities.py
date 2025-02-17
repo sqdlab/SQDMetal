@@ -1085,18 +1085,21 @@ class QUtilities:
         x0 = QUtilities.parse_value_length(die_origin[0])
         y0 = QUtilities.parse_value_length(die_origin[1])
 
+        # string values for gap/width (unscaled)
+        width_cur = width
+        gap_cur = gap
+        radius_cur = radius
+
         # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
 
-            # setup values for scaled/constant geometry
-            width_cur = width[i] if (scaled_geometry == True) else width
-            gap_cur = gap[i] if (scaled_geometry == True) else gap
+            # setup values for scaled geometry
             if scaled_geometry == True:
                 # parse strings to float values (width and gap - per resonator)
-                w = QUtilities.parse_value_length(width[i])
-                g = QUtilities.parse_value_length(gap[i])
-            radius_cur = radius[i] if (scaled_radius == True) else radius
+                width_cur = width[i]
+                gap_cur = gap[i]
+                radius_cur = radius[i]
             
             # calculate x_position and add to list
             x_pos_cur = x0 - (tl_extent / 2) + ((i + 0.25) * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
@@ -1108,11 +1111,14 @@ class QUtilities:
                 capacitances.append(r_cur.get_res_capacitance())
                 inductances.append(r_cur.get_res_capacitance())
 
+            w_float = QUtilities.parse_value_length(width_cur)
+            g_float = QUtilities.parse_value_length(gap_cur)
+
             # calculate length based on frequency
             l_fullwave, er_eff, F = cpw_calculations.guided_wavelength(
                 freq=frequencies[i],
-                line_width=w,
-                line_gap=g,
+                line_width=w_float,
+                line_gap=g_float,
                 substrate_thickness=h,
                 film_thickness=ft,
             )
@@ -1124,7 +1130,7 @@ class QUtilities:
             resonator_vals.append([l_fullwave, er_eff, F])
 
             # calculate y value of resonator start
-            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w) - (feedline_upscale * g) - cg - (0.5 * w) - g
+            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg - (0.5 * w_float) - g_float
             res_y_um = f'{res_y_val * 1e6:.3f}um'
 
             # calculate y value of resonator end
