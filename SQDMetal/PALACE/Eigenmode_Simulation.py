@@ -1,9 +1,9 @@
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,11 +25,15 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "mesh_max": 100e-3,
-                 "mesh_min": 10e-3,
-                 "mesh_sampling": 120,
+                 "mesh_max": 100e-6,
+                 "mesh_min": 10e-6,
+                 "taper_dist_min": 30e-6,
+                 "taper_dist_max": 200e-6,
+                 "gmsh_dist_func_discretisation": 120,
                  "comsol_meshing": "Extremely fine",
-                 "HPC_Parameters_JSON": ""
+                 "HPC_Parameters_JSON": "",
+                 "fuse_threshold": 1e-9,
+                 "gmsh_verbosity": 1
                 }
 
     #Parent Directory path
@@ -59,10 +63,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
-            material_air = [gmsh_render_attrs['air_box']]
-            material_dielectric = [gmsh_render_attrs['dielectric']]
+            material_air = gmsh_render_attrs['air_box']
+            material_dielectric = gmsh_render_attrs['dielectric']
+            dielectric_gaps = gmsh_render_attrs['dielectric_gaps']
             PEC_metals = gmsh_render_attrs['metals']
-            far_field = [gmsh_render_attrs['far_field']]
+            far_field = gmsh_render_attrs['far_field']
             ports = gmsh_render_attrs['ports']
 
             #define length scale
@@ -101,12 +106,14 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
         #Process Ports
         config_ports = self._process_ports(ports)
-        config_ports[0]["Excitation"] = True
+        if self._rf_port_excitation > 0:
+            config_ports[self._rf_port_excitation-1]["Excitation"] = True
 
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
             self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        self._mesh_name = filePrefix + self.name + file_ext
         config = {
             "Problem":
             {
@@ -116,7 +123,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             },
             "Model":
             {
-                "Mesh":  filePrefix + self.name + file_ext,
+                "Mesh":  self._mesh_name,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -137,7 +144,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                         "Attributes": material_dielectric,  # Dielectric
                         "Permeability": dielectric.permeability,
                         "Permittivity": dielectric.permittivity,
-                        "LossTan": 1.2e-5
+                        "LossTan": dielectric.loss_tangent
                     }
                 ]
             },
@@ -168,6 +175,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self.meshing == 'GMSH':
+            self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         if self._ff_type == 'absorbing':
             config['Boundaries']['Absorbing'] = {
                     "Attributes": far_field,
@@ -194,6 +203,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self.path_mesh = os.path.join(simulation_dir, self._mesh_name)
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)
     
@@ -224,13 +234,194 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                     plt.close(fig)
                 except Exception as e:
                     print(f"Error in plotting: {e}")
-            try:
-                fig = leSlice.plot_mesh()
-                fig.savefig(self._output_data_dir + '/mesh.png')
-                plt.close(fig)
-            except Exception as e:
-                print(f"Error in plotting: {e}")
+            if self.meshing == 'GMSH':
+                GMSH_Navigator(self._mesh_path).export_to_png(file_path=self._output_data_dir + '/mesh.png')
+            else:
+                try:
+                    fig = leSlice.plot_mesh()
+                    fig.savefig(self._output_data_dir + '/mesh.png')
+                    plt.close(fig)
+                except Exception as e:
+                    print(f"Error in plotting: {e}")
 
     def retrieve_field_plots(self):
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
         return PVDVTU_Viewer(lePlots)
+
+    def retrieve_EPR_data(self):
+        return PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(self._sim_config, self._output_data_dir)
+
+    def retrieve_mode_port_EPR(self):
+        return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
+
+    @staticmethod
+    def retrieve_EPR_data_from_file(json_sim_config, output_directory):
+        if os.path.exists(output_directory + '/config.json'):
+            #Newer version stores configuration in output directory... Use this as it is the exact one used in this simulation...
+            json_sim_config = output_directory + '/config.json'
+        with open(json_sim_config, "r") as f:
+            config_json = json.loads(f.read())
+        assert 'Boundaries' in config_json, "\"Boundaries\" not found in the JSON configuration."
+        leDict = config_json['Boundaries']
+        assert 'Postprocessing' in leDict, "\"Postprocessing\" not found in the JSON configuration."
+        leDict = leDict['Postprocessing']
+        assert 'Dielectric' in leDict, "\"Dielectric\" not found in the JSON configuration."
+        leDict = leDict['Dielectric']
+        epr_dict = {}
+        for cur_dict in leDict:
+            epr_dict[cur_dict['Type']] = cur_dict['Index']
+
+        raw_data = pd.read_csv(output_directory + '/eig.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
+        col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
+        col_Ief = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Im{f}')][0]
+        col_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
+
+        raw_dataEPR = pd.read_csv(output_directory + '/surface-Q.csv')
+        headersEPR = raw_dataEPR.columns
+        raw_dataEPR = raw_dataEPR.to_numpy()
+
+        ret_list = []
+        for m,cur_row in enumerate(raw_data):
+            cur_mode = {}
+            cur_mode['Frequency'] = (cur_row[col_Ref] + 1j*cur_row[col_Ief]) * 1e9
+            cur_mode['Q'] = cur_row[col_Q]
+            for cur_interface in epr_dict:
+                cur_mode[cur_interface] = {}
+                cur_mode[cur_interface]['p'] = raw_dataEPR[m,2*epr_dict[cur_interface]-1]
+                cur_mode[cur_interface]['Q'] = raw_dataEPR[m,2*epr_dict[cur_interface]]
+            ret_list.append(cur_mode)
+        
+        return ret_list
+
+    @staticmethod
+    def retrieve_mode_port_EPR_from_file(output_directory):
+        #Returns matrix where modes on rows, ports on columns
+
+        raw_data = pd.read_csv(output_directory + '/port-EPR.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
+
+        raw_dataE = pd.read_csv(output_directory + '/eig.csv')
+        headers = raw_dataE.columns
+        raw_dataE = raw_dataE.to_numpy()
+        col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
+
+        return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
+
+    @staticmethod
+    def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = []):
+        
+        mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
+        
+        #Constants used for calculations
+        e = 1.60218e-19
+        hbar = 1.05457e-34
+        phi0 = hbar/(2*e)
+
+        #get particpation ratios and frequencies
+        participation_ratios = mode_dict['mat_mode_port']
+        frequencies = mode_dict['eigenfrequencies']
+
+        #get #modes and #junctions from arrays
+        num_of_modes = np.shape(participation_ratios)[0]
+        num_of_junctions = np.shape(participation_ratios)[1]
+
+        #choose modes user is interested in
+        modes = np.arange(num_of_modes) + 1 # array of modes
+        modes_to_compare = np.array(modes_to_compare) #cast to array
+        if modes_to_compare.size == 0:
+            modes_to_compare = modes
+        modes_to_delete = np.setdiff1d(modes, modes_to_compare)
+
+        #update number of modes left for comparison
+        num_of_modes = num_of_modes - modes_to_delete.size
+
+        #create labels for the modes
+        dataframe_label_mode = []
+        for i, mode in enumerate(modes_to_compare):
+            dataframe_label_mode.append("mode_" + str(mode))
+
+        dataframe_label_junc = []
+        for i in range(num_of_junctions):
+            dataframe_label_junc.append("jj_" + str(i+1))
+
+        #delete modes not wanted from participation ratio and frequency vectors
+        if modes_to_delete.size > 0:
+            for i,mode in enumerate(modes_to_delete):
+                participation_ratios = np.delete(participation_ratios, (modes_to_delete[i] - (i+1)), axis=0)
+                frequencies = np.delete(frequencies, (modes_to_delete[i] - (i+1)), axis=0)
+
+        #participation ratio matrix - dimension (num_of_modes, num_of_junctions)
+        P = np.matrix(np.abs(participation_ratios))
+
+        #diagonal matrix for eigenfrequencies
+        omega_vector = 2* np.pi * frequencies
+        omega = np.diag(omega_vector)
+
+        #Detuning matrix
+        delta = np.ones((np.shape(omega)[0], np.shape(omega)[0])) #create delta/detuning matrix
+
+        #Populate delta/detuning matrix
+        for j in range(np.shape(omega)[0]):
+            delta[:,j] = omega_vector - omega_vector[j]
+
+        #Get Ej for each junction
+        Lj = np.matrix([[13e-9], [9e-9]]) ##### need function to extract this #####
+        Ej = np.diag((phi0**2 / Lj).A1)
+
+        #Calcultate Kerr matrix: chi = hbar/4 * (omega*P) * inv_Ej * (omega*P)^T
+        ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hetz divide by 2*pi###
+        chi = (hbar/4) * (omega*P) * np.linalg.inv(Ej) * np.transpose(omega*P)
+        diag_matrix = (-1/2) * np.diag(np.ones(num_of_modes)) + np.ones(num_of_modes) #hacky way of creating ones matrix with values of 1/2 down the diagonal
+        chi_anharm = np.multiply(diag_matrix,chi) #This is the kerr matrix but with the anharmonicity down the diagonal for the self-kerr term
+        anharm = (1/2) * np.diagonal(chi)
+        lamb_shift = (1/2) * chi * np.ones((np.shape(chi)[0],1))
+        renormalised_freqs = np.transpose(np.matrix(frequencies * 2 * np.pi)) - lamb_shift #linear frequencies from eigenmode simulation are renormalised by lamb shift caused by non-linearity
+
+        #Get values in mehahertz (MHz) to display to user
+        chi_freq = chi / (2 * np.pi * 1e6) 
+        chi_anharm = chi_anharm / (2 * np.pi * 1e6) 
+        anharm_freq = anharm / (2 * np.pi * 1e6)
+        lamb_shift_freq = lamb_shift / (2 * np.pi * 1e6)
+        delta_freq = delta / (2 * np.pi * 1e9)
+        renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
+
+        #create dataframes and print for user to see
+        print('Simulation Mode Frequencies:')
+        freq_df = pd.DataFrame(frequencies / (1e9), dataframe_label_mode, ['Freq (GHz)'])
+        print(freq_df)
+        print('______________________________')
+        print('\n')
+
+        print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for lamb shift')
+        freq_renorm_df = pd.DataFrame(renormalised_freqs, dataframe_label_mode, ['Freq (GHz)'])
+        print(freq_renorm_df)
+        print('______________________________')
+        print('\n')
+
+        print('Participation Ratios:')
+        ratios_df = pd.DataFrame(np.abs(participation_ratios), dataframe_label_mode, dataframe_label_junc)
+        print(ratios_df)
+        print('______________________________')
+        print('\n')
+
+        chi_anharm_df = pd.DataFrame(chi_anharm, dataframe_label_mode, dataframe_label_mode)
+        print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
+        print(chi_anharm_df)
+        print('______________________________')
+        print('\n')
+
+        lamb_shift_df = pd.DataFrame(lamb_shift_freq, dataframe_label_mode, ['Lamb Shift (MHz)'])
+        print('Lamb Shifts:')
+        print(lamb_shift_df)
+        print('______________________________')
+        print('\n')
+
+        delta_df = pd.DataFrame(delta_freq, dataframe_label_mode, dataframe_label_mode)
+        print('Detuning (GHz):')
+        print(delta_df)
+        print('______________________________')
+        print('\n')
+

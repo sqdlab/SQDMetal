@@ -53,7 +53,7 @@ class JunctionDolan(QComponent):
                                       BG     BG = bridge_gap
              _______________________  BG
             |__________   __________| TPS    TPS = t_pad_size
-            <-->       | |       <-->        TP  = t_pad_extra
+            <-->       | |       <-->        TPE = t_pad_extra
              TPE       |S|        TPE
                        | |
 
@@ -99,7 +99,7 @@ class JunctionDolan(QComponent):
         p = self.p
         #########################################################
 
-        pad_T, pad_Fork, pin1, pin2 = JunctionDolan.draw_junction(p)
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -111,6 +111,12 @@ class JunctionDolan(QComponent):
         #                    dict(padGap=padGap),
         #                    subtract=True,
         #                    layer=p.layer)
+        
+        self.add_qgeometry('junction',
+                           {'design': sim_JJ},
+                           layer=p.layer,
+                           subtract=False,
+                           width=p.squid_width+2*p.t_pad_extra)
 
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
@@ -166,17 +172,23 @@ class JunctionDolan(QComponent):
 
         pin1 = shapely.LineString(pad_T[1:3])
         pin2 = shapely.LineString([pad_Fork[-1], pad_Fork[0]])
+
+        sim_JJ = shapely.LineString([
+            np.mean(pad_T[1:3],axis=0),
+            np.mean([pad_Fork[-1], pad_Fork[0]],axis=0)
+        ])
+
         pad_T = shapely.Polygon(pad_T)
         pad_Fork = shapely.Polygon(pad_Fork)
 
-        polys = [pad_T, pad_Fork, pin1, pin2]
+        polys = [pad_T, pad_Fork, pin1, pin2, sim_JJ]
         if p.reverse:
             polys = draw.translate(polys, -len_comp, 0)
             polys = draw.rotate(polys, np.pi, origin=(0, 0), use_radians=True)
         polys = draw.rotate(polys, np.arctan2(p.end_y-p.pos_y,p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [pad_T, pad_Fork, pin1, pin2] = polys
-        return pad_T, pad_Fork, pin1, pin2
+        [pad_T, pad_Fork, pin1, pin2, sim_JJ] = polys
+        return pad_T, pad_Fork, pin1, pin2, sim_JJ
 
 class JunctionDolanPinStretch(QComponent):
     """Create a Dolan Bridge Josephson Junction
@@ -226,7 +238,7 @@ class JunctionDolanPinStretch(QComponent):
                                       BG     BG = bridge_gap
              _______________________  BG
             |__________   __________| TPS    TPS = t_pad_size
-            <-->       | |       <-->        TP  = t_pad_extra
+            <-->       | |       <-->        TPE = t_pad_extra
              TPE       |S|        TPE        x   = Location where target poin is attached.
                        |x|
 
@@ -279,7 +291,7 @@ class JunctionDolanPinStretch(QComponent):
         p.end_x = endPt[0]
         p.end_y = endPt[1]
 
-        pad_T, pad_Fork, pin1, pin2 = JunctionDolan.draw_junction(p)
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -291,6 +303,12 @@ class JunctionDolanPinStretch(QComponent):
         #                    dict(padGap=padGap),
         #                    subtract=True,
         #                    layer=p.layer)
+        
+        self.add_qgeometry('junction',
+                           {'design': sim_JJ},
+                           layer=p.layer,
+                           subtract=False,
+                           width=p.squid_width+2*p.t_pad_extra)
 
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)

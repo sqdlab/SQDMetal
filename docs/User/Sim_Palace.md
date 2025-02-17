@@ -35,8 +35,8 @@ find -name palace*
 
 The second command will find the path of the Palace binary. Basically it's somewhere like (remember to add the `~/` for the full absolute path):
 
-```
-./spack/opt/spack/linux-ubuntu23.04-zen2/gcc-12.3.0/palace-0.11.2-v3z2x65yy2n6p7ryhwnzzxhroauejven/bin/palace
+```bash
+./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
 ```
 
 Executing the above block should show the command-line switches required for Palace. Finally, install [Paraview](https://www.paraview.org/):
@@ -73,11 +73,11 @@ import os
 os.environ["PMIX_MCA_gds"]="hash"
 ```
 
-If it throws an error for `libCEED` (see [here](https://github.com/awslabs/palace/issues/257) for details), run:
+If it throws an error for `libCEED` (see [here](https://github.com/awslabs/palace/issues/257) for details) or an error like `SUNDIALS: Core: *** NOT FOUND ***`, first open the file:
 ```bash
-spack install libxsmm@=main
+nano ~/spack/var/spack/repos/builtin/packages/palace/package.py
 ```
-Now proceed with the installation by running the palace installation command once more.
+Edit the line which says `depends_on("libxsmm@main")` to `depends_on("libxsmm@=main")` (note the `=` sign). Then add `depends_on("sundials")` after the line `depends_on("eigen")`. Now proceed with the installation by running the palace installation command once more.
 
 **Upgrading**
 
@@ -98,7 +98,6 @@ Working installation instructions for the Australian Bunya cluster are given [he
 
 ```python
 from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 
 #Eigenmode Simulation Options
 user_defined_options = {
