@@ -1,47 +1,58 @@
 from qiskit_metal import designs
-from SQDMetal.Utilities.Materials import Material 
+from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.MakeGDS import MakeGDS
 from SQDMetal.Utilities.CpwParams import CpwParams
 from SQDMetal.Utilities.QUtilities import QUtilities
 import numpy as np
+import matplotlib.pyplot as plt
 import os
 from pprint import pprint
 from datetime import datetime
+from shapely.geometry import Polygon
+
 
 class MultiDieChip:
 
-    @staticmethod
-    def make_resonator_chip(export_filename=None, 
-                            export_path="", 
-                            export_type="all",
-                            export_threshold=1e-9,
-                            frequency_range=(6e9, 7e9), 
-                            num_resonators=5, 
-                            cpw_width="9um", 
-                            feedline_upscale=1.0,
-                            coupling_gap="20um", 
-                            tl_y="0um",
-                            res_vertical="1500um",
-                            lp_to_res="300um",
-                            lp_inset="0um",
-                            lp_dimension="600um",
-                            lp_taper="300um",
-                            substrate_material="silicon", 
-                            substrate_thickness="0.5mm", 
-                            film_thickness="100nm",
-                            chip_dimension=("20mm", "20mm"), 
-                            chip_border="500um",     
-                            die_dimension=("7.1mm", "4.4mm"),    
-                            die_num=[1,1],
-                            fill_chip=True,
-                            markers_on=True,
-                            text_label="",
-                            text_size=600,
-                            text_position=None,
-                            print_all_infos=True,
-                            date_stamp_on_export=True
-                            ):
-        '''
+    def __init__(self, export_filename=None):
+        self.export_filename = export_filename
+        self.design = None
+
+    # @staticmethod
+    def make_resonator_chip(
+        self,
+        export_filename=None,
+        export_path="",
+        export_type="all",
+        export_threshold=1e-9,
+        frequency_range=(6e9, 7e9),
+        num_resonators=5,
+        cpw_width="9um",
+        feedline_upscale=1.0,
+        coupling_gap="20um",
+        tl_y="0um",
+        res_vertical="1500um",
+        lp_to_res="300um",
+        lp_inset="0um",
+        lp_dimension="600um",
+        lp_taper="300um",
+        substrate_material="silicon",
+        substrate_thickness="0.5mm",
+        film_thickness="100nm",
+        chip_dimension=("20mm", "20mm"),
+        chip_border="500um",
+        die_dimension=("7.1mm", "4.4mm"),
+        die_num=[1, 1],
+        fill_chip=False,
+        markers_on=True,
+        text_label="",
+        text_size=600,
+        text_position=None,
+        print_all_infos=True,
+        date_stamp_on_export=True,
+        single_circuit_for_simulation=False,
+        plot_inline_mpl=True
+    ):
+        """
         Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
 
         Inputs:
@@ -74,29 +85,41 @@ class MultiDieChip:
             - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
             - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
             - date_stamp_on_export - (Defaults to True) If True, will print date and time of export in exported .gds filename
-        
+
         Outputs:
             - design - Qiskit Metal design object for the generated chip
-        '''
+        """
+
+        assert self.export_filename != None or export_filename != None, "Please provide an export filename"
+        if self.export_filename == None:
+            self.export_filename = export_filename
+        elif export_filename == None:
+                export_filename = self.export_filename
+        
+        if single_circuit_for_simulation and fill_chip:
+            print("\nWarning: single_circuit_for_simulation=True will override fill_chip=True. We will only print a single chip (die_num=[1, 1]).\n")
+            fill_chip = False
+            die_num = [1, 1]
 
         # check if chip geometry is constant or scaled per-resonator
         assert QUtilities.is_string_or_list_of_strings(cpw_width)
         scaled_geometry = isinstance(cpw_width, list)
         if scaled_geometry == True:
-            assert (len(cpw_width) > 1), "If cpw_width is a list, it must have more than one element"
-            assert (len(cpw_width) == num_resonators), "If cpw_width is a list, it must have the same length as num_resonators"
-
+            assert (
+                len(cpw_width) > 1
+            ), "If cpw_width is a list, it must have more than one element"
+            assert (
+                len(cpw_width) == num_resonators
+            ), "If cpw_width is a list, it must have the same length as num_resonators"
 
         # TODO: add automatic Palace sim
         # TODO: add per-die labels for easy ID during fabrication
 
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
 
-        print(f"{t}\nBuilding chip \"{export_filename}\" with the following options:\n")
+        print(f'{t}\nBuilding chip "{export_filename}" with the following options:\n')
         if print_all_infos:
             pprint(locals(), sort_dicts=False)
-            print('\n')
-            print('~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
         # assign other values form input parameters
         substrate = Material(substrate_material)
@@ -108,51 +131,78 @@ class MultiDieChip:
         )
         design.delete_all_components()
 
+        # convert some values to floats for ease-of-use
+        chip_dim_x = QUtilities.parse_value_length(chip_dimension[0])
+        chip_dim_y = QUtilities.parse_value_length(chip_dimension[1])
+        die_dim_x = QUtilities.parse_value_length(die_dimension[0])
+        die_dim_y = QUtilities.parse_value_length(die_dimension[1])
+        chip_border_xy = QUtilities.parse_value_length(chip_border)
+        res_vertical_y = QUtilities.parse_value_length(res_vertical)
+
         # set chip dimension and material
         design.chips.main.size.size_x = chip_dimension[0]
         design.chips.main.size.size_y = chip_dimension[1]
-        design.chips.main.size.size_z = '-' + substrate_thickness
+        design.chips.main.size.size_z = "-" + substrate_thickness
         design.chips.main.material = [substrate_material]
 
         # enact
         design.chips.main
 
         # initialise CpwParams object for calculations
-        c = CpwParams(rel_permittivity=er, dielectric_thickness=QUtilities.parse_value_length(substrate_thickness))
+        c = CpwParams(
+            rel_permittivity=er,
+            dielectric_thickness=QUtilities.parse_value_length(substrate_thickness),
+        )
         cpw_params = c.fromQDesign(design=design)
 
         # calculate gap from specified width for 50 Ohm impedence
         if scaled_geometry == True:
-            gap = [str(f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(i)) * 1e6:.2f}um") for i in cpw_width]
+            gap = [
+                str(
+                    f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(i)) * 1e6:.2f}um"
+                )
+                for i in cpw_width
+            ]
             width_0 = cpw_width[0]
             gap_0 = gap[0]
         else:
-            gap = str(f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(cpw_width)) * 1e6:.2f}um")
+            gap = str(
+                f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(cpw_width)) * 1e6:.2f}um"
+            )
             gap_0 = gap
             width_0 = cpw_width
 
         # calculate gap width ratio
-        width_to_gap_ratio = QUtilities.parse_value_length(width_0) / QUtilities.parse_value_length(gap_0)
+        width_to_gap_ratio = QUtilities.parse_value_length(
+            width_0
+        ) / QUtilities.parse_value_length(gap_0)
 
         # calculate cpw impedance
-        cpw_impedance = CpwParams.calc_impedance(tr_wid=QUtilities.parse_value_length(width_0), tr_gap=QUtilities.parse_value_length(gap_0), er=er, h=QUtilities.parse_value_length(substrate_thickness))
+        cpw_impedance = CpwParams.calc_impedance(
+            tr_wid=QUtilities.parse_value_length(width_0),
+            tr_gap=QUtilities.parse_value_length(gap_0),
+            er=er,
+            h=QUtilities.parse_value_length(substrate_thickness),
+        )
 
         # calculate number of die in x and y if fill_chip is True
         if fill_chip:
-            die_num[0] = int(
-                (QUtilities.parse_value_length(chip_dimension[0]) - QUtilities.parse_value_length(chip_border))
-                // QUtilities.parse_value_length(die_dimension[0])
-            )
-            die_num[1] = int(
-                (QUtilities.parse_value_length(chip_dimension[1]) - QUtilities.parse_value_length(chip_border))
-                // QUtilities.parse_value_length(die_dimension[1])
+            die_num[0] = int((chip_dim_x - chip_border_xy) // die_dim_x)
+            die_num[1] = int((chip_dim_y - chip_border_xy) // die_dim_y)
+            assert (
+                die_num[0] > 0 and die_num[1] > 0
+            ), "Chip dimensions must be larger than twice the chip border if fill_chip=True"
+            print(
+                f"\nChip fill enabled - overriding die_num. Writing {die_num[0]} x {die_num[1]} dies to fill chip.\n"
             )
 
         # list of tuples containing die centre coordinates (floats in units of meters)
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
 
         # calculate frequencies
-        freq_list = np.linspace(frequency_range[0], frequency_range[1], num_resonators, endpoint=True)
+        freq_list = np.linspace(
+            frequency_range[0], frequency_range[1], num_resonators, endpoint=True
+        )
 
         # calculate total launchpad width (from edge of die)
         lp_extent = (
@@ -165,32 +215,39 @@ class MultiDieChip:
 
         # calculate feedline dimensions (if different from resonators)
         if feedline_upscale != 1.0:
-            feedline_cpw_width = f'{(QUtilities.parse_value_length(width_0) * feedline_upscale) * 1e6}um'
-            feedline_cpw_gap = f'{(QUtilities.parse_value_length(gap_0) * feedline_upscale) * 1e6}um'
+            feedline_cpw_width = (
+                f"{(QUtilities.parse_value_length(width_0) * feedline_upscale) * 1e6}um"
+            )
+            feedline_cpw_gap = (
+                f"{(QUtilities.parse_value_length(gap_0) * feedline_upscale) * 1e6}um"
+            )
         else:
             feedline_cpw_width = width_0
             feedline_cpw_gap = gap_0
 
-        print(f'Chip Size: {chip_dimension[0]} x {chip_dimension[1]}')
-        print(f'Die Size: {die_dimension[0]} x {die_dimension[1]}')
-        print('\nResonator frequencies:')
-        print(f"\t{[f'{i * 1e-9} GHz' for i in freq_list]}")
-        print('\nResonator properties:')
-        print(f'\tGap      : {gap}')
-        print(f'\tWidth    : {cpw_width}')
-        print(f'\tImpedance: {cpw_impedance:.2f} Ohm')
-        print('\nLaunchpad properties:')
-        print(f'\tLaunchpad extent: {lp_extent * 1e6:.2f}um\n\n')
-        print('~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
+        print(f"Chip Size: {chip_dimension[0]} x {chip_dimension[1]}")
+        print(f"Die Size:  {die_dimension[0]} x {die_dimension[1]}\n")
+        print(f"Resonator properties:")
+        print(f" Frequencies    : {[f'{i * 1e-9} GHz' for i in freq_list]}")
+        print(f" Gap            : {gap}")
+        print(f" Width          : {cpw_width}")
+        print(f" Impedance      : {cpw_impedance:.2f} Ω\n")
+        print(f"Launchpad extent: {lp_extent * 1e6:.2f} µm\n")
 
         # place and store launchpads, resonators, transmission lines
         launchpads = []
-        resonators_list, resonator_vals, resonator_names, capacitances, inductances = [], [], [], [], []
+        resonators_list, resonator_vals, resonator_names, capacitances, inductances = (
+            [],
+            [],
+            [],
+            [],
+            [],
+        )
         transmission_lines = []
 
         # loop through dies
         for i, origin in enumerate(die_coords):
-            
+
             # draw launchpads
             launchpads.append(
                 QUtilities.place_launchpads(
@@ -203,33 +260,36 @@ class MultiDieChip:
                     dimension=lp_dimension,
                     inset=lp_inset,
                     taper=lp_taper,
-                    print_checks=print_all_infos
+                    print_checks=print_all_infos,
                 )
             )
 
             # TODO: update calculation of resonator start position (in y) to account for up-scaled feedline as given by feedline_upscale argument.
-            
+
             # draw resonators
-            resonators, resonator_val, resonator_name, capacitance, inductance = QUtilities.place_resonators_hanger(design=design,
-                gap=gap,
-                width=cpw_width,
-                num_resonators=num_resonators,
-                frequencies=freq_list,
-                die_origin=origin,
-                die_dimension=die_dimension,
-                die_index=i,
-                film_thickness=film_thickness,
-                launchpad_extent=lp_extent,
-                feedline_upscale=feedline_upscale,
-                coupling_gap=coupling_gap,
-                transmission_line_y=tl_y,
-                launchpad_to_res=lp_to_res,
-                res_vertical=res_vertical,
-                min_res_gap="50um",
-                LC_calculations=True,
-                print_statements=print_all_infos
+            resonators, resonator_val, resonator_name, capacitance, inductance = (
+                QUtilities.place_resonators_hanger(
+                    design=design,
+                    gap=gap,
+                    width=cpw_width,
+                    num_resonators=num_resonators,
+                    frequencies=freq_list,
+                    die_origin=origin,
+                    die_dimension=die_dimension,
+                    die_index=i,
+                    film_thickness=film_thickness,
+                    launchpad_extent=lp_extent,
+                    feedline_upscale=feedline_upscale,
+                    coupling_gap=coupling_gap,
+                    transmission_line_y=tl_y,
+                    launchpad_to_res=lp_to_res,
+                    res_vertical=res_vertical,
+                    min_res_gap="50um",
+                    LC_calculations=True,
+                    print_statements=print_all_infos,
                 )
-            
+            )
+
             resonators_list.append(resonators)
             resonator_vals.append(resonator_val)
             resonator_names.append(resonator_name)
@@ -237,52 +297,109 @@ class MultiDieChip:
             inductances.append(inductance)
 
             # draw transmission lines
-            transmission_lines.append(QUtilities.place_transmission_line_from_launchpads(
-                design=design,
-                tl_y=tl_y,
-                gap=feedline_cpw_gap,
-                launchpads=launchpads,
-                width=feedline_cpw_width,
-                die_index=i,
-                die_origin=origin))
+            transmission_lines.append(
+                QUtilities.place_transmission_line_from_launchpads(
+                    design=design,
+                    tl_y=tl_y,
+                    gap=feedline_cpw_gap,
+                    launchpads=launchpads,
+                    width=feedline_cpw_width,
+                    die_index=i,
+                    die_origin=origin,
+                )
+            )
 
             # draw markers
-            if markers_on: 
-                QUtilities.place_markers(design=design, die_origin=origin, die_dim=die_dimension)
-
-        if print_all_infos:
-            print('\n\n~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
-
-        # setup GDS export (positive)
-        gds_export = MakeGDS(design, 
-                             export_type=export_type, 
-                             print_statements=print_all_infos,
-                             threshold=export_threshold,
-                             precision=export_threshold)
+            if markers_on:
+                QUtilities.place_markers(
+                    design=design, die_origin=origin, die_dim=die_dimension
+                )
 
         # add text label
         if text_label != None:
-            if text_position==None:
-                gds_export.add_text(text_label=text_label, size=text_size, position=(0.05, 0.9))
+            if text_position == None:
+                gds_export.add_text(
+                    text_label=text_label, size=text_size, position=(0.05, 0.9)
+                )
             else:
-                gds_export.add_text(text_label=text_label, size=text_size, position=text_position)
+                gds_export.add_text(
+                    text_label=text_label, size=text_size, position=text_position
+                )
+
+        if single_circuit_for_simulation:
+            # # Create the chip boundary (polygon)
+            sim_border = 0.1  # mm
+            minxy = [np.inf, np.inf]
+            maxxy = [-1*np.inf, -1*np.inf]
+            # Iterate over all components in the design to check smalles boundary
+            for comp in design.components.values():
+                # Get the shape of the component
+                (minx, miny, maxx, maxy) = comp.qgeometry_bounds()
+                if minx < minxy[0]:
+                    minxy[0] = minx
+                if miny < minxy[1]:
+                    minxy[1] = miny
+                if maxx > maxxy[0]:
+                    maxxy[0] = maxx
+                if maxy > maxxy[1]:
+                    maxxy[1] = maxy
+            # Add a border around the chip
+            x_bounds = max(abs(maxxy[0] + sim_border), abs(minxy[0] - sim_border))
+            y_bounds = max(abs(minxy[1] - sim_border), abs(maxxy[1] + sim_border))
+            print(f"Resizing chip for simulation: {(x_bounds*2)}mm x {(y_bounds*2)}mm\n")
+            design.chips.main.size.size_x = f"{(x_bounds*2)}mm"
+            design.chips.main.size.size_y = f"{(y_bounds*2)}mm"
+            design.chips.main
+            design.rebuild()
+        
+        # setup GDS export (positive)
+        gds_export = MakeGDS(
+            design,
+            export_type=export_type,
+            print_statements=print_all_infos,
+            threshold=export_threshold,
+            precision=export_threshold,
+        )
 
         # only export if a filename is passed
         if export_filename != None:
             # setup export path based on user inputs
-            if export_path=="":
-                if date_stamp_on_export == True: 
+            if export_path == "":
+                if date_stamp_on_export == True:
                     full_export_path = os.path.join(f"{export_filename}_{t}.gds")
                 else:
-                    full_export_path = os.path.join(f"{export_filename}.gds") 
+                    full_export_path = os.path.join(f"{export_filename}.gds")
             else:
-                if date_stamp_on_export == True: 
-                    full_export_path = os.path.join(export_path, f"{export_filename}_{t}.gds")
+                if date_stamp_on_export == True:
+                    full_export_path = os.path.join(
+                        export_path, f"{export_filename}_{t}.gds"
+                    )
                 else:
-                    full_export_path = os.path.join(export_path, f"{export_filename}.gds")
+                    full_export_path = os.path.join(
+                        export_path, f"{export_filename}.gds"
+                    )
             # do export
             gds_export.export(full_export_path)
             print(f"Exported at {os.path.abspath(full_export_path)}")
+            print(f"")
+
+        # assign self.design
+        self.design = design
+
+        if plot_inline_mpl == True:
+            fig, ax = plt.subplots(figsize=(chip_dim_x*3e3, chip_dim_y*3e3))
+            for comp in design.components.values():
+                comp.qgeometry_plot(ax)
+            full_export_path = os.path.join(
+                        export_path, f"{export_filename}.png"
+                    )
+            fig.savefig(full_export_path)
+            print(f"Circuit diagram saved at {os.path.abspath(full_export_path)}\n")
 
         # return design regardless of whether the GDS was exported or not
         return design
+    
+    def run_palace_sims(self):
+        assert self.design != None, "Please run make_resonator_chip() first."
+        # add simulation here
+        print(f"Not yet implemented.")

@@ -1,6 +1,7 @@
 import gdspy
 import shapely
 import numpy as np
+import pya
 from datetime import datetime
 from types import NoneType
 from SQDMetal.Utilities.QUtilities import QUtilities
@@ -271,6 +272,40 @@ class MakeGDS:
             # multiple layers
             for i in layers_to_delete:
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer==i)
+    
+    @staticmethod
+    def merge_gds_per_layer_inplace(gds_input_file, inplace=True):
+        try:
+            import pya
+            # Load the layout
+            layout = pya.Layout()
+            layout.read(f"{gds_input_file}.gds") if gds_input_file[-4:] != ".gds" else layout.read(f"{gds_input_file}")
+            # Create a new layout for merged polygons
+            merged_layout = pya.Layout()
+            # Iterate through all layers in the original layout
+            for layer_index in layout.layer_indices():
+                # Iterate through all cells in the layout
+                for cell in layout.each_cell():
+                    shapes = cell.shapes(layer_index)
+                    # Create a region from all shapes in the layer
+                    region = pya.Region(shapes)
+                    # Merge all polygons in the region
+                    region.merge()
+                    # Clear existing shapes and insert merged region
+                    shapes.clear()
+                    shapes.insert(region)
+                print(f"Shapes in layer {layer_index} successfully merged in the loaded GDS file.")
+            # Commit the transaction (finalize the operation)
+            if inplace:
+                layout.write(f"{gds_input_file}.gds")
+                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.")
+            else:
+                layout.write(f"{gds_input_file}_merged.gds");
+                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.")
+        except ImportError:
+            print("KLayout (pya) is not installed. Please install it with 'pip install klayout' to run this function.")
+        except AttributeError as e:
+            print(f"Attribute error: {e}. Please ensure you're using the correct KLayout API (i.e. NOT 'pip install pya' - this is a different library). Use 'pip install klayout' instead.")
 
     def export(self, file_name):
         self.lib.write_gds(file_name)

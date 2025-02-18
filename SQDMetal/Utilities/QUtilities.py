@@ -951,10 +951,10 @@ class QUtilities:
         if print_checks:
             if die_number is not None:
                 print(
-                    f"Launchpads placed on die {die_number} at \t({die_origin[0] * 1e6:.0f}, {die_origin[1] * 1e6:.0f})\t[µm] \tnames: ({lp_L.name}, {lp_R.name})"
+                    f"Launchpads placed on die {die_number}\n names : ({lp_L.name}, {lp_R.name})\n"
                 )
             else:
-                print(f"Launchpads placed: ({lp_L.name}, {lp_R.name})")
+                print(f"Launchpads placed\n names : ({lp_L.name}, {lp_R.name})\n")
 
         launchpad_objects = (lp_L, lp_R)
 
@@ -1046,17 +1046,17 @@ class QUtilities:
         # check if width/gap and/or fillet is a list (for scaled)   
         if (isinstance(width, list) or isinstance(gap, list)):
             scaled_geometry = True 
-            print(f"Options for scaled gap/width geometry detected.") if print_statements else 0 
+            print(f"Options for scaled gap/width geometry detected.\n") if print_statements else 0 
         else:
             scaled_geometry = False
         if isinstance(fillet, list):
             scaled_fillet = True 
-            print(f"Options for scaled fillet size detected.") if print_statements else 0 
+            print(f"Options for scaled fillet size detected.\n") if print_statements else 0 
         else:
             scaled_fillet = False
         if isinstance(radius, list):
             scaled_radius = True 
-            print(f"Options for scaled curve radius detected.") if print_statements else 0
+            print(f"Options for scaled curve radius detected.\n") if print_statements else 0
         else:
             scaled_radius = False
 
@@ -1142,9 +1142,10 @@ class QUtilities:
 
             # printouts
             if print_statements: 
-                print(f'Resonator {i+1}: {res}')
-                print(f'\tl: {l_quarterwave_mm}')
-                print(f'\tf: {frequencies[i] * 1e-9:.2f}GHz')
+                print(f'Resonator {i+1}:')
+                print(f' name : {res}')
+                print(f' l    : {l_quarterwave_mm}')
+                print(f' f    : {frequencies[i] * 1e-9:.2f}GHz')
             
             # create pin component for start-point (open, 10um pocket)
             res_start_pin = OpenToGround(

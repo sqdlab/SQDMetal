@@ -26,7 +26,14 @@ cd ~/spack
 . share/spack/setup-env.sh
 ```
 
-Now run (can omit `@develop` if the default preferred version is desired):
+On MacOS, you will have to install and setup [Sundials](https://github.com/LLNL/sundials) before installing Palace. This is done by running:
+
+```bash
+spack install sundials
+export SUNDIALS_DIR=$(spack location -i sundials)
+```
+
+Now run (`@develop` tag is required for version 0.13 as of 18 Feb, 2025):
 
 ```bash
 spack install palace@develop
