@@ -19,7 +19,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "fillet_resolution": 4,
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
-                 "starting_freq": 5.5,
+                 "starting_freq": 5.5e9,
                  "number_of_freqs": 5,
                  "solns_to_save": 5,
                  "solver_order": 2,
@@ -163,7 +163,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 {
                     "N": self.user_options["number_of_freqs"],  # number of eigenfrequencies
                     "Tol": self.user_options["solver_tol"],  # solver tolerance
-                    "Target": self.user_options["starting_freq"],  # GHz - starting point
+                    "Target": self.user_options["starting_freq"]/1e9,  # GHz - starting point
                     "Save": self.user_options["solns_to_save"] # Number of computed field modes to save to disk for visualization with ParaView
                 },
                 "Linear":

@@ -14,7 +14,7 @@ class PVDVTU_Slice:
     def get_data(self, param_name):
         return self.slc[param_name]
     
-    def plot(self, values, cmap='viridis', equalise_histogram=False):
+    def plot(self, values, cmap='viridis', equalise_histogram=False, fig=None, ax=None):
         #Values must be a N-array - basically use get_data() and mathematically manipulate it to be a scalar array
 
         zMin, zMax = np.min(values), np.max(values)
@@ -31,11 +31,12 @@ class PVDVTU_Slice:
 
         pts = self.slc.points
         tri = self.slc.faces.reshape((-1,4))[:, 1:]
-        fig, ax = plt.subplots(1)
+        if fig == None:
+            fig, ax = plt.subplots(1)
         pcm = ax.tripcolor(pts[:,0]*self._units, pts[:,1]*self._units, tri, values, norm=cMapNorm, cmap=cmap)
         ax.set_xlabel('x position (m)')
         ax.set_ylabel('y position (m)')
-        fig.colorbar(pcm, shrink=0.6, ticks=cBarTicks)
+        self._colbar_obj = fig.colorbar(pcm, shrink=0.6, ticks=cBarTicks)
         return fig
     
     def plot_mesh(self):

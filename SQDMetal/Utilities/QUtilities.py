@@ -1093,6 +1093,11 @@ class QUtilities:
         gap_cur = gap
         radius_cur = radius
 
+        # string values for gap/width (unscaled)
+        width_cur = width
+        gap_cur = gap
+        radius_cur = radius
+
         # Start and end coordinates of the usable transmission line
         tl_start = x0 - tl_extent / 2
         tl_end = x0 + tl_extent / 2
