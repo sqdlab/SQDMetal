@@ -206,7 +206,7 @@ class MakeGDS:
 
 
     # add a text label (default to bottom left)
-    def add_text(self, text_label="", layer=0, size=800, position=None):
+    def add_text(self, text_label="", layer=0, size=300, position=None):
         """
         Add a text label to the gds export on a given layer at a given position.
 
@@ -294,14 +294,13 @@ class MakeGDS:
                     # Clear existing shapes and insert merged region
                     shapes.clear()
                     shapes.insert(region)
-                print(f"Shapes in layer {layer_index} successfully merged in the loaded GDS file.")
             # Commit the transaction (finalize the operation)
             if inplace:
                 layout.write(f"{gds_input_file}.gds")
-                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.")
+                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.\n Merged layers: {layout.layer_indices()}")
             else:
-                layout.write(f"{gds_input_file}_merged.gds");
-                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.")
+                layout.write(f"{gds_input_file}_merged.gds")
+                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.\n Merged layers: {layout.layer_indices()}")
         except ImportError:
             print("KLayout (pya) is not installed. Please install it with 'pip install klayout' to run this function.")
         except AttributeError as e:

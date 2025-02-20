@@ -33,7 +33,7 @@ spack install sundials
 export SUNDIALS_DIR=$(spack location -i sundials)
 ```
 
-Now run (`@develop` tag is required for version 0.13 as of 18 Feb, 2025):
+Now run (`@develop` tag is required to get the latest version, i.e, 0.13 or newer):
 
 ```bash
 spack install palace@develop
@@ -46,7 +46,9 @@ The second command will find the path of the Palace binary. Basically it's somew
 ./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
 ```
 
-Executing the above block should show the command-line switches required for Palace. Finally, install [Paraview](https://www.paraview.org/):
+Executing the above block should show the command-line switches required for Palace. 
+
+Finally, install [Paraview](https://www.paraview.org/):
 
 ```bash
 sudo apt install paraview
@@ -59,7 +61,6 @@ pip install pyvista
 ```
 
 This is required to open the simulation field data via the API functions.
-
 
 **Troubleshooting**
 
@@ -95,6 +96,25 @@ sudo rm -r .spack/
 sudo rm -r spack/
 ```
 Then start from the beginning to reinstall to the latest version of `spack` and subsequently the latest version of `palace`.
+
+**Installing Palace v0.13**
+As of 18 Feb, 2024, Palace v0.13 is not available by default to install in `spack`. To install Palace v0.13.0, you need to edit the `spack` palace installation information contained in `package.py`:
+
+```bash
+spack edit palace
+```
+
+Add the following line (where the Palace versions are listed) to add v0.13.0 to available installs:
+
+```bash
+version("0.13.0", tag="v0.13.0", commit="a61c8cbe0cacf496cde3c62e93085fae0d6299ac")
+```
+
+Save the package.py file for the Palace install, and then run
+
+```bash
+spack install palace@0.13
+```
 
 ### HPC cluster
 
