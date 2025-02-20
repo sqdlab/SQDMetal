@@ -103,7 +103,7 @@ from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
 user_defined_options = {
                  "mesh_refinement":  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
                  "dielectric_material": "silicon",                  #choose dielectric material - 'silicon' or 'sapphire'
-                 "starting_freq": 7.5,                              #starting frequency in GHz 
+                 "starting_freq": 7.5e9,                            #starting frequency in Hz 
                  "number_of_freqs": 4,                              #number of eigenmodes to find
                  "solns_to_save": 4,                                #number of electromagnetic field visualizations to save
                  "solver_order": 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
