@@ -438,6 +438,7 @@ class MultiDieChip:
         run_locally=True,
         leave_free_cpu_num=1,
         fine_mesh_min_max=(14e-6, 250e-6),
+        start_freq = None,
         **kwargs,
     ):
         """
@@ -457,8 +458,11 @@ class MultiDieChip:
         except ImportError:
             print("PALACE Eigenmode Simulation module not found. Exiting simulation")
             exit()
+        if start_freq == None:
+            start_freq = self.start_freq
+        assert start_freq > 1e9, "Starting frequency should be given in Hz. It looks like you provided a value in GHz."
         if num_eigenmodes == None:
-            num_eigenmodes = self.num_resonators
+            num_eigenmodes = self.num_resonators + 1
             # Fine meshing resonators, tranmission line and launchpads
         fine_mesh_components_1 = []
         print(f"\nResonator component names:")
@@ -488,7 +492,7 @@ class MultiDieChip:
         user_defined_options = {
             "mesh_refinement": 0,  # refines mesh in PALACE - essetially divides every mesh element in half
             "dielectric_material": self.substrate_material,  # choose dielectric material - 'silicon' or 'sapphire'
-            "starting_freq": self.start_freq,  # starting frequency in GHz
+            "starting_freq": start_freq - 0.5e9,  # starting frequency in Hz
             "number_of_freqs": num_eigenmodes,  # number of eigenmodes to find
             "solns_to_save": 1,  # number of electromagnetic field visualizations to save
             "solver_order": 2,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
