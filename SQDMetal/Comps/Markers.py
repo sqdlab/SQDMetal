@@ -113,6 +113,7 @@ class MarkerDicingCross(QComponent):
         # TODO: this block can cause deletion of other qgeometry components?? 
         self.add_qgeometry('poly',
                            dict(cross=cross),
+                           # subtract=True,
                            layer=p.layer)
 
 

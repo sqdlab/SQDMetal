@@ -1068,12 +1068,9 @@ class QUtilities:
             - (2 * QUtilities.parse_value_length(launchpad_to_res))
             - (1.5 * res_width_x)
         )
-
-        # # calculate width per resonator (according to num_resonators)
-        # x_increment_res = (tl_extent / num_resonators) + (QUtilities.parse_value_length(min_res_gap) * ((num_resonators - 1) / num_resonators))
-
+        
         # initialise lists
-        x_positions, resonator_names, resonator_vals = [], [], []
+        resonator_names, resonator_vals = [], []
         if LC_calculations: capacitances, inductances = [], []
 
         for i in range(num_resonators):
@@ -1110,8 +1107,6 @@ class QUtilities:
 
         # draw resonators
         resonators = []
-        # calculate left-most x position for resonator
-        x_pos_left_res = x0 - ((num_resonators - 1) * tl_extent / num_resonators) + (tl_extent / (num_resonators + 1))
         for i, res in enumerate(resonator_names):
 
             # setup values for scaled geometry
@@ -1228,8 +1223,6 @@ class QUtilities:
                 )
             
             resonators.append(res)
-    
-        if print_statements: print('\n')
 
         # sanity check and outputs
         # TODO: embed capacitances and inductances in resonator_vals
@@ -1279,8 +1272,8 @@ class QUtilities:
         anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", 
                                f"{tl_y_cur * 1e6:.1f}um"])
         
-        anchor_L_low_x = lp_L_pin_x + QUtilities.parse_value_length(start_straight)
-        anchor_R_low_x = lp_R_pin_x - QUtilities.parse_value_length(start_straight)
+        anchor_L_low_x = lp_L_pin_x + QUtilities.parse_value_length(start_straight) + QUtilities.parse_value_length(fillet)
+        anchor_R_low_x = lp_R_pin_x - QUtilities.parse_value_length(start_straight) - QUtilities.parse_value_length(fillet)
 
         anchor_L_low = np.array([f"{anchor_L_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
         anchor_R_low = np.array([f"{anchor_R_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
@@ -1330,7 +1323,7 @@ class QUtilities:
         return tl
     
     @staticmethod
-    def place_markers(design, die_origin, die_dim, marker_type="cross"):
+    def place_markers(design, die_origin, die_dim, die_index, marker_type="cross"):
         """
         Function to place dicing markers on a multi-die chip.
 
@@ -1338,6 +1331,7 @@ class QUtilities:
             - design - qiskit metal design
             - die_origin - tuple containing die origin (x, y) as float in meters
             - die_dim - die dimensionsion as a yuple (x, y) containing strings with units
+            - die_index - die number for currently placing markers
         Input (optional):
             - marker_type - marker type, currently only supports cross markers (defaults to "cross")
         """
@@ -1357,18 +1351,21 @@ class QUtilities:
 
         if (marker_type=="cross" or marker_type=="Cross"):
             # place markers
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make()
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make() #top left
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make() #top right
+            # only place bottom markers on the bottom die to avoid overlaps 
+            if die_index == 0:
+                Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make() #bottom left
+                Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make() #bottom right
         elif (marker_type=="square" or marker_type=="Square"):
             # place markers
-            Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
-            Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
             Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()
             Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=t_y)).make()
+            if die_index == 0:
+                Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
+                Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
         else: 
-            raise Exception("Only marker_type=['cross', 'square'] currently available.")
+            raise Exception("Currently, only marker_type=['cross', 'square'] available.")
     
     @staticmethod
     def is_string_or_list_of_strings(var):

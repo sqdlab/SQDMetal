@@ -1,4 +1,5 @@
 from qiskit_metal import designs
+from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.MakeGDS import MakeGDS
 from SQDMetal.Utilities.CpwParams import CpwParams
@@ -8,7 +9,6 @@ import matplotlib.pyplot as plt
 import os
 from pprint import pprint
 from datetime import datetime
-from shapely.geometry import Polygon
 
 
 class MultiDieChip:
@@ -89,6 +89,7 @@ class MultiDieChip:
             - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
             - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
             - date_stamp_on_export - (Defaults to True) If True, will print date and time of export in exported .gds filename
+            - single_circuit_for_simulation - (Defaults to False) If true, the multi-chip layour will be cropped to a single chip that can be used for simulation
 
         Outputs:
             - design - Qiskit Metal design object for the generated chip
@@ -108,9 +109,9 @@ class MultiDieChip:
         elif export_filename == None:
             export_filename = self.export_filename
 
-        if single_circuit_for_simulation and fill_chip:
+        if single_circuit_for_simulation:
             print(
-                "\nWarning: single_circuit_for_simulation=True will override fill_chip=True. We will only print a single chip (die_num=[1, 1]).\n"
+                "\nPreparing as single_circuit_for_simulation.\n"
             )
             fill_chip = False
             die_num = [1, 1]
@@ -133,7 +134,6 @@ class MultiDieChip:
         self.start_freq = frequency_range[0]
         self.num_resonators = num_resonators
 
-        # TODO: add automatic Palace sim
         # TODO: add per-die labels for easy ID during fabrication
 
         t = datetime.now().strftime("%Y%m%d_%H%M")  # add timestamp to export
@@ -249,10 +249,10 @@ class MultiDieChip:
         print(f"Chip Size: {chip_dimension[0]} x {chip_dimension[1]}")
         print(f"Die Size:  {die_dimension[0]} x {die_dimension[1]}\n")
         print(f"Resonator properties:")
-        print(f" Frequencies    : {[f'{i * 1e-9} GHz' for i in freq_list]}")
+        print(f" Frequencies    : {[f'{i * 1e-9:.3f} GHz' for i in freq_list]}")
         print(f" Gap            : {gap}")
         print(f" Width          : {cpw_width}")
-        print(f" Impedance      : {cpw_impedance:.2f} Ω\n")
+        print(f" Impedance      : {cpw_impedance:.2f} Ω")
         print(f"Launchpad extent: {lp_extent * 1e6:.2f} µm\n")
 
         # place and store launchpads, resonators, transmission lines
@@ -270,12 +270,6 @@ class MultiDieChip:
         for i, origin in enumerate(die_coords):
 
             if print_all_infos: print(f'\nPrinting die {i}')
-
-            # draw markers
-            if markers_on:
-                QUtilities.place_markers(
-                    design=design, die_origin=origin, die_dim=die_dimension
-                )
 
             # draw launchpads
             launchpads.append(
@@ -336,9 +330,15 @@ class MultiDieChip:
                 )
             )
 
+            # draw markers
+            if markers_on:
+                QUtilities.place_markers(
+                    design=design, die_origin=origin, die_dim=die_dimension, die_index=i
+                )
+
         if single_circuit_for_simulation:
             # update chip boundary
-            sim_border = 0.3  # mm
+            sim_border = 0.4  # mm
             minxy = [np.inf, np.inf]
             maxxy = [-1 * np.inf, -1 * np.inf]
             print(f"\nCropping chip for simulation:")
@@ -360,7 +360,7 @@ class MultiDieChip:
             y_total = (maxxy[1] - minxy[1]) + (2 * sim_border)
             new_chip_centre = [(minxy[0] + maxxy[0]) / 2, (minxy[1] + maxxy[1]) / 2]
             print(
-                f"\n Resized chip to {x_total*2:.2f} x {y_total:.2f} mm\n"
+                f"\n Resized chip to {x_total:.2f} x {y_total:.2f} mm\n"
                 f"  xmin = {minxy[0]:6.3f} mm\n"
                 f"  xmax = {maxxy[0]:6.3f} mm\n"
                 f"  ymin = {minxy[1]:6.3f} mm\n"
@@ -383,6 +383,8 @@ class MultiDieChip:
             threshold=export_threshold,
             precision=export_threshold,
         )
+
+        print(f" Layers in design (gds): {gds_export.cell.get_layers()}") if print_all_infos else 0
 
         # add text label
         if text_label != None:

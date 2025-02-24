@@ -67,6 +67,10 @@ class MakeGDS:
         '''
         assert self.export_type in ["all", "negative", "positive"], "Export type must be: \"all\", \"negative\", or \"positive\""
 
+        if self.export_layers != None:
+            self.export_type = "all"
+            print(f"Exporting layers {self.export_layers}") if self.print_statements else 0
+
         qmpl = QiskitShapelyRenderer(None, self._design, None)
         gsdf = qmpl.get_net_coordinates(self.curve_resolution)
 
@@ -99,30 +103,35 @@ class MakeGDS:
         all_layers.append((0, chip))
         #
         #
-        leLayers = np.unique(gsdf['layer'])
+        leLayers = np.unique(gsdf['layer']) # metal layers
 
-        if self.print_statements:
-            print(f'Export type: {self.export_type}\n')
-
-        # create layer list (positive layers)
+        # add metal layers to all_layers list (currently only contains ground plane)
         for layer in leLayers:
             metals = gsdf.loc[(gsdf['layer'] == layer) & (gsdf['subtract'] == False)]
             metals = ShapelyEx.fuse_polygons_threshold(metals['geometry'].tolist(), threshold)
             metals = shapely.affinity.scale(metals, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
             all_layers.append((layer, metals))
+        
+        if self.print_statements:
+            print(f'\nExport type: {self.export_type}')
+            print(f' Metal layers (qiskit design, {len(leLayers)} total): {leLayers}')
 
-        # write layers based on export options
+        # define layer numbers for negative layers
         neg_layer_offset = np.max(leLayers)+10
+        # loop through all layers: at minimum (0: GND, 1: metals (fused))
         for cur_layer in all_layers:
             # 0: ground, 1: fused metals (i.e. centre conductor)
+            # layer: layer number (i.e. 0)
+            # metals: list of shapely polygons
             layer, metals = cur_layer
-
             gds_metal = self._shapely_to_gds(metals, layer)    
             if self.smooth_radius > 0:
                 gds_metal = self._round_corners(gds_metal, layer)
 
-            # negative layer
-            if self.export_type in ("negative", "all"):        
+            print(f"  Building layer: {layer:3}") if self.print_statements else 0
+            # export all
+            if self.export_type in ["all", "negative"]:
+                # negative ground plane
                 gds_rect_neg = gdspy.boolean(gdspy.Rectangle(((cx-0.5*sx)*unit_conv, 
                                                           (cy-0.5*sy)*unit_conv),
                                                           ((cx+0.5*sx)*unit_conv, 
@@ -131,35 +140,37 @@ class MakeGDS:
                                                         "not", 
                                                         layer=layer+neg_layer_offset, 
                                                         max_points=0)
-                self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or", layer=layer+neg_layer_offset))    #max_points = 199 here...
+                self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or", layer=layer+neg_layer_offset))    
                 self._layer_metals[layer+neg_layer_offset] = gds_rect_neg
-
-            # positive layer
-            if self.export_type in ("positive", "all"): 
-                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))    #max_points = 199 here...
+                print(f"  Added negative layer {layer+neg_layer_offset}") if self.print_statements else 0
+                # negative me
+                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))   
+                self._layer_metals[layer] = gds_metal
+            # positive ground plane/metals
+            elif self.export_type == "positive": 
+                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))    
                 self._layer_metals[layer] = gds_metal
 
         # fuse layers for a single-layer design (GND, metal)
         if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
+            print(f"   Two layers detected - performing boolean operations for {self.export_type} export.") if self.print_statements else 0
             if self.export_type=="positive":
                 if (all_layers[0][0] == 0) and (all_layers[1][0] == 1):
                     self.add_boolean_layer(0, 1, "or", output_layer=0)
-                    self.add_boolean_layer(0, 0, "and", output_layer=0)
-                    self.delete_layers(1)
-                    #self.add_boolean_layer(2, 2, "or", output_layer=0)
-                    #self.delete_layers(2)
                 else:
                     self.add_boolean_layer(0, 0, "and", output_layer=0)
             if self.export_type=="negative":
                 self.add_boolean_layer(11, 12, "and", output_layer=0)
                 self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
-                # self.merge_polygons_in_layer(0) 
+                self.merge_polygons_in_layer(0) 
+            self.cell.remove_polygons(lambda pts, layer, datatype: layer == 1)
             self.cell.flatten()
+        elif (len(all_layers)>2) and (self.export_type in ["positive", "negative"]):
+            "Positive or negative export for multi-layer designs is not supported."
         
         # layer exports (works best when export_type=="all")
         if self.export_layers!=None:
             layer_list = list(self.cell.get_layers())
-            # assert self.export_layers in layer_list, "Chosen export layers are not present in the design. Choose again."
             if isinstance(self.export_layers, list):
                 assert set(self.export_layers).issubset(layer_list), "Chosen export layers are not present in the design."
                 to_delete = list(set(layer_list) - set(self.export_layers))
@@ -280,8 +291,6 @@ class MakeGDS:
             # Load the layout
             layout = pya.Layout()
             layout.read(f"{gds_input_file}.gds") if gds_input_file[-4:] != ".gds" else layout.read(f"{gds_input_file}")
-            # Create a new layout for merged polygons
-            merged_layout = pya.Layout()
             # Iterate through all layers in the original layout
             for layer_index in layout.layer_indices():
                 # Iterate through all cells in the layout
@@ -295,12 +304,13 @@ class MakeGDS:
                     shapes.clear()
                     shapes.insert(region)
             # Commit the transaction (finalize the operation)
+            layers_in_design = [layout.get_info(layer_index) for layer_index in layout.layer_indices()]
             if inplace:
                 layout.write(f"{gds_input_file}.gds")
-                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.\n Merged layers: {layout.layer_indices()}")
+                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.\n Merged layers: {list(layers_in_design)}")
             else:
                 layout.write(f"{gds_input_file}_merged.gds")
-                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.\n Merged layers: {layout.layer_indices()}")
+                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.\n Merged layers: {list(layers_in_design)}")
         except ImportError:
             print("KLayout (pya) is not installed. Please install it with 'pip install klayout' to run this function.")
         except AttributeError as e:
