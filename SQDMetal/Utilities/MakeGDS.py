@@ -113,9 +113,8 @@ class MakeGDS:
             all_layers.append((layer, metals))
         
         if self.print_statements:
-            print(f'\nExport type: {self.export_type}')
-            print(f' Metal layers (qiskit design, {len(leLayers)} total): {leLayers}')
-
+            print(f'\nExport type: {self.export_type}') if self.print_statements else 0
+            # print(f' Metal layers (qiskit design, {len(leLayers)} total): {leLayers}')
         # define layer numbers for negative layers
         neg_layer_offset = np.max(leLayers)+10
         # loop through all layers: at minimum (0: GND, 1: metals (fused))
@@ -127,8 +126,7 @@ class MakeGDS:
             gds_metal = self._shapely_to_gds(metals, layer)    
             if self.smooth_radius > 0:
                 gds_metal = self._round_corners(gds_metal, layer)
-
-            print(f"  Building layer: {layer:3}") if self.print_statements else 0
+            print(f" Building layer: {layer:3}") if self.print_statements else 0
             # export all
             if self.export_type in ["all", "negative", "positive"]:
                 # negative ground plane
@@ -142,12 +140,12 @@ class MakeGDS:
                                                         max_points=0)
                 self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or", layer=layer+neg_layer_offset))    
                 self._layer_metals[layer+neg_layer_offset] = gds_rect_neg
-                print(f"  Added negative layer {layer+neg_layer_offset}") if self.print_statements else 0
+                print(f" Added negative layer {layer+neg_layer_offset}") if self.print_statements else 0
                 self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))   
                 self._layer_metals[layer] = gds_metal
         # fuse layers for a single-layer design (GND, metal)
         if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
-            print(f"   Two layers detected - performing boolean operations for {self.export_type} export.") if self.print_statements else 0
+            print(f"  Two layers detected - performing boolean operations for {self.export_type} export") if self.print_statements else 0
             self.add_boolean_layer(11, 12, "and", output_layer=0)
             self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
             self.merge_polygons_in_layer(0) 
@@ -158,12 +156,19 @@ class MakeGDS:
                                                           (cy-0.5*sy)*unit_conv),
                                                           ((cx+0.5*sx)*unit_conv, 
                                                            (cy+0.5*sy)*unit_conv))
-                gds_positive = gdspy.boolean(gds_gnd_plane, gds_metal_neg, "not", layer=0, max_points=10000)
+                gds_positive = gdspy.boolean(gds_gnd_plane, gds_metal_neg, "not", layer=0, max_points=5000)
                 # add positive layer to design
-                self.cell.add(gdspy.boolean(gds_positive, gds_positive, "or", layer=0))
+                max_points_to_write = 199
+                self.cell.add(gdspy.boolean(gds_positive, gds_positive, "or", layer=0, max_points=max_points_to_write))
                 self._layer_metals[0] = gds_positive
             self.cell.remove_polygons(lambda pts, layer, datatype: layer == 1)
             self.cell.flatten()
+            # Find the largest polygon by vertex count
+            if self.print_statements:
+                largest_polygon = max(self._layer_metals[0].polygons, key=len)
+                num_vertices = len(largest_polygon)
+                print(f"   Number of vertices in the largest polygon: {num_vertices}")
+                print(f"   Splitting polygons with more than {max_points_to_write} vertices for gds export")
         elif (len(all_layers)>2) and (self.export_type in ["positive", "negative"]):
             "Positive or negative export for multi-layer designs is not supported."
         
