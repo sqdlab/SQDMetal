@@ -150,6 +150,7 @@ class MakeGDS:
             self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
             self.merge_polygons_in_layer(0) 
             gds_metal_neg = self._layer_metals[0] # PolygonSet
+            max_points_to_write = 199
             if self.export_type=="positive":
                 # invert negative design
                 gds_gnd_plane = gdspy.Rectangle(((cx-0.5*sx)*unit_conv, 
@@ -158,7 +159,6 @@ class MakeGDS:
                                                            (cy+0.5*sy)*unit_conv))
                 gds_positive = gdspy.boolean(gds_gnd_plane, gds_metal_neg, "not", layer=0, max_points=5000)
                 # add positive layer to design
-                max_points_to_write = 199
                 self.cell.add(gdspy.boolean(gds_positive, gds_positive, "or", layer=0, max_points=max_points_to_write))
                 self._layer_metals[0] = gds_positive
             self.cell.remove_polygons(lambda pts, layer, datatype: layer == 1)
