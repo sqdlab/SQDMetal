@@ -1353,10 +1353,11 @@ class QUtilities:
             # place markers
             Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make() #top left
             Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make() #top right
-            # only place bottom markers on the bottom die to avoid overlaps 
-            if die_index == 0:
-                Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make() #bottom left
-                Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make() #bottom right
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make() #bottom left
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make() #bottom right
+            # # only place bottom markers on the bottom die to avoid overlaps 
+            # if die_index == 0:
+                
         elif (marker_type=="square" or marker_type=="Square"):
             # place markers
             Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()

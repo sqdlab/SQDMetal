@@ -130,7 +130,7 @@ class MakeGDS:
 
             print(f"  Building layer: {layer:3}") if self.print_statements else 0
             # export all
-            if self.export_type in ["all", "negative"]:
+            if self.export_type in ["all", "negative", "positive"]:
                 # negative ground plane
                 gds_rect_neg = gdspy.boolean(gdspy.Rectangle(((cx-0.5*sx)*unit_conv, 
                                                           (cy-0.5*sy)*unit_conv),
@@ -143,26 +143,25 @@ class MakeGDS:
                 self.cell.add(gdspy.boolean(gds_rect_neg, gds_rect_neg, "or", layer=layer+neg_layer_offset))    
                 self._layer_metals[layer+neg_layer_offset] = gds_rect_neg
                 print(f"  Added negative layer {layer+neg_layer_offset}") if self.print_statements else 0
-                # negative me
                 self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))   
                 self._layer_metals[layer] = gds_metal
-            # positive ground plane/metals
-            elif self.export_type == "positive": 
-                self.cell.add(gdspy.boolean(gds_metal, gds_metal, "or", layer=layer, max_points=199))    
-                self._layer_metals[layer] = gds_metal
-
         # fuse layers for a single-layer design (GND, metal)
         if (len(all_layers)==2) and (self.export_type in ["positive", "negative"]):
             print(f"   Two layers detected - performing boolean operations for {self.export_type} export.") if self.print_statements else 0
+            self.add_boolean_layer(11, 12, "and", output_layer=0)
+            self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
+            self.merge_polygons_in_layer(0) 
+            gds_metal_neg = self._layer_metals[0] # PolygonSet
             if self.export_type=="positive":
-                if (all_layers[0][0] == 0) and (all_layers[1][0] == 1):
-                    self.add_boolean_layer(0, 1, "or", output_layer=0)
-                else:
-                    self.add_boolean_layer(0, 0, "and", output_layer=0)
-            if self.export_type=="negative":
-                self.add_boolean_layer(11, 12, "and", output_layer=0)
-                self.cell.remove_polygons(lambda pts, layer, datatype: layer == 11 or layer == 12)
-                self.merge_polygons_in_layer(0) 
+                # invert negative design
+                gds_gnd_plane = gdspy.Rectangle(((cx-0.5*sx)*unit_conv, 
+                                                          (cy-0.5*sy)*unit_conv),
+                                                          ((cx+0.5*sx)*unit_conv, 
+                                                           (cy+0.5*sy)*unit_conv))
+                gds_positive = gdspy.boolean(gds_gnd_plane, gds_metal_neg, "not", layer=0, max_points=10000)
+                # add positive layer to design
+                self.cell.add(gdspy.boolean(gds_positive, gds_positive, "or", layer=0))
+                self._layer_metals[0] = gds_positive
             self.cell.remove_polygons(lambda pts, layer, datatype: layer == 1)
             self.cell.flatten()
         elif (len(all_layers)>2) and (self.export_type in ["positive", "negative"]):

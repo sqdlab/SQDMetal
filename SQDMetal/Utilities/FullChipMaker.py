@@ -384,8 +384,6 @@ class MultiDieChip:
             precision=export_threshold,
         )
 
-        print(f" Layers in design (gds): {gds_export.cell.get_layers()}") if print_all_infos else 0
-
         # add text label
         if text_label != None:
             if text_position == None:
@@ -440,7 +438,8 @@ class MultiDieChip:
         run_locally=True,
         leave_free_cpu_num=1,
         fine_mesh_min_max=(14e-6, 250e-6),
-        start_freq = None,
+        start_freq=None,
+        num_saved_solns=None,
         **kwargs,
     ):
         """
@@ -463,9 +462,13 @@ class MultiDieChip:
         if start_freq == None:
             start_freq = self.start_freq
         assert start_freq > 1e9, "Starting frequency should be given in Hz. It looks like you provided a value in GHz."
+        # set number of eigenmodes
         if num_eigenmodes == None:
             num_eigenmodes = self.num_resonators + 1
-            # Fine meshing resonators, tranmission line and launchpads
+        # set number of saved solutions
+        if num_saved_solns == None:
+            num_saved_solns = num_eigenmodes # by default, save every eigenmode
+        # Fine meshing resonators, tranmission line and launchpads
         fine_mesh_components_1 = []
         print(f"\nResonator component names:")
         for name in self.design.components.keys():
