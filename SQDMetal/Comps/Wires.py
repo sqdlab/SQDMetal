@@ -461,7 +461,8 @@ class WireTaperPinStretch(QComponent):
             gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
             #In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
-                gap = QUtilities.parse_value_length(self.design.variables[gap])
+                if gap in self.design.variables:
+                    gap = QUtilities.parse_value_length(self.design.variables[gap])
                 gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
             gap = p.orig_gap
