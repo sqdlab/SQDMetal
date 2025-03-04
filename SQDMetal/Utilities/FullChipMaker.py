@@ -5,6 +5,7 @@ from SQDMetal.Utilities.CpwParams import CpwParams
 from SQDMetal.Utilities.QUtilities import QUtilities
 import numpy as np
 import os
+from pprint import pprint
 from datetime import datetime
 
 class MultiDieChip:
@@ -50,7 +51,7 @@ class MultiDieChip:
             - export_threshold - (Defaults to 1e-9) The smallest feature width that can exist; anything smaller will get culled out. This is to help remove artefacts from floating-point inaccuracies. It is given in metre
             - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
             - num_resonators - (Defaults to 5) Number of resonators per die
-            - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width
+            - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width. You can pass a list of strings if you want to scale each resonator seperately.
             - feedline_upscale - (Defaults to 1.0) scale of the feedline gap and width as a multiple of the resonator dimensions
             - coupling_gap - (Defaults to "20um") Amount of ground plane in the coupling gap between the feedline and the resonator
             - tl_y - (Defaults to "0um") The die-relative y-value for the main straight of the feedline
@@ -81,7 +82,10 @@ class MultiDieChip:
         # check if chip geometry is constant or scaled per-resonator
         assert QUtilities.is_string_or_list_of_strings(cpw_width)
         scaled_geometry = isinstance(cpw_width, list)
-        assert (len(cpw_width) == num_resonators) if (scaled_geometry == True) else 0
+        if scaled_geometry == True:
+            assert (len(cpw_width) > 1), "If cpw_width is a list, it must have more than one element"
+            assert (len(cpw_width) == num_resonators), "If cpw_width is a list, it must have the same length as num_resonators"
+
 
         # TODO: add automatic Palace sim
         # TODO: add per-die labels for easy ID during fabrication
@@ -90,7 +94,7 @@ class MultiDieChip:
 
         print(f"{t}\nBuilding chip \"{export_filename}\" with the following options:\n")
         if print_all_infos:
-            print(locals())
+            pprint(locals(), sort_dicts=False)
             print('\n')
             print('~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~^~\n')
 
