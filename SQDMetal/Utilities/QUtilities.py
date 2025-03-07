@@ -570,7 +570,10 @@ class QUtilities:
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
-        ids = [design.components[x].id for x in comp_names]
+        ids = []
+        for x in comp_names:
+            assert x in design.components, f"Component \'{x}\' does not exist!"
+            ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
 
         if filt.shape[0] == 0:

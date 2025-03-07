@@ -42,7 +42,7 @@ class JunctionDolan(QComponent):
         Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
         ::
 
-                SW.............SW
+            SW...................SW
                       | |
                       |S|                      SW  = squid_width
              _________| |_________             S   = stem_width 
@@ -52,11 +52,11 @@ class JunctionDolan(QComponent):
               | |             | |       FW  
               | |             |F|       FW     F  = finger_width
               |_|             |_|       FW     FW = finger_length
-                    
+                                        BG
                   |<--TPL-->|           BG     BG = bridge_gap
                    _________            BG
          _________|    ^    |_________  BG                 
-        |_________   TPW   __________| TFW    TFW = t_finger_width  
+        |_________   TPW     _________| TFW    TFW = t_finger_width  
                   |___ | ___|                  TPL = t_pad_length
         <-->          | |         <-->          TPW = t_pad_width
          TPE          |S|          TPE           TPE = t_pad_extra
@@ -140,8 +140,8 @@ class JunctionDolan(QComponent):
         #The T-Section and Stem
         pad_T = [
                 (-p.t_pad_width*0.5, p.stem_width*0.5), #1
-                (-len_stem, p.stem_width*0.5), #2
-                (-len_stem, -p.stem_width*0.5), #3
+                (-len_stem-p.t_pad_width*0.5, p.stem_width*0.5), #2
+                (-len_stem-p.t_pad_width*0.5, -p.stem_width*0.5), #3
                 (-p.t_pad_width*0.5, -p.stem_width*0.5), #4
                 (-p.t_pad_width*0.5,-p.t_pad_length*0.5), #4'
                 (-p.t_finger_width*0.5,-p.t_pad_length*0.5), #5
@@ -183,16 +183,16 @@ class JunctionDolan(QComponent):
                    (p.finger_length+p.prong_length+p.fork_pad_size, -p.squid_width*0.5),
                    (p.finger_length+p.prong_length+p.fork_pad_size, -p.stem_width*0.5),
                    (p.finger_length+p.prong_length+p.fork_pad_size+len_stem, -p.stem_width*0.5)]
-        
-        sim_JJ = shapely.LineString([
-            np.mean(pad_T[1:3],axis=0),
-            np.mean([pad_Fork[-1], pad_Fork[0]],axis=0)
-        ])
 
         pad_T = np.array(pad_T)
         pad_T[:,0] += len_stem + p.t_pad_width/2
         pad_Fork = np.array(pad_Fork)
         pad_Fork[:,0] += p.t_finger_width*0.5+ p.bridge_gap + len_stem + p.t_pad_width/2
+        
+        sim_JJ = shapely.LineString([
+            np.mean(pad_T[1:3],axis=0),
+            np.mean([pad_Fork[-1], pad_Fork[0]],axis=0)
+        ])
 
         pin1 = shapely.LineString(pad_T[1:3])
         pin2 = shapely.LineString([pad_Fork[-1], pad_Fork[0]])
@@ -482,8 +482,8 @@ class JunctionDolanAsymmetric(QComponent):
         #The T-Section and Stem
         pad_T = [
                 (-p.t_pad_width*0.5, p.stem_width*0.5), #1
-                (-len_stem, p.stem_width*0.5), #2
-                (-len_stem, -p.stem_width*0.5), #3
+                (-len_stem-p.t_pad_width*0.5, p.stem_width*0.5), #2
+                (-len_stem-p.t_pad_width*0.5, -p.stem_width*0.5), #3
                 (-p.t_pad_width*0.5, -p.stem_width*0.5), #4
                 (-p.t_pad_width*0.5,-p.t_pad_length*0.5), #4'
                 (-p.t_finger_width*0.5,-p.t_pad_length*0.5), #5
@@ -525,16 +525,17 @@ class JunctionDolanAsymmetric(QComponent):
                    (p.finger_length+p.prong_length+p.fork_pad_size, -p.squid_width*0.5),
                    (p.finger_length+p.prong_length+p.fork_pad_size, -p.stem_width*0.5),
                    (p.finger_length+p.prong_length+p.fork_pad_size+len_stem, -p.stem_width*0.5)]
-        
+    
+        pad_T = np.array(pad_T)
+        pad_T[:,0] += len_stem + p.t_pad_width/2
+        pad_Fork = np.array(pad_Fork)
+        pad_Fork[:,0] += p.t_finger_width*0.5+ p.bridge_gap + len_stem + p.t_pad_width/2
+
         sim_JJ = shapely.LineString([
             np.mean(pad_T[1:3],axis=0),
             np.mean([pad_Fork[-1], pad_Fork[0]],axis=0)
         ])
 
-        pad_T = np.array(pad_T)
-        pad_T[:,0] += len_stem+ p.t_pad_width/2
-        pad_Fork = np.array(pad_Fork)
-        pad_Fork[:,0] += p.t_finger_width*0.5+ p.bridge_gap + len_stem + p.t_pad_width/2
 
         pin1 = shapely.LineString(pad_T[1:3])
         pin2 = shapely.LineString([pad_Fork[-1], pad_Fork[0]])

@@ -138,7 +138,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             # Create the directory
             if not os.path.exists(path):
                 os.mkdir(path)
-                print("Directory '% s' created" % directory)
+                # print("Directory '% s' created" % directory)
 
 
 
