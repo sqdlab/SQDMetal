@@ -456,7 +456,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
     def create_port_JosephsonJunction(self, qObjName, **kwargs):
         junction_index = kwargs.get('junction_index', 0)
 
-        comp_id = self.metal_design.components['junction'].id
+        comp_id = self.metal_design.components[qObjName].id
         gsdf = self.metal_design.qgeometry.tables['junction']
         gsdf = gsdf.loc[gsdf["component"] == comp_id]
         ls = gsdf['geometry'].iloc[junction_index]
