@@ -386,15 +386,24 @@ class JunctionManhattan(QComponent):
         electrode1 = ShapelyEx.fuse_polygons_threshold([draw.rectangle(p.width,
                                     p.length + p.extension,
                                     0,
-                                    -(p.length - p.extension)/2),
-                                    draw.rectangle(p.taper_width1,
-                                    p.length/2,
+                                    -(p.length - p.extension)/2), # main electrode
+                                    draw.rectangle(p.taper_width1, # taper 1
+                                    p.length*0.9,
                                     0,
-                                    -0.75*p.length),
-                                    draw.rectangle(extension_taper_width1,
-                                    p.extension/2,
+                                    (-p.length-p.length*0.1)/2),
+                                    draw.rectangle(2*p.taper_width1, # taper 2
+                                    p.length*0.6,
                                     0,
-                                    0.75*p.extension)])
+                                    (-p.length-p.length*0.4)/2), # extension taper 1
+                                    # draw.rectangle(extension_taper_width1,
+                                    # p.extension*0.9,
+                                    # 0,
+                                    # (p.extension+0.1*p.extension)/2),
+                                    # draw.rectangle(2*extension_taper_width1, # extension taper 2
+                                    # p.extension*0.6,
+                                    # 0,
+                                    # (p.extension+0.4*p.extension)/2)
+                                    ])
 
 
         pin1_coords = draw.LineString([(0,0), (0,-p.length+p.pin1_offset)])
@@ -404,15 +413,23 @@ class JunctionManhattan(QComponent):
                                     length2 + extension2,
                                     0,
                                     -(length2 - extension2)/2),
-                                    draw.rectangle(p.taper_width2,
-                                    length2/2,
-                                    0,
-                                    -0.75*p.length2),
-                                    draw.rectangle(extension_taper_width2,
-                                    p.extension2/2,
-                                    0,
-                                    0.75*p.extension2)])
-
+                                    # draw.rectangle(p.taper_width2,
+                                    # length2*0.9,
+                                    # 0,
+                                    # (-p.length2-p.length2*0.1)/2),
+                                    # draw.rectangle(2*p.taper_width2,
+                                    # length2*0.6,
+                                    # 0,
+                                    # (-p.length2-p.length2*0.4)/2),
+                                    # draw.rectangle(extension_taper_width2,
+                                    # p.extension2*0.9,
+                                    # 0,
+                                    # (p.extension2+0.1*p.extension2)/2),
+                                    # draw.rectangle(2*extension_taper_width2,
+                                    # p.extension2*0.6,
+                                    # 0,
+                                    # (p.extension2+0.4*p.extension2)/2)
+                                    ])
 
 
         # draw the second electrode as a rectangle

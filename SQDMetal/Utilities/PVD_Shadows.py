@@ -401,6 +401,11 @@ class PVD_Shadows:
 
         IMPORTANT: make sure there are no other areas in the same object or layer that give a shadow
         (e.g. when using tapered electrodes), otherwise these will be included in the area.
+
+        Does not include extra area from overlap between sides of first and second layer
+        (relevant for small junctions)
+
+        To do: add layer thickness contributions
         Added by: SZ, 11/9/2024
         '''
         if qObj_name is not None:
