@@ -506,7 +506,8 @@ class QUtilities:
                     x for x in range(len(metal_sel_ids), len(metal_sel_ids) + num_polys)
                 ]
 
-        metal_polys_all = [x.simplify(thresh) for x in metal_polys_all]
+        if thresh > 0:
+            metal_polys_all = [x.simplify(thresh/unit_conv) for x in metal_polys_all]
         return metal_polys_all, metal_sel_ids
 
     @staticmethod

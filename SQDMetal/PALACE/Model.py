@@ -340,7 +340,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()

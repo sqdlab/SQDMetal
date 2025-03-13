@@ -102,11 +102,17 @@ class GMSH_Geometry_Builder:
         #Process simulation constructs - e.g. ports
         lePortPolys = {}
         aux_list = []
+        metal_cut_list_for_ports = [(x[0],x[1]) for x in metal_list]
         for cur_sim_poly in sim_constructs:
             sim_poly = self._draw_polygon_in_GMSH_from_coords(np.array(cur_sim_poly[1])[:-1]*1e3) #i.e. ignore closed loop part as function closes it automatically and use mm
-            lePortPoly = gmsh.model.addPhysicalGroup(2, [sim_poly], name = cur_sim_poly[0])
-            fragment_list.append((2, sim_poly))
-            aux_list.append((2, sim_poly))
+            sim_poly,leMap = gmsh.model.occ.cut([(2,sim_poly)], metal_cut_list_for_ports, removeObject=True, removeTool=False)
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+            #
+            lePortPoly = gmsh.model.addPhysicalGroup(2, [x[1] for x in sim_poly], name = cur_sim_poly[0])
+            sim_poly_list = [(2,x[1]) for x in sim_poly]
+            fragment_list += sim_poly_list
+            aux_list += sim_poly_list
             lePortPolys[cur_sim_poly[0]] = lePortPoly
 
         #list for metals for capacitance simulation
@@ -228,6 +234,7 @@ class GMSH_Geometry_Builder:
 
     def _process_qiskit_geometries(self, metallic_layers, ground_plane, fuse_threshold, **kwargs):
         fuse_threshold /= 1e-3  #Convert to mm...
+        threshold = kwargs.get('threshold', 1e-9) / 1e-3  #Convert to mm...
 
         #Remove any previous model and add new gmsh model
         gmsh.model.remove()
@@ -263,7 +270,7 @@ class GMSH_Geometry_Builder:
             if cur_layer['type'] == 'design_layer':
                 cur_layer['unit_conv'] = unit_conv
                 cur_layer['resolution'] = self.fillet_resolution
-                cur_layer['threshold'] = kwargs.get('threshold', 1e-9)
+                cur_layer['threshold'] = threshold
                 metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
                 unique_ids = np.unique(metal_sel_ids)
                 for m in range(unique_ids.size):
