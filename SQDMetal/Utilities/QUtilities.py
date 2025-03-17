@@ -1205,6 +1205,7 @@ class QUtilities:
                             trace_width=width_cur, 
                             trace_gap=gap_cur,
                             fillet=fillet_cur,
+                            # spacing="100um", # TODO: remove - this is temporary
                             fillet_padding="10um",
                             start_left=True,
                             layer='1',

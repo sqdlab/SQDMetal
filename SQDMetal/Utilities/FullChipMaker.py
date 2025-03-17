@@ -20,6 +20,7 @@ class MultiDieChip:
         self.film_material = None
         self.start_freq = None
         self.num_resonators = None
+        self.eigen_sim = None
 
     def make_resonator_chip(
         self,
@@ -117,6 +118,9 @@ class MultiDieChip:
             die_num = [1, 1]
             markers_on = False
             text_label = None
+            text_position = None
+            chip_border = "0um"
+            export_type = "positive"
 
         # check if chip geometry is constant or scaled per-resonator
         assert QUtilities.is_string_or_list_of_strings(cpw_width)
@@ -308,6 +312,8 @@ class MultiDieChip:
                     min_res_gap="50um",
                     LC_calculations=True,
                     print_statements=print_all_infos,
+                    radius="100um" # TODO: temporary
+                    #fillet="50um"
                 )
             )
 
@@ -396,7 +402,7 @@ class MultiDieChip:
                 )
 
         # only export if a filename is passed
-        if export_filename != None:
+        if not single_circuit_for_simulation:
             # setup export path based on user inputs
             if export_path == "":
                 if date_stamp_on_export == True:
@@ -422,6 +428,7 @@ class MultiDieChip:
 
         if plot_inline_mpl == True:
             fig, ax = plt.subplots(figsize=(chip_dim_x * 3e3, chip_dim_y * 3e3))
+            ax.set_aspect('equal', adjustable='datalim')
             for comp in design.components.values():
                 comp.qgeometry_plot(ax)
             full_export_path = os.path.join(export_path, f"{export_filename}.png")
@@ -431,7 +438,7 @@ class MultiDieChip:
         # return design regardless of whether the GDS was exported or not
         return design
 
-    def run_palace_eigenmode_resonator(
+    def setup_palace_eigenmode_resonator(
         self,
         palace_binary: str,
         num_eigenmodes=None,
@@ -521,7 +528,7 @@ class MultiDieChip:
         else:
             sim_name = self.export_filename
         # Creat the Palace Eigenmode simulation
-        eigen_sim = PALACE_Eigenmode_Simulation(
+        self.eigen_sim = PALACE_Eigenmode_Simulation(
             name=sim_name,  # name of simulation
             metal_design=self.design,  # feed in qiskit metal design
             sim_parent_directory="",  # choose directory where mesh file, config file and HPC batch file will be saved
@@ -531,24 +538,24 @@ class MultiDieChip:
             view_design_gmsh_gui=False,  # view design in GMSH gui
             create_files=True,
         )  # create mesh, config and HPC batch files
-        eigen_sim.add_metallic(1)
-        eigen_sim.add_ground_plane()
+        self.eigen_sim.add_metallic(1)
+        self.eigen_sim.add_ground_plane()
         # Add in the RF ports
-        eigen_sim.create_port_CPW_on_Launcher("lp_L_die0", 30e-6)
-        eigen_sim.create_port_CPW_on_Launcher("lp_R_die0", 30e-6)
+        self.eigen_sim.create_port_CPW_on_Launcher("lp_L_die0", 30e-6)
+        self.eigen_sim.create_port_CPW_on_Launcher("lp_R_die0", 30e-6)
         # Fine-mesh routed paths (resonators, transmission line)
-        eigen_sim.fine_mesh_around_comp_boundaries(
+        self.eigen_sim.fine_mesh_around_comp_boundaries(
             fine_mesh_components_1, min_size=fine_mesh_min_max[0], max_size=fine_mesh_min_max[1]
         )
         # Fine-mesh launchpads (less fine)
-        eigen_sim.fine_mesh_around_comp_boundaries(
+        self.eigen_sim.fine_mesh_around_comp_boundaries(
             fine_mesh_launchpads, min_size=fine_mesh_min_max[1], max_size=250e-6
         )
         # setup interfaces
         if (self.substrate_material == "silicon") and (
             self.film_material == "aluminium"
         ):
-            eigen_sim.setup_EPR_interfaces(
+            self.eigen_sim.setup_EPR_interfaces(
                 metal_air=MaterialInterface("aluminiumair"),
                 substrate_air=MaterialInterface("siliconair"),
                 substrate_metal=MaterialInterface("aluminiumsilicon"),
@@ -556,11 +563,13 @@ class MultiDieChip:
         elif (self.substrate_material == "silicon") and (
             self.film_material == "tantalum"
         ):
-            eigen_sim.setup_EPR_interfaces(
+            self.eigen_sim.setup_EPR_interfaces(
                 metal_air=MaterialInterface("tantalumair"),
                 substrate_air=MaterialInterface("siliconair"),
                 substrate_metal=MaterialInterface("tantalumsilicon"),
             )
-        eigen_sim.prepare_simulation()
+        self.eigen_sim.prepare_simulation()
         print(f"\nGMSH mesh exported at {os.path.abspath(f'{sim_name}.msh')}\n")
-        eigen_sim.run()
+    
+    def run_palace_eigenmode_resonator(self):
+        self.eigen_sim.run()
