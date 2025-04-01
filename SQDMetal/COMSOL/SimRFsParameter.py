@@ -341,6 +341,30 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         return np.vstack([freqs] + s1Remains)
 
+    def run_only_eigenfrequencies(self, return_dofs=False):
+        #TODO: Check it is in eigenmode type and find a better solution than this... This basically evaluates a table and then extracts the first column
+        #which happens to hold the simulated eigenfrequencies...
+        self.jc.sol(self._soln).runFromTo("st1", "su1")
+        self.jc.result().numerical().create("gev1", "EvalGlobal")
+        self.jc.result().numerical("gev1").set("data", self.dset_name)
+        self.jc.result().numerical("gev1").set("expr", jtypes.JArray(jtypes.JString)(["numberofdofs"]))
+
+        self.jc.result().table().create("tbl1", "Table")
+        self.jc.result().numerical("gev1").set("table", "tbl1")
+        self.jc.result().numerical("gev1").computeResult()
+        self.jc.result().numerical("gev1").setResult();
+
+        freqs = [1e9*np.complex128(str(y).replace('i','j')) for y in [x[0] for x in self.jc.result().table("tbl1").getTableData(True)]]
+        dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])
+
+        self.jc.result().table().remove("tbl1")
+        self.jc.result().numerical().remove("gev1")
+
+        if return_dofs:
+            return freqs, dofs
+        else:
+            return freqs
+
     def _cost_func(self, freq, param_index=1, find_max=False):
         self.set_freq_range(freq[0], freq[0],1)
         data = self.run()
