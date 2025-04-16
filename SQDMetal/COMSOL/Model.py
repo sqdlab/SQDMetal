@@ -461,6 +461,7 @@ class COMSOL_Model:
 
     def fine_mesh_around_comp_boundaries(self, list_comp_names, minElementSize=1e-7, maxElementSize=5e-6, **kwargs):
         kwargs['restrict_rect'] = self.restrict_rect
+        kwargs['resolution'] = self._resolution
         list_polys = QUtilities.get_perimetric_polygons(self.design, list_comp_names, **kwargs)
         self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False)
 

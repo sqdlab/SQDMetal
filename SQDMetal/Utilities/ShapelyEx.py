@@ -1,4 +1,5 @@
 import shapely
+import numpy as np
 
 class ShapelyEx:
     @staticmethod
@@ -29,3 +30,22 @@ class ShapelyEx:
             return shapely.Polygon(coords)
         else:
             return coords
+
+    @staticmethod
+    def rectangle_from_line(pos1,pos2, rect_width, make_poly=True):
+        v_parl = pos2-pos1
+        v_perp = np.array([-v_parl[1], v_parl[0]])
+        v_perp /= np.linalg.norm(v_perp)
+        v_perp *= rect_width*0.5
+        coords = np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl])
+        if make_poly:
+            return shapely.Polygon(coords)
+        else:
+            return coords
+
+    @staticmethod
+    def shapely_to_list(shapely_poly):
+        if isinstance(shapely_poly, shapely.geometry.multipolygon.MultiPolygon):
+            return [x for x in shapely_poly.geoms]
+        else:
+            return [shapely_poly] #i.e. it's just a lonely Polygon object...

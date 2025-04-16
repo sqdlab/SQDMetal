@@ -16,6 +16,7 @@ dependencies:
   - pyside2==5.15.8
   - qdarkstyle==3.1
   - qutip==4.7.1
+  - gdspy==1.6.12
   - scipy==1.10.0
   - shapely==2.0.1
   - jupyter==1.0.0
@@ -23,7 +24,7 @@ dependencies:
   - pyyaml==6.0
   - pip==23.0
   - cython<3.0.0
+  - gdspy==1.6.12
   - pip:
-      - gdspy==1.6.12
       - pyaedt==0.6.46
       - gmsh==4.11.1

@@ -1,5 +1,4 @@
 from SQDMetal.PALACE.Model import PALACE_Model
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
@@ -9,6 +8,12 @@ import json
 import os
 import io
 import gmsh
+import shapely
+import pandas as pd
+import geopandas as gpd
+from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
+from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
+from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 
 class PALACE_Capacitance_Simulation(PALACE_Model):
 
@@ -17,11 +22,19 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "fillet_resolution": 4,
                  "mesh_refinement":  0,
                  "dielectric_material": "silicon",
-                 "solns_to_save": 3,
+                 "solns_to_save": -1,
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "HPC_Parameters_JSON": ""
+                 "mesh_max": 100e-6,
+                 "mesh_min": 10e-6,
+                 "taper_dist_min": 30e-6,
+                 "taper_dist_max": 200e-6,              
+                 "gmsh_dist_func_discretisation": 130,
+                 "HPC_Parameters_JSON": "",
+                 "fuse_threshold": 1e-9,
+                 "gmsh_verbosity": 1,
+                 "threshold": 1e-9
     }
 
     # Parent Directory path
@@ -41,6 +54,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             self.user_options[key] = user_options.get(key, PALACE_Capacitance_Simulation.default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
+        self._cur_cap_terminals = []
         super().__init__(meshing, mode, user_options)
 
 
@@ -48,12 +62,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         '''set-up the simulation'''
 
         if self.meshing == 'GMSH':
-
-            #Create the gmsh renderer to convert qiskit metal geomentry to gmsh geometry
-            pgr = Palace_Gmsh_Renderer(self.metal_design)
-
-            #prepare design by converting shapely geometries to Gmsh geometries
-            gmsh_render_attrs = pgr._prepare_design(metallic_layers, ground_plane, [], self.user_options['fillet_resolution'], 'capacitance_simulation')
+            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
+            #
+            gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
+            gmb.build_mesh()
 
             if self.create_files == True:
                 #create directory to store simulation files
@@ -63,14 +76,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 self.create_config_file(gmsh_render_attrs = gmsh_render_attrs)
 
                 #create batch file
-                if self.mode == 'HPC':
-                    self.create_batch_file()
-                
-                #create mesh
-                pgr._intelligent_mesh('capacitance_simulation', 
-                                min_size = self.user_options['mesh_min'], 
-                                max_size = self.user_options['mesh_max'], 
-                                mesh_sampling = self.user_options['mesh_sampling'])
+                # if self.mode == 'HPC':
+                #     self.create_batch_file()
 
                 self._save_mesh_gmsh()
 
@@ -117,23 +124,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #save mesh
             self._save_mesh_comsol(comsol_obj = cmsl)
 
-
-
-    def _check_simulation_mode(self):
-        
-        parent_simulation_dir = None
-
-        if self.mode == "HPC":
-            parent_simulation_dir = self.HPC_parent_simulation_dir
-        elif self.mode == "simPC":
-            parent_simulation_dir = self.simPC_parent_simulation_dir
-        else:
-            Exception('Invalid simulation mode entered.')
-        
-        return parent_simulation_dir
-
-
-
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
@@ -147,8 +137,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             path = os.path.join(parent_simulation_dir, directory)
     
             # Create the directory
-            os.mkdir(path)
-            print("Directory '% s' created" % directory)
+            if not os.path.exists(path):
+                os.mkdir(path)
+                # print("Directory '% s' created" % directory)
 
 
 
@@ -180,7 +171,26 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
+    def display_conductor_indices(self):
+        '''
+        Plots a coloured visualisation of the metallic conductors and their corresponding row/column indices of the capacitance matrix.
+        '''
+        assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
 
+        minX = (self.chip_centre[0] - self.chip_len*0.5)
+        maxX = (self.chip_centre[0] + self.chip_len*0.5)
+        minY = (self.chip_centre[1] - self.chip_wid*0.5)
+        maxY = (self.chip_centre[1] + self.chip_wid*0.5)
+        chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
+        
+        leGeoms = [chip_bounding_poly] + self._cur_cap_terminals
+        leNames = ["Chip"] + [f"Cond{x+1}" for x in range(len(self._cur_cap_terminals))]
+        gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
+        fig, ax = plt.subplots(1)
+        gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
+        ax.set_xlabel(f'Position (m)')
+        ax.set_ylabel(f'Position (m)')
+        return fig
 
     def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -188,13 +198,15 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         if self.meshing == 'GMSH':
 
             #GMSH renderer object needed to get boundary conditions for config file
-            PGR = kwargs['Palace_Gmsh_Renderer_object']
+            gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
-            material_air = [gmsh_render_attrs['air_box']]
-            material_dielectric = [gmsh_render_attrs['dielectric']]
-            far_field = [gmsh_render_attrs['far_field']]
+            material_air = gmsh_render_attrs['air_box']
+            material_dielectric = gmsh_render_attrs['dielectric']
+            far_field = gmsh_render_attrs['far_field']
             
+            self._cur_cap_terminals = gmsh_render_attrs['metalsShapely']
+
             #metals to compute capacitances for
             Terminal = []
             for i,value in enumerate(gmsh_render_attrs['metals']):
@@ -219,6 +231,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             material_dielectric = list(comsol._model.java.component("comp1").material("Substrate").selection().entities())
             far_field = list(comsol._model.java.component("comp1").physics(sCapMats.phys_es).feature("gnd1").selection().entities())
 
+            self._cur_cap_terminals = [x[0] for x in sCapMats.model._cond_polys]
+
             #metals to compute capacitances for
             Terminal = []
             for i,term_name in enumerate(sCapMats.terminal_names):
@@ -238,7 +252,13 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         
         #Define python dictionary to convert to json file
+        if self._output_subdir == "":
+            self.set_local_output_subdir("", False)
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
+        self._mesh_name = filePrefix + self.name + file_ext
+        post_procs = []
+        for x in Terminal:
+            post_procs.append({"Index":x["Index"], "Attributes":x["Attributes"], "Type": "Electric"})
         config = {
                     "Problem":
                     {
@@ -248,7 +268,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                     },
                     "Model":
                     {
-                        "Mesh":  filePrefix + self.name + file_ext,
+                        "Mesh":  self._mesh_name,
                         "L0": l0,  # mm
                         "Refinement":
                         {
@@ -269,7 +289,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                                 "Attributes": material_dielectric,  # Dielectric
                                 "Permeability": dielectric.permeability,
                                 "Permittivity": dielectric.permittivity,
-                                "LossTan": 1.2e-5
+                                "LossTan": dielectric.loss_tangent
                             }
                         ]
                     },
@@ -283,8 +303,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                             Terminal,
                         "Postprocessing":  # Capacitance from charge instead of energy
                         {
-                        "Capacitance":
-                            Terminal,
+                        "SurfaceFlux": post_procs,
                         }
                     },
                     "Solver":
@@ -292,7 +311,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                         "Order": self.user_options["solver_order"],
                         "Electrostatic":
                         {
-                        "Save": self.user_options["solns_to_save"]
+                        "Save": len(Terminal) if self.user_options["solns_to_save"] == -1 else self.user_options["solns_to_save"]
                         },
                         "Linear":
                         {
@@ -319,4 +338,37 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self.path_mesh = os.path.join(simulation_dir, self._mesh_name)
         self._sim_config = file
+        self.set_local_output_subdir(self._output_subdir)
+
+    def retrieve_data(self):
+        raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
+        headers = raw_data.columns
+        raw_data = raw_data.to_numpy()
+
+        fig = self.display_conductor_indices()
+        fig.savefig(self._output_data_dir + f'/terminal_indices.png')
+        plt.close(fig)
+
+        lePlots = self._output_data_dir + '/paraview/electrostatic/electrostatic.pvd'
+        if os.path.exists(lePlots):
+            leView = PVDVTU_Viewer(lePlots)
+            for m in range(leView.num_datasets):
+                try: 
+                    leSlice = leView.get_data_slice(m)
+                    fig = leSlice.plot(leSlice.get_data('V'), 'coolwarm', True)
+                    fig.savefig(self._output_data_dir + f'/cond{m+1}_V.png')
+                    plt.close(fig)
+                except Exception as e:
+                    print(f"Error in plotting: {e}")
+            try:
+                fig = leSlice.plot_mesh()
+                fig.savefig(self._output_data_dir + '/mesh.png')
+                plt.close(fig)
+            except Exception as e:
+                print(f"Error in plotting: {e}")
+
+        return raw_data
+
+

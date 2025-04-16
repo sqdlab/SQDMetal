@@ -35,9 +35,10 @@ class HoleBorders(QComponent):
         * include_geoms  - Given a list of component names to include when patterning the bordering holes. If it's empty, then all
                            metals in the layers given by border_layers are selected for border-hole patterning.
         * layer_gnd_plane - The layer in which to place the ground cutout. This should be typically layer 1 (hence, the default).
+        * exclude_gaps   - (Default False) If True, the holes cannot fall within gaps...
     ***READ CAREFULLY*** the holes are placed as follows:
-        1. Select all metals (not cut-outs) in all layers supplied by border_layers - restrict to only include_geoms if non-empty.
-           Careful when supplying include_geoms as it can pattern holes on unincluded metallic surfaces.
+        1. Select all metals (not cut-outs unless exclude_gaps is True) in all layers supplied by border_layers - restrict to only
+           include_geoms if non-empty. Careful when supplying include_geoms as it can pattern holes on non-included metallic surfaces.
         2. Pattern holes on selected metals
         3. Using exclude_geoms, a buffer area is made via dist_init and num_hole_lines. All holes in this area are culled.
 
@@ -81,6 +82,7 @@ class HoleBorders(QComponent):
         * exclude_geoms=[]
         * include_geoms=[]
         * layer_gnd_plane=1
+        * exclude_gaps=False
     """
 
     default_options = Dict(hole_radius='5um', 
@@ -93,7 +95,8 @@ class HoleBorders(QComponent):
                            border_layers=[1,2,3],
                            exclude_geoms=[],
                            include_geoms=[],
-                           layer_gnd_plane=1)
+                           layer_gnd_plane=1,
+                           exclude_gaps=False)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -104,7 +107,10 @@ class HoleBorders(QComponent):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates()
         gsdf = gsdf[gsdf['layer'].isin(p.border_layers)]
-        filt = gsdf.loc[gsdf['subtract'] == False]
+        if p.exclude_gaps:
+            filt = gsdf
+        else:
+            filt = gsdf.loc[gsdf['subtract'] == False]
 
         if len(p.exclude_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.exclude_geoms]

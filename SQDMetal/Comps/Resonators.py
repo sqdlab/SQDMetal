@@ -59,7 +59,7 @@ class ResonatorMeander(QComponent):
         * pos_y='0um'
         * orientation=0
         * total_length='1mm'
-        * constr_radius='50um'
+        * constr_radius='30um'
         * constr_width_max='250um'
         * constr_extend_length='0um'
         * trace_width='10um',
@@ -70,7 +70,7 @@ class ResonatorMeander(QComponent):
 
     default_options = Dict(pos_x='0um', pos_y='0um', orientation=0,
                            total_length='1mm',
-                           constr_radius='50um',
+                           constr_radius='30um',
                            constr_width_max='250um',
                            constr_extend_length='0um',
                            trace_width='10um', trace_gap='10um',
@@ -87,7 +87,7 @@ class ResonatorMeander(QComponent):
         wid_constr = p.constr_width_max
         f = p.fillet_padding
 
-        lePath, pin1, pin2 = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, p.pos_x, p.pos_y, p.orientation)
+        lePath, pin1, pin2, r = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, p.pos_x, p.pos_y, p.orientation)
 
         self.add_qgeometry('path', {'trace': lePath},
                            width=p.trace_width,
@@ -107,36 +107,62 @@ class ResonatorMeander(QComponent):
         if r > 0 and wid_constr > 0:
             assert L == 0, err_msg
             smax = wid_constr - 2*r
-            N = int( (l - (np.pi-2)*r - 2*f) / (np.pi*r + f + smax) )
-            if N > 0:
-                s = (l - (np.pi-2)*r - 2*f) / N - np.pi*r - f
+            N = np.ceil( (l - 3*f - smax - 2*np.pi*r + 2*r) / (np.pi*r + f + smax) )
+            N = int(N)
+            assert N > 0, "Constraints on meander cannot be satisfied. Try reducing fillet_padding or constr_radius. Otherwise try increasing constr_width_max."
+            s = (l - 3*f - 2*np.pi*r + 2*r - N*(np.pi*r + f)) / (1+N)
             resid=0
         elif r > 0 and L > 0:
             assert wid_constr == 0, err_msg
-            N = int( (L-2*(r+f)) / (2*r+f) )
+            N = int( (L-3*f-4*r) / (f+2*r) )
             if N > 0:
-                L0 = 2*r + 2*f + (2*r+f)*N
+                L0 = 3*f + 4*r + N*(f+2*r)
                 resid=(L-L0)*0.5
-                s = (l-2*resid - (np.pi-2)*r - 2*f) / N - np.pi*r - f
+                s = (l-2*resid - 3*f - 2*np.pi*r + 2*r - N*(np.pi*r + f)) / (1+N)
             else:
-                assert N==0 and L==l, "Current constraints cannot form a curved fillet/radius on the meander that meets the distance requirements."
+                assert N==0 and L==l, "Constraints on meander for this given point-to-point distance cannot be satisfied. Try reducing fillet_padding or constr_radius."
                 resid=0
         elif wid_constr > 0 and L > 0:
-            assert wid_constr == 0, err_msg
-            assert False, "Need to implement this..."
+            Nmax = int((L-3*f)/f)
+            if Nmax > 0:
+                best_width = -1
+                cur_resid_s_r_N = None
+                for N in range(1,Nmax+1):
+                    r = (L - 3*f - N*f)/(4 + 2*N)
+                    if r <= trace_width/2:
+                        continue
+                    L0 = 3*f + 4*r + N*(f+2*r)
+                    resid=(L-L0)*0.5
+                    s = (l-2*resid - 3*f - 2*np.pi*r + 2*r - N*(np.pi*r + f)) / (1+N)
+                    cur_w = s+2*r
+                    # print(N, cur_w, r, s)
+                    if cur_w > wid_constr or s/2 <= r:
+                        continue
+                    if cur_w > best_width:
+                        best_width = cur_w
+                        cur_resid_s_r_N = (resid, s, r, N)
+                assert best_width > 0, "Constraints on meander cannot be satisfied for some reason. Try increasing wid_constr or decreasing fillet_padding."
+                resid, s, r, N = cur_resid_s_r_N
+            else:
+                assert Nmax==0 and L==l, "Constraints on meander for this given point-to-point distance cannot be satisfied."
+                resid=0
 
-        if N <= 0:
+
+        # print(N, s, r, resid, L, trace_width)
+        # print(L, r, wid_constr)
+
+        if N == 0:
             lePath = [[0,0], [l,0]]
         else:
-            assert s/2 > r, "Current constraints cannot form a curved fillet/radius on the meander. The width and radius combination make it too narrow."
+            assert s/2 > r, "Constraints on meander cannot form a curved fillet/radius on the meander. The width and radius combination make it too narrow."
 
-            lePath = [[0,0], [r+f+resid,0]]
-            cur_x = r+f+resid
+            lePath = [[0,0], [resid+f+r,0]]
+            cur_x = resid+f+r
             if start_left:
                 dir = 1
             else:
                 dir=-1
-            for m in range(N):
+            for m in range(N+1):
                 lePath += [[cur_x,dir*(s*0.5+r)], [cur_x+2*r+f,dir*(s*0.5+r)]]
                 cur_x = cur_x+2*r+f
                 dir *= -1
@@ -152,7 +178,7 @@ class ResonatorMeander(QComponent):
         polys = draw.rotate(polys, angle, origin=(0, 0))
         polys = draw.translate(polys, x, y)
         [lePath, pin1, pin2] = polys
-        return lePath, pin1, pin2
+        return lePath, pin1, pin2, r
 
 class ResonatorMeanderPin(QComponent):
     """Create a CPW Meander Resonator.
@@ -250,7 +276,7 @@ class ResonatorMeanderPin(QComponent):
         wid_constr = p.constr_width_max
         f = p.fillet_padding
 
-        lePath, pin1, pin2 = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, startPt[0], startPt[1], np.arctan2(norm[1],norm[0])/np.pi*180)
+        lePath, pin1, pin2, r = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, startPt[0], startPt[1], np.arctan2(norm[1],norm[0])/np.pi*180)
 
         self.add_qgeometry('path', {'trace': lePath},
                            width=p.trace_width,
@@ -358,7 +384,7 @@ class ResonatorMeanderPinPin(QComponent):
         wid_constr = p.constr_width_max
         f = p.fillet_padding
 
-        lePath, pin1, pin2 = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, startPt[0], startPt[1], ori)
+        lePath, pin1, pin2, r = ResonatorMeander.draw_resonator(l, L, r, wid_constr, f, p.start_left, p.trace_width, startPt[0], startPt[1], ori)
 
         self.add_qgeometry('path', {'trace': lePath},
                            width=p.trace_width,

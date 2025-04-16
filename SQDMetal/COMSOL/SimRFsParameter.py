@@ -1,5 +1,6 @@
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
 from SQDMetal.Utilities.QUtilities import QUtilities
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 import mph
 import jpype.types as jtypes
@@ -157,12 +158,12 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         unit_conv = QUtilities.get_units(self.model.design)
         pos1 = self.model.design.components[qObjName1].pins[pin1]['middle'] * unit_conv
         pos2 = self.model.design.components[qObjName2].pins[pin2]['middle'] * unit_conv
-        v_parl = pos2-pos1
-        v_perp = np.array([-v_parl[1], v_parl[0]])
-        v_perp /= np.linalg.norm(v_perp)
-        v_perp *= rect_width*0.5
+        self.create_port_2_conds_by_position(pos1, pos2, rect_width)
 
-        sel_x, sel_y, sel_r = self.model._create_poly(f"port{len(self._ports)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
+    def create_port_2_conds_by_position(self, pos1, pos2, rect_width=20e-6):
+        coords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width, False)
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"port{len(self._ports)}", coords)
         select_3D_name = self.model._setup_selection_boundaries(len(self._ports), f"port{len(self._ports)}", 'port')
         cur_port = {'type':'Single', 'polys': [select_3D_name]}
         self._ports += [cur_port]
@@ -339,6 +340,30 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.jc.result().numerical().remove("ev1")
 
         return np.vstack([freqs] + s1Remains)
+
+    def run_only_eigenfrequencies(self, return_dofs=False):
+        #TODO: Check it is in eigenmode type and find a better solution than this... This basically evaluates a table and then extracts the first column
+        #which happens to hold the simulated eigenfrequencies...
+        self.jc.sol(self._soln).runFromTo("st1", "su1")
+        self.jc.result().numerical().create("gev1", "EvalGlobal")
+        self.jc.result().numerical("gev1").set("data", self.dset_name)
+        self.jc.result().numerical("gev1").set("expr", jtypes.JArray(jtypes.JString)(["numberofdofs"]))
+
+        self.jc.result().table().create("tbl1", "Table")
+        self.jc.result().numerical("gev1").set("table", "tbl1")
+        self.jc.result().numerical("gev1").computeResult()
+        self.jc.result().numerical("gev1").setResult();
+
+        freqs = [1e9*np.complex128(str(y).replace('i','j')) for y in [x[0] for x in self.jc.result().table("tbl1").getTableData(True)]]
+        dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])
+
+        self.jc.result().table().remove("tbl1")
+        self.jc.result().numerical().remove("gev1")
+
+        if return_dofs:
+            return freqs, dofs
+        else:
+            return freqs
 
     def _cost_func(self, freq, param_index=1, find_max=False):
         self.set_freq_range(freq[0], freq[0],1)

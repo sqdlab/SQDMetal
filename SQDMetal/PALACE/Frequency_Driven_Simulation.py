@@ -1,5 +1,4 @@
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.PALACE.SQDGmshRenderer import Palace_Gmsh_Renderer
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
@@ -21,11 +20,16 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 300,
-                 "mesh_max": 100e-3,
-                 "mesh_min": 10e-3,
-                 "mesh_sampling": 120,
+                 "mesh_max": 100e-6,
+                 "mesh_min": 10e-6,
+                 "taper_dist_min": 30e-6,
+                 "taper_dist_max": 200e-6,
+                 "gmsh_dist_func_discretisation": 120,
                  "comsol_meshing": "Extremely fine",
-                 "HPC_Parameters_JSON": ""
+                 "HPC_Parameters_JSON": "",
+                 "fuse_threshold": 1e-9,
+                 "gmsh_verbosity": 1,
+                 "threshold": 1e-9
                 }
 
     #constructor
@@ -55,10 +59,11 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             gmsh_render_attrs = kwargs['gmsh_render_attrs']
 
             #GMSH config file variables
-            material_air = [gmsh_render_attrs['air_box']]
-            material_dielectric = [gmsh_render_attrs['dielectric']]
+            material_air = gmsh_render_attrs['air_box']
+            material_dielectric = gmsh_render_attrs['dielectric']
+            dielectric_gaps = gmsh_render_attrs['dielectric_gaps']
             PEC_metals = gmsh_render_attrs['metals']
-            far_field = [gmsh_render_attrs['far_field']]
+            far_field = gmsh_render_attrs['far_field']
             ports = gmsh_render_attrs['ports']
 
             #define length scale
@@ -97,7 +102,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         #Process Ports
         config_ports = self._process_ports(ports)
-        config_ports[0]["Excitation"] = True
+        if self._rf_port_excitation > 0:
+            config_ports[self._rf_port_excitation-1]["Excitation"] = True
 
         if isinstance(self.freqs, tuple):
             fStart,fStop,fStep = self.freqs
@@ -109,6 +115,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         if self._output_subdir == "":
             self.set_local_output_subdir("", False)
         filePrefix = self._get_folder_prefix()
+        self._mesh_name = filePrefix + self.name + file_ext
         config = {
             "Problem":
             {
@@ -118,7 +125,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             },
             "Model":
             {
-                "Mesh":  filePrefix + self.name + file_ext,
+                "Mesh":  self._mesh_name,
                 "L0": l0,  
                 "Refinement":
                 {
@@ -170,6 +177,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        if self.meshing == 'GMSH':
+            self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         if self._ff_type == 'absorbing':
             config['Boundaries']['Absorbing'] = {
                     "Attributes": far_field,
@@ -193,6 +202,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         #write to file
         with open(file, "w+") as f:
             json.dump(config, f, indent=2)
+        self.path_mesh = os.path.join(simulation_dir, self._mesh_name)
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)
     

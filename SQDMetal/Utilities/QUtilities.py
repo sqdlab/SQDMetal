@@ -8,13 +8,14 @@ from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
 from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
 from qiskit_metal.qlibrary.tlines.straight_path import RouteStraight
+from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
 from qiskit_metal.analyses import cpw_calculations
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Comps import Markers
 from SQDMetal.Utilities.QubitDesigner import ResonatorQuarterWave
-
+import matplotlib.pyplot as plt
 
 class QUtilities:
     @staticmethod
@@ -39,7 +40,7 @@ class QUtilities:
         # So do this instead...
         if isinstance(strVal, int) or isinstance(strVal, float):
             return strVal
-        strVal = strVal.strip()
+        strVal = strVal.strip().replace(' ', '')
         assert len(strVal) > 1, f"Length '{strVal}' is invalid (no units?)."
         if strVal[-2:] == "mm":
             return float(strVal[:-2] + "e-3")
@@ -55,6 +56,7 @@ class QUtilities:
             return float(strVal[:-2])
         else:
             assert len(strVal) > 1, f"Length '{strVal}' is invalid."
+            return strVal
 
     @staticmethod
     def get_comp_bounds(design, objs, units_metres=False):
@@ -317,7 +319,7 @@ class QUtilities:
         line_segs = QUtilities.calc_lines_and_fillets_on_path(
             points, rFillet, precision
         )
-        print(line_segs)
+        # print(line_segs)
         final_pts = []
         for cur_seg in line_segs:
             if "centre" in cur_seg:
@@ -504,7 +506,62 @@ class QUtilities:
                     x for x in range(len(metal_sel_ids), len(metal_sel_ids) + num_polys)
                 ]
 
+        if thresh > 0:
+            metal_polys_all = [x.simplify(thresh/unit_conv) for x in metal_polys_all]
         return metal_polys_all, metal_sel_ids
+
+    @staticmethod
+    def plot_highlight_component(component_name, design, **kwargs):
+        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
+        arrow_width = kwargs.get('arrow_width', 0.001)
+        push_to_back = kwargs.get('push_to_back', False)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
+        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
+        # obstacles = shapely.unary_union(gsdf['geometry'])
+        
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1)
+
+        cur_comp_id = design.components[component_name].id
+
+        gsdf_gaps = gsdf[gsdf['subtract']]
+        sort_inds = np.argsort(gsdf_gaps['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_gaps = gsdf_gaps.iloc[sort_inds]
+        cols = gsdf_gaps['component'] == cur_comp_id
+        cols = [('#808080' if x else '#C5C9C7') for x in cols]
+        if gsdf_gaps.size > 0:
+            gsdf_gaps.plot(color=cols, ax=ax)
+
+
+        gsdf_metals = gsdf[~gsdf['subtract']]
+        sort_inds = np.argsort(gsdf_metals['component'] == cur_comp_id)
+        if push_to_back:
+            sort_inds = sort_inds[::-1]
+        gsdf_metals = gsdf_metals.iloc[sort_inds]
+        cols = gsdf_metals['component'] == cur_comp_id
+        cols = [('#069AF3' if x else 'lightblue') for x in cols]
+        if gsdf_metals.size > 0:
+            gsdf_metals.plot(color=cols, ax=ax)
+
+        xLims = ax.get_xlim()
+        yLims = ax.get_ylim()
+        min_dist = min(xLims[1]-xLims[0], yLims[1]-yLims[0])
+        vec_len = min_dist*len_pin_arrow_frac_axis
+
+        for cur_pin in design.components[component_name].pins:
+            vec_pt = design.components[component_name].pins[cur_pin]['middle']
+            vec_norm = design.components[component_name].pins[cur_pin]['normal']
+            vec_norm *= vec_len/np.linalg.norm(vec_norm)
+            ax.arrow(*vec_pt, *vec_norm, width=arrow_width, color='red')
+            vec_text = vec_pt+vec_norm/2
+            txt = ax.text(*vec_text, cur_pin, horizontalalignment='center', verticalalignment='center', color='red')
+            txt.set_bbox(dict(facecolor='white', alpha=0.7, edgecolor='white'))
 
     @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
@@ -514,7 +571,10 @@ class QUtilities:
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
-        ids = [design.components[x].id for x in comp_names]
+        ids = []
+        for x in comp_names:
+            assert x in design.components, f"Component \'{x}\' does not exist!"
+            ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
 
         if filt.shape[0] == 0:
@@ -578,12 +638,19 @@ class QUtilities:
 
         startPt = design.components[route_name].pins[pin_name]["middle"] * unit_conv
         padDir = -1.0 * design.components[route_name].pins[pin_name]["normal"]
+
         padWid = QUtilities.parse_value_length(
             design.components[route_name].options.trace_width
         )
         padGap = QUtilities.parse_value_length(
             design.components[route_name].options.trace_gap
         )
+
+        #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        if isinstance(padWid, str):
+            padWid = QUtilities.parse_value_length(design.variables[padWid])
+        if isinstance(padGap, str):
+            padGap = QUtilities.parse_value_length(design.variables[padGap])
 
         return (
             startPt * unit_conv_extra,
@@ -826,6 +893,8 @@ class QUtilities:
                 f"No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input."
             )
 
+        if print_checks: print(f'\nNOW PRINTING: Die {die_number}\n')
+
         # calculate launchpad scaling
         lp_scale_factor = QUtilities.parse_value_length(
             dimension
@@ -906,25 +975,27 @@ class QUtilities:
         die_dimension,
         die_index,
         launchpad_extent,
+        feedline_upscale=1.0,
         film_thickness="100nm",
         coupling_gap="20um",
         transmission_line_y="0um",
-        launchpad_to_res="200um",
+        launchpad_to_res="300um",
         res_shift_x="225um",
         min_res_gap="150um",
         res_vertical="1500um",
         chip_name="main",
         LC_calculations=True,
         print_statements=True,
-        fillet="85um"
+        fillet="85um",
+        radius="100um"
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
 
         Inputs:
             - design - Qiskit Metal design object
-            - gap - transmission line gap as string with units (e.g. "5um")
-            - width - transmission line central conductor width as string with units (e.g. "5um")
+            - gap - transmission line gap as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
+            - width - transmission line central conductor width as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
             - num_resonators - number of resonators to be placed on each die
             - frequencies - list of frequencies in Hz (must be same length as num_resonators)
             - die_origin - centre coordinates of die as tuple (float(x), float(y)) in units of meters
@@ -932,6 +1003,7 @@ class QUtilities:
             - die_index - die number (int) for resonator object naming
             - launchpad_extent - total width of the launchpad including inset from edge of die in units of meters
         Inputs (optional):
+            - feedline_upscale - upscale factor for feedline gap/width compared to resonators (defaults to 1.0)
             - film thickness - as a string with units (defaults to "100nm")
             - coupling gap - amount of ground plane between transmission line and resonator coupling length as a string with units (defaults to "20um")
             - transmission_line_y - y-position of tranmission line in relation to die centre as a string with units (defaults to "0um")
@@ -952,12 +1024,10 @@ class QUtilities:
             - inductances - list containing calculated inductances of resonators
         """
 
-        # check inputs
+        # check inputs with assertions
         assert num_resonators == len(frequencies)
         assert isinstance(launchpad_extent, (float, int))
         for i in [
-            gap,
-            width,
             die_dimension[0],
             die_dimension[1],
             transmission_line_y,
@@ -967,20 +1037,32 @@ class QUtilities:
             film_thickness
         ]:
             assert isinstance(i, str)
+        for i in [gap, width, fillet, radius]:
+            assert QUtilities.is_string_or_list_of_strings(i)
         for i in [die_origin, die_dimension]:
             assert isinstance(i, (tuple, list))
         assert len(die_origin) == 2 and len(die_dimension) == 2
         assert isinstance(die_index, int)
+        if isinstance(gap, list):
+            assert isinstance(width, list), f"If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
+            assert ((len(gap) == num_resonators) and (len(width) == num_resonators))
 
-        # parse strings to float values
-        w = QUtilities.parse_value_length(width)
-        g = QUtilities.parse_value_length(gap)
-        h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
-        ft = QUtilities.parse_value_length(film_thickness)
-        tl_y = QUtilities.parse_value_length(transmission_line_y)
-        cg = QUtilities.parse_value_length(coupling_gap)
-        x0 = QUtilities.parse_value_length(die_origin[0])
-        y0 = QUtilities.parse_value_length(die_origin[1])
+        # check if width/gap and/or fillet is a list (for scaled)   
+        if (isinstance(width, list) or isinstance(gap, list)):
+            scaled_geometry = True 
+            print(f"Options for scaled gap/width geometry detected.") if print_statements else 0 
+        else:
+            scaled_geometry = False
+        if isinstance(fillet, list):
+            scaled_fillet = True 
+            print(f"Options for scaled fillet size detected.") if print_statements else 0 
+        else:
+            scaled_fillet = False
+        if isinstance(radius, list):
+            scaled_radius = True 
+            print(f"Options for scaled curve radius detected.") if print_statements else 0
+        else:
+            scaled_radius = False
 
         # calculate x-projected length of useable transmission line [m]
         tl_extent = (
@@ -992,8 +1074,6 @@ class QUtilities:
         # calculate width per resonator (according to num_resonators)
         x_increment_res = (tl_extent / num_resonators) + QUtilities.parse_value_length(min_res_gap)
 
-        if print_statements: print(f'\nNOW PRINTING: Die {die_index + 1}\n')
-
         # initialise lists
         x_positions, resonator_names, resonator_vals = [], [], []
         if LC_calculations: capacitances, inductances = [], []
@@ -1002,11 +1082,32 @@ class QUtilities:
             # name resonators
             resonator_names.append(f"die{die_index}_res{i+1}_{frequencies[i] * 1e-9:.2f}GHz")
 
+        # parse string valued arguments to floats
+        h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
+        ft = QUtilities.parse_value_length(film_thickness)
+        tl_y = QUtilities.parse_value_length(transmission_line_y)
+        cg = QUtilities.parse_value_length(coupling_gap)
+        x0 = QUtilities.parse_value_length(die_origin[0])
+        y0 = QUtilities.parse_value_length(die_origin[1])
+
+        # string values for gap/width (unscaled)
+        width_cur = width
+        gap_cur = gap
+        radius_cur = radius
+
+        # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
 
+            # setup values for scaled geometry
+            if scaled_geometry == True:
+                # parse strings to float values (width and gap - per resonator)
+                width_cur = width[i]
+                gap_cur = gap[i]
+                radius_cur = radius[i]
+            
             # calculate x_position and add to list
-            x_pos_cur = x0 - (tl_extent / 2) + (i * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
+            x_pos_cur = x0 - (tl_extent / 2) + ((i + 0.25) * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
             x_positions.append(x_pos_cur)
 
             # calculate capacitance and inductance if requested
@@ -1015,11 +1116,14 @@ class QUtilities:
                 capacitances.append(r_cur.get_res_capacitance())
                 inductances.append(r_cur.get_res_capacitance())
 
+            w_float = QUtilities.parse_value_length(width_cur)
+            g_float = QUtilities.parse_value_length(gap_cur)
+
             # calculate length based on frequency
             l_fullwave, er_eff, F = cpw_calculations.guided_wavelength(
                 freq=frequencies[i],
-                line_width=w,
-                line_gap=g,
+                line_width=w_float,
+                line_gap=g_float,
                 substrate_thickness=h,
                 film_thickness=ft,
             )
@@ -1031,7 +1135,7 @@ class QUtilities:
             resonator_vals.append([l_fullwave, er_eff, F])
 
             # calculate y value of resonator start
-            res_y_val = (y0 + tl_y - cg - w - 2*g)
+            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg - (0.5 * w_float) - g_float
             res_y_um = f'{res_y_val * 1e6:.3f}um'
 
             # calculate y value of resonator end
@@ -1053,8 +1157,8 @@ class QUtilities:
                 options=Dict(
                     pos_x=res_x_um, 
                     pos_y=res_y_um, 
-                    width=width, 
-                    gap=gap, 
+                    width=width_cur, 
+                    gap=gap_cur, 
                     termination_gap="10um", 
                     orientation="180"
                 )
@@ -1067,8 +1171,8 @@ class QUtilities:
                 options=Dict(
                     pos_x=res_x_um, 
                     pos_y=res_end_y_um, 
-                    width=width, 
-                    gap=gap, 
+                    width=width_cur, 
+                    gap=gap_cur, 
                     termination_gap="0um", 
                     orientation="-90"
                 )
@@ -1078,14 +1182,20 @@ class QUtilities:
             start_pin_id = next(iter(res_start_pin.pin_names))
             end_pin_id = next(iter(res_end_pin.pin_names))
 
+            # check for scaled filleting
+            if scaled_fillet == True:
+                fillet_cur = fillet[i]
+            else: 
+                fillet_cur = fillet
+
             # set resonator options
             res_options = Dict(
                             total_length=l_quarterwave_mm, 
-                            constr_radius="100um",
+                            constr_radius=radius_cur,
                             constr_width_max="0um",
-                            trace_width=width, 
-                            trace_gap=gap,
-                            fillet=fillet,
+                            trace_width=width_cur, 
+                            trace_gap=gap_cur,
+                            fillet=fillet_cur,
                             fillet_padding="10um",
                             start_left=True,
                             layer='1',
@@ -1116,7 +1226,7 @@ class QUtilities:
             return resonators, resonator_vals, resonator_names
     
     @staticmethod
-    def place_transmission_line_from_launchpads(design, tl_y, gap, width, die_index):
+    def place_transmission_line_from_launchpads(design, tl_y, gap, width, launchpads, die_index, die_origin=[0, 0], start_straight="100um", fillet="85um", anchor_inset="250um"):
         """
         Function to place transmission lines between launchpad pins on a multi-die chip. Each transmission line is named as "tl_die{die_index}".
 
@@ -1125,32 +1235,70 @@ class QUtilities:
             - tl_y - y coordinate for the primary routing of the transmission line, relative to the die centre as a string with units
             - gap - transmission line gap as a string with units
             - width - transmission line width as a string with units
+            - launchpads - QComponents for launchpads
             - die_index - index of the current die for QComponent naming
+            - die_origin - (Default to ["0um", "0um"]) origin coordinates of current die as a list of strings with units
+            - start_straight - (Defaults to "80um") Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to "50um"
+            - fillet - (Defaults to "50um") Fillet size on transmission line
+            - anchor_inset - (Defaults to "250um") Distance in x between launchpad connection and anchor
         
         Outputs:
             - tl - transmission line QComponent
         """
 
-        # TODO: add automatic component/pin naming from launchpad list which should be passed as an input
+        # assign launchpads
+        lp_L = launchpads[die_index][0].name
+        lp_L_pin = next(iter(launchpads[die_index][0].pins))
+        lp_R = launchpads[die_index][1].name
+        lp_R_pin = next(iter(launchpads[die_index][1].pins))
+        lp_L_pin_x = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][0] * 1e-3 # convert to m
+        lp_R_pin_x = launchpads[die_index][1].get_pin(lp_R_pin)['middle'][0] * 1e-3 # convert to m
 
-        # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
-        if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
-            tl_options = Dict(
+        # calculate positions of anchors
+        tl_y_cur = QUtilities.parse_value_length(tl_y) + die_origin[1]
+        anchor_L_x = lp_L_pin_x + (2 * QUtilities.parse_value_length(fillet)) + QUtilities.parse_value_length(start_straight)
+        anchor_R_x = lp_R_pin_x - (2 * QUtilities.parse_value_length(fillet)) - QUtilities.parse_value_length(start_straight)
+        anchor_L = np.array([f"{anchor_L_x * 1e6:.1f}um", 
+                               f"{tl_y_cur * 1e6:.1f}um"])
+        anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", 
+                               f"{tl_y_cur * 1e6:.1f}um"])
+        anchors = {1: anchor_L, 2: anchor_R}
+
+        # transmission line options
+        tl_options = Dict(
                 pin_inputs=Dict(
-                    start_pin=Dict(component=f'lp_L_die{die_index+1}', pin='tie'),
-                    end_pin=Dict(component=f'lp_R_die{die_index+1}', pin='tie'),
+                    start_pin=Dict(component=lp_L, pin=lp_L_pin),
+                    end_pin=Dict(component=lp_R, pin=lp_R_pin)
                 ),
                 trace_width=width,
                 trace_gap=gap,
             )
+
+        # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
+        if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
             tl = RouteStraight(design=design, 
                             name=f"tl_die{die_index}", 
                             options=tl_options)
-        elif tl_y not in ["0nm", "0um", "0mm", "0cm", "0m"]:
-            raise Exception("Sorry, for now the transmission line must be at y=0um. Functionality for other placements coming soon")
-
-            
-
+            print(f'We drew a straight transmission line connecting the two launchpads.')
+        else:
+            print(f"Anchor left:  {anchor_L}\nAnchor right: {anchor_R}")
+            # draw a routed tranmission line through the specified tl_y point using RoutePathfinder
+            try:
+                # tl_options.anchors = {1: anchor_cur}
+                tl_options.anchors = anchors
+                tl_options.advanced.avoid_collision = 'true'
+                tl_options.fillet = fillet
+                tl_options.lead.start_straight = start_straight
+                tl_options.lead.end_straight = start_straight
+                tl = RoutePathfinder(
+                                design=design, 
+                                name=f"tl_die{die_index}", 
+                                options=tl_options,
+                    )
+            except:
+                raise Exception("Anchor-based routing failed - see Qiskit metal logs.")
+            else:
+                print(f'We drew a routed transmission line connecting the two launchpads according to the above anchors.')
         return tl
     
     @staticmethod
@@ -1188,3 +1336,11 @@ class QUtilities:
         else: 
             raise Exception("Only marker_type=\"cross\" is currently available.")
             # TODO: add other marker types as options
+    
+    @staticmethod
+    def is_string_or_list_of_strings(var):
+        if isinstance(var, str):
+            return True
+        elif isinstance(var, list) and all(isinstance(item, str) for item in var):
+            return True
+        return False
