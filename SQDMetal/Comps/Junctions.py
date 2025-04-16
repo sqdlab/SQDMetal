@@ -3,11 +3,14 @@
 # Creation Date: 24/05/2023
 # Description: Collection of classes to draw Josephson Junctions.
 
-from qiskit_metal import draw
+from qiskit_metal import draw, Dict
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
+# for Manhattan JJ
+from shapely import Polygon, Point
+from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class JunctionDolan(QComponent):
     """Create a Dolan Bridge Josephson Junction
@@ -343,6 +346,184 @@ class JunctionDolanPinStretch(QComponent):
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
+# -*- coding: utf-8 -*-
+# Author: Pradeep
+# Extended and modified by: Stefan
+# Creation Date: 2023
+# Description: Class to draw Manhattan junctions.
+class JunctionManhattan(QComponent):
+    """Create a Manhattan junction
+
+    Inherits QComponent class.
+
+    The Manhattan junction consists of two electrodes and a junction area plus extension electrodes.
+    The junction area is a rectangle with width jj_width and length jj_width2.
+    The electrodes are rectangles with width width and length length.
+    The extension electrodes are rectangles with width width and length extension.
+
+    The positioning can be done via position (pos_x,pos_y) and angle given by 'orientation'.
+
+    # more details on the class will be added shortly
+
+    """
+
+    default_options = Dict(pos_x='0mm',
+                           pos_y='0mm',
+                           jj_width = '0um',
+                           width='200nm',
+                           width2='-1',
+                           length='10um',
+                           length2='-1',
+                           extension='2um',
+                           extension2='-1',
+                           pin1_offset='0um',
+                           pin2_offset ='0um',
+                           taper_width1 = '2um',
+                           taper_width2 = '2um',
+                           extension_taper = False,
+                           start_point_shift = ('0um', '0um'),
+                           four_legs = False)
+
+    component_metadata = Dict(short_name='component')
+    """Component metadata"""
+
+    def make(self):
+        """Convert self.options into QGeometry."""
+
+        extension_taper = self.options.extension_taper
+        p = self.parse_options()  # Parse the string options into numbers
+
+        # if, for some reason, non-square junctions are needed, specify jj_width2
+        if p.jj_width2:
+            jj_width2 = p.jj_width2
+        else:
+            jj_width2 = p.jj_width
+
+        if p.width2 == -1:
+            width2 = p.width
+        else:
+            width2 = p.width2
+
+        if p.length2 == -1:
+            length2 = p.length
+        else:
+            length2 = p.length2
+
+        if p.extension2 == -1:
+            extension2 = p.extension
+        else:
+            extension2 = p.extension2
+
+        # tapering for the extension electrodes: this will probably not be needed often
+        if extension_taper:
+            extension_taper_width1 = p.taper_width1
+            extension_taper_width2 = p.taper_width2
+        else:
+            extension_taper_width1 = p.width
+            extension_taper_width2 = p.width
+
+        if p.target_comp:
+            start_point = self.design.components[self.options.target_comp].pins[self.options.target_pin]
+            start_point = start_point['middle'] + p.start_point_shift
+            # print(start_point)
+        else:
+            start_point = (p.pos_x, p.pos_y)
+
+        # draw the first electrode as a rectangle and add the tapering rectangles
+        electrode1 = ShapelyEx.fuse_polygons_threshold([draw.rectangle(p.width,
+                                    p.length + p.extension,
+                                    0,
+                                    -(p.length - p.extension)/2), # main electrode
+                                    draw.rectangle(p.taper_width1, # taper 1
+                                    p.length*0.9,
+                                    0,
+                                    (-p.length-p.length*0.1)/2),
+                                    draw.rectangle(2*p.taper_width1, # taper 2
+                                    p.length*0.6,
+                                    0,
+                                    (-p.length-p.length*0.4)/2), # extension taper 1
+                                    # draw.rectangle(extension_taper_width1,
+                                    # p.extension*0.9,
+                                    # 0,
+                                    # (p.extension+0.1*p.extension)/2),
+                                    # draw.rectangle(2*extension_taper_width1, # extension taper 2
+                                    # p.extension*0.6,
+                                    # 0,
+                                    # (p.extension+0.4*p.extension)/2)
+                                    ])
+
+
+        pin1_coords = draw.LineString([(0,0), (0,-p.length+p.pin1_offset)])
+
+        # draw the first electrode as a rectangle and add the tapering rectangles
+        electrode2 = ShapelyEx.fuse_polygons_threshold([draw.rectangle(width2,
+                                    length2 + extension2,
+                                    0,
+                                    -(length2 - extension2)/2),
+                                    # draw.rectangle(p.taper_width2,
+                                    # length2*0.9,
+                                    # 0,
+                                    # (-p.length2-p.length2*0.1)/2),
+                                    # draw.rectangle(2*p.taper_width2,
+                                    # length2*0.6,
+                                    # 0,
+                                    # (-p.length2-p.length2*0.4)/2),
+                                    # draw.rectangle(extension_taper_width2,
+                                    # p.extension2*0.9,
+                                    # 0,
+                                    # (p.extension2+0.1*p.extension2)/2),
+                                    # draw.rectangle(2*extension_taper_width2,
+                                    # p.extension2*0.6,
+                                    # 0,
+                                    # (p.extension2+0.4*p.extension2)/2)
+                                    ])
+
+
+        # draw the second electrode as a rectangle
+        electrode2 = draw.rotate_position(electrode2, 90, (0,0), (0,0))
+        pin21_coords = draw.LineString([(0,0), (0,-p.length2+p.pin2_offset)])
+        pin2_coords = draw.rotate_position(pin21_coords, 90, (0,0), (0,0))
+
+
+        if p.four_legs:
+            # draw junction area
+            junction = draw.rectangle(p.jj_width,
+                                    jj_width2,
+                                    0,
+                                    0)
+        else: 
+            junction = draw.rectangle(p.jj_width,
+                        jj_width2,)
+                        # (p.jj_width/2-p.width/2),
+                        # -(jj_width2/2-p.width2/2))
+        # extension pins
+        extension_pin11 = draw.LineString([(0,0), (0,-p.extension)])
+        extension_pin1 = draw.rotate_position(extension_pin11, 180, (0,0), (0,0))
+        extension_pin21 = draw.LineString([(0,0), (0,-p.extension2)])
+        extension_pin2 = draw.rotate_position(extension_pin21, -90, (0,0), (0,0))
+
+        electrode1 = draw.rotate_position(electrode1, p.orientation, start_point)
+        electrode2 = draw.rotate_position(electrode2, p.orientation, start_point)
+
+        junction = draw.rotate_position(junction, p.orientation, start_point)
+        # final_design = draw.rotate(final_design, p.orientation)
+        pin1_coords = draw.rotate_position(pin1_coords, p.orientation, start_point)
+        pin2_coords = draw.rotate_position(pin2_coords, p.orientation, start_point)
+
+        extension_pin1 = draw.rotate_position(extension_pin1, p.orientation, start_point)
+        extension_pin2 = draw.rotate_position(extension_pin2, p.orientation, start_point)
+
+
+
+        geom = {'electrode1': electrode1,
+                'electrode2': electrode2,
+                'junction': junction,}
+        self.add_qgeometry('poly', geom, layer=p.layer, subtract=False)
+        self.add_pin('pin1', pin1_coords.coords, width=p.width, input_as_norm=True)
+        self.add_pin('pin2', pin2_coords.coords, width=p.width, input_as_norm=True)
+        self.add_pin('extension_pin1', extension_pin1.coords, width=p.width, input_as_norm=True)
+        self.add_pin('extension_pin2', extension_pin2.coords, width=p.width, input_as_norm=True)
+=======
 class JunctionDolanAsymmetric(QComponent):
     """Create a Dolan Bridge Josephson Junction
 
@@ -690,7 +871,3 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
-
-
-
-
