@@ -576,6 +576,8 @@ class QUtilities:
             assert x in design.components, f"Component \'{x}\' does not exist!"
             ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
+        if kwargs.get('metals_only', False):
+            filt = gsdf[gsdf["subtract"] == False]
 
         if filt.shape[0] == 0:
             return

@@ -321,7 +321,8 @@ class PALACE_Model:
             'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
             'max_size': kwargs.get('max_size', self.user_options['mesh_max']),
             'taper_dist_min': kwargs.get('taper_dist_min', self.user_options['taper_dist_min']),
-            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
+            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max']),
+            'metals_only': kwargs.get('metals_only', False)
         })
 
 class PALACE_Model_RF_Base(PALACE_Model):

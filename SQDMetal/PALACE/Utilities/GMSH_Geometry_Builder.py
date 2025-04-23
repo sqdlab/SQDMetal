@@ -214,8 +214,8 @@ class GMSH_Geometry_Builder:
                 fine_mesh_elems.append(cur_mesh_attrb)
             elif cur_fine_mesh['type'] == 'comp_bounds':
                 cur_mesh_attrb = {}
-                #Get it in mm...
-                cur_mesh_attrb['region'] = self._create_gmsh_geometry_from_shapely_polygons(QUtilities.get_perimetric_polygons(self.design, cur_fine_mesh['list_comp_names'], fuse_threshold=fuse_threshold, resolution=self.fillet_resolution, unit_conv=1))
+                comp_outlines = QUtilities.get_perimetric_polygons(self.design, cur_fine_mesh['list_comp_names'], fuse_threshold=fuse_threshold, resolution=self.fillet_resolution, unit_conv=1, metals_only=cur_fine_mesh['metals_only'])    #Get it in mm...
+                cur_mesh_attrb['region'] = self._create_gmsh_geometry_from_shapely_polygons(comp_outlines)
                 cur_mesh_attrb['mesh_min'] = cur_fine_mesh['min_size'] * 1e3
                 cur_mesh_attrb['mesh_max'] = cur_fine_mesh['max_size'] * 1e3
                 cur_mesh_attrb['taper_dist_min'] = cur_fine_mesh['taper_dist_min'] * 1e3
@@ -329,7 +329,8 @@ class GMSH_Geometry_Builder:
                 gmsh_surface, gmsh_surface_map = gmsh.model.occ.cut([(2,gmsh_exterior)], 
                                                                     interiors,
                                                                     removeObject=True, removeTool=True)
-                polygons_list.append((2,gmsh_surface[0][1]))
+                if len(gmsh_surface) > 0:
+                    polygons_list.append((2,gmsh_surface[0][1]))
             else:
                 polygons_list.append((2,gmsh_exterior))
         

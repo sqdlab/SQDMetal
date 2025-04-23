@@ -523,7 +523,7 @@ class JunctionManhattan(QComponent):
         self.add_pin('pin2', pin2_coords.coords, width=p.width, input_as_norm=True)
         self.add_pin('extension_pin1', extension_pin1.coords, width=p.width, input_as_norm=True)
         self.add_pin('extension_pin2', extension_pin2.coords, width=p.width, input_as_norm=True)
-=======
+
 class JunctionDolanAsymmetric(QComponent):
     """Create a Dolan Bridge Josephson Junction
 
