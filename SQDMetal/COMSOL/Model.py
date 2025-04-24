@@ -66,6 +66,8 @@ class COMSOL_Model:
         self.pad_y = kwargs.get('pad_y', 0.5e-3)
         self.pad_z = kwargs.get('pad_z', 0.5e-3)
 
+        self._include_loss_tangents = kwargs.get('include_loss_tangents', False)
+
         self.bottom_grounded = kwargs.get('bottom_grounded', False)
 
         self._conds = []
@@ -597,7 +599,7 @@ class COMSOL_Model:
 
 
 
-    def _create_material(self, name, rel_permit, rel_permea, conductivity):
+    def _create_material(self, name, rel_permit, rel_permea, conductivity, loss_tangent=0):
         '''
         Creates a polygon on workplane wp1.
         Inputs:
@@ -609,7 +611,10 @@ class COMSOL_Model:
                                 naming the selection.
         '''
         self._model.java.component("comp1").material().create(name, "Common")
-        self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", jtypes.JDouble(rel_permit))
+        if loss_tangent > 0:
+            self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", f"{rel_permit}*(1+{loss_tangent}j)")
+        else:
+            self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", jtypes.JDouble(rel_permit))
         self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermeability", jtypes.JDouble(rel_permea))
         self._model.java.component("comp1").material(name).propertyGroup("def").set("electricconductivity", jtypes.JDouble(conductivity))
 
@@ -662,12 +667,14 @@ class COMSOL_Model:
         #Create materials
         if isinstance(substrate_material, Material):
             Er = substrate_material.permittivity
+            loss_tangent = substrate_material.loss_tangent
         else:
-            Er = substrate_permittivity
+            Er = np.real(substrate_permittivity)
+            loss_tangent = -np.imag(substrate_permittivity)/Er
         #
         self._create_material('Vacuum', 1.0, 1.0, 0.0)
         self._model.java.component("comp1").material('Vacuum').selection().all()
-        self._create_material('Substrate', Er, 1.0, 0.0)     #Don't use 4.35e-4 for conductivity as it can cause issues with convergence in inductance simulations...
+        self._create_material('Substrate', Er, 1.0, 0.0, loss_tangent)     #Don't use 4.35e-4 for conductivity as it can cause issues with convergence in inductance simulations...
         self._model.java.component("comp1").material('Substrate').selection().set(self._model.java.selection('geom1_blk_chip_dom').entities(3))
         #Set the conductive boundaries to Aluminium (ignored by s-parameter and capacitance-matrix simulations due to PEC, but inductor simulations require conductivity)
         # cond_bounds = [self._get_selection_boundaries(x)[0] for x in self._conds]

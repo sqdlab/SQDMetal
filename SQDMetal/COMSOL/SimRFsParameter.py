@@ -13,7 +13,7 @@ import scipy.optimize
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
-    def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
+    def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01, include_loss_tangents=False):
         self.model = model
         self.jc = model._get_java_comp()
         self.dset_name = ""
@@ -31,6 +31,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.adaptive = adaptive
         self.modal_min_freq_num_eigs = modal_min_freq_num_eigs
         self.relative_tolerance = relative_tolerance
+        self._include_loss_tangents = include_loss_tangents
 
     def _prepare_simulation(self):
         self._study = self.model._add_study("stdRFsparams")
@@ -136,6 +137,10 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             elif cur_lelem[2] == 'LCparallel':
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+
+
+        if self.model._include_loss_tangents:
+            self.jc.component("comp1").physics("emw").feature("wee1").set("DisplacementFieldModel", "LossTangent")
 
         #Note that PEC1 is the default exterior boundary condition
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
