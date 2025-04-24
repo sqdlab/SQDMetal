@@ -131,7 +131,11 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             elem_bnds = self.model._get_selection_boundaries(cur_lelem[0])
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).selection().set(jtypes.JArray(jtypes.JInt)(elem_bnds))
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem[2])
-            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
+            if cur_lelem[2] == 'Inductor':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
+            elif cur_lelem[2] == 'LCparallel':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
 
         #Note that PEC1 is the default exterior boundary condition
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
@@ -259,6 +263,50 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array([pos1+v_perp, pos1-v_perp, pos1-v_perp+v_parl, pos1+v_perp+v_parl]))
 
         self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), value, 'Inductor'])
+
+    def create_port_JosephsonJunction(self, qObjName, **kwargs):
+        junction_index = kwargs.get('junction_index', 0)
+
+        comp_id = self.model.design.components[qObjName].id
+        gsdf = self.model.design.qgeometry.tables['junction']
+        gsdf = gsdf.loc[gsdf["component"] == comp_id]
+        ls = gsdf['geometry'].iloc[junction_index]
+        assert isinstance(ls, shapely.geometry.linestring.LineString), "The junction must be defined as a LineString object. Check the code for the part to verify this..."
+
+        coords = [x for x in ls.coords]
+        assert len(coords) == 2, "Currently only junctions with two points (i.e. a rectangle) are supported."
+        rect_width = gsdf['width'].iloc[junction_index]
+
+        if 'E_J_Hertz' in kwargs:
+            elem_charge = 1.60218e-19
+            hbar = 1.05457e-34
+            h = hbar*2*np.pi
+            phi0 = hbar/(2*elem_charge)
+            E_J = kwargs.pop('E_J_Hertz') * h
+            L_ind = phi0**2 / E_J
+        elif 'L_J' in kwargs:
+            L_ind = kwargs.pop('L_J')
+        else:
+            assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
+
+        C_J = kwargs.get('C_J', 0)
+
+        port_name = "rf_port_" + str(len(self._ports))
+
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = np.array(coords[0]) * unit_conv
+        pos2 = np.array(coords[1]) * unit_conv
+        v_parl = pos2-pos1
+        v_parl /= np.linalg.norm(v_parl)
+
+        portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width * unit_conv, False)
+        portCoords = [x for x in portCoords]
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array(portCoords))
+        if C_J > 0:
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])    #TODO: How does the capacitance add in here?
+        else:
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])    #TODO: How does the capacitance add in here?
 
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
