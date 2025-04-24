@@ -612,7 +612,7 @@ class COMSOL_Model:
         '''
         self._model.java.component("comp1").material().create(name, "Common")
         if loss_tangent > 0:
-            self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", f"{rel_permit}*(1+{loss_tangent}i)")
+            self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", f"{rel_permit}*(1-{loss_tangent}i)")
         else:
             self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermittivity", jtypes.JDouble(rel_permit))
         self._model.java.component("comp1").material(name).propertyGroup("def").set("relpermeability", jtypes.JDouble(rel_permea))
