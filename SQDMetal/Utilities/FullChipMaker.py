@@ -1,7 +1,7 @@
 from qiskit_metal import designs
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.Materials import Material
-from SQDMetal.Utilities.MakeGDS import MakeGDS
+from SQDMetal.Utilities.MakeGDS_gdstk import MakeGDS
 from SQDMetal.Utilities.CpwParams import CpwParams
 from SQDMetal.Utilities.QUtilities import QUtilities
 import numpy as np
@@ -401,27 +401,26 @@ class MultiDieChip:
                     text_label=text_label, size=text_size, position=text_position
                 )
 
-        # only export if a filename is passed
-        if not single_circuit_for_simulation:
-            # setup export path based on user inputs
-            if export_path == "":
-                if date_stamp_on_export == True:
-                    full_export_path = os.path.join(f"{export_filename}_{t}.gds")
-                else:
-                    full_export_path = os.path.join(f"{export_filename}.gds")
+    
+        # setup export path based on user inputs
+        if export_path == "":
+            if date_stamp_on_export == True:
+                full_export_path = os.path.join(f"{export_filename}_{t}.gds")
             else:
-                if date_stamp_on_export == True:
-                    full_export_path = os.path.join(
-                        export_path, f"{export_filename}_{t}.gds"
-                    )
-                else:
-                    full_export_path = os.path.join(
-                        export_path, f"{export_filename}.gds"
-                    )
-            # do export
-            gds_export.export(full_export_path)
-            print(f"Exported at {os.path.abspath(full_export_path)}")
-            print(f"")
+                full_export_path = os.path.join(f"{export_filename}.gds")
+        else:
+            if date_stamp_on_export == True:
+                full_export_path = os.path.join(
+                    export_path, f"{export_filename}_{t}.gds"
+                )
+            else:
+                full_export_path = os.path.join(
+                    export_path, f"{export_filename}.gds"
+                )
+        # do export
+        gds_export.export(full_export_path)
+        print(f"Exported at {os.path.abspath(full_export_path)}")
+        print(f"")
 
         # assign self.design
         self.design = design
