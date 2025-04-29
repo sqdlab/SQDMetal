@@ -23,11 +23,11 @@ class Material:
             if name == "silicon" or name == "siliconcold" or name == "siliconcryo":
                 self.permittivity = 11.45
                 self.permeability = 1
-                self.loss_tangent = 1.2e-6
+                self.loss_tangent = 2.7e-6 #PHYS. REV. APPLIED 18, 034013 (2022) Measurement of the Low-Temperature Loss Tangent of High-Resistivity Silicon Using a High-Q Superconducting Resonator
             elif name == "siliconwarm":
                 self.permittivity = 11.7
                 self.permeability = 1
-                self.loss_tangent = 1.2e-6  #TODO: Change this to actual value!
+                self.loss_tangent = 2.7e-6  #TODO: Change this to actual value!
             ################################
             #
             #SAPPHIRE

@@ -506,7 +506,8 @@ class QUtilities:
                     x for x in range(len(metal_sel_ids), len(metal_sel_ids) + num_polys)
                 ]
 
-        metal_polys_all = [x.simplify(thresh) for x in metal_polys_all]
+        if thresh > 0:
+            metal_polys_all = [x.simplify(thresh/unit_conv) for x in metal_polys_all]
         return metal_polys_all, metal_sel_ids
 
     @staticmethod
@@ -570,8 +571,13 @@ class QUtilities:
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
-        ids = [design.components[x].id for x in comp_names]
+        ids = []
+        for x in comp_names:
+            assert x in design.components, f"Component \'{x}\' does not exist!"
+            ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
+        if kwargs.get('metals_only', False):
+            filt = gsdf[gsdf["subtract"] == False]
 
         if filt.shape[0] == 0:
             return

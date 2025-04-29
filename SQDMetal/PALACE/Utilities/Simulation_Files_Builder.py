@@ -50,7 +50,7 @@ class Simulation_Files_Builder:
         # Create the directory
         if not os.path.exists(path):
             os.makedirs(path)
-            print("Directory '% s' created at '% s'." % (self.name, path))
+            # print("Directory '% s' created at '% s'." % (self.name, path))
         else:
             Exception('Path already exists. Create a new path.')
 

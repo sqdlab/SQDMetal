@@ -243,6 +243,14 @@ class PVD_Shadows:
                     profiles[m] = profiles[m].difference(intersec)
                     profiles[n] = profiles[n].difference(intersec)
             return profiles
+        elif mode == 'separate_plot_intersections':
+            assert 'layer_trim_length' in kwargs, "Must supply layer_trim_length if using mode: separate_delete_below."
+            trim_len = kwargs.get('layer_trim_length')
+            for m in range(0,len(profiles)):
+                for n in range(m+1,len(profiles)):
+                    intersec = shapely.intersection(profiles[m], profiles[n]).buffer(trim_len, join_style=2, cap_style=3)
+
+            return [intersec]
 
     def _get_poly_shadow(self, cur_poly, dict_evap_params, list_evap_metals):
         leading_dist = dict_evap_params['leading_dist']
@@ -480,6 +488,66 @@ class PVD_Shadows:
             elif intersec_inds[0] == 0 and intersec_inds[1] == 3:
                 intersecs.append((xmin, ymax))
         return Polygon(np.array(intersecs))
+
+    def get_junction_area(self,qObj_name=None, layer_id=None, **kwargs):
+        '''prints and returns the expected junction area in um^2
+
+        The area is equal to the intersection area between the evaporations, i.e. the junction overlap.
+        Must provide either qObj_name (find out by design.components) or layer_id
+
+        IMPORTANT: make sure there are no other areas in the same object or layer that give a shadow
+        (e.g. when using tapered electrodes), otherwise these will be included in the area.
+
+        Does not include extra area from overlap between sides of first and second layer
+        (relevant for small junctions)
+
+        To do: add layer thickness contributions
+        Added by: SZ, 11/9/2024
+        '''
+        if qObj_name is not None:
+
+            comp_id = self.design.components[qObj_name].id
+
+            qmpl = QiskitShapelyRenderer(None, self.design, None)
+            gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
+
+            filt = gsdf.loc[(gsdf['component'] == comp_id) & (gsdf['subtract'] == False)]
+            if filt.shape[0] == 0:
+                return
+            metal_polys = shapely.unary_union(filt['geometry'])
+            unit_conv, unit_conv_name = self.get_units()
+            metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+
+            layer_id = int(self.design.components[qObj_name].options.layer)
+            if layer_id in self.evap_profiles:
+
+                intersec = self.get_all_shadows(metal_polys, layer_id, 'separate_plot_intersections', **kwargs)
+            else:
+                print('Component does not have evap profile')
+            print(f'Expected junction area for {qObj_name}: {intersec[0].area*1e12} um^2')
+            return intersec[0].area*1e12
+
+        elif layer_id is not None:
+
+            qmpl = QiskitShapelyRenderer(None, self.design, None)
+            gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
+
+            filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
+            if filt.shape[0] == 0:
+                return
+            metal_polys = shapely.unary_union(filt['geometry'])
+            unit_conv, unit_conv_name = self.get_units()
+            metal_polys = shapely.affinity.scale(metal_polys, xfact=unit_conv, yfact=unit_conv, origin=(0,0))
+
+            if layer_id in self.evap_profiles:
+                intersec = self.get_all_shadows(metal_polys, layer_id, 'separate_plot_intersections', **kwargs)
+            else:
+                print('Component does not have evap profile')
+            print(f'Expected junction area for layer {layer_id}: {intersec[0].area*1e12} um^2')
+            return intersec[0].area*1e12
+
+        else:
+            print("Must supply layer_id or component_id!")
 
     def _add_metallic_layer(self, cur_metal_layers, new_metal_layer, new_metal_layer_height):
         #cur_metal_layers is a list of tuples where the first element is the height and the second element is the polygon...

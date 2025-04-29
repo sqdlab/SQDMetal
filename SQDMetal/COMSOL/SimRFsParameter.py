@@ -13,7 +13,7 @@ import scipy.optimize
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
-    def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01):
+    def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01, include_loss_tangents=False):
         self.model = model
         self.jc = model._get_java_comp()
         self.dset_name = ""
@@ -31,6 +31,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.adaptive = adaptive
         self.modal_min_freq_num_eigs = modal_min_freq_num_eigs
         self.relative_tolerance = relative_tolerance
+        self._include_loss_tangents = include_loss_tangents
 
     def _prepare_simulation(self):
         self._study = self.model._add_study("stdRFsparams")
@@ -131,7 +132,15 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             elem_bnds = self.model._get_selection_boundaries(cur_lelem[0])
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).selection().set(jtypes.JArray(jtypes.JInt)(elem_bnds))
             self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set("LumpedElementType", cur_lelem[2])
-            self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
+            if cur_lelem[2] == 'Inductor':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1]))
+            elif cur_lelem[2] == 'LCparallel':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+
+
+        if self.model._include_loss_tangents:
+            self.jc.component("comp1").physics("emw").feature("wee1").set("DisplacementFieldModel", "LossTangent")
 
         #Note that PEC1 is the default exterior boundary condition
         self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
@@ -260,6 +269,50 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), value, 'Inductor'])
 
+    def create_port_JosephsonJunction(self, qObjName, **kwargs):
+        junction_index = kwargs.get('junction_index', 0)
+
+        comp_id = self.model.design.components[qObjName].id
+        gsdf = self.model.design.qgeometry.tables['junction']
+        gsdf = gsdf.loc[gsdf["component"] == comp_id]
+        ls = gsdf['geometry'].iloc[junction_index]
+        assert isinstance(ls, shapely.geometry.linestring.LineString), "The junction must be defined as a LineString object. Check the code for the part to verify this..."
+
+        coords = [x for x in ls.coords]
+        assert len(coords) == 2, "Currently only junctions with two points (i.e. a rectangle) are supported."
+        rect_width = gsdf['width'].iloc[junction_index]
+
+        if 'E_J_Hertz' in kwargs:
+            elem_charge = 1.60218e-19
+            hbar = 1.05457e-34
+            h = hbar*2*np.pi
+            phi0 = hbar/(2*elem_charge)
+            E_J = kwargs.pop('E_J_Hertz') * h
+            L_ind = phi0**2 / E_J
+        elif 'L_J' in kwargs:
+            L_ind = kwargs.pop('L_J')
+        else:
+            assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
+
+        C_J = kwargs.get('C_J', 0)
+
+        port_name = "rf_port_" + str(len(self._ports))
+
+        unit_conv = QUtilities.get_units(self.model.design)
+        pos1 = np.array(coords[0]) * unit_conv
+        pos2 = np.array(coords[1]) * unit_conv
+        v_parl = pos2-pos1
+        v_parl /= np.linalg.norm(v_parl)
+
+        portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width * unit_conv, False)
+        portCoords = [x for x in portCoords]
+
+        sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array(portCoords))
+        if C_J > 0:
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])    #TODO: How does the capacitance add in here?
+        else:
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])    #TODO: How does the capacitance add in here?
+
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
         Set the frequency range to sweep in the s-parameter and E-field simulation. THE SIMULATION MUST BE BUILT BY THIS POINT (i.e. running build_geom_mater_elec_mesh).
@@ -340,6 +393,30 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.jc.result().numerical().remove("ev1")
 
         return np.vstack([freqs] + s1Remains)
+
+    def run_only_eigenfrequencies(self, return_dofs=False):
+        #TODO: Check it is in eigenmode type and find a better solution than this... This basically evaluates a table and then extracts the first column
+        #which happens to hold the simulated eigenfrequencies...
+        self.jc.sol(self._soln).runFromTo("st1", "su1")
+        self.jc.result().numerical().create("gev1", "EvalGlobal")
+        self.jc.result().numerical("gev1").set("data", self.dset_name)
+        self.jc.result().numerical("gev1").set("expr", jtypes.JArray(jtypes.JString)(["numberofdofs"]))
+
+        self.jc.result().table().create("tbl1", "Table")
+        self.jc.result().numerical("gev1").set("table", "tbl1")
+        self.jc.result().numerical("gev1").computeResult()
+        self.jc.result().numerical("gev1").setResult();
+
+        freqs = [1e9*np.complex128(str(y).replace('i','j')) for y in [x[0] for x in self.jc.result().table("tbl1").getTableData(True)]]
+        dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])
+
+        self.jc.result().table().remove("tbl1")
+        self.jc.result().numerical().remove("gev1")
+
+        if return_dofs:
+            return freqs, dofs
+        else:
+            return freqs
 
     def _cost_func(self, freq, param_index=1, find_max=False):
         self.set_freq_range(freq[0], freq[0],1)

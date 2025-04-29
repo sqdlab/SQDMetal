@@ -28,7 +28,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "comsol_meshing": "Extremely fine",
                  "HPC_Parameters_JSON": "",
                  "fuse_threshold": 1e-9,
-                 "gmsh_verbosity": 1
+                 "gmsh_verbosity": 1,
+                 "threshold": 1e-9
                 }
 
     #constructor
