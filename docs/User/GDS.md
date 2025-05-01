@@ -43,9 +43,10 @@ leGDS = MakeGDS(design, curve_resolution=60, precision=1e-12, smooth_radius=0)  
 
 #Set the rounding radius to be non-zero now... Now all subsequent layers will have a rounding of 200nm
 leGDS.smooth_radius = 200e-9
-bottom_layer = gdsexp.add_boolean_layer(0,1,'or')
-top_layer = gdsexp.add_boolean_layer(2,2,'or')
+bottom_layer = leGDS.add_boolean_layer(0,1,'or',output_layer=20)
+top_layer = leGDS.add_boolean_layer(2,2,'or', output_layer=21)
 
+#Export with boolean layers on 20 and 21
 leGDS.export('rounded.gds')
 ```
 
@@ -86,12 +87,12 @@ f = ManipulateGDS(
                   origin=(0, 4000)
                   )
 
-# make a 16 x 16 array of the design from `import_design.gds` with 500 um spacing in the array. Here we only import the cells 'TOP_main_2' and 'TOP_main_1' from `import_design.gds`. The array will export to the path given in the ManipulateGDS() initialisation above.
+# make a 16 x 16 array of the design from `import_design.gds` with 500 um spacing in the array. Here we only import the cell 'TOP' from `import_design.gds`. The array will export a single flattened cell 'Array' to the path given in the ManipulateGDS() initialisation above.
 m = f.make_array_onChip(columns=16,
                         rows=16,
                         export=True, 
                         spacing=("500um", "500um"),
-                        use_cells=['TOP_main_2', 'TOP_main_1']
+                        use_cells=['TOP']
                         )
 
 ```

@@ -51,16 +51,10 @@ class MakeGDS:
         return gds_metal
 
     def _round_corners(self, gds_metal, output_layer):
-        #Perform the usual expand and contract to join fractures... But this fails due to some gdsPy bugs?
-        # new_metal = gdspy.boolean(gdspy.offset(new_metal, self.threshold/self.gds_units, max_points=0, join_first=True), None, "or", max_points=0)
-        # new_metal = gdspy.boolean(gdspy.offset(new_metal, -self.threshold/self.gds_units, max_points=0, join_first=True), None, "or", max_points=0)
-        # new_metal = new_metal.fillet(self.smooth_radius/self.gds_units, max_points=0)
-
-        #So use Shapely instead...
-        polyFuse = ShapelyEx.fuse_polygons_threshold([shapely.Polygon(x) for x in gds_metal.polygons], self.threshold/self.gds_units)
         rndDist = self.smooth_radius/self.gds_units
-        polyFuse = polyFuse.buffer(rndDist*0.5, join_style=1, quad_segs=self.curve_resolution).buffer(-rndDist, join_style=1).buffer(rndDist*0.5, join_style=1, quad_segs=self.curve_resolution)
-        new_metal = self._shapely_to_gds(polyFuse, output_layer)
+        for p in gds_metal:
+            p.fillet(rndDist, tolerance=1e-3)
+        new_metal = gdstk.boolean(gds_metal, gds_metal, "or", layer=int(output_layer))
         return new_metal
 
     def refresh(self, full_refresh=False):
@@ -101,7 +95,7 @@ class MakeGDS:
         self.rect = rect
 
         # Now rebuild library and cell, removing only layers that are about to be recreated
-        self.lib = gdstk.Library('GDS Export', precision=self.precision)
+        self.lib = gdstk.Library('GDS Export')
         self.cell = self.lib.new_cell('Main')
         self.lib.replace(self.cell)  # over-write existing cell if it exists
         # Rebuild _layer_metals with only standard layers, preserve user layers below
@@ -192,14 +186,15 @@ class MakeGDS:
         if merged:
             self.cell.add(*merged)
 
-    # def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None, max_points_out=199):
     def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
         assert operation in ["and", "or", "xor", "not"], "Operation must be: \"and\", \"or\", \"xor\", \"not\""
         if output_layer == None:
             output_layer = max([x for x in self._layer_metals]) + 1
-        if not self._layer_metals.get(layer1_ind) or not self._layer_metals.get(layer2_ind):
-            raise ValueError(f"One of the input layers ({layer1_ind}, {layer2_ind}) has no polygons.")
-        new_metal = gdstk.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=int(output_layer), precision=self.precision)
+        try:
+            new_metal = gdstk.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=int(output_layer), precision=self.precision)
+        except KeyError:
+            print(f"Warning: Boolean operation ({layer1_ind}, {layer2_ind}) failed: one of the input layers ({layer1_ind}, {layer2_ind}) has no polygons.")
+            return output_layer
         if self.smooth_radius > 0:
             new_metal = self._round_corners(new_metal, output_layer)
         new_metal = gdstk.boolean(new_metal, new_metal, "or", layer=int(output_layer), precision=self.precision)
