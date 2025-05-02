@@ -124,11 +124,11 @@ class LabelText(QComponent):
         polys = draw.scale(polys, p.font_size/300, p.font_size/300, origin=(0,0))
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        lePoly = polys
+        lePoly = polys[0]   #Remove [0] if there are multiple polygons later...
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
-                           dict(text=lePoly),
+                           dict(textLabel=lePoly),
                            layer=p.layer,
                            subtract=p.is_gap)
 
