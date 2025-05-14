@@ -103,15 +103,17 @@ class MarkerDicingCross(QComponent):
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         [cross, gap] = polys
 
-        # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(cross=cross),
-                           layer=p.layer)
-
         #subtracts out ground plane on the layer it's on
         self.add_qgeometry('poly',
                            dict(gap=gap),
                            subtract=True,
+                           layer=p.layer)
+        
+        # Adds the object to the qgeometry table
+        # TODO: this block can cause deletion of other qgeometry components?? 
+        self.add_qgeometry('poly',
+                           dict(cross=cross),
+                           # subtract=True,
                            layer=p.layer)
 
 

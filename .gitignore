@@ -160,3 +160,5 @@ cython_debug/
 #.idea/
 
 outputFiles/
+/docs/User/WorkedExamples/GMSH_eigen_test
+docs/User/WorkedExamples/temp.sh

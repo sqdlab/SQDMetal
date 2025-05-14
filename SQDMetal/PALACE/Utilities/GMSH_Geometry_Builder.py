@@ -80,12 +80,6 @@ class GMSH_Geometry_Builder:
 
         fragment_list = []
 
-
-        # #create JJ's as lumped ports, if they exist
-        # junctions = []
-        # if not self.design.qgeometry.tables['junction'].empty:
-        #     junctions, jj_inductance = self._create_JJ_lumped_ports()
-        
         # #create junction list for boolean operations in gmsh
         # junction_list = [(2,x) for x in junctions]
 
@@ -460,57 +454,3 @@ class GMSH_Geometry_Builder:
         
         assert False, f"AWS Palace requires RF Lumped Ports to be aligned with the x/y axes. Here the port is pointing: {vec_perp}."
 
-
-    def _create_JJ_lumped_ports(self):
-
-        #get the dataframe with the JJ parameters
-        junctions_df = self.design.qgeometry.tables['junction']
-
-        #get number of rows/columns in data frame
-        rows, cols = junctions_df.shape
-
-        junctions = []
-        jj_inductance = []
-        for junction_no in range(rows):
-            
-            inductance = junctions_df.loc[junction_no].hfss_inductance
-            inductance = float(inductance[:-2]) * 1e-9
-
-            #coords has two points which represent the JJ as a linestring
-            jj_coords = junctions_df.loc[junction_no].geometry.coords[:]
-            jj_width = junctions_df.loc[junction_no].width
-
-            #find left-most coord if JJ orientation is horizontal
-            if jj_coords[0][1] == jj_coords[1][1]:
-                if jj_coords[0][0] < jj_coords[1][0]:
-                    left_most_coord = jj_coords[0]
-                    right_most_coord = jj_coords[1]
-                else:
-                    left_most_coord = jj_coords[1]
-                    right_most_coord = jj_coords[0]
-
-                left_x = left_most_coord[0]
-                right_x = right_most_coord[0]
-                left_y = left_most_coord[1] - jj_width/2
-                delta_x = right_x - left_x
-            
-            else:
-                if jj_coords[0][1] < jj_coords[1][1]:
-                    bottom_most_coord = jj_coords[0]
-                    up_most_coord = jj_coords[1]
-                else:
-                    bottom_most_coord = jj_coords[1]
-                    up_most_coord = jj_coords[0]
-                
-                left_x = bottom_most_coord[0] - jj_width/2
-                left_y = bottom_most_coord[1]
-                delta_y = up_most_coord[1] - bottom_most_coord[1]
-
-            junction = gmsh.model.occ.addRectangle(left_x, left_y, 0, jj_width, delta_y)
-            gmsh.model.occ.synchronize()
-
-            junctions.append(junction)
-            jj_inductance.append(inductance)
-
-        return junctions, jj_inductance
-    

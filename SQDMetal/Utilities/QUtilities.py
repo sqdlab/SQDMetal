@@ -895,8 +895,6 @@ class QUtilities:
                 f"No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input."
             )
 
-        if print_checks: print(f'\nNOW PRINTING: Die {die_number}\n')
-
         # calculate launchpad scaling
         lp_scale_factor = QUtilities.parse_value_length(
             dimension
@@ -950,17 +948,17 @@ class QUtilities:
         )
 
         # place launchpads
-        lp_L = LaunchpadWirebond(design, f"lp_L_die{die_number}", options=lp_L_ops)
-        lp_R = LaunchpadWirebond(design, f"lp_R_die{die_number}", options=lp_R_ops)
+        lp_L = LaunchpadWirebond(design, f"lp_L_die{die_number-1}", options=lp_L_ops)
+        lp_R = LaunchpadWirebond(design, f"lp_R_die{die_number-1}", options=lp_R_ops)
 
         # print statement after placing
         if print_checks:
             if die_number is not None:
                 print(
-                    f"Launchpads placed on die {die_number} at \t({die_origin[0] * 1e6:.0f}, {die_origin[1] * 1e6:.0f})\t[µm] \tnames: ({lp_L.name}, {lp_R.name})"
+                    f" Launchpads\n  name : ({lp_L.name}, {lp_R.name})"
                 )
             else:
-                print(f"Launchpads placed: ({lp_L.name}, {lp_R.name})")
+                print(f" Launchpads\n  name : ({lp_L.name}, {lp_R.name})")
 
         launchpad_objects = (lp_L, lp_R)
 
@@ -1026,6 +1024,9 @@ class QUtilities:
             - inductances - list containing calculated inductances of resonators
         """
 
+        # Estimate of resonator width along x
+        res_width_x = 500e-6
+
         # check inputs with assertions
         assert num_resonators == len(frequencies)
         assert isinstance(launchpad_extent, (float, int))
@@ -1052,17 +1053,17 @@ class QUtilities:
         # check if width/gap and/or fillet is a list (for scaled)   
         if (isinstance(width, list) or isinstance(gap, list)):
             scaled_geometry = True 
-            print(f"Options for scaled gap/width geometry detected.") if print_statements else 0 
+            print(f"Options for scaled gap/width geometry detected.\n") if print_statements else 0 
         else:
             scaled_geometry = False
         if isinstance(fillet, list):
             scaled_fillet = True 
-            print(f"Options for scaled fillet size detected.") if print_statements else 0 
+            print(f"Options for scaled fillet size detected.\n") if print_statements else 0 
         else:
             scaled_fillet = False
         if isinstance(radius, list):
             scaled_radius = True 
-            print(f"Options for scaled curve radius detected.") if print_statements else 0
+            print(f"Options for scaled curve radius detected.\n") if print_statements else 0
         else:
             scaled_radius = False
 
@@ -1071,13 +1072,11 @@ class QUtilities:
             QUtilities.parse_value_length(die_dimension[0])
             - (2 * launchpad_extent)
             - (2 * QUtilities.parse_value_length(launchpad_to_res))
+            - (1.5 * res_width_x)
         )
-
-        # calculate width per resonator (according to num_resonators)
-        x_increment_res = (tl_extent / num_resonators) + QUtilities.parse_value_length(min_res_gap)
-
+        
         # initialise lists
-        x_positions, resonator_names, resonator_vals = [], [], []
+        resonator_names, resonator_vals = [], []
         if LC_calculations: capacitances, inductances = [], []
 
         for i in range(num_resonators):
@@ -1097,6 +1096,21 @@ class QUtilities:
         gap_cur = gap
         radius_cur = radius
 
+        # string values for gap/width (unscaled)
+        width_cur = width
+        gap_cur = gap
+        radius_cur = radius
+
+        # Start and end coordinates of the usable transmission line
+        tl_start = x0 - tl_extent / 2
+        tl_end = x0 + tl_extent / 2
+
+        # create resonator positions
+        resonator_positions = QUtilities.create_even_spacing_along_line_1d(tl_start, tl_end, num_resonators)
+
+        if num_resonators > 1:
+            assert (resonator_positions[1] - resonator_positions[0]) > res_width_x*1.5, f"Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
+
         # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
@@ -1108,9 +1122,7 @@ class QUtilities:
                 gap_cur = gap[i]
                 radius_cur = radius[i]
             
-            # calculate x_position and add to list
-            x_pos_cur = x0 - (tl_extent / 2) + ((i + 0.25) * x_increment_res) + QUtilities.parse_value_length(res_shift_x)
-            x_positions.append(x_pos_cur)
+            x_pos_cur = resonator_positions[i]
 
             # calculate capacitance and inductance if requested
             if LC_calculations:
@@ -1148,9 +1160,10 @@ class QUtilities:
 
             # printouts
             if print_statements: 
-                print(f'Resonator {i+1}: {res}')
-                print(f'\tl: {l_quarterwave_mm}')
-                print(f'\tf: {frequencies[i] * 1e-9:.2f}GHz')
+                print(f' Resonator {i+1}:')
+                print(f'  name : {res}')
+                print(f'  l    : {l_quarterwave_mm}')
+                print(f'  f    : {frequencies[i] * 1e-9:.2f}GHz')
             
             # create pin component for start-point (open, 10um pocket)
             res_start_pin = OpenToGround(
@@ -1198,6 +1211,7 @@ class QUtilities:
                             trace_width=width_cur, 
                             trace_gap=gap_cur,
                             fillet=fillet_cur,
+                            # spacing="100um", # TODO: remove - this is temporary
                             fillet_padding="10um",
                             start_left=True,
                             layer='1',
@@ -1216,8 +1230,6 @@ class QUtilities:
                 )
             
             resonators.append(res)
-    
-        if print_statements: print('\n')
 
         # sanity check and outputs
         # TODO: embed capacitances and inductances in resonator_vals
@@ -1256,6 +1268,8 @@ class QUtilities:
         lp_L_pin_x = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][0] * 1e-3 # convert to m
         lp_R_pin_x = launchpads[die_index][1].get_pin(lp_R_pin)['middle'][0] * 1e-3 # convert to m
 
+        lp_y = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][1] * 1e-3 # convert to m
+
         # calculate positions of anchors
         tl_y_cur = QUtilities.parse_value_length(tl_y) + die_origin[1]
         anchor_L_x = lp_L_pin_x + (2 * QUtilities.parse_value_length(fillet)) + QUtilities.parse_value_length(start_straight)
@@ -1264,7 +1278,16 @@ class QUtilities:
                                f"{tl_y_cur * 1e6:.1f}um"])
         anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", 
                                f"{tl_y_cur * 1e6:.1f}um"])
-        anchors = {1: anchor_L, 2: anchor_R}
+        
+        anchor_L_low_x = lp_L_pin_x + QUtilities.parse_value_length(start_straight) + QUtilities.parse_value_length(fillet)
+        anchor_R_low_x = lp_R_pin_x - QUtilities.parse_value_length(start_straight) - QUtilities.parse_value_length(fillet)
+
+        anchor_L_low = np.array([f"{anchor_L_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
+        anchor_R_low = np.array([f"{anchor_R_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
+
+
+        #anchors = {1: anchor_L, 2: anchor_R}
+        anchors = {1: anchor_L_low, 2: anchor_L, 3: anchor_R, 4: anchor_R_low}
 
         # transmission line options
         tl_options = Dict(
@@ -1276,17 +1299,15 @@ class QUtilities:
                 trace_gap=gap,
             )
 
-        # draw straight tranmission line if in the center of chip vertically (lining up with launchpads)
+        # draw straight transmission line if in the center of chip vertically (lining up with launchpads)
         if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
             tl = RouteStraight(design=design, 
                             name=f"tl_die{die_index}", 
                             options=tl_options)
-            print(f'We drew a straight transmission line connecting the two launchpads.')
+            print(f'Drew a straight transmission line connecting the two launchpads.')
+        # else draw a tranmission line through the anchor points
         else:
-            print(f"Anchor left:  {anchor_L}\nAnchor right: {anchor_R}")
-            # draw a routed tranmission line through the specified tl_y point using RoutePathfinder
             try:
-                # tl_options.anchors = {1: anchor_cur}
                 tl_options.anchors = anchors
                 tl_options.advanced.avoid_collision = 'true'
                 tl_options.fillet = fillet
@@ -1300,11 +1321,16 @@ class QUtilities:
             except:
                 raise Exception("Anchor-based routing failed - see Qiskit metal logs.")
             else:
-                print(f'We drew a routed transmission line connecting the two launchpads according to the above anchors.')
+                max_len = max(map(len, np.concatenate((anchor_L, anchor_R))))
+                print(f" Transmission line")
+                print("  Anchor left high  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L) + "]")
+                print("  Anchor right high : [" + " ".join(f"{x:>{max_len}}" for x in anchor_R) + "]")
+                print("  Anchor right low  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L_low) + "]")
+                print("  Anchor left low   : [" + " ".join(f"{x:>{max_len}}" for x in anchor_R_low) + "]")
         return tl
     
     @staticmethod
-    def place_markers(design, die_origin, die_dim, marker_type="cross"):
+    def place_markers(design, die_origin, die_dim, die_index, marker_type="cross"):
         """
         Function to place dicing markers on a multi-die chip.
 
@@ -1312,6 +1338,7 @@ class QUtilities:
             - design - qiskit metal design
             - die_origin - tuple containing die origin (x, y) as float in meters
             - die_dim - die dimensionsion as a yuple (x, y) containing strings with units
+            - die_index - die number for currently placing markers
         Input (optional):
             - marker_type - marker type, currently only supports cross markers (defaults to "cross")
         """
@@ -1329,15 +1356,24 @@ class QUtilities:
         b_y = f'{(y0 - dy/2) * 1e3}mm'
         t_y = f'{(y0 + dy/2) * 1e3}mm'
 
-        if marker_type=="cross" or "Cross":
+        if (marker_type=="cross" or marker_type=="Cross"):
             # place markers
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make()
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make() #top left
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make() #top right
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make() #bottom left
+            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make() #bottom right
+            # # only place bottom markers on the bottom die to avoid overlaps 
+            # if die_index == 0:
+                
+        elif (marker_type=="square" or marker_type=="Square"):
+            # place markers
+            Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()
+            Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=t_y)).make()
+            if die_index == 0:
+                Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
+                Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
         else: 
-            raise Exception("Only marker_type=\"cross\" is currently available.")
-            # TODO: add other marker types as options
+            raise Exception("Currently, only marker_type=['cross', 'square'] available.")
     
     @staticmethod
     def is_string_or_list_of_strings(var):
@@ -1346,3 +1382,18 @@ class QUtilities:
         elif isinstance(var, list) and all(isinstance(item, str) for item in var):
             return True
         return False
+    
+    @staticmethod
+    def create_even_spacing_along_line_1d(start, end, n, inset_factor=0.2):
+        # n == 1, return the middle point
+        if n == 1:
+            return [(start + end) / 2]
+        # For n > 1, evenly space values with scaled inset
+        range_length = abs(end - start)
+        inset_step = inset_factor * (range_length / n)  # Adjust inset by inset_factor
+        # Generate evenly spaced values within the range
+        values = np.linspace(start + inset_step, end - inset_step, n)
+        # If start is greater than end, reverse the values to ensure correct ordering
+        if start > end:
+            values = values[::-1]
+        return values
