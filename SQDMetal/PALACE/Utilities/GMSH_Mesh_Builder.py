@@ -45,10 +45,10 @@ class GMSH_Mesh_Builder:
             thresh_field_id = 2*(m+1)
             gmsh.model.mesh.field.add("Threshold", thresh_field_id)
             gmsh.model.mesh.field.setNumber(thresh_field_id, "InField", 2*m+1)
-            gmsh.model.mesh.field.setNumber(thresh_field_id, "SizeMin", cur_fine_mesh['mesh_min'])        #minimum size of mesh element
-            gmsh.model.mesh.field.setNumber(thresh_field_id, "SizeMax", cur_fine_mesh['mesh_max'])        #maximum size of mesh element
+            gmsh.model.mesh.field.setNumber(thresh_field_id, "SizeMin", cur_fine_mesh['mesh_min'])              #minimum size of mesh element
+            gmsh.model.mesh.field.setNumber(thresh_field_id, "SizeMax", cur_fine_mesh['mesh_max'])              #maximum size of mesh element
             gmsh.model.mesh.field.setNumber(thresh_field_id, "DistMin", cur_fine_mesh['taper_dist_min'])        #distance from the gmsh surface to keep minimum mesh element size 
-            gmsh.model.mesh.field.setNumber(thresh_field_id, "DistMax", cur_fine_mesh['taper_dist_max'])       #how far from the element until the max element size can be implemented 
+            gmsh.model.mesh.field.setNumber(thresh_field_id, "DistMax", cur_fine_mesh['taper_dist_max'])        #how far from the element until the max element size can be implemented 
             
             fields_to_min.append(thresh_field_id)
         min_field_id = thresh_field_id+1
