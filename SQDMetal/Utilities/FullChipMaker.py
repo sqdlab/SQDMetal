@@ -57,6 +57,7 @@ class MultiDieChip:
         date_stamp_on_export=True,
         single_circuit_for_simulation=False,
         plot_inline_mpl=True,
+        fillet="85um"
     ):
         """
         Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
@@ -138,6 +139,7 @@ class MultiDieChip:
         self.film_material = film_material
         self.start_freq = frequency_range[0]
         self.num_resonators = num_resonators
+        self.fillet = fillet
 
         # TODO: add per-die labels for easy ID during fabrication
 
@@ -293,6 +295,11 @@ class MultiDieChip:
             )
 
             # draw resonators
+            '''
+            Add resonators to the design. In progress: can we route better to avoid any bugs (WIP)? Testing filleting options, radius (?), etc. 
+            TODO: finish this function and ensure the results are same as older designs... 
+            There should be an option for qiskit_metal or sqdmetal routing (hopefully). 
+            '''
             resonators, resonator_val, resonator_name, capacitance, inductance = (
                 QUtilities.place_resonators_hanger(
                     design=design,
@@ -313,8 +320,8 @@ class MultiDieChip:
                     min_res_gap="50um",
                     LC_calculations=True,
                     print_statements=print_all_infos,
-                    radius="100um" # TODO: temporary
-                    #fillet="50um"
+                    radius="100um",
+                    fillet=self.fillet
                 )
             )
 
