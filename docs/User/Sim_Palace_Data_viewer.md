@@ -11,7 +11,7 @@ data_path = 'output_example/paraview/eigenmode/eigenmode.pvd'
 leView = PVDVTU_Viewer(data_path)
 
 #Create a 2D slice of the 3D dataset
-leSlice = leView.get_data_slice(m)
+leSlice = leView.get_data_slice(data_set_index=0, slice_plane_normal=np.array([0,0,1]), slice_plane_origin=np.array([0,0,0]))
 
 #Gather and plot the magnitude of the z-component of the electric field: E_z
 data = leSlice.get_data('E_real')[:,2]
