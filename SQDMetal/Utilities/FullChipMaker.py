@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import os
 from pprint import pprint
 from datetime import datetime
+import psutil
 
 
 class MultiDieChip:
@@ -442,7 +443,8 @@ class MultiDieChip:
         palace_binary: str,
         num_eigenmodes=None,
         run_locally=True,
-        leave_free_cpu_num=1,
+        leave_free_cpu_num=None,
+        num_cpus=None,
         fine_mesh_min_max=(14e-6, 250e-6),
         start_freq=None,
         num_saved_solns=None,
@@ -455,6 +457,17 @@ class MultiDieChip:
         assert (
             run_locally == True
         ), "Only local simulations are supported at the moment."
+        # CPU num
+        assert (leave_free_cpu_num or num_cpus) != None, "You must supply either 'num_cpus' or 'leave_free_cpu_num'."
+        if leave_free_cpu_num == None:
+            num_cpus = num_cpus
+        elif num_cpus == None:
+            physical_cores = psutil.cpu_count(logical=False)
+            num_cpus = physical_cores - leave_free_cpu_num, 
+            # print(f"Number of physical CPU cores: {physical_cores}")
+        else:
+            num_cpus = num_cpus
+        # import Palace
         try:
             from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
             from SQDMetal.Utilities.Materials import MaterialInterface
@@ -512,8 +525,7 @@ class MultiDieChip:
             "mesh_sampling": 130,  # number of points to mesh along a geometry
             "fillet_resolution": 12,  # Number of vertices per quarter turn on a filleted path
             "palace_dir": palace_binary,  # "PATH/TO/PALACE/BINARY",
-            "num_cpus": os.cpu_count()
-            - leave_free_cpu_num,  # number of CPUs to use for simulation
+            "num_cpus": num_cpus,  # number of CPUs to use for simulation
             "mesh_min": fine_mesh_min_max[0]*1e3,  # minimum mesh size in mm
             "mesh_max": fine_mesh_min_max[1]*1e3  # maximum mesh size in mm
         }
