@@ -988,7 +988,7 @@ class QUtilities:
         LC_calculations=True,
         print_statements=True,
         fillet="85um",
-        radius="100um"
+        radius="100um",
         meander_method="qiskit_metal"
     ):
         """
