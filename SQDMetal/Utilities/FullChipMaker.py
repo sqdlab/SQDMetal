@@ -518,7 +518,7 @@ class MultiDieChip:
             "dielectric_material": self.substrate_material,  # choose dielectric material - 'silicon' or 'sapphire'
             "starting_freq": start_freq - 0.5e9,  # starting frequency in Hz
             "number_of_freqs": num_eigenmodes,  # number of eigenmodes to find
-            "solns_to_save": 1,  # number of electromagnetic field visualizations to save
+            "solns_to_save": num_saved_solns,  # number of electromagnetic field visualizations to save
             "solver_order": 2,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
             "solver_tol": 1.0e-8,  # error residual tolerance foriterative solver
             "solver_maxits": 200,  # number of solver iterations
