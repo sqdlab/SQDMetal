@@ -1233,7 +1233,8 @@ class QUtilities:
                             trace_width=width_cur, 
                             trace_gap=gap_cur,
                             fillet=fillet_cur,
-                            fillet_padding="10um",
+                            # fillet_padding="10um",
+                            fillet_padding="0um",
                             start_left=True,
                             layer='1',
                             # lead = Dict(

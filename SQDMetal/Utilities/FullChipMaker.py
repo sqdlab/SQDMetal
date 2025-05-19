@@ -57,7 +57,8 @@ class MultiDieChip:
         date_stamp_on_export=True,
         single_circuit_for_simulation=False,
         plot_inline_mpl=True,
-        fillet="85um"
+        fillet="85um",
+        radius="100um",
     ):
         """
         Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
@@ -140,6 +141,7 @@ class MultiDieChip:
         self.start_freq = frequency_range[0]
         self.num_resonators = num_resonators
         self.fillet = fillet
+        self.radius = radius
 
         # TODO: add per-die labels for easy ID during fabrication
 
@@ -320,7 +322,7 @@ class MultiDieChip:
                     min_res_gap="50um",
                     LC_calculations=True,
                     print_statements=print_all_infos,
-                    radius="100um",
+                    radius=self.radius,
                     fillet=self.fillet
                 )
             )
