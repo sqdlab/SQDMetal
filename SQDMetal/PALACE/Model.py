@@ -106,7 +106,7 @@ class PALACE_Model:
         '''
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
 
-    def set_farfield(self, ff_type='absorbing'):
+    def set_farfield(self, ff_type='pec'):
         #ff_type can be: 'absorbing' or 'pec'
         ff_type = ff_type.lower()
         assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
@@ -291,7 +291,6 @@ class PALACE_Model:
             self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
-        print("Try not to use fine_mesh_along_path for now. A bug makes multiple calls of this mesh around the edges...")
         leUnits = QUtilities.get_units(self.metal_design)
         lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
         self._fine_meshes.append({
@@ -331,7 +330,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         
         if self.meshing == 'GMSH':
             #Prepare the ports...
-            assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
+            #assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
             for cur_port in self._ports:
                 if cur_port['elem_type'] == 'single':

@@ -170,6 +170,8 @@ eigen_sim.fine_mesh_in_rectangle(-0.14e-3, -1.33e-3, 0.14e-3, -1.56e-3, mesh_sam
 eigen_sim.prepare_simulation()
 ```
 
+Details on viewing the data in the end are shown [here](Sim_Palace_Data_viewer.md).
+
 ## Usage (HPC)
 
 Here, some extra parameters need to be supplied. Specifically the path to a JSON file (supplied in the user option: `"HPC_Parameters_JSON"`) containing the parameters. Here is a template:
