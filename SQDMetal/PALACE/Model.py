@@ -324,6 +324,19 @@ class PALACE_Model:
             'metals_only': kwargs.get('metals_only', False)
         })
 
+    def retrieve_SimulationSizes(self):
+        return self.retrieve_SimulationSizes_from_file(self._output_data_dir + '/palace.json')
+
+    @staticmethod
+    def retrieve_SimulationSizes_from_file(path_palace_json):
+        #Returns dictionary of DoF and Mesh size...
+        with open(path_palace_json, "r") as f:
+            config_json = json.loads(f.read())
+        return {
+            'DoF': config_json['Problem']['DegreesOfFreedom'],
+            'MeshElements': config_json['Problem']['MeshElements']
+        }
+
 class PALACE_Model_RF_Base(PALACE_Model):
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''

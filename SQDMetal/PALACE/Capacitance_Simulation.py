@@ -345,7 +345,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
         headers = raw_data.columns
-        raw_data = raw_data.to_numpy()
+        raw_data = raw_data.to_numpy()[:,1:]    #First column is just the indices...
 
         fig = self.display_conductor_indices()
         fig.savefig(self._output_data_dir + f'/terminal_indices.png')
