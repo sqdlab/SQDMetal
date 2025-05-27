@@ -25,6 +25,8 @@ class PALACE_Model:
         self._output_subdir = ""
         self.set_farfield()
         self._EPR_setup = False
+        self._use_KI = False
+        self._KI = 0
         self._rf_port_excitation = -1
 
         if mode == 'HPC':
@@ -325,9 +327,12 @@ class PALACE_Model:
         })
 
 class PALACE_Model_RF_Base(PALACE_Model):
+
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''
         
+        
+
         if self.meshing == 'GMSH':
             #Prepare the ports...
             #assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
@@ -341,7 +346,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
             ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
-            #
+            
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
 
@@ -647,4 +652,23 @@ class PALACE_Model_RF_Base(PALACE_Model):
                         }
                     ] 
                 }
+        
+    def add_kinetic_inductance(self, kinetic_inductance):
+        '''Method for user to add kinetic inductance into simulations'''
+        self._use_KI = True
+        self._KI = kinetic_inductance
+        
+        
+    def _setup_kinetic_inductance(self, dict_json, id_metals):
+        '''Internal method to adjust Palace config file to change boundary condition from PEC to Surface Impedance to
+            incorporate kinetic inductance.'''
 
+        dict_json['Boundaries']['Impedance'] = [{
+                    "Attributes": id_metals,
+                    "Ls": self._KI                   
+                }]
+        
+        dict_json['Boundaries']['PEC'] = {
+                    "Attributes": [],
+                }
+        

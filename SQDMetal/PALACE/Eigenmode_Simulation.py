@@ -176,8 +176,14 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        
+        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition 
+        if self._use_KI == True:
+            self._setup_kinetic_inductance(config, PEC_metals)
+
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
+        
         if self._ff_type == 'absorbing':
             config['Boundaries']['Absorbing'] = {
                     "Attributes": far_field,
@@ -189,6 +195,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         #     config['Solver']['Linear']['Type'] = "Default"
         #     config['Solver']['Linear']['KSPType'] = "GMRES"
 
+        
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
 
@@ -313,7 +320,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = []):
+        '''Method to extract Hamiltonian from eigenmode simulation using the EPR method'''
         
+        #retrieve data from the simulation files
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
         
         #Constants used for calculations
@@ -381,7 +390,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         lamb_shift = (1/2) * chi * np.ones((np.shape(chi)[0],1))
         renormalised_freqs = np.transpose(np.matrix(frequencies * 2 * np.pi)) - lamb_shift #linear frequencies from eigenmode simulation are renormalised by lamb shift caused by non-linearity
 
-        #Get values in mehahertz (MHz) to display to user
+        #Get values in megahertz (MHz) or gigahertz (GHz) to display to user
         chi_freq = chi / (2 * np.pi * 1e6) 
         chi_anharm = chi_anharm / (2 * np.pi * 1e6) 
         anharm_freq = anharm / (2 * np.pi * 1e6)
