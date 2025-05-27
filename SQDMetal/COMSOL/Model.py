@@ -446,8 +446,10 @@ class COMSOL_Model:
         leLine = shapely.LineString([[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]])
         self._fine_mesh += [{'type':'conds', 'poly':leLine, 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
-    def fine_mesh_in_poly(self, poly, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
-        leCoords = np.array(poly.exterior.coords[:])
+    def fine_mesh_in_poly(self, poly, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True, buffer_size=0):
+        if buffer_size > 0 and qmUnits:
+            buffer_size *= QUtilities.get_units(self.design)
+        leCoords = np.array(poly.buffer(buffer_size, join_style=2, cap_style=3).exterior.coords[:])
         if qmUnits:
             leCoords *= QUtilities.get_units(self.design)
         ind = len(self._fine_mesh)
@@ -465,14 +467,16 @@ class COMSOL_Model:
         kwargs['restrict_rect'] = self.restrict_rect
         kwargs['resolution'] = self._resolution
         list_polys = QUtilities.get_perimetric_polygons(self.design, list_comp_names, **kwargs)
-        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False)
+        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False, buffer_size=kwargs.get('buffer_size',0))
 
-    def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
+    def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True, buffer_size=0):
         ind = len(self._fine_mesh)
         pol_names = []
         leLines = []
         for m, poly in enumerate(list_polys):
-            leCoords = np.array(poly.exterior.coords[:])
+            if buffer_size > 0 and qmUnits:
+                buffer_size *= QUtilities.get_units(self.design)
+            leCoords = np.array(poly.buffer(buffer_size, join_style=2, cap_style=3).exterior.coords[:])
             if leCoords.size == 0:
                 continue
             if qmUnits:

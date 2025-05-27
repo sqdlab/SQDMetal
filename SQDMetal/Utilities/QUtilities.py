@@ -1036,7 +1036,6 @@ class QUtilities:
             transmission_line_y,
             launchpad_to_res,
             min_res_gap,
-            coupling_gap,
             film_thickness
         ]:
             assert isinstance(i, str)
@@ -1087,7 +1086,10 @@ class QUtilities:
         h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
         ft = QUtilities.parse_value_length(film_thickness)
         tl_y = QUtilities.parse_value_length(transmission_line_y)
-        cg = QUtilities.parse_value_length(coupling_gap)
+        if isinstance(coupling_gap, str):
+            cg = QUtilities.parse_value_length(coupling_gap)
+        else:
+            cg = None
         x0 = QUtilities.parse_value_length(die_origin[0])
         y0 = QUtilities.parse_value_length(die_origin[1])
 
@@ -1114,6 +1116,12 @@ class QUtilities:
         # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
+
+            # set coupling gap based on user options
+            if cg:
+                cg_cur = cg
+            elif cg == None:
+                cg_cur = QUtilities.parse_value_length(coupling_gap[i])
 
             # setup values for scaled geometry
             if scaled_geometry == True:
@@ -1149,7 +1157,7 @@ class QUtilities:
             resonator_vals.append([l_fullwave, er_eff, F])
 
             # calculate y value of resonator start
-            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg - (0.5 * w_float) - g_float
+            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg_cur - (0.5 * w_float) - g_float
             res_y_um = f'{res_y_val * 1e6:.3f}um'
 
             # calculate y value of resonator end

@@ -222,13 +222,36 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         headers = raw_data.columns
         raw_data = raw_data.to_numpy().T
 
-        ret_data = {'freqs' : raw_data[0]*1e9}
-        for m in range(int((raw_data.shape[0]-1)/2)):
+        num_s_params = int((raw_data.shape[0]-1)/2)
+
+        fig, axs = plt.subplots(ncols=num_s_params); fig.set_figwidth(8*num_s_params)
+
+        freq_vals = raw_data[0]*1e9
+
+        ret_data = {'freqs' : freq_vals}
+        for m in range(num_s_params):
             #Header will be like: |S[1][1]| (dB)
             key = headers[2*m+1].strip().split('|')[1].replace('[','').replace(']','')
             amp = np.array(raw_data[2*m+1], dtype=np.float64)
             phs = np.array(raw_data[2*m+2], dtype=np.float64)
             sParam = 10**(amp/20)*np.exp(1j*phs/180*np.pi)
             ret_data[key] = sParam
-        
+            #
+            axs[m].grid()
+            axs[m].set_title(f'|{key}| (dB)')
+            axs[m].plot(freq_vals, amp, 'r-')
+            axs[m].set_xlabel('Frequency (Hz)')
+            axs[m].set_ylabel('Amplitude (dB)', color='red')
+            axsPhs = axs[m].twinx()
+            axsPhs.plot(freq_vals, phs, 'b-')
+            axsPhs.set_ylabel('Phase (°)', color='blue')
+            for label in axs[m].yaxis.get_ticklabels():
+                label.set_color('red')
+            for label in axsPhs.yaxis.get_ticklabels():
+                label.set_color('blue')
+
+        fig.tight_layout()
+        fig.savefig(self._output_data_dir + '/s_params.png')
+        plt.close(fig)
+
         return ret_data

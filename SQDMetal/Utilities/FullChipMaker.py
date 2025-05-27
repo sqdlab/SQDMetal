@@ -29,6 +29,7 @@ class MultiDieChip:
         export_type="all",
         export_threshold=1e-9,
         frequency_range=(6e9, 7e9),
+        frequency_list=None,
         num_resonators=5,
         cpw_width="9um",
         feedline_upscale=1.0,
@@ -66,6 +67,7 @@ class MultiDieChip:
             - export_type - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
             - export_threshold - (Defaults to 1e-9) The smallest feature width that can exist; anything smaller will get culled out. This is to help remove artefacts from floating-point inaccuracies. It is given in metre
             - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
+            - frequency_list - (Defaults to None) List containing discrete frequencies (must be same length as num_resonators) in Hz
             - num_resonators - (Defaults to 5) Number of resonators per die
             - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width. You can pass a list of strings if you want to scale each resonator seperately.
             - feedline_upscale - (Defaults to 1.0) scale of the feedline gap and width as a multiple of the resonator dimensions
@@ -96,6 +98,9 @@ class MultiDieChip:
             - design - Qiskit Metal design object for the generated chip
         """
 
+        if frequency_list:
+            assert len(frequency_list) == num_resonators, "frequency_list must be the same length as num resonators."
+
         assert film_material in [
             "aluminium",
             "tantalum",
@@ -124,6 +129,9 @@ class MultiDieChip:
 
         # check if chip geometry is constant or scaled per-resonator
         assert QUtilities.is_string_or_list_of_strings(cpw_width)
+        assert QUtilities.is_string_or_list_of_strings(coupling_gap), "If you want different coupling_gap per-resonator, pass as a list of strings (e.g. ['5um, '10um', ...])"
+        if isinstance(coupling_gap, list):
+            assert len(coupling_gap) == num_resonators
         if len(cpw_width) == 1:
             cpw_width = cpw_width[0]
         scaled_geometry = isinstance(cpw_width, list)
@@ -225,9 +233,12 @@ class MultiDieChip:
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
 
         # calculate frequencies
-        freq_list = np.linspace(
-            frequency_range[0], frequency_range[1], num_resonators, endpoint=True
-        )
+        if frequency_list == None:
+            freq_list = np.linspace(
+                frequency_range[0], frequency_range[1], num_resonators, endpoint=True
+            )
+        elif frequency_list:
+            freq_list = frequency_list
 
         # calculate total launchpad width (from edge of die)
         lp_extent = (
