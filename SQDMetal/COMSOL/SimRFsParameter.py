@@ -32,6 +32,8 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.modal_min_freq_num_eigs = modal_min_freq_num_eigs
         self.relative_tolerance = relative_tolerance
         self._include_loss_tangents = include_loss_tangents
+        self._current_sources = []
+        self._discard_PEC_BC = False
 
     def _prepare_simulation(self):
         self._study = self.model._add_study("stdRFsparams")
@@ -71,6 +73,22 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         # if self.adaptive == 'None':
         #     self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
         self.dset_name = self.model._get_dset_name()
+        
+        #Setup surface integrals (e.g. for EPR calculations)
+        int_name = "intMetals"
+        self.jc.result().numerical().create(int_name, "IntSurface")
+        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).selection().named("geom1_condAll");
+        self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
+        self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
+        #
+        int_name = "intDielectric"
+        self.jc.result().numerical().create(int_name, "IntSurface")
+        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).selection().named("geom1_dielectricSurface")
+        self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
+        self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
+
 
     def _temporary_freq_domain_AutoSequence(self):
         self.jc.sol(self._soln).create("st1", "StudyStep")
@@ -143,8 +161,9 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.component("comp1").physics("emw").feature("wee1").set("DisplacementFieldModel", "LossTangent")
 
         #Note that PEC1 is the default exterior boundary condition
-        self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
-        self.jc.component("comp1").physics(self.phys_emw).feature("pec2").selection().named("geom1_condAll")
+        if not self._discard_PEC_BC:
+            self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
+            self.jc.component("comp1").physics(self.phys_emw).feature("pec2").selection().named("geom1_condAll")
         #Create the excitation ports
         self.port_names = []
         for cur_port_id,cur_port in enumerate(self._ports):
@@ -162,6 +181,16 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
                 self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
             #
             self.port_names.append(port_name)
+        #Create any current sources
+        for m,cur_current_src in enumerate(self._current_sources):
+            if cur_current_src[0] == 'region':
+                self.jc.component("comp1").physics(self.phys_emw).create(f"scu{m}", "SurfaceCurrent", 2)
+                region, J_z = cur_current_src[1], cur_current_src[2]
+                if region == 'metals':
+                    self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").selection().named("geom1_condAll")
+                else:
+                    self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").selection().named("geom1_dielectricSurface")
+                self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").set("Js0", jtypes.JArray(jtypes.JDouble)([0, 0, J_z]))
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6):
         unit_conv = QUtilities.get_units(self.model.design)
@@ -354,6 +383,13 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study).set("errestandadap", "none")
             self.jc.study(self._study).feature(self._sub_study).set("plist", str_freqs)
 
+    def add_surface_current_source_region(self, region="", J_z=1.0):
+        assert self.adaptive == 'None', "Cannot use eigenmode-based simulations when setting current sources."
+
+        assert region in ['metals', 'dielectric'], "Must set region to either 'metals' or 'dielectric'"
+        self._current_sources.append(('region', region, J_z))
+        if region == 'metals':
+            self._discard_PEC_BC = True
 
     def _get_required_physics(self):
         return [self.phys_emw]

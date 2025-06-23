@@ -658,6 +658,22 @@ class COMSOL_Model:
         '''
         Builds geometry, sets up materials, sets up electromagnetic parameters/ports and builds the mesh.
         '''
+
+        #Prepare the dielectric selection...
+        pol_name = "polSurface"
+        x1 = self.chip_centre[0] - self.chip_len*0.5
+        x2 = self.chip_centre[0] + self.chip_len*0.5
+        y1 = self.chip_centre[1] - self.chip_wid*0.5
+        y2 = self.chip_centre[1] + self.chip_wid*0.5
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(pol_name, "Rectangle")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(pol_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(pol_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]))
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name) #Makes selection easier...
+        #
+        sel_surface_name = f"selSurface"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_surface_name, "ExplicitSelection")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_surface_name).selection("selection").set(pol_name, 1)
+
         #Build geometry
         self._model.java.component("comp1").geom("geom1").run()
         #
@@ -667,6 +683,12 @@ class COMSOL_Model:
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)([x[1] for x in self._conds]))
         self._model.java.component("comp1").geom("geom1").run("condAll")
+        #
+        diff_sel_name = f"dielectricSurface"
+        self._model.java.component("comp1").geom("geom1").create(diff_sel_name, "DifferenceSelection")
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("entitydim", jtypes.JInt(2))
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("add", jtypes.JArray(jtypes.JString)([f"wp1_{sel_surface_name}"]));
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("subtract", jtypes.JArray(jtypes.JString)(["condAll"]));
 
         #Create materials
         if isinstance(substrate_material, Material):
