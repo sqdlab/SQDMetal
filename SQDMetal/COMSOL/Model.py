@@ -654,6 +654,12 @@ class COMSOL_Model:
     def _get_java_comp(self):
         return self._model.java
 
+    def _dset_exists(self, dset_name):
+        return dset_name in [x.tag() for x in self._model.java.result().dataset()]
+
+    def _numeval_exists(self, numeval_name):
+        return numeval_name in [x.tag() for x in self._model.java.result().numerical()]
+
     def build_geom_mater_elec_mesh(self, mesh_structure='Normal', skip_meshing=False, substrate_material=None, substrate_permittivity=11.45, **kwargs):    #mesh_structure can be 'Fine'
         '''
         Builds geometry, sets up materials, sets up electromagnetic parameters/ports and builds the mesh.
