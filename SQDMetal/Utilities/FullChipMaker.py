@@ -478,8 +478,8 @@ class MultiDieChip:
             num_cpus = num_cpus
         # import Palace
         try:
-            from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
-            from SQDMetal.Utilities.Materials import MaterialInterface
+            from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation # type: ignore
+            from SQDMetal.Utilities.Materials import MaterialInterface # type: ignore
 
             print(
                 "SQDMetal Palace modules successfully imported. Continuing with simulation."
