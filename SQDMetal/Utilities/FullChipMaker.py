@@ -457,6 +457,8 @@ class MultiDieChip:
         fine_mesh_min_max=(14e-6, 250e-6),
         start_freq=None,
         num_saved_solns=None,
+        solver_order=2,
+        solver_tol=1.0e-8,
         **kwargs,
     ):
         """
@@ -528,8 +530,8 @@ class MultiDieChip:
             "starting_freq": start_freq - 0.5e9,  # starting frequency in Hz
             "number_of_freqs": num_eigenmodes,  # number of eigenmodes to find
             "solns_to_save": num_saved_solns,  # number of electromagnetic field visualizations to save
-            "solver_order": 2,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
-            "solver_tol": 1.0e-8,  # error residual tolerance foriterative solver
+            "solver_order": solver_order,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
+            "solver_tol": solver_tol,  # error residual tolerance foriterative solver
             "solver_maxits": 200,  # number of solver iterations
             "mesh_sampling": 130,  # number of points to mesh along a geometry
             "fillet_resolution": 12,  # Number of vertices per quarter turn on a filleted path
