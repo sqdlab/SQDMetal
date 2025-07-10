@@ -158,6 +158,10 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             elif cur_lelem[2] == 'LCparallel':
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+            elif cur_lelem[2] == 'RLCparallel':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Relement', jtypes.JDouble(cur_lelem[1][2]))
 
 
         if self.model._include_loss_tangents:
@@ -352,6 +356,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
 
         C_J = kwargs.get('C_J', 0)
+        R_J = kwargs.get('R_J', 0)
 
         port_name = "rf_port_" + str(len(self._ports))
 
@@ -366,9 +371,12 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array(portCoords))
         if C_J > 0:
-            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])    #TODO: How does the capacitance add in here?
+            if R_J > 0:
+                self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J, R_J), 'RLCparallel'])
+            else:
+                self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])
         else:
-            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])    #TODO: How does the capacitance add in here?
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])
 
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
