@@ -309,12 +309,12 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         cur_port['vec_perp'] = vec_perp
         self._ports += [cur_port]
 
-    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
-        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap)
         self.model._add_cond(Uclip)
 
-    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
-        Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap)
         self.model._add_cond(Uclip)
 
     def create_lumped_inductance(self, qObj1, pin1, qObj2, pin2, width, value):

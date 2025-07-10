@@ -42,10 +42,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = {}, 
+    def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                                     view_design_gmsh_gui = False, create_files = False):
         self.name = name
-        self.metal_design = metal_design
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
@@ -55,14 +54,14 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._cur_cap_terminals = []
-        super().__init__(meshing, mode, user_options)
+        super().__init__(meshing, mode, user_options, **kwargs)
 
 
     def prepare_simulation(self):
         '''set-up the simulation'''
 
         if self.meshing == 'GMSH':
-            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
+            ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
@@ -94,7 +93,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
             #Create COMSOL capacitance sim object
             simCapMats = COMSOL_Simulation_CapMats(cmsl)
-            cmsl.initialize_model(self.metal_design, [simCapMats], bottom_grounded = True, resolution = 10)
+            cmsl.initialize_model(self._geom_processor.design, [simCapMats], bottom_grounded = True, resolution = 10)     #TODO: Make COMSOL actually compatible rather than assuming Qiskit-Metal designs?
 
             #Add metallic layers
             cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)

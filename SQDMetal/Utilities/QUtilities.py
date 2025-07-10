@@ -345,7 +345,7 @@ class QUtilities:
         """
         Partitions unique conductors from a layer in a Qiskit-Metal design object. If the particular layer has fancy PVD evaporation steps, the added
         metallic layer will account for said steps and merge the final result. In addition, all metallic elements that are contiguous are merged into
-        single blobs.
+        single blobs. NOTE: Everything is in METRES.
 
         Inputs:
             - design - Qiskit-Metal deisgn object
@@ -366,7 +366,6 @@ class QUtilities:
                                       capacitance matrix simulations).
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
-            - unit_conv - (Optional) Unit conversion factor to convert the Qiskit-Metal design units. Defaults to converting the units into metres.
             - multilayer_fuse - (Optional) Defaults to False. Flattens everything into a single layer (careful when using this with evap_mode).
             - smooth_radius - (Optional) Defaults to 0. If above 0, then the corners of the metallic surface will be smoothed via this radius. Only works
                               if multilayer_fuse is set to True.
@@ -390,7 +389,7 @@ class QUtilities:
 
         metal_evap_polys = []
         fuse_threshold = kwargs.get("fuse_threshold", 1e-12)
-        unit_conv = kwargs.get("unit_conv", QUtilities.get_units(design))
+        unit_conv = QUtilities.get_units(design)
         for cur_layer_id in layer_id:
             if cur_layer_id > 0:
                 filt = gsdf.loc[
@@ -507,7 +506,7 @@ class QUtilities:
                 ]
 
         if thresh > 0:
-            metal_polys_all = [x.simplify(thresh/unit_conv) for x in metal_polys_all]
+            metal_polys_all = [x.simplify(thresh) for x in metal_polys_all]
         return metal_polys_all, metal_sel_ids
 
     @staticmethod

@@ -33,10 +33,9 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 }
 
     #constructor
-    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = {}, 
-                 view_design_gmsh_gui = False, create_files = False):
+    def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
+                 view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.metal_design = metal_design
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
@@ -46,7 +45,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing, mode, user_options)
+        super().__init__(meshing, mode, user_options, **kwargs)
         self.freqs = None
         self._current_sources = []
 
