@@ -8,6 +8,7 @@ from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 
 from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
+from SQDMetal.Utilities.GeometryProcessors.GeomGDS import GeomGDS
 
 import numpy as np
 import os, subprocess
@@ -46,6 +47,8 @@ class PALACE_Model:
     def _process_geometry_type(self, **kwargs):
         if 'metal_design' in kwargs:
             self._geom_processor = GeomQiskitMetal(kwargs['metal_design'], **kwargs)
+        elif 'gds_design' in kwargs:
+            self._geom_processor = GeomGDS(kwargs['gds_design'], **kwargs)
 
     def create_batch_file(self):
         pass
@@ -78,16 +81,21 @@ class PALACE_Model:
                                       capacitance matrix simulations).
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
+
+            GDS-SPECIFIC
+            - cell_index - (Optional) Defaults to 0. Can specify the cell from which the layer is to be extracted
         '''
-        self._metallic_layers += [{
-            'type': 'design_layer',
-            'layer_id': layer_id,
-            'threshold': kwargs.get('threshold', -1),
-            'fuse_threshold': kwargs.get('fuse_threshold', 1e-12),
-            'evap_mode': kwargs.get('evap_mode', 'separate_delete_below'),
-            'group_by_evaporations': kwargs.get('group_by_evaporations', False),
-            'evap_trim': kwargs.get('evap_trim', 20e-9),
-        }]
+        new_metallic_layer = {
+                'type': 'design_layer',
+                'layer_id': layer_id,
+                'threshold': kwargs.pop('threshold', -1),
+                'fuse_threshold': kwargs.pop('fuse_threshold', 1e-12),
+                'evap_mode': kwargs.pop('evap_mode', 'separate_delete_below'),
+                'group_by_evaporations': kwargs.pop('group_by_evaporations', False),
+                'evap_trim': kwargs.pop('evap_trim', 20e-9),
+                'other' : kwargs
+            }
+        self._metallic_layers.append(new_metallic_layer)
 
     def add_ground_plane(self, **kwargs):
         '''
@@ -407,7 +415,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     elif cur_port['type'] == 'route':
                         sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
                     elif cur_port['type'] == 'single_rect':
-                        sim_sParams.create_port_2_conds_by_position(cur_port['pos1'], cur_port['pos2'], cur_port['rect_width']) 
+                        sim_sParams.create_port_2_conds_by_position(cur_port['pos1'], cur_port['pos2'], cur_port['rect_width']) #TODO: Make COMSOL support cpw_point CPW feed...
                 
                 for fine_mesh in self._fine_meshes:
                     if fine_mesh['type'] == 'box':
@@ -550,6 +558,22 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': vec_perp.tolist(),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+        if self._rf_port_excitation == -1 and impedance_R > 0:
+            self._rf_port_excitation = len(self._ports)
+
+    def create_port_CPW_via_edge_point(self, pt_near_centre_end, len_launch, impedance_R=50, impedance_L=0, impedance_C=0, **kwargs):
+        port_name = "rf_port_" + str(len(self._ports))
+
+        kwargs["fuse_threshold"] = self.user_options["fuse_threshold"]
+        kwargs["threshold"] = self.user_options["threshold"]
+        launchesA, launchesB, vec_perp = self._geom_processor.create_CPW_feed_via_point(pt_near_centre_end, len_launch, self._metallic_layers, self._ground_plane, **kwargs)
+        
+        #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
+        self._ports += [{'port_name':port_name, 'type':'point', 'elem_type':'cpw', 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[0]],
+                         'portBcoords': launchesB + [launchesB[0]],
+                         'vec_field': vec_perp,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
         if self._rf_port_excitation == -1 and impedance_R > 0:
             self._rf_port_excitation = len(self._ports)

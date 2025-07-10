@@ -78,7 +78,7 @@ class GeomQiskitMetal(GeomBase):
             if cur_layer['type'] == 'design_layer':
                 cur_layer['resolution'] = fillet_resolution
                 cur_layer['threshold'] = threshold
-                cur_layer['fuse_threshold'] = fuse_threshold
+                # cur_layer['fuse_threshold'] = fuse_threshold  #Let the individual fuse_thresholds work here...
                 cur_layer['restrict_rect'] = self._restrict_rect[:]
                 metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
                 metal_polys += metal_polys_all
@@ -89,7 +89,7 @@ class GeomQiskitMetal(GeomBase):
                     Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.design, cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
                 metal_polys.append(shapely.Polygon(Uclip))
         #Try to fuse any contiguous polygons...
-        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys)
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
         metal_polys = shapely.affinity.scale(metal_polys, xfact=1/unit_conv, yfact=1/unit_conv, origin=(0,0))
         #If there are any MultiPolygons, convert them into normal polygons...
         new_polys = ShapelyEx.shapely_to_list(metal_polys)

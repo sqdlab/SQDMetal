@@ -20,17 +20,6 @@ class GMSH_Geometry_Builder:
         self._geom_processor = geom_processor
         self.fillet_resolution = fillet_resolution
 
-        unit_conv = 1e-3
-
-        #Get dimensions of chip base and convert to design units in 'mm'
-        chip_centre = geom_processor.chip_centre
-        self.center_x = chip_centre[0] / unit_conv
-        self.center_y = chip_centre[1] / unit_conv
-        self.center_z = chip_centre[2] / unit_conv
-        self.size_x = geom_processor.chip_size_x / unit_conv
-        self.size_y = geom_processor.chip_size_y / unit_conv
-        self.size_z = geom_processor.chip_size_z / unit_conv
-
         #Initialize the GMSH API and name the model
         gmsh.model.remove()
         gmsh.finalize()
@@ -55,6 +44,18 @@ class GMSH_Geometry_Builder:
         #Note: metals list contains ground plane. Dielectric gaps are the difference between the dielectric cutout
         #and the metals
         metals, dielectric_gaps = self._geom_processor.process_layers(metallic_layers, ground_plane, fuse_threshold=fuse_threshold, fillet_resolution=self.fillet_resolution, unit_conv=1e-3, **kwargs)    #It's in mm...
+
+        unit_conv = 1e-3
+
+        #Get dimensions of chip base and convert to design units in 'mm'
+        chip_centre = self._geom_processor.chip_centre
+        self.center_x = chip_centre[0] / unit_conv
+        self.center_y = chip_centre[1] / unit_conv
+        self.center_z = chip_centre[2] / unit_conv
+        self.size_x = self._geom_processor.chip_size_x / unit_conv
+        self.size_y = self._geom_processor.chip_size_y / unit_conv
+        self.size_z = self._geom_processor.chip_size_z / unit_conv
+
 
         #Plot the shapely metals for user to see device
         # geoms = metals# + ground_plane
