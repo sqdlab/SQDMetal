@@ -382,7 +382,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         Ej = np.diag((phi0**2 / Lj).A1)
 
         #Calcultate Kerr matrix: chi = hbar/4 * (omega*P) * inv_Ej * (omega*P)^T
-        ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hetz divide by 2*pi###
+        ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hertz divide by 2*pi###
         chi = (hbar/4) * (omega*P) * np.linalg.inv(Ej) * np.transpose(omega*P)
         diag_matrix = (-1/2) * np.diag(np.ones(num_of_modes)) + np.ones(num_of_modes) #hacky way of creating ones matrix with values of 1/2 down the diagonal
         chi_anharm = np.multiply(diag_matrix,chi) #This is the kerr matrix but with the anharmonicity down the diagonal for the self-kerr term

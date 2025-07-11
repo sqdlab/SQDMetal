@@ -34,7 +34,7 @@ class Kinetic_Inductance:
         L_s = Z_s / omega
 
         #print values
-        print(f"Complex conductivity: σ = {sigma} S")
+        print(f"Complex conductivity: σ = {sigma} S/m")
         print(f"Surface Impedance: Z = {Z_s} Ω/□")
         print(f"Surface Inductance: L = {L_s} H/□" )
         print(f"Effective Penetrattion Depth: λ_eff = {lambda_eff/1e-9} nm")
@@ -54,7 +54,7 @@ class Kinetic_Inductance:
             t_crit = critical temperature
         
         Output:
-            s = sigma = sigma1 - j * sigma2
+            s = sigma = sigma1 + j * sigma2
         """
         M = 500
         k_b = 1.380649e-23
