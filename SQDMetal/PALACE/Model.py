@@ -6,6 +6,10 @@ from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
 from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
+
+from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
+from SQDMetal.Utilities.GeometryProcessors.GeomGDS import GeomGDS
+
 import numpy as np
 import os, subprocess
 import gmsh
@@ -15,7 +19,7 @@ import shapely
 import shutil
 
 class PALACE_Model:
-    def __init__(self, meshing, mode, options):
+    def __init__(self, meshing, mode, options, **kwargs):
         self.meshing = meshing
         self._metallic_layers = []
         self._ground_plane = {'omit': True}
@@ -29,6 +33,8 @@ class PALACE_Model:
         self._KI = 0
         self._rf_port_excitation = -1
 
+        self._process_geometry_type(**kwargs)
+
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
                 self.hpc_options = json.loads(f.read())
@@ -37,23 +43,12 @@ class PALACE_Model:
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
 
-        #Assuming that metal_design attribute already exists
 
-        restrict_rect = options.get('segment_rectangle', None)   #Given as [x1,y1,x2,y2]
-        if isinstance(restrict_rect, list) or isinstance(restrict_rect, np.ndarray) or isinstance(restrict_rect, tuple):
-            self.restrict_rect = [min([restrict_rect[0], restrict_rect[2]]), min([restrict_rect[1], restrict_rect[3]]),
-                                  max([restrict_rect[0], restrict_rect[2]]), max([restrict_rect[1], restrict_rect[3]])]
-            self.chip_len = self.restrict_rect[2]-self.restrict_rect[0]
-            self.chip_wid = self.restrict_rect[3]-self.restrict_rect[1]
-            self.chip_centre = [(self.restrict_rect[0]+self.restrict_rect[2])*0.5,
-                                (self.restrict_rect[1]+self.restrict_rect[3])*0.5,
-                                QUtilities.parse_value_length(self.metal_design.chips['main']['size']['center_z'])]
-        else:
-            self.chip_len = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_x'])
-            self.chip_wid = QUtilities.parse_value_length(self.metal_design.chips['main']['size']['size_y'])
-            self.chip_centre = [QUtilities.parse_value_length(self.metal_design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
-            self.restrict_rect = [self.chip_centre[0]-0.5*self.chip_len, self.chip_centre[1]-0.5*self.chip_wid,
-                                  self.chip_centre[0]+0.5*self.chip_len, self.chip_centre[1]+0.5*self.chip_wid]
+    def _process_geometry_type(self, **kwargs):
+        if 'metal_design' in kwargs:
+            self._geom_processor = GeomQiskitMetal(kwargs['metal_design'], **kwargs)
+        elif 'gds_design' in kwargs:
+            self._geom_processor = GeomGDS(kwargs['gds_design'], **kwargs)
 
     def create_batch_file(self):
         pass
@@ -86,16 +81,21 @@ class PALACE_Model:
                                       capacitance matrix simulations).
             - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
                           PVD_Shadows for more details on its definition.
+
+            GDS-SPECIFIC
+            - cell_index - (Optional) Defaults to 0. Can specify the cell from which the layer is to be extracted
         '''
-        self._metallic_layers += [{
-            'type': 'design_layer',
-            'layer_id': layer_id,
-            'threshold': kwargs.get('threshold', -1),
-            'fuse_threshold': kwargs.get('fuse_threshold', 1e-12),
-            'evap_mode': kwargs.get('evap_mode', 'separate_delete_below'),
-            'group_by_evaporations': kwargs.get('group_by_evaporations', False),
-            'evap_trim': kwargs.get('evap_trim', 20e-9),
-        }]
+        new_metallic_layer = {
+                'type': 'design_layer',
+                'layer_id': layer_id,
+                'threshold': kwargs.pop('threshold', -1),
+                'fuse_threshold': kwargs.pop('fuse_threshold', 1e-12),
+                'evap_mode': kwargs.pop('evap_mode', 'separate_delete_below'),
+                'group_by_evaporations': kwargs.pop('group_by_evaporations', False),
+                'evap_trim': kwargs.pop('evap_trim', 20e-9),
+                'other' : kwargs
+            }
+        self._metallic_layers.append(new_metallic_layer)
 
     def add_ground_plane(self, **kwargs):
         '''
@@ -292,9 +292,13 @@ class PALACE_Model:
                 json.dump(config_json, f, indent=2)
             self._output_data_dir = os.path.dirname(os.path.realpath(self._sim_config)) + "/" + self._output_dir
 
+    def _check_if_QiskitMetalDesign(self):
+        assert isinstance(self._geom_processor, GeomQiskitMetal), "This function can only be used on QiskitMetal designs."
+
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
-        leUnits = QUtilities.get_units(self.metal_design)
-        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self.metal_design, qObjName, trace_name)[0] * leUnits
+        self._check_if_QiskitMetalDesign()
+        leUnits = QUtilities.get_units(self._geom_processor.design)
+        lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self._geom_processor.design, qObjName, trace_name)[0] * leUnits
         self._fine_meshes.append({
             'type': 'path',
             'path': lePath,
@@ -357,7 +361,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
                     lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
-            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
+            ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
             
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
@@ -389,7 +393,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             try:
                 #Create COMSOL RF sim object
                 sim_sParams = COMSOL_Simulation_RFsParameters(cmsl, adaptive = 'None')
-                cmsl.initialize_model(self.metal_design, [sim_sParams], bottom_grounded = True, resolution = 10)
+                cmsl.initialize_model(self._geom_processor.design, [sim_sParams], bottom_grounded = True, resolution = 10)     #TODO: Make COMSOL actually compatible rather than assuming Qiskit-Metal designs?
 
                 #Add metallic layers
                 for cur_layer in metallic_layers:
@@ -397,9 +401,9 @@ class PALACE_Model_RF_Base(PALACE_Model):
                         cmsl.add_metallic(**cur_layer)
                     elif cur_layer.get('type') == 'Uclip':
                         if cur_layer['clip_type'] == 'inplaneLauncher':
-                            sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                            sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
                         elif cur_layer['clip_type'] == 'inplaneRoute':
-                            sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra'])
+                            sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
                 if not ground_plane['omit']:
                     cmsl.add_ground_plane(threshold=ground_plane['threshold'])
                 #cmsl.fuse_all_metals()
@@ -411,7 +415,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     elif cur_port['type'] == 'route':
                         sim_sParams.create_port_CPW_on_Route(cur_port['qObjName'], cur_port['pin_name'], cur_port['len_launch'])
                     elif cur_port['type'] == 'single_rect':
-                        sim_sParams.create_port_2_conds_by_position(cur_port['pos1'], cur_port['pos2'], cur_port['rect_width']) 
+                        sim_sParams.create_port_2_conds_by_position(cur_port['pos1'], cur_port['pos2'], cur_port['rect_width']) #TODO: Make COMSOL support cpw_point CPW feed...
                 
                 for fine_mesh in self._fine_meshes:
                     if fine_mesh['type'] == 'box':
@@ -454,11 +458,13 @@ class PALACE_Model_RF_Base(PALACE_Model):
         self._rf_port_excitation = port_index
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+        self._check_if_QiskitMetalDesign()
+        
         port_name = "rf_port_" + str(len(self._ports))
 
-        unit_conv = QUtilities.get_units(self.metal_design)
-        pos1 = self.metal_design.components[qObjName1].pins[pin1]['middle'] * unit_conv
-        pos2 = self.metal_design.components[qObjName2].pins[pin2]['middle'] * unit_conv
+        unit_conv = QUtilities.get_units(self._geom_processor.design)
+        pos1 = self._geom_processor.design.components[qObjName1].pins[pin1]['middle'] * unit_conv
+        pos2 = self._geom_processor.design.components[qObjName2].pins[pin2]['middle'] * unit_conv
         v_parl = pos2-pos1
         v_parl /= np.linalg.norm(v_parl)
 
@@ -472,10 +478,12 @@ class PALACE_Model_RF_Base(PALACE_Model):
             self._rf_port_excitation = len(self._ports)
 
     def create_port_JosephsonJunction(self, qObjName, **kwargs):
+        self._check_if_QiskitMetalDesign()
+
         junction_index = kwargs.get('junction_index', 0)
 
-        comp_id = self.metal_design.components[qObjName].id
-        gsdf = self.metal_design.qgeometry.tables['junction']
+        comp_id = self._geom_processor.design.components[qObjName].id
+        gsdf = self._geom_processor.design.qgeometry.tables['junction']
         gsdf = gsdf.loc[gsdf["component"] == comp_id]
         ls = gsdf['geometry'].iloc[junction_index]
         assert isinstance(ls, shapely.geometry.linestring.LineString), "The junction must be defined as a LineString object. Check the code for the part to verify this..."
@@ -500,7 +508,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
         port_name = "rf_port_" + str(len(self._ports))
 
-        unit_conv = QUtilities.get_units(self.metal_design)
+        unit_conv = QUtilities.get_units(self._geom_processor.design)
         pos1 = np.array(coords[0]) * unit_conv
         pos2 = np.array(coords[1]) * unit_conv
         v_parl = pos2-pos1
@@ -525,9 +533,10 @@ class PALACE_Model_RF_Base(PALACE_Model):
             - is_start - If True, then the port is attached to the start of the CPW, while False attaches the port to the end of the CPW
             - len_launch - (Default: 20e-6) Length of the inlet port fins along the the CPW. It is a good idea to keep it thin w.r.t. CPW gap 
         '''
+        self._check_if_QiskitMetalDesign()
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self.metal_design, qObjName, len_launch, 1)  #Units of m...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Launcher(self._geom_processor.design, qObjName, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'launcher', 'elem_type':'cpw', 'qObjName':qObjName, 'len_launch': len_launch,
@@ -539,15 +548,32 @@ class PALACE_Model_RF_Base(PALACE_Model):
             self._rf_port_excitation = len(self._ports)
 
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+        self._check_if_QiskitMetalDesign()
         port_name = "rf_port_" + str(len(self._ports))
         
-        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self.metal_design, qObjName, pin_name, len_launch, 1)  #Units of m...
+        launchesA, launchesB, vec_perp = QUtilities.get_RFport_CPW_coords_Route(self._geom_processor.design, qObjName, pin_name, len_launch, 1)  #Units of m...
 
         #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
         self._ports += [{'port_name':port_name, 'type':'route', 'elem_type':'cpw', 'qObjName':qObjName, 'pin_name':pin_name, 'len_launch': len_launch,
                          'portAcoords': launchesA + [launchesA[0]],
                          'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': vec_perp.tolist(),
+                         'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+        if self._rf_port_excitation == -1 and impedance_R > 0:
+            self._rf_port_excitation = len(self._ports)
+
+    def create_port_CPW_via_edge_point(self, pt_near_centre_end, len_launch, impedance_R=50, impedance_L=0, impedance_C=0, **kwargs):
+        port_name = "rf_port_" + str(len(self._ports))
+
+        kwargs["fuse_threshold"] = self.user_options["fuse_threshold"]
+        kwargs["threshold"] = self.user_options["threshold"]
+        launchesA, launchesB, vec_perp = self._geom_processor.create_CPW_feed_via_point(pt_near_centre_end, len_launch, self._metallic_layers, self._ground_plane, **kwargs)
+        
+        #See here for details: https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22LumpedPort%22]
+        self._ports += [{'port_name':port_name, 'type':'point', 'elem_type':'cpw', 'len_launch': len_launch,
+                         'portAcoords': launchesA + [launchesA[0]],
+                         'portBcoords': launchesB + [launchesB[0]],
+                         'vec_field': vec_perp,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
         if self._rf_port_excitation == -1 and impedance_R > 0:
             self._rf_port_excitation = len(self._ports)
@@ -567,18 +593,17 @@ class PALACE_Model_RF_Base(PALACE_Model):
             with open(self._sim_config, "w") as f:
                 json.dump(config_json, f, indent=2)
 
-    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneLauncher',
             'qObjName':qObjName,
             'thickness_side':thickness_side,
             'thickness_back':thickness_back,
-            'separation_gap':separation_gap,
-            'unit_conv_extra':unit_conv_extra
+            'separation_gap':separation_gap
         }]
 
-    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneRoute',
@@ -586,8 +611,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'pin_name':pin_name,
             'thickness_side':thickness_side,
             'thickness_back':thickness_back,
-            'separation_gap':separation_gap,
-            'unit_conv_extra':unit_conv_extra
+            'separation_gap':separation_gap
         }]
 
     def _process_ports(self, ports):

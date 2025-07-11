@@ -44,8 +44,21 @@ class ShapelyEx:
             return coords
 
     @staticmethod
-    def shapely_to_list(shapely_poly):
-        if isinstance(shapely_poly, shapely.geometry.multipolygon.MultiPolygon):
-            return [x for x in shapely_poly.geoms]
+    def shapely_to_list(shapely_obj):
+        if isinstance(shapely_obj, shapely.geometry.multipolygon.MultiPolygon) or isinstance(shapely_obj, shapely.geometry.multilinestring.MultiLineString):
+            return [x for x in shapely_obj.geoms]
         else:
-            return [shapely_poly] #i.e. it's just a lonely Polygon object...
+            return [shapely_obj] #i.e. it's just a lonely Polygon or LineString object...
+
+    @staticmethod
+    def get_points_uniform_in_polygon(shapely_poly, spacing_x, spacing_y):
+        min_x, min_y, max_x, max_y = shapely_poly.bounds
+        smpl_x = np.arange(min_x,max_x+spacing_x, spacing_x)
+        smpl_y = np.arange(min_y,max_y+spacing_y, spacing_y)
+        ret_array = []
+        for x in smpl_x:
+            for y in smpl_y:
+                if shapely_poly.contains(shapely.geometry.Point(x,y)):
+                    ret_array.append([x, y])
+        return np.array(ret_array)
+

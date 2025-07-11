@@ -1,8 +1,4 @@
-from qiskit_metal.qgeometries.qgeometries_handler import QGeometryTables
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
-from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
-from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 from SQDMetal.Utilities.QUtilities import QUtilities
 import gmsh
 import pandas as pd
@@ -12,26 +8,17 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import colormaps
 import shapely
-import qiskit_metal 
 
+from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
+from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
 
 class GMSH_Geometry_Builder:
 
-    def __init__(self, design, fillet_resolution, gmsh_verbosity=1):
+    def __init__(self, geom_processor:GeomBase, fillet_resolution, gmsh_verbosity=1):
         #gmsh_verbosity: 0: silent except for fatal errors, 1: +errors, 2: +warnings, 3: +direct, 4: +information, 5: +status, 99: +debug
         
-        self.design = design
+        self._geom_processor = geom_processor
         self.fillet_resolution = fillet_resolution
-
-        unit_conv = 1e-3
-
-        #Get dimensions of chip base and convert to design units in 'mm'
-        self.center_x = QUtilities.parse_value_length(design.chips['main']['size']['center_x']) / unit_conv
-        self.center_y = QUtilities.parse_value_length(design.chips['main']['size']['center_y']) / unit_conv
-        self.center_z = QUtilities.parse_value_length(design.chips['main']['size']['center_z']) / unit_conv
-        self.size_x = QUtilities.parse_value_length(design.chips['main']['size']['size_x']) / unit_conv
-        self.size_y = QUtilities.parse_value_length(design.chips['main']['size']['size_y']) / unit_conv
-        self.size_z = QUtilities.parse_value_length(design.chips['main']['size']['size_z']) / unit_conv
 
         #Initialize the GMSH API and name the model
         gmsh.model.remove()
@@ -56,7 +43,19 @@ class GMSH_Geometry_Builder:
         #Do pre-processing in shapely to get metallic elements and dielectric cutouts ready to build in GMSH.
         #Note: metals list contains ground plane. Dielectric gaps are the difference between the dielectric cutout
         #and the metals
-        metals, dielectric_gaps = self._process_qiskit_geometries(metallic_layers, ground_plane, fuse_threshold, **kwargs)
+        metals, dielectric_gaps = self._geom_processor.process_layers(metallic_layers, ground_plane, fuse_threshold=fuse_threshold, fillet_resolution=self.fillet_resolution, unit_conv=1e-3, **kwargs)    #It's in mm...
+
+        unit_conv = 1e-3
+
+        #Get dimensions of chip base and convert to design units in 'mm'
+        chip_centre = self._geom_processor.chip_centre
+        self.center_x = chip_centre[0] / unit_conv
+        self.center_y = chip_centre[1] / unit_conv
+        self.center_z = chip_centre[2] / unit_conv
+        self.size_x = self._geom_processor.chip_size_x / unit_conv
+        self.size_y = self._geom_processor.chip_size_y / unit_conv
+        self.size_z = self._geom_processor.chip_size_z / unit_conv
+
 
         #Plot the shapely metals for user to see device
         # geoms = metals# + ground_plane
@@ -207,8 +206,9 @@ class GMSH_Geometry_Builder:
                 #
                 fine_mesh_elems.append(cur_mesh_attrb)
             elif cur_fine_mesh['type'] == 'comp_bounds':
+                assert isinstance(self._geom_processor, GeomQiskitMetal), "The geometry must be in Qiskit-Metal format to use comp_bounds..."
                 cur_mesh_attrb = {}
-                comp_outlines = QUtilities.get_perimetric_polygons(self.design, cur_fine_mesh['list_comp_names'], fuse_threshold=fuse_threshold, resolution=self.fillet_resolution, unit_conv=1, metals_only=cur_fine_mesh['metals_only'])    #Get it in mm...
+                comp_outlines = QUtilities.get_perimetric_polygons(self._geom_processor.design, cur_fine_mesh['list_comp_names'], fuse_threshold=fuse_threshold, resolution=self.fillet_resolution, unit_conv=1, metals_only=cur_fine_mesh['metals_only'])    #Get it in mm...
                 cur_mesh_attrb['region'] = self._create_gmsh_geometry_from_shapely_polygons(comp_outlines)
                 cur_mesh_attrb['mesh_min'] = cur_fine_mesh['min_size'] * 1e3
                 cur_mesh_attrb['mesh_max'] = cur_fine_mesh['max_size'] * 1e3
@@ -251,62 +251,6 @@ class GMSH_Geometry_Builder:
         else:
             return [data]
 
-    def _process_qiskit_geometries(self, metallic_layers, ground_plane, fuse_threshold, **kwargs):
-        fuse_threshold /= 1e-3  #Convert to mm...
-        threshold = kwargs.get('threshold', 1e-9) / 1e-3  #Convert to mm...
-
-        #Remove any previous model and add new gmsh model
-        gmsh.model.remove()
-        gmsh.finalize()
-        gmsh.initialize()
-        gmsh.model.add('qiskit_to_gmsh')
-        gmsh.option.setNumber('General.Verbosity', self._verbosity)
-        gmsh.option.setNumber("General.Terminal", self._verbosity)
-
-        unit_conv = 1   #TODO: Because it is stuck in mm?!
-
-        #Handle the ground plane...
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
-        gsdf = qmpl.get_net_coordinates(self.fillet_resolution)
-        filt = gsdf.loc[gsdf['subtract'] == True]
-        #TODO: It should only take stuff from the metallic layers specified when calculating spaces???
-        space_polys = ShapelyEx.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold)
-        space_polys = ShapelyEx.shapely_to_list(space_polys)
-        space_polys = [shapely.affinity.scale(x, xfact=unit_conv, yfact=unit_conv, origin=(0,0)) for x in space_polys]
-        #
-        metal_surface = shapely.geometry.box(self.center_x - 0.5*self.size_x, self.center_y - 0.5*self.size_y,
-                                             self.center_x + 0.5*self.size_x, self.center_y + 0.5*self.size_y)
-        if not ground_plane['omit']:
-            ground_plane_poly = shapely.difference(metal_surface, shapely.geometry.multipolygon.MultiPolygon(space_polys))
-        #
-        #Gather all polygons into contiguous groups
-        metal_polys = []
-        if not ground_plane['omit'] and not ground_plane_poly.is_empty:
-            metal_polys.append(ground_plane_poly)
-        for cur_layer in metallic_layers:
-            if cur_layer['type'] == 'design_layer':
-                cur_layer['unit_conv'] = unit_conv
-                cur_layer['resolution'] = self.fillet_resolution
-                cur_layer['threshold'] = threshold
-                metal_polys_all, metal_sel_ids = QUtilities.get_metals_in_layer(self.design, **cur_layer)
-                metal_polys += metal_polys_all
-            elif cur_layer['type'] == 'Uclip':
-                if cur_layer['clip_type'] == 'inplaneLauncher':
-                    Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.design, cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra']*1e3) #TODO: Stuck in mm?!
-                elif cur_layer['clip_type'] == 'inplaneRoute':
-                    Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.design, cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'], cur_layer['unit_conv_extra']*1e3) #TODO: Stuck in mm?!
-                metal_polys.append(shapely.Polygon(Uclip))
-        #Try to fuse any contiguous polygons...
-        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys)
-        #If there are any MultiPolygons, convert them into normal polygons...
-        new_polys = ShapelyEx.shapely_to_list(metal_polys)
-
-        substrate = ShapelyEx.rectangle(self.center_x-self.size_x/2, self.center_y-self.size_y/2, self.center_x+self.size_x/2, self.center_y+self.size_y/2)
-        dielectric_gaps = shapely.difference(substrate, metal_polys)
-        dielectric_gaps = ShapelyEx.shapely_to_list(dielectric_gaps)
-
-        return new_polys, dielectric_gaps
-
     def _create_gmsh_geometry_from_shapely_polygons(self, polygons):
         polygons_list = []
         for m,poly in enumerate(polygons):
@@ -340,22 +284,13 @@ class GMSH_Geometry_Builder:
         Returns:
             surface - GMSH surface ID of newly drawn polygon.
         '''
-        #gets polygon coordinates depending on the type of argument fed to the function
-        x_coords = []
-        y_coords = []
-
-        for _,coordinates in enumerate(coords):
-            x_coords.append(coordinates[0])
-            y_coords.append(coordinates[1])
-
         #define lists to store points and lines
         points = []
         lines = []
     
         #create 2D points in gmsh
-        for i,_ in enumerate(x_coords):
-            point = gmsh.model.occ.addPoint(x_coords[i], y_coords[i], 
-                                            self.design.parse_value(self.design.chips['main'].size.center_z))
+        for coord in coords:
+            point = gmsh.model.occ.addPoint(coord[0], coord[1], self._geom_processor.chip_centre[2])
             points.append(point)
 
         #update model with the created geometry items

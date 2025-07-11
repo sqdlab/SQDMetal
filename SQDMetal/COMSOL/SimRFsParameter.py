@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize
 
+import os
+
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
@@ -32,6 +34,9 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.modal_min_freq_num_eigs = modal_min_freq_num_eigs
         self.relative_tolerance = relative_tolerance
         self._include_loss_tangents = include_loss_tangents
+        self._current_sources = []
+        self._electric_point_dipoles = []
+        self._discard_PEC_BC = False
 
     def _prepare_simulation(self):
         self._study = self.model._add_study("stdRFsparams")
@@ -71,6 +76,22 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         # if self.adaptive == 'None':
         #     self.jc.sol(self._soln).feature("s1").set("stol", self.relative_tolerance)
         self.dset_name = self.model._get_dset_name()
+        
+        #Setup surface integrals (e.g. for EPR calculations)
+        int_name = "intMetals"
+        self.jc.result().numerical().create(int_name, "IntSurface")
+        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).selection().named("geom1_condAll");
+        self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
+        self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
+        #
+        int_name = "intDielectric"
+        self.jc.result().numerical().create(int_name, "IntSurface")
+        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).selection().named("geom1_dielectricSurface")
+        self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
+        self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
+
 
     def _temporary_freq_domain_AutoSequence(self):
         self.jc.sol(self._soln).create("st1", "StudyStep")
@@ -137,14 +158,19 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             elif cur_lelem[2] == 'LCparallel':
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
                 self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+            elif cur_lelem[2] == 'RLCparallel':
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Lelement', jtypes.JDouble(cur_lelem[1][0]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Celement', jtypes.JDouble(cur_lelem[1][1]))
+                self.jc.component("comp1").physics(self.phys_emw).feature(elem_name).set('Relement', jtypes.JDouble(cur_lelem[1][2]))
 
 
         if self.model._include_loss_tangents:
             self.jc.component("comp1").physics("emw").feature("wee1").set("DisplacementFieldModel", "LossTangent")
 
         #Note that PEC1 is the default exterior boundary condition
-        self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
-        self.jc.component("comp1").physics(self.phys_emw).feature("pec2").selection().named("geom1_condAll")
+        if not self._discard_PEC_BC:
+            self.jc.component("comp1").physics(self.phys_emw).create("pec2", "PerfectElectricConductor", 2)
+            self.jc.component("comp1").physics(self.phys_emw).feature("pec2").selection().named("geom1_condAll")
         #Create the excitation ports
         self.port_names = []
         for cur_port_id,cur_port in enumerate(self._ports):
@@ -162,6 +188,41 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
                 self.jc.component("comp1").physics(self.phys_emw).feature(port_name).selection().named('geom1_'+cur_port['polys'][0])
             #
             self.port_names.append(port_name)
+        #Create any current sources
+        for m,cur_current_src in enumerate(self._current_sources):
+            assert False, "Do not add surface current sources for now"
+            #TODO: Finish this feature later...
+            region, extrusion_depth, J_z = cur_current_src[1], cur_current_src[2], cur_current_src[3]
+            
+            if cur_current_src[0] == 'region':
+                cur_extrusion = f"ext{m}"
+                self.jc.component("comp1").geom("geom1").feature().create(cur_extrusion, "Extrude")
+                self.jc.component("comp1").geom("geom1").feature(cur_extrusion).set("extrudefrom", "faces")
+                self.jc.component("comp1").geom("geom1").feature(cur_extrusion).selection("inputface").named("condAll")
+                self.jc.component("comp1").geom("geom1").feature(cur_extrusion).setIndex("distance", str(extrusion_depth), 0)
+
+                #It'll have to be:
+                # - Create workplane + extrusion separately for each polygon
+                # - Contribute entire thing to a selection
+                # - Create selection spheres on top and bottom sections to slice out the top/bottom
+                # - Create difference-selection to isolate side-walls
+                # - Create S.C. B.C. on side-walls and PEC on top/bottom sections...
+
+                # self.jc.component("comp1").physics(self.phys_emw).create(f"scu{m}", "SurfaceCurrent", 2)
+                # 
+                # if region == 'metals':
+                #     self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").selection().named("geom1_condAll")
+                # else:
+                #     self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").selection().named("geom1_dielectricSurface")
+                # self.jc.component("comp1").physics(self.phys_emw).feature(f"scu{m}").set("Js0", jtypes.JArray(jtypes.JDouble)([0, 0, J_z]))
+        #Create electric point dipoles
+        for m,cur_dipole in enumerate(self._electric_point_dipoles):
+            sel_name, dipole_moment_p, dipole_moment_vecdir = cur_dipole
+            edp_name = f"edp{m}"
+            self.jc.component("comp1").physics(self.phys_emw).create(edp_name, "ElectricPointDipole", 0)
+            self.jc.component("comp1").physics(self.phys_emw).feature(edp_name).selection().named(f"geom1_{sel_name}_pnt")  #Why does it require this _pnt?
+            self.jc.component("comp1").physics(self.phys_emw).feature(edp_name).set("enpI", jtypes.JArray(jtypes.JDouble)(dipole_moment_vecdir.tolist()))
+            self.jc.component("comp1").physics(self.phys_emw).feature(edp_name).set("normpI", jtypes.JFloat(dipole_moment_p))
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6):
         unit_conv = QUtilities.get_units(self.model.design)
@@ -248,12 +309,12 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         cur_port['vec_perp'] = vec_perp
         self._ports += [cur_port]
 
-    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
-        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Launcher_inplane(self.model.design, qObjName, thickness_side, thickness_back, separation_gap)
         self.model._add_cond(Uclip)
 
-    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6, unit_conv_extra = 1):
-        Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap, unit_conv_extra)
+    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+        Uclip = QUtilities.get_RFport_CPW_groundU_Route_inplane(self.model.design, route_name, pin_name, thickness_side, thickness_back, separation_gap)
         self.model._add_cond(Uclip)
 
     def create_lumped_inductance(self, qObj1, pin1, qObj2, pin2, width, value):
@@ -295,6 +356,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             assert False, "Must supply either E_J_Hertz or L_J to define a Josephson Junction port."
 
         C_J = kwargs.get('C_J', 0)
+        R_J = kwargs.get('R_J', 0)
 
         port_name = "rf_port_" + str(len(self._ports))
 
@@ -309,9 +371,12 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         sel_x, sel_y, sel_r = self.model._create_poly(f"lumpedPort{len(self.lumped_elems)}", np.array(portCoords))
         if C_J > 0:
-            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])    #TODO: How does the capacitance add in here?
+            if R_J > 0:
+                self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J, R_J), 'RLCparallel'])
+            else:
+                self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), (L_ind, C_J), 'LCparallel'])
         else:
-            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])    #TODO: How does the capacitance add in here?
+            self.lumped_elems.append([self.model._create_boundary_selection_sphere(sel_r, sel_x, sel_y), L_ind, 'Inductor'])
 
     def set_freq_range(self, freq_start, freq_end, num_points, use_previous_solns = False):
         '''
@@ -354,6 +419,28 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study).set("errestandadap", "none")
             self.jc.study(self._study).feature(self._sub_study).set("plist", str_freqs)
 
+    def add_surface_current_source_region(self, region="", extrusion_depth=1e-6, J_z=1.0):
+        assert self.adaptive == 'None', "Cannot use eigenmode-based simulations when setting current sources."
+
+        assert region in ['metals', 'dielectric'], "Must set region to either 'metals' or 'dielectric'"
+        self._current_sources.append(('region', region, extrusion_depth, J_z))
+        if region == 'metals':
+            self._discard_PEC_BC = True
+
+    def add_electric_point_dipole(self, vec_pos, dipole_moment_p, dipole_moment_vecdir):
+        pt_name = f"pt{len(self._electric_point_dipoles)}"
+        sel_name = f"sel_" + pt_name
+        self.jc.component("comp1").geom("geom1").create(pt_name, "Point")
+        self.jc.component("comp1").geom("geom1").feature(pt_name).setIndex("p", str(vec_pos[0]), 0)
+        self.jc.component("comp1").geom("geom1").feature(pt_name).setIndex("p", str(vec_pos[1]), 1)
+        self.jc.component("comp1").geom("geom1").feature(pt_name).setIndex("p", str(vec_pos[2]), 2)
+        self.jc.component("comp1").geom("geom1").run(pt_name)
+        self.jc.component("comp1").geom("geom1").selection().create(sel_name, "CumulativeSelection")
+        self.jc.component("comp1").geom("geom1").selection(sel_name).label(pt_name)
+        self.jc.component("comp1").geom("geom1").feature(pt_name).set("contributeto", sel_name)
+        #
+        dipole_moment_vecdir = np.array(dipole_moment_vecdir)
+        self._electric_point_dipoles.append((sel_name, dipole_moment_p, dipole_moment_vecdir/np.linalg.norm(dipole_moment_vecdir)))
 
     def _get_required_physics(self):
         return [self.phys_emw]
@@ -393,6 +480,74 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.jc.result().numerical().remove("ev1")
 
         return np.vstack([freqs] + s1Remains)
+
+    def eval_fields_over_mesh(self):
+        x,y,z,Ex,Ey,Ez,Bx,By,Bz,Dx,Dy,Dz,Hx,Hy,Hz = self.model._model.evaluate(['x', 'y', 'z', 'emw.Ex', 'emw.Ey', 'emw.Ez', 'emw.Bx', 'emw.By', 'emw.Bz', 'emw.Dx', 'emw.Dy', 'emw.Dz', 'emw.Hx', 'emw.Hy', 'emw.Hz'])
+        return {'coords': np.vstack([x,y,z]).T,
+                'E': np.vstack([Ex,Ey,Ez]).T,
+                'B': np.vstack([Bx,By,Bz]).T,
+                'D': np.vstack([Dx,Dy,Dz]).T,
+                'H': np.vstack([Hx,Hy,Hz]).T}
+
+    def eval_field_at_pts(self, expr, coords: np.ndarray, freq_index=1):
+        allowed_exprs = ['Ex', 'Ey', 'Ez', 'E',
+                         'Bx', 'By', 'Bz', 'B',
+                         'Dx', 'Dy', 'Dz', 'D',
+                         'Hx', 'Hy', 'Hz', 'H']
+        assert expr in allowed_exprs, f"Must only ask for: {str(allowed_exprs)}"
+
+        if self.model._dset_exists("cpt1"):
+            self.jc.result().dataset().remove("cpt1")
+        if self.model._numeval_exists("pev1"):
+            self.jc.result().numerical().remove("pev1")
+        
+        self.jc.result().dataset().create("cpt1", "CutPoint3D")
+
+        np.savetxt("temp_data.csv", np.real(coords), delimiter=',')
+
+        #Loading via Java is slow...
+        # self.jc.result().dataset("cpt1").set("pointx", jtypes.JArray(jtypes.JDouble)(np.real(coords[:,0]).tolist()))
+        # self.jc.result().dataset("cpt1").set("pointy", jtypes.JArray(jtypes.JDouble)(np.real(coords[:,1]).tolist()))
+        # self.jc.result().dataset("cpt1").set("pointz", jtypes.JArray(jtypes.JDouble)(np.real(coords[:,2]).tolist()))
+        self.jc.result().dataset("cpt1").set("method", "file")
+        self.jc.result().dataset("cpt1").set("filename", "temp_data.csv")
+
+        self.jc.result().dataset("cpt1").set("data", self.dset_name)
+        
+        self.jc.result().numerical().create("pev1", "EvalPoint")
+        self.jc.result().numerical("pev1").set("data", "cpt1")
+        self.jc.result().numerical("pev1").setIndex("looplevelinput", "manualindices", 0)
+        self.jc.result().numerical("pev1").setIndex("looplevelindices", jtypes.JInt(freq_index), 0)
+
+        if expr in ['Ex', 'Ey', 'Ez', 'Bx', 'By', 'Bz', 'Dx', 'Dy', 'Dz', 'Hx', 'Hy', 'Hz']:
+            self.jc.result().numerical("pev1").setIndex("expr", f"emw.{expr}", 0)
+            cur_vals_R = self.jc.result().numerical("pev1").getReal()
+            cur_vals_I = self.jc.result().numerical("pev1").getImag()
+            ret_vals = (np.array(cur_vals_R) + 1j*np.array(cur_vals_I))[:,0]
+        elif expr in ['E', 'B', 'D', 'H']:
+            self.jc.result().numerical("pev1").setIndex("expr", f"emw.{expr}x", 0)
+            cur_vals_R = self.jc.result().numerical("pev1").getReal()
+            cur_vals_I = self.jc.result().numerical("pev1").getImag()
+            x_vals = (np.array(cur_vals_R) + 1j*np.array(cur_vals_I))[:,0]
+            #
+            self.jc.result().numerical("pev1").setIndex("expr", f"emw.{expr}y", 0)
+            cur_vals_R = self.jc.result().numerical("pev1").getReal()
+            cur_vals_I = self.jc.result().numerical("pev1").getImag()
+            y_vals = (np.array(cur_vals_R) + 1j*np.array(cur_vals_I))[:,0]
+            #
+            self.jc.result().numerical("pev1").setIndex("expr", f"emw.{expr}z", 0)
+            cur_vals_R = self.jc.result().numerical("pev1").getReal()
+            cur_vals_I = self.jc.result().numerical("pev1").getImag()
+            z_vals = (np.array(cur_vals_R) + 1j*np.array(cur_vals_I))[:,0]
+            #
+            ret_vals = np.vstack([x_vals, y_vals, z_vals]).T
+
+        self.jc.result().numerical().remove("pev1")
+        self.jc.result().dataset().remove("cpt1")
+        if os.path.exists("temp_data.csv"):
+            os.remove("temp_data.csv")
+
+        return ret_vals
 
     def run_only_eigenfrequencies(self, return_dofs=False):
         #TODO: Check it is in eigenmode type and find a better solution than this... This basically evaluates a table and then extracts the first column

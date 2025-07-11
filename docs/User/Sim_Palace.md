@@ -48,10 +48,17 @@ The second command will find the path of the Palace binary. Basically it's somew
 
 Executing the above block should show the command-line switches required for Palace. 
 
-Finally, install [Paraview](https://www.paraview.org/):
+Optionally, install [Paraview](https://www.paraview.org/):
 
 ```bash
 sudo apt install paraview
+```
+If this fails (e.g. some dependency clash), use its `flatpak`:
+
+```bash
+sudo apt install flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+sudo flatpak install flathub org.paraview.ParaView
 ```
 
 Finally, in the Python virtual environment, if it has not been already installed, run:
