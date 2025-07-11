@@ -80,6 +80,9 @@ class GeomGDS(GeomBase):
 
         #Given as min x, min y, max x, max y
         temp_metal_fuse = ShapelyEx.fuse_polygons_threshold(metal_polys_all, kwargs.get('fuse_threshold', 1e-12) / unit_conv)
+        simplify_edge_min_angle_deg = kwargs.get("simplify_edge_min_angle_deg",-1)
+        if simplify_edge_min_angle_deg >= 0:
+            temp_metal_fuse = ShapelyEx.simplify_poly_edges(temp_metal_fuse, simplify_edge_min_angle_deg)
 
         if not isinstance(self._restrict_rect, list):
             substrate_box_bnds = temp_metal_fuse.bounds

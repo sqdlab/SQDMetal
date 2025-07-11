@@ -62,3 +62,49 @@ class ShapelyEx:
                     ret_array.append([x, y])
         return np.array(ret_array)
 
+    @staticmethod
+    def simplify_line_edges(coords, min_angle_deg):
+        '''
+        Give coordinates as a list of (x,y) pairs. It must be a closed shell (i.e. coords[0]==coords[-1]). The
+        min_angle_deg specifies the angle upon which to discard a corner if below this angle...
+        '''
+        min_angle = min_angle_deg/180*np.pi
+        cur_coords = coords[:-1]    #Remove the repeated closure point...
+        deleted = True
+        while deleted:
+            deleted = False
+            numPts = len(cur_coords)
+            chosen_coords = np.zeros(numPts, dtype=int)
+            for m in range(numPts):
+                if chosen_coords[m] == 1:
+                    continue
+                vec_a = np.array([cur_coords[m][0]-cur_coords[m-1][0], cur_coords[m][1]-cur_coords[m-1][1]])
+                vec_b = np.array([cur_coords[(m+1)%numPts][0]-cur_coords[m][0], cur_coords[(m+1)%numPts][1]-cur_coords[m][1]])
+                vec_a_norm = np.linalg.norm(vec_a)
+                vec_b_norm = np.linalg.norm(vec_b)
+                len_fac = vec_a_norm/vec_b_norm if vec_a_norm>vec_b_norm else vec_b_norm/vec_a_norm
+                phi = np.arccos(np.dot(vec_a, vec_b)/(vec_a_norm*vec_b_norm))
+                if phi* len_fac <= min_angle:
+                    chosen_coords[m-1] = 1
+                    chosen_coords[(m+1)%numPts] = 1
+                    # chosen_coords[m] = 0
+                    deleted = True
+                else:
+                    chosen_coords[m] = 1
+            cur_coords = [cur_coords[m] for m in range(numPts) if chosen_coords[m] == 1]
+        cur_coords.append(cur_coords[0])    #Close the loop again...
+        return cur_coords
+
+    @staticmethod
+    def simplify_poly_edges(shapely_poly, min_angle_deg):
+        list_shapely_polys = ShapelyEx.shapely_to_list(shapely_poly)
+
+        filtered_polys = []
+        for cur_poly in list_shapely_polys:
+            exteriors = ShapelyEx.simplify_line_edges(cur_poly.exterior.coords[:], min_angle_deg)
+            interiors = [ShapelyEx.simplify_line_edges(cur_int.coords[:], min_angle_deg) for cur_int in cur_poly.interiors]
+            filtered_polys.append(shapely.Polygon(exteriors, interiors))
+
+        filtered_polys = shapely.unary_union(filtered_polys)
+
+        return filtered_polys

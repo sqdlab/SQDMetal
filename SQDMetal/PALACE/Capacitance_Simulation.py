@@ -34,7 +34,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "HPC_Parameters_JSON": "",
                  "fuse_threshold": 1e-9,
                  "gmsh_verbosity": 1,
-                 "threshold": 1e-9
+                 "threshold": 1e-9,
+                 "simplify_edge_min_angle_deg": -1
     }
 
     # Parent Directory path
@@ -62,7 +63,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         if self.meshing == 'GMSH':
             ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"], simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"])
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()

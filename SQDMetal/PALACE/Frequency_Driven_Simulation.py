@@ -29,7 +29,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "HPC_Parameters_JSON": "",
                  "fuse_threshold": 1e-9,
                  "gmsh_verbosity": 1,
-                 "threshold": 1e-9
+                 "threshold": 1e-9,
+                 "simplify_edge_min_angle_deg": -1
                 }
 
     #constructor

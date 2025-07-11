@@ -91,6 +91,10 @@ class GeomQiskitMetal(GeomBase):
         #Try to fuse any contiguous polygons...
         metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, fuse_threshold)
         metal_polys = shapely.affinity.scale(metal_polys, xfact=1/unit_conv, yfact=1/unit_conv, origin=(0,0))
+        simplify_edge_min_angle_deg = kwargs.get("simplify_edge_min_angle_deg",-1)
+        if simplify_edge_min_angle_deg >= 0:
+            metal_polys = ShapelyEx.simplify_poly_edges(metal_polys, simplify_edge_min_angle_deg)
+
         #If there are any MultiPolygons, convert them into normal polygons...
         new_polys = ShapelyEx.shapely_to_list(metal_polys)
 
