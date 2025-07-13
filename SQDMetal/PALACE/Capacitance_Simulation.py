@@ -44,7 +44,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     #constructor
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
-                                    view_design_gmsh_gui = False, create_files = False):
+                                    view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
@@ -177,10 +177,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         '''
         assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
 
-        minX = (self.chip_centre[0] - self.chip_len*0.5)
-        maxX = (self.chip_centre[0] + self.chip_len*0.5)
-        minY = (self.chip_centre[1] - self.chip_wid*0.5)
-        maxY = (self.chip_centre[1] + self.chip_wid*0.5)
+        minX = (self._geom_processor.chip_centre[0] - self._geom_processor.chip_size_x*0.5)
+        maxX = (self._geom_processor.chip_centre[0] + self._geom_processor.chip_size_x*0.5)
+        minY = (self._geom_processor.chip_centre[1] - self._geom_processor.chip_size_y*0.5)
+        maxY = (self._geom_processor.chip_centre[1] + self._geom_processor.chip_size_y*0.5)
         chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
         
         leGeoms = [chip_bounding_poly] + self._cur_cap_terminals
