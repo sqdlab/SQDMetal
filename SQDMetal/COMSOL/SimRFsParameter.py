@@ -80,14 +80,14 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         #Setup surface integrals (e.g. for EPR calculations)
         int_name = "intMetals"
         self.jc.result().numerical().create(int_name, "IntSurface")
-        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).set("intvolume", jtypes.JBoolean(True))
         self.jc.result().numerical(int_name).selection().named("geom1_condAll");
         self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
         self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
         #
         int_name = "intDielectric"
         self.jc.result().numerical().create(int_name, "IntSurface")
-        self.jc.result().numerical(int_name).set("intvolume", True)
+        self.jc.result().numerical(int_name).set("intvolume", jtypes.JBoolean(True))
         self.jc.result().numerical(int_name).selection().named("geom1_dielectricSurface")
         self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
         self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
