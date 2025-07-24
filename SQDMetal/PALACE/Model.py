@@ -260,7 +260,14 @@ class PALACE_Model:
             gmsh.write(path)
             self._mesh_path = path
             GMSH_Navigator(self._mesh_path).export_to_png()
-            
+    
+    def open_mesh_gmsh(self):
+        '''
+        Note that if this is used in a Notebook environment, it'll be a blocking function until the Gmsh GUI is closed...
+        '''
+        gmsh_nav = GMSH_Navigator(self.path_mesh)
+        gmsh_nav.open_GUI()
+
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
         if self.create_files == True:
