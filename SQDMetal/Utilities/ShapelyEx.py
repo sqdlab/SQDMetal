@@ -19,7 +19,10 @@ class ShapelyEx:
             else:
                 lePolys += [cur_poly]
         lePolys = [p.buffer(threshold, join_style=2, cap_style=3) for p in lePolys]
-        return shapely.unary_union(lePolys).buffer(-threshold, join_style=2, cap_style=3)
+        new_poly = shapely.unary_union(lePolys).buffer(-threshold, join_style=2, cap_style=3)
+        #Now that gaps are joined, handle edge-case where the interior hole infinitesimally touches exterior outlines. Sometimes
+        #it doesn't cut the polygon into a MultiPolygon...
+        return new_poly.buffer(-threshold, join_style=2, cap_style=3).buffer(threshold, join_style=2, cap_style=3)
     
     @staticmethod
     def rectangle(x1,y1,x2,y2, make_poly=True):
@@ -122,8 +125,8 @@ class ShapelyEx:
                 cur_dist2 = (cur_poly.exterior.coords[m][0]-cur_poly.exterior.coords[m-1][0])**2 + (cur_poly.exterior.coords[m][1]-cur_poly.exterior.coords[m-1][1])**2
                 smallest_dist2 = min(smallest_dist2, cur_dist2)
             for cur_int in cur_poly.interiors:
-                for m in range(1,len(cur_int)):
-                    cur_dist2 = (cur_int[m][0]-cur_int[m-1][0])**2 + (cur_int[m][1]-cur_int[m-1][1])**2
+                for m in range(1,len(cur_int.coords)):
+                    cur_dist2 = (cur_int.coords[m][0]-cur_int.coords[m-1][0])**2 + (cur_int.coords[m][1]-cur_int.coords[m-1][1])**2
                     smallest_dist2 = min(smallest_dist2, cur_dist2)
         
         return np.sqrt(smallest_dist2)
