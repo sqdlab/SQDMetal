@@ -138,7 +138,7 @@ class GMSH_Geometry_Builder:
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
         #Add physical group for dielectric gap list
-        leDielectricGaps = gmsh.model.addPhysicalGroup(2, [x[1] for x in dielectric_gap_list], name = 'dielectric_gaps')
+        leDielectricGaps = [x[1] for x in dielectric_gap_list]
         #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
@@ -163,8 +163,6 @@ class GMSH_Geometry_Builder:
             if np.min(np.abs(self._extents.T - np.array(com))) < 1e-6:
                 far_field_surfaces.append(tag)
         leFarField = gmsh.model.addPhysicalGroup(2, far_field_surfaces, name = 'far_field')
-        #
-        leDielectric = gmsh.model.addPhysicalGroup(3, [tag3D_chip_base], name = 'dielectric_substrate')
         #        
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
@@ -222,9 +220,8 @@ class GMSH_Geometry_Builder:
                 metal_cap_names.append(metal_name)  #TODO: Look into why is this even stored?
         else:
             metal_thickness = full_3D_params['metal_thickness'] * 1e3
-            trench_depth = full_3D_params['substrate_trenching'] * 1e3
 
-            new_extrusion_metals = []
+            new_extrusion_metals = []   #Holds (dim,tag) pairs for 3D volumes
             for cur_metal_entities in metal_cap_physical_group:
                 ex_metals = gmsh.model.occ.extrude([(2,x) for x in cur_metal_entities], 0, 0, metal_thickness)
                 gmsh.model.occ.synchronize()
@@ -255,7 +252,38 @@ class GMSH_Geometry_Builder:
             for x in chip_and_air_box_map[1:]:
                 new_extrude_tags += [y[1] for y in x if y[0]==3]
             air_box_tags = [x[1] for x in chip_and_air_box_map[0] if not(x[1] in new_extrude_tags) and x[0]==3]
-                
+        #Process trenching into dielectric
+        if full_3D_params != None and full_3D_params['substrate_trenching'] > 0:
+            trench_depth = full_3D_params['substrate_trenching'] * 1e3
+
+            trenches = gmsh.model.occ.extrude(dielectric_gap_list, 0, 0, -trench_depth)
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+            new_trench_extrusions = [x for x in trenches if x[0] == 3]
+
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+            chip_and_trenches, chip_and_trenches_map = gmsh.model.occ.fragment([(3,tag3D_chip_base)], new_trench_extrusions, removeObject=True, removeTool=True)
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+
+            trenches_3D = []
+            for cur_trench in chip_and_trenches_map[1:]:
+                trenches_3D += [y[1] for y in cur_trench if y[0]==3]
+            chip_tags = [x[1] for x in chip_and_trenches_map[0] if not(x[1] in trenches_3D) and x[0]==3]
+            leDielectric = gmsh.model.addPhysicalGroup(3, chip_tags, name = 'dielectric_substrate')
+            
+            all_surfaces = gmsh.model.occ.getEntities(2)
+            leDielectricGaps = []
+            for dim, tag in all_surfaces:
+                com = gmsh.model.occ.getCenterOfMass(dim, tag)
+                if com[2] < -0.25*trench_depth and com[2] > -1.25*trench_depth:
+                    leDielectricGaps.append(tag)
+            air_box_tags += trenches_3D
+        else:
+            leDielectric = gmsh.model.addPhysicalGroup(3, [tag3D_chip_base], name = 'dielectric_substrate')
+        
+        leDielectricGaps = gmsh.model.addPhysicalGroup(2, leDielectricGaps, name = 'dielectric_gaps')
         leAirBox = gmsh.model.addPhysicalGroup(3, air_box_tags, name = 'air_box')
         
 
