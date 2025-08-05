@@ -107,7 +107,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             config_ports[self._rf_port_excitation-1]["Excitation"] = True
 
         if isinstance(self.freqs, tuple):
-            fStart,fStop,fStep = self.freqs
+            fStart,fStop,fStep = self.freqs[0]/1e9, self.freqs[1]/1e9, self.freqs[2]/1e9
         else:
             print("Warning: Frequencies have not been set properly...")
             fStart,fStop,fStep = (1,10,1)
