@@ -56,6 +56,7 @@ class GMSH_Geometry_Builder:
         self.size_y = self._geom_processor.chip_size_y / unit_conv
         self.size_z = self._geom_processor.chip_size_z / unit_conv
 
+        bottom_grounded = True
 
         #Plot the shapely metals for user to see device
         # geoms = metals# + ground_plane
@@ -65,31 +66,22 @@ class GMSH_Geometry_Builder:
         # gdf.plot(ax = ax, column='names', cmap='tab10', alpha=0.75, categorical=True, legend=True)
         # plt.show()
 
+
+        ####CONSTRUCT AIR-BOX AND CARVE OUT THE SUBSTRATE FROM IT####
+        #
+        #Create substrate and air box
+        tag3D_chip_base = self._create_chip_base()
+        gmsh.model.occ.synchronize()
+        gmsh.model.geo.synchronize()
+       
+        ####CONSTRUCT THE SURFACE ELEMENTS ON TOP OF THE SUBSTRATE####
+        #
         #Draw shapely metal and dielectric gap polygons into GMSH. If the polygon has an interior, the interior sections are subtracted from
         #the exterior boundary
         metal_list = self._create_gmsh_geometry_from_shapely_polygons(metals)                           #create all metal traces
         dielectric_gap_list = self._create_gmsh_geometry_from_shapely_polygons(dielectric_gaps)         #create all the gaps between the metal traces and the ground plane 
-
-        #Create the chip base (dielectric substrate) in Gmsh
-        chip_base = self._create_chip_base()
-        
-        #Create the airbox which houses the chip base
-        bottom_grounded = True
-        air_box = self._draw_air_box(bottom_grounded)
-
+        #
         fragment_list = []
-
-        # #create junction list for boolean operations in gmsh
-        # junction_list = [(2,x) for x in junctions]
-
-        # #if there are junctions in the design, create the physical group
-        # jj_dict = {}
-        # if junctions:
-        #     for i,junction in enumerate(junctions):
-        #         jj_name = 'jj_' + str(i)
-        #         jj_physical_group = gmsh.model.addPhysicalGroup(2, [junction], name = jj_name)
-        #         jj_dict[jj_name] = (jj_physical_group, jj_inductance)
-
         #Process simulation constructs - e.g. ports
         lePortPolys = {}
         aux_list = []
@@ -104,43 +96,36 @@ class GMSH_Geometry_Builder:
             fragment_list += sim_poly_list
             aux_list += sim_poly_list
             lePortPolys[cur_sim_poly[0]] = [x[1] for x in sim_poly]
-
-        #list for metals for capacitance simulation
+        #List for metals for capacitance simulation
         metal_cap_physical_group = []
         metal_cap_names = []
-        
         #Dielectric gap list needs to be updated to account for the presence of ports/junctions etc...
         if len(aux_list) > 0:
             cut_list = aux_list #ports_list + junction_list
             dielectric_gap_list_for_cut = [(x[0],x[1]) for x in dielectric_gap_list]
             dielectric_gap_list,lemap = gmsh.model.occ.cut(dielectric_gap_list_for_cut, cut_list, removeObject=True, removeTool=False)
         fragment_list = metal_list + dielectric_gap_list + fragment_list
-
+        #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
-
+        #
         fragment_list = [(x[0],x[1]) for x in fragment_list]
         #See here: https://gitlab.onelab.info/gmsh/gmsh/-/blob/master/tutorials/python/t16.py for details on the mapping...
-        chip, chip_map = gmsh.model.occ.fragment([(3,chip_base)], fragment_list, removeObject=True, removeTool=True)
+        chip, chip_map = gmsh.model.occ.fragment([(3,tag3D_chip_base)], fragment_list, removeObject=True, removeTool=True)
         surface_remappings = {}
-        for e in zip([(3,chip_base)] + fragment_list, chip_map):
+        for e in zip([(3,tag3D_chip_base)] + fragment_list, chip_map):
             # print("parent " + str(e[0]) + " -> child " + str(e[1]))
             surface_remappings[e[0]] = e[1]
-
+        #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
-
         #Create a physical group for each metal in the design. This is important for capacitance simulations
-        for i,metal in enumerate(metal_list):
-            metal_name = 'metal_' + str(i)
+        for m,metal in enumerate(metal_list):
             cur_metal_surfaces = surface_remappings[metal]
-            metal_physical_group = gmsh.model.addPhysicalGroup(2, [x[1] for x in cur_metal_surfaces], name = metal_name)
-            metal_cap_physical_group.append(metal_physical_group)
-            metal_cap_names.append(metal_name)
-
+            metal_cap_physical_group.append([x[1] for x in cur_metal_surfaces])
+        #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
-
         #Create a physical group for each port/junction simulation construct...
         cur_port_names = [x for x in lePortPolys]
         for cur_port in cur_port_names:
@@ -149,45 +134,38 @@ class GMSH_Geometry_Builder:
             for cur_port_surface in cur_port_surfaces:
                 cur_port_surfaces_final += surface_remappings[cur_port_surface]
             lePortPolys[cur_port] = gmsh.model.addPhysicalGroup(2, [x[1] for x in cur_port_surfaces_final], name = cur_port)
-
+        #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
-
         #Add physical group for dielectric gap list
         leDielectricGaps = gmsh.model.addPhysicalGroup(2, [x[1] for x in dielectric_gap_list], name = 'dielectric_gaps')
-
+        #
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
 
-        #@DavidSommers - basically the mesh elements must be conformal. Thus, as the fragments have been done with
-        #surface metals onto the substrate, this needs to be done onto the air-box as well...
-        #
-        #Add in physical groups for each part of the device
-        leDielectric = gmsh.model.addPhysicalGroup(3, [x[1] for x in chip if x[0] == 3], name = 'dielectric_substrate') #Only taking 3D elements from chip...
-        #
-        #Fragment the dielectric volume with the airbox
-        chip_and_air_box, chip_and_air_box_map = gmsh.model.occ.fragment(chip, [(3, air_box)], removeObject=True, removeTool=True)
-        
+        ####ADD IN AIR-BOX####
+        #Note that the substrate volume already encompasses all the changes made to its surface etc...
+        air_box = self._draw_air_box(bottom_grounded)
+        #The two pieces intersect in 3D volume and may have intersecting 2D surfaces - they must be reconciled into one (i.e. conformal meshing;
+        #otherwise, Gmsh will create the same mesh twice in that intersecting 3D volume etc.)
+        chip_and_air_box, chip_and_air_box_map = gmsh.model.occ.fragment([(3,tag3D_chip_base)], [(3, air_box)], removeObject=True, removeTool=True)
         gmsh.model.occ.synchronize()
         gmsh.model.geo.synchronize()
-        
-        leAirBox = gmsh.model.addPhysicalGroup(3, [air_box], name = 'air_box')
-        
-        #Get all gmsh elements which comprise the airbox and chip base.
-        #These elements can be used to determine the far-field conditions. 
-        _,air_box_surfaces = gmsh.model.getAdjacencies(3,air_box)
-        _,dielectric_box_surfaces = gmsh.model.getAdjacencies(3,chip_base)
-
-        #Define far-field boundary condition based on whether the dielectric substrate has a back-side ground plane.
-        #For the case where the substrate is grounded there is an extra element to add.
-        if bottom_grounded == True:
-            far_field_surfaces = air_box_surfaces[:6].tolist() + [air_box_surfaces[0]-1]
-        else:
-            far_field_surfaces = air_box_surfaces[:6]
-
+        #NOTE: THIS ASSUMES THAT THERE ARE ONLY 2 3D VOLUMES IN PLAY UP TO THIS POINT
+        #The air-box will have the substrate carved out of it. Find the 3D tags for the substrate (it'll be solitary) and the air-box...
+        tag3D_chip_base = chip_and_air_box_map[0][0][1]
+        tag3D_air_box = [x for x in chip_and_air_box_map[1] if x[1] != tag3D_chip_base][0][1]
+        #Get the outer-region for the far-field. Just find this by checking which planes have a centre-of-mass on the extents...
+        all_surfaces = gmsh.model.occ.getEntities(2)
+        far_field_surfaces = []
+        for dim, tag in all_surfaces:
+            com = gmsh.model.occ.getCenterOfMass(dim, tag)
+            if np.min(np.abs(self._extents.T - np.array(com))) < 1e-6:
+                far_field_surfaces.append(tag)
         leFarField = gmsh.model.addPhysicalGroup(2, far_field_surfaces, name = 'far_field')
-        
-        #synchronise
+        #
+        leDielectric = gmsh.model.addPhysicalGroup(3, [tag3D_chip_base], name = 'dielectric_substrate')
+        #        
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
 
@@ -232,10 +210,58 @@ class GMSH_Geometry_Builder:
                 #
                 fine_mesh_elems.append(cur_mesh_attrb)
 
+        lemetals_physgrps = []
+        air_box_tags = [tag3D_air_box]
+        #Process the metals into groups (extrude if required)
+        full_3D_params = kwargs.get('full_3D_params', None)
+        if full_3D_params == None or full_3D_params['metal_thickness'] == 0:
+            for m,cur_metal_entities in enumerate(metal_cap_physical_group):
+                metal_name = 'metal_' + str(m)
+                metal_physical_group = gmsh.model.addPhysicalGroup(2, cur_metal_entities, name = metal_name)
+                lemetals_physgrps.append(metal_physical_group)
+                metal_cap_names.append(metal_name)  #TODO: Look into why is this even stored?
+        else:
+            metal_thickness = full_3D_params['metal_thickness'] * 1e3
+            trench_depth = full_3D_params['substrate_trenching'] * 1e3
+
+            new_extrusion_metals = []
+            for cur_metal_entities in metal_cap_physical_group:
+                ex_metals = gmsh.model.occ.extrude([(2,x) for x in cur_metal_entities], 0, 0, metal_thickness)
+                gmsh.model.occ.synchronize()
+                gmsh.model.geo.synchronize()
+                new_extrusion_metals += [x for x in ex_metals if x[0] == 3]
+
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+            chip_and_air_box, chip_and_air_box_map = gmsh.model.occ.fragment([(3,tag3D_air_box)], new_extrusion_metals, removeObject=True, removeTool=True)
+            gmsh.model.occ.synchronize()
+            gmsh.model.geo.synchronize()
+
+            for m in range(len(new_extrusion_metals)):
+                #Collate all 3D parts inside this mapping...
+                tags_3D = [cur_tag[1] for cur_tag in chip_and_air_box_map[m+1] if cur_tag[0]==3]
+                cur_metal_surfaces = []
+                for cur_tag_3D in tags_3D:
+                    #Note that here getAdjacencies returns 4D and 2D entities (empty list for former)
+                    cur_metal_surfaces += gmsh.model.getAdjacencies(3, cur_tag_3D)[1].tolist()
+
+                metal_name = 'metal_' + str(m)
+                metal_physical_group = gmsh.model.addPhysicalGroup(2, cur_metal_surfaces, name = metal_name)
+                lemetals_physgrps.append(metal_physical_group)
+                metal_cap_names.append(metal_name)  #TODO: Look into why is this even stored?
+
+            #Figure out the 3D tag for the air-box...
+            new_extrude_tags = []
+            for x in chip_and_air_box_map[1:]:
+                new_extrude_tags += [y[1] for y in x if y[0]==3]
+            air_box_tags = [x[1] for x in chip_and_air_box_map[0] if not(x[1] in new_extrude_tags) and x[0]==3]
+                
+        leAirBox = gmsh.model.addPhysicalGroup(3, air_box_tags, name = 'air_box')
+        
 
         ret_dict = {
             'air_box'   : self._conv_to_lists(leAirBox),
-            'metals'    : self._conv_to_lists(metal_cap_physical_group),
+            'metals'    : lemetals_physgrps,
             'metalsShapely'    : metals,
             'far_field' : self._conv_to_lists(leFarField),
             'ports'     : lePortPolys,
@@ -369,6 +395,9 @@ class GMSH_Geometry_Builder:
 
         air_box = gmsh.model.occ.addBox(x_point, y_point, z_point, self.size_x + air_box_delta_x, self.size_y + air_box_delta_y, air_box_delta_z)
         gmsh.model.occ.synchronize()
+        self._extents = np.array([(x_point, x_point + self.size_x + air_box_delta_x),
+                                  (y_point, y_point + self.size_y + air_box_delta_y),
+                                  (z_point, z_point + air_box_delta_z)])
 
         return air_box
 

@@ -42,6 +42,7 @@ class PALACE_Model:
             self.palace_dir = options.get('palace_dir', 'palace')                
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
+        self._full_3D_params = {'metal_thickness':0, 'substrate_trenching':0}
 
 
     def _process_geometry_type(self, **kwargs):
@@ -340,6 +341,10 @@ class PALACE_Model:
     def retrieve_SimulationSizes(self):
         return self.retrieve_SimulationSizes_from_file(self._output_data_dir + '/palace.json')
 
+    def enforce_full_3D_simulation(self, metal_thickness, substrate_trenching=0):
+        self._full_3D_params['metal_thickness'] = metal_thickness
+        self._full_3D_params['substrate_trenching'] = substrate_trenching
+
     @staticmethod
     def retrieve_SimulationSizes_from_file(path_palace_json):
         #Returns dictionary of DoF and Mesh size...
@@ -369,7 +374,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"], simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"], simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"], full_3D_params = self._full_3D_params)
             
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
