@@ -1,12 +1,9 @@
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.COMSOL.Model import COMSOL_Model
-from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
-import gmsh
 import pandas as pd
 
 class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
@@ -268,7 +265,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         num_s_params = int((raw_data.shape[0]-1)/2)
 
-        fig, axs = plt.subplots(ncols=num_s_params); fig.set_figwidth(8*num_s_params)
+        fig, axs = plt.subplots(ncols=num_s_params)
+        fig.set_figwidth(8*num_s_params)
 
         freq_vals = raw_data[0]*1e9
 

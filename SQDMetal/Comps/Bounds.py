@@ -3,12 +3,10 @@
 # Creation Date: 01/05/2023
 # Description: Collection of classes to create bounding objects/planes.
 
-from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
-from SQDMetal.Utilities.CpwParams import CpwParams
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
@@ -206,11 +204,11 @@ class BoundGroundShieldScaleGap(QComponent):
 
         units = QUtilities.get_units(self.design)
 
-        filt_gaps = filt.loc[gsdf['subtract'] == True]
+        filt_gaps = filt.loc[gsdf['subtract']]
         gap_polys = shapely.unary_union(filt_gaps['geometry'])
         gap_polys = ShapelyEx.fuse_polygons_threshold(gap_polys, 1e-12/units)
         #
-        filt_metals = filt.loc[gsdf['subtract'] == False]
+        filt_metals = filt.loc[~gsdf['subtract']]
         metal_polys = shapely.unary_union(filt_metals['geometry'])
         metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, 1e-12/units)
 

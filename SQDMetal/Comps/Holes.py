@@ -3,7 +3,6 @@
 # Creation Date: 12/06/2023
 # Description: Collection of classes to draw holes.
 
-from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
@@ -110,7 +109,7 @@ class HoleBorders(QComponent):
         if p.exclude_gaps:
             filt = gsdf
         else:
-            filt = gsdf.loc[gsdf['subtract'] == False]
+            filt = gsdf.loc[~gsdf['subtract']]
 
         if len(p.exclude_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.exclude_geoms]

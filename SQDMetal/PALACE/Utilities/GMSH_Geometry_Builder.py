@@ -1,13 +1,7 @@
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Utilities.QUtilities import QUtilities
 import gmsh
-import pandas as pd
-import geopandas as gpd
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-from matplotlib import colormaps
-import shapely
 
 from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
 from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
@@ -212,7 +206,7 @@ class GMSH_Geometry_Builder:
         air_box_tags = [tag3D_air_box]
         #Process the metals into groups (extrude if required)
         full_3D_params = kwargs.get('full_3D_params', None)
-        if full_3D_params == None or full_3D_params['metal_thickness'] == 0:
+        if full_3D_params is None or full_3D_params['metal_thickness'] == 0:
             for m,cur_metal_entities in enumerate(metal_cap_physical_group):
                 metal_name = 'metal_' + str(m)
                 metal_physical_group = gmsh.model.addPhysicalGroup(2, cur_metal_entities, name = metal_name)
@@ -251,9 +245,9 @@ class GMSH_Geometry_Builder:
             new_extrude_tags = []
             for x in chip_and_air_box_map[1:]:
                 new_extrude_tags += [y[1] for y in x if y[0]==3]
-            air_box_tags = [x[1] for x in chip_and_air_box_map[0] if not(x[1] in new_extrude_tags) and x[0]==3]
+            air_box_tags = [x[1] for x in chip_and_air_box_map[0] if x[1] not in new_extrude_tags and x[0]==3]
         #Process trenching into dielectric
-        if full_3D_params != None and full_3D_params['substrate_trenching'] > 0:
+        if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
             trench_depth = full_3D_params['substrate_trenching'] * 1e3
 
             trenches = gmsh.model.occ.extrude(dielectric_gap_list, 0, 0, -trench_depth)
@@ -270,7 +264,7 @@ class GMSH_Geometry_Builder:
             trenches_3D = []
             for cur_trench in chip_and_trenches_map[1:]:
                 trenches_3D += [y[1] for y in cur_trench if y[0]==3]
-            chip_tags = [x[1] for x in chip_and_trenches_map[0] if not(x[1] in trenches_3D) and x[0]==3]
+            chip_tags = [x[1] for x in chip_and_trenches_map[0] if x[1] not in trenches_3D and x[0]==3]
             leDielectric = gmsh.model.addPhysicalGroup(3, chip_tags, name = 'dielectric_substrate')
             
             all_surfaces = gmsh.model.occ.getEntities(2)
@@ -414,7 +408,7 @@ class GMSH_Geometry_Builder:
         y_point = self.center_y-self.size_y/2-air_box_delta_y/2
 
         #Check to place ground plane on back side by choosing statring z point
-        if bottom_grounded == True: 
+        if bottom_grounded: 
             z_point = self.center_z - np.abs(self.size_z)
             air_box_delta_z = 2 * np.abs(self.size_z)
         else:

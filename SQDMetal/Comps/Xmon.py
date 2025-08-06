@@ -6,7 +6,6 @@
 from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
-import numpy as np
 import shapely
 
 class Xmon(QComponent):

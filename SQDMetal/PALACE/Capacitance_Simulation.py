@@ -3,10 +3,8 @@ from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
-import numpy as np
 import json
 import os
-import io
 import gmsh
 import shapely
 import pandas as pd
@@ -68,7 +66,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
 
-            if self.create_files == True:
+            if self.create_files:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
@@ -81,9 +79,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
                 self._save_mesh_gmsh()
 
-            if self.view_design_gmsh_gui == True:
-                #plot design in gmsh gui
-                pgr.view_design_components()
+
+            # abhishekchak52: commented out for now since pgr is not defined
+            # if self.view_design_gmsh_gui:
+            #     #plot design in gmsh gui
+            #     pgr.view_design_components()
             
                    
         if self.meshing == 'COMSOL':
@@ -110,7 +110,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #save comsol file
             #cmsl.save(self.name)
 
-            if self.create_files == True:
+            if self.create_files:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
@@ -127,7 +127,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # Directory
@@ -158,7 +158,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
@@ -188,8 +188,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
         fig, ax = plt.subplots(1)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel(f'Position (m)')
-        ax.set_ylabel(f'Position (m)')
+        ax.set_xlabel('Position (m)')
+        ax.set_ylabel('Position (m)')
         return fig
 
     def create_config_file(self, **kwargs):
@@ -344,11 +344,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
-        headers = raw_data.columns
+        headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()[:,1:]    #First column is just the indices...
 
         fig = self.display_conductor_indices()
-        fig.savefig(self._output_data_dir + f'/terminal_indices.png')
+        fig.savefig(self._output_data_dir + '/terminal_indices.png')
         plt.close(fig)
 
         lePlots = self._output_data_dir + '/paraview/electrostatic/electrostatic.pvd'

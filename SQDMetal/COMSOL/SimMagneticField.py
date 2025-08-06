@@ -1,7 +1,6 @@
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
 from SQDMetal.Utilities.QUtilities import QUtilities
 
-import mph
 import jpype.types as jtypes
 import geopandas as gpd
 import shapely
@@ -70,9 +69,9 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         return [self.phys_ecis, self.phys_mf]
 
     def set_current_feed_on_CPW_on_Route(self, qObjName, pin_name='end', width_U = 20e-6, src_gnd_gap=10e-6):
-        assert self.current_feed_UBend == None, "Cannot have more than one current feed..."
+        assert self.current_feed_UBend is None, "Cannot have more than one current feed..."
 
-        qObj = self.model.design.components[qObjName]
+        qObj = self.model.design.components[qObjName]  # noqa: F841
         # if isinstance(qObj, LaunchpadWirebond):
         vec_ori, vec_launch, cpw_wid, cpw_gap = self._get_Route_params(qObjName, pin_name)
         # else:
@@ -137,7 +136,7 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         self.jc.component("comp1").geom("geom1").feature(wpName).geom().selection().create(selPolyNameWP, "CumulativeSelection")
         self.jc.component("comp1").geom("geom1").feature(wpName).geom().feature(polyUname).set("contributeto", selPolyNameWP)
         #
-        select_3D_name = f"selCurrentFeedVerticalU"
+        select_3D_name = "selCurrentFeedVerticalU"
         self.jc.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
         self.jc.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self.jc.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
@@ -168,11 +167,11 @@ class COMSOL_Simulation_MagneticField(COMSOL_Simulation_Base):
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
         fig, ax = plt.subplots(1)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel(f'Position (m)')
-        ax.set_ylabel(f'Position (m)')
+        ax.set_xlabel('Position (m)')
+        ax.set_ylabel('Position (m)')
 
     def run(self):
-        assert self._bfield_int != None, "Must define an integration surface"
+        assert self._bfield_int is not None, "Must define an integration surface"
 
         self.jc.result().numerical().create("int1", "IntSurface")
         self.jc.result().numerical("int1").set("intvolume", jtypes.JBoolean(True))

@@ -1203,7 +1203,7 @@ class CapacitorGapMeander(QComponent):
                  (len_trace*0.5+p.cap_length*0.5+p.init_pad, -p.cap_width*0.5-gap_cpw_cap),
                  (len_trace*0.5+p.cap_length*0.5+p.init_pad, p.cap_width*0.5+gap_cpw_cap)]
 
-        l = p.mean_total_length
+        l = p.mean_total_length  # noqa: E741 
         L = np.linalg.norm(p.cap_width)
         r = p.mean_constr_radius
         wid_constr = p.mean_constr_width_max
@@ -1661,7 +1661,7 @@ class CapacitorUcapGroundPin(QComponent):
         startPt = start_point['middle']
         startPtNorm = start_point['normal']
 
-        wid = start_point['width']
+        wid = start_point['width']  # noqa: F841 # abhishekchak52: unused variable wid
 
         pad1 = [
                (0, p.trace_width*0.5),

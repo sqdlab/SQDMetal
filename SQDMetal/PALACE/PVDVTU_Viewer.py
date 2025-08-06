@@ -21,8 +21,8 @@ class PVDVTU_Slice:
         if equalise_histogram:
             quantileStops = np.linspace(0,1,64)
             leQuantiles = np.quantile(values, quantileStops)
-            zinterpInv = lambda x: np.interp(x, quantileStops, leQuantiles)
-            zinterp = lambda x: np.interp(x, leQuantiles, quantileStops)
+            zinterpInv = lambda x: np.interp(x, quantileStops, leQuantiles) # noqa: E731
+            zinterp = lambda x: np.interp(x, leQuantiles, quantileStops) # noqa: E731
             cMapNorm = matplotlib.colors.FuncNorm((zinterp,zinterpInv), vmin=zMin, vmax=zMax)
             cBarTicks = np.quantile(values, np.linspace(0,1,5))
         else:
@@ -31,7 +31,7 @@ class PVDVTU_Slice:
 
         pts = self.slc.points
         tri = self.slc.faces.reshape((-1,4))[:, 1:]
-        if fig == None:
+        if fig is None:
             fig, ax = plt.subplots(1)
         pcm = ax.tripcolor(pts[:,0]*self._units, pts[:,1]*self._units, tri, values, norm=cMapNorm, cmap=cmap)
         ax.set_xlabel('x position (m)')
