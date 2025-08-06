@@ -6,8 +6,8 @@
 from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
-import numpy as np
 import shapely
+
 
 class Xmon(QComponent):
     """Create an Xmon cross
@@ -72,19 +72,21 @@ class Xmon(QComponent):
         * gap_right='2um'
     """
 
-    default_options = Dict(pos_x='0um',pos_y='0um',
-                           orientation=0,
-                           cross_width='120um',
-                           cross_height='100um',
-                           vBar_width='20um',
-                           hBar_width='20um',
-                           vBar_gap='20um',
-                           hBar_gap='20um',
-                           gap_up='2um',
-                           gap_down='2um',
-                           gap_left='2um',
-                           gap_right='2um',
-                           )
+    default_options = Dict(
+        pos_x="0um",
+        pos_y="0um",
+        orientation=0,
+        cross_width="120um",
+        cross_height="100um",
+        vBar_width="20um",
+        hBar_width="20um",
+        vBar_gap="20um",
+        hBar_gap="20um",
+        gap_up="2um",
+        gap_down="2um",
+        gap_left="2um",
+        gap_right="2um",
+    )
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -93,42 +95,62 @@ class Xmon(QComponent):
         #########################################################
 
         cross = [
-                (p.cross_width*0.5, p.hBar_width*0.5),
-                (p.vBar_width*0.5, p.hBar_width*0.5),
-                (p.vBar_width*0.5, p.cross_height*0.5),
-                (-p.vBar_width*0.5, p.cross_height*0.5),
-                (-p.vBar_width*0.5, p.hBar_width*0.5),
-                (-p.cross_width*0.5, p.hBar_width*0.5),
-                (-p.cross_width*0.5, -p.hBar_width*0.5),
-                (-p.vBar_width*0.5, -p.hBar_width*0.5),
-                (-p.vBar_width*0.5, -p.cross_height*0.5),
-                (p.vBar_width*0.5, -p.cross_height*0.5),
-                (p.vBar_width*0.5, -p.hBar_width*0.5),
-                (p.cross_width*0.5, -p.hBar_width*0.5)
+            (p.cross_width * 0.5, p.hBar_width * 0.5),
+            (p.vBar_width * 0.5, p.hBar_width * 0.5),
+            (p.vBar_width * 0.5, p.cross_height * 0.5),
+            (-p.vBar_width * 0.5, p.cross_height * 0.5),
+            (-p.vBar_width * 0.5, p.hBar_width * 0.5),
+            (-p.cross_width * 0.5, p.hBar_width * 0.5),
+            (-p.cross_width * 0.5, -p.hBar_width * 0.5),
+            (-p.vBar_width * 0.5, -p.hBar_width * 0.5),
+            (-p.vBar_width * 0.5, -p.cross_height * 0.5),
+            (p.vBar_width * 0.5, -p.cross_height * 0.5),
+            (p.vBar_width * 0.5, -p.hBar_width * 0.5),
+            (p.cross_width * 0.5, -p.hBar_width * 0.5),
         ]
 
         gap = [
-                (p.cross_width*0.5+p.gap_right, p.hBar_width*0.5+p.hBar_gap),
-                (p.vBar_width*0.5+p.vBar_gap, p.hBar_width*0.5+p.hBar_gap),
-                (p.vBar_width*0.5+p.vBar_gap, p.cross_height*0.5+p.gap_up),
-                (-p.vBar_width*0.5-p.vBar_gap, p.cross_height*0.5+p.gap_up),
-                (-p.vBar_width*0.5-p.vBar_gap, p.hBar_width*0.5+p.hBar_gap),
-                (-p.cross_width*0.5-p.gap_left, p.hBar_width*0.5+p.hBar_gap),
-                (-p.cross_width*0.5-p.gap_left, -p.hBar_width*0.5-p.hBar_gap),
-                (-p.vBar_width*0.5-p.vBar_gap, -p.hBar_width*0.5-p.hBar_gap),
-                (-p.vBar_width*0.5-p.vBar_gap, -p.cross_height*0.5-p.gap_down),
-                (p.vBar_width*0.5+p.vBar_gap, -p.cross_height*0.5-p.gap_down),
-                (p.vBar_width*0.5+p.vBar_gap, -p.hBar_width*0.5-p.hBar_gap),
-                (p.cross_width*0.5+p.gap_right, -p.hBar_width*0.5-p.hBar_gap)
+            (p.cross_width * 0.5 + p.gap_right, p.hBar_width * 0.5 + p.hBar_gap),
+            (p.vBar_width * 0.5 + p.vBar_gap, p.hBar_width * 0.5 + p.hBar_gap),
+            (p.vBar_width * 0.5 + p.vBar_gap, p.cross_height * 0.5 + p.gap_up),
+            (-p.vBar_width * 0.5 - p.vBar_gap, p.cross_height * 0.5 + p.gap_up),
+            (-p.vBar_width * 0.5 - p.vBar_gap, p.hBar_width * 0.5 + p.hBar_gap),
+            (-p.cross_width * 0.5 - p.gap_left, p.hBar_width * 0.5 + p.hBar_gap),
+            (-p.cross_width * 0.5 - p.gap_left, -p.hBar_width * 0.5 - p.hBar_gap),
+            (-p.vBar_width * 0.5 - p.vBar_gap, -p.hBar_width * 0.5 - p.hBar_gap),
+            (-p.vBar_width * 0.5 - p.vBar_gap, -p.cross_height * 0.5 - p.gap_down),
+            (p.vBar_width * 0.5 + p.vBar_gap, -p.cross_height * 0.5 - p.gap_down),
+            (p.vBar_width * 0.5 + p.vBar_gap, -p.hBar_width * 0.5 - p.hBar_gap),
+            (p.cross_width * 0.5 + p.gap_right, -p.hBar_width * 0.5 - p.hBar_gap),
         ]
 
         cross = shapely.Polygon(cross)
         gap = shapely.Polygon(gap)
-        
-        pin_up = shapely.LineString([[p.vBar_width*0.5, p.cross_height*0.5], [-p.vBar_width*0.5, p.cross_height*0.5]])
-        pin_down = shapely.LineString([[-p.vBar_width*0.5, -p.cross_height*0.5], [p.vBar_width*0.5, -p.cross_height*0.5]])
-        pin_left = shapely.LineString([[-p.cross_width*0.5, p.hBar_width*0.5], [-p.cross_width*0.5, -p.hBar_width*0.5]])
-        pin_right = shapely.LineString([[p.cross_width*0.5, -p.hBar_width*0.5], [p.cross_width*0.5, p.hBar_width*0.5]])
+
+        pin_up = shapely.LineString(
+            [
+                [p.vBar_width * 0.5, p.cross_height * 0.5],
+                [-p.vBar_width * 0.5, p.cross_height * 0.5],
+            ]
+        )
+        pin_down = shapely.LineString(
+            [
+                [-p.vBar_width * 0.5, -p.cross_height * 0.5],
+                [p.vBar_width * 0.5, -p.cross_height * 0.5],
+            ]
+        )
+        pin_left = shapely.LineString(
+            [
+                [-p.cross_width * 0.5, p.hBar_width * 0.5],
+                [-p.cross_width * 0.5, -p.hBar_width * 0.5],
+            ]
+        )
+        pin_right = shapely.LineString(
+            [
+                [p.cross_width * 0.5, -p.hBar_width * 0.5],
+                [p.cross_width * 0.5, p.hBar_width * 0.5],
+            ]
+        )
 
         polys = [cross, gap, pin_up, pin_down, pin_left, pin_right]
         polys = draw.rotate(polys, p.orientation, origin=(0, 0), use_radians=False)
@@ -136,18 +158,13 @@ class Xmon(QComponent):
         [cross, gap, pin_up, pin_down, pin_left, pin_right] = polys
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(cross=cross),
-                           layer=p.layer)
+        self.add_qgeometry("poly", dict(cross=cross), layer=p.layer)
 
-        #subtracts out ground plane on the layer it's on
-        self.add_qgeometry('poly',
-                           dict(gap=gap),
-                           subtract=True,
-                           layer=p.layer)
+        # subtracts out ground plane on the layer it's on
+        self.add_qgeometry("poly", dict(gap=gap), subtract=True, layer=p.layer)
 
         # Generates its own pins
-        self.add_pin('up', pin_up.coords[::-1], width=p.vBar_width)
-        self.add_pin('down', pin_down.coords[::-1], width=p.vBar_width)
-        self.add_pin('left', pin_left.coords[::-1], width=p.hBar_width)
-        self.add_pin('right', pin_right.coords[::-1], width=p.hBar_width)
+        self.add_pin("up", pin_up.coords[::-1], width=p.vBar_width)
+        self.add_pin("down", pin_down.coords[::-1], width=p.vBar_width)
+        self.add_pin("left", pin_left.coords[::-1], width=p.hBar_width)
+        self.add_pin("right", pin_right.coords[::-1], width=p.hBar_width)

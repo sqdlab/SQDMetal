@@ -3,7 +3,6 @@
 # Creation Date: 01/05/2023
 # Description: Collection of classes to create joints/pins to be used in routing/positioning.
 
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 from qiskit_metal.toolbox_python.attr_dict import Dict
@@ -32,15 +31,23 @@ class Joint(QComponent):
         * width='1um'
     """
 
-    default_options = Dict(pos_x='0um', pos_y='0um', orientation=0, width='1um')
+    default_options = Dict(pos_x="0um", pos_y="0um", orientation=0, width="1um")
 
     def make(self):
         p = self.p
 
         ptJoint = np.array([p.pos_x, p.pos_y])
-        norm_vec = np.array([-np.cos(p.orientation/180*np.pi), -np.sin(p.orientation/180*np.pi)])
+        norm_vec = np.array(
+            [-np.cos(p.orientation / 180 * np.pi), -np.sin(p.orientation / 180 * np.pi)]
+        )
 
-        self.add_pin('a', [(ptJoint+norm_vec).tolist(), ptJoint.tolist()], width=p.width, input_as_norm=True)
+        self.add_pin(
+            "a",
+            [(ptJoint + norm_vec).tolist(), ptJoint.tolist()],
+            width=p.width,
+            input_as_norm=True,
+        )
+
 
 class JointExtend(QComponent):
     """Creates a point pin some distance away from another pin. Useful when needing to connect a component to at some offset
@@ -53,7 +60,7 @@ class JointExtend(QComponent):
         * jointPin - Name of the pin on the target component. If left as blank (i.e. ''), the component's centre (pos_x, pos_y)
                      will be taken.
         * pin_width - Width associated with pin. Ignored if jointPin is specified
-    
+
     The positioning is specified via:
         * dist_extend - Distance in which to place the pin away from the target component pin
         * orientation - Direction in which to place the pin away from the target component pin
@@ -62,7 +69,7 @@ class JointExtend(QComponent):
                             (specified by either 'orientation' or 'extend_off_pin_dir'). Otherwise, the resulting pin direction
                             is given by 'pin_orientation'.
     This class ignores pos_x and pos_y...
-        
+
     Pins:
         The solitary pin is called 'a'. Its width matches the path width of the target component's pin.
 
@@ -82,31 +89,59 @@ class JointExtend(QComponent):
         * pin_width='10um'
     """
 
-    default_options = Dict(jointObj='', jointPin='a', orientation=0, dist_extend='10um', pin_orientation=None, extend_off_pin_dir=False, pin_width='10um')
+    default_options = Dict(
+        jointObj="",
+        jointPin="a",
+        orientation=0,
+        dist_extend="10um",
+        pin_orientation=None,
+        extend_off_pin_dir=False,
+        pin_width="10um",
+    )
 
     def make(self):
         p = self.p
 
-        if self.options.jointPin == '':
-            ptJoint = np.array([self._design.components[self.options.jointObj].p.pos_x, self._design.components[self.options.jointObj].p.pos_y])
+        if self.options.jointPin == "":
+            ptJoint = np.array(
+                [
+                    self._design.components[self.options.jointObj].p.pos_x,
+                    self._design.components[self.options.jointObj].p.pos_y,
+                ]
+            )
             angl = self._design.components[self.options.jointObj].p.orientation
-            norm = np.array([np.cos(angl/180*np.pi), np.sin(angl/180*np.pi)])
+            norm = np.array([np.cos(angl / 180 * np.pi), np.sin(angl / 180 * np.pi)])
             width = p.pin_width
         else:
-            jointPin = self._design.components[self.options.jointObj].pins[self.options.jointPin]
-            ptJoint = jointPin['middle']
-            norm = jointPin['normal']
-            width = jointPin['width']
+            jointPin = self._design.components[self.options.jointObj].pins[
+                self.options.jointPin
+            ]
+            ptJoint = jointPin["middle"]
+            norm = jointPin["normal"]
+            width = jointPin["width"]
         if p.extend_off_pin_dir:
             pt = ptJoint + p.dist_extend * norm
         else:
-            pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
+            pt = ptJoint + p.dist_extend * np.array(
+                [
+                    np.cos(p.orientation / 180 * np.pi),
+                    np.sin(p.orientation / 180 * np.pi),
+                ]
+            )
 
         self.options.pos_x, self.options.pos_y = pt
-        if self.options.pin_orientation != None:
-            ptJoint = pt - np.array([np.cos(self.options.pin_orientation/180*np.pi), np.sin(self.options.pin_orientation/180*np.pi)])
+        if self.options.pin_orientation is not None:
+            ptJoint = pt - np.array(
+                [
+                    np.cos(self.options.pin_orientation / 180 * np.pi),
+                    np.sin(self.options.pin_orientation / 180 * np.pi),
+                ]
+            )
 
-        self.add_pin('a', [ptJoint.tolist(), pt.tolist()], width=width, input_as_norm=True)
+        self.add_pin(
+            "a", [ptJoint.tolist(), pt.tolist()], width=width, input_as_norm=True
+        )
+
 
 class RouteJoint(QComponent):
     """Creates a point pin positioned on a routing path object. Useful when needing to connect a component to some point
@@ -133,7 +168,7 @@ class RouteJoint(QComponent):
     On a side note while using attach_on_side; it works great on straight edges as an adjoining wire can sit flush on its side.
     Evidently, this does not work well on curved edges - in which case, attach_on_side should be set to False so that the wire
     connecting to the path will reach its centre and leave a flush connection when rendered/merged.
-        
+
     Pins:
         The solitary pin is called 'a'. Its width matches the path width.
 
@@ -152,14 +187,21 @@ class RouteJoint(QComponent):
         * attach_on_side=False
     """
 
-    default_options = Dict(pathObj='', pathObjTraceName='', frac_line=0.5, dist_line=0, is_right_hand=True, attach_on_side=False)
-    
+    default_options = Dict(
+        pathObj="",
+        pathObjTraceName="",
+        frac_line=0.5,
+        dist_line=0,
+        is_right_hand=True,
+        attach_on_side=False,
+    )
+
     def make(self):
         p = self.p
 
-        if self.options.pathObj == '':
-            ptLine = np.array([0,0])
-            norm_vec = np.array([1,0])
+        if self.options.pathObj == "":
+            ptLine = np.array([0, 0])
+            norm_vec = np.array([1, 0])
             width = 1e-6
         else:
             if p.frac_line < 0 or p.frac_line > 1:
@@ -169,17 +211,28 @@ class RouteJoint(QComponent):
                 leDist = p.frac_line
                 leFrac = True
 
-            final_pts, normals, width, gap, total_dist = QUtilities.calc_points_on_path([leDist], self._design, self.options.pathObj, trace_name=self.options.pathObjTraceName, dists_are_fractional=leFrac)
+            final_pts, normals, width, gap, total_dist = QUtilities.calc_points_on_path(
+                [leDist],
+                self._design,
+                self.options.pathObj,
+                trace_name=self.options.pathObjTraceName,
+                dists_are_fractional=leFrac,
+            )
             ptLine = final_pts[0]
             norm_vec = normals[0]
             if not p.is_right_hand:
-                norm_vec = -norm_vec        
+                norm_vec = -norm_vec
         if p.attach_on_side:
             if p.is_right_hand:
-                ptLine += normals[0]*width*0.5
+                ptLine += normals[0] * width * 0.5
             else:
-                ptLine -= normals[0]*width*0.5
-        
+                ptLine -= normals[0] * width * 0.5
+
         self.options.pos_x, self.options.pos_y = ptLine
 
-        self.add_pin('a', [(ptLine-norm_vec).tolist(), ptLine.tolist()], width=width, input_as_norm=True)
+        self.add_pin(
+            "a",
+            [(ptLine - norm_vec).tolist(), ptLine.tolist()],
+            width=width,
+            input_as_norm=True,
+        )

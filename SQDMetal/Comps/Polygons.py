@@ -10,6 +10,7 @@ from qiskit_metal.qlibrary.core import QComponent
 import shapely
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
+
 class PolyRectangle(QComponent):
     """Create a rectangle with a border of some thickness. Can either be solid metal or just a ground-plane cut-out.
 
@@ -19,7 +20,7 @@ class PolyRectangle(QComponent):
         * is_ground_cutout - If True, the border is a ground cutout, otherwise it is a metallic square.
 
     As usual, the centre-positioning can be done dynamically via (pos_x,pos_y) and (end_x,end_y) with orientation being ignored.
-        
+
     Pins:
         There are pins N, E, W and S on the rectangle on the centre across every edges of the outer border
 
@@ -39,9 +40,14 @@ class PolyRectangle(QComponent):
         * is_ground_cutout=False
     """
 
-    default_options = Dict(pos_x='0um',pos_y='0um', end_x='10um',end_y='10um',
-                           is_ground_cutout=False,
-                           cpw_width='10um')
+    default_options = Dict(
+        pos_x="0um",
+        pos_y="0um",
+        end_x="10um",
+        end_y="10um",
+        is_ground_cutout=False,
+        cpw_width="10um",
+    )
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -62,14 +68,17 @@ class PolyRectangle(QComponent):
         pinW = shapely.LineString([[left, bottom], [left, top]])
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(rectangle=rectangle),
-                           layer=p.layer,
-                           subtract=p.is_ground_cutout)
-        self.add_pin('N', pinN.coords[::], width=p.cpw_width)
-        self.add_pin('S', pinS.coords[::], width=p.cpw_width)
-        self.add_pin('E', pinE.coords[::-1], width=p.cpw_width)
-        self.add_pin('W', pinW.coords[::], width=p.cpw_width)
+        self.add_qgeometry(
+            "poly",
+            dict(rectangle=rectangle),
+            layer=p.layer,
+            subtract=p.is_ground_cutout,
+        )
+        self.add_pin("N", pinN.coords[::], width=p.cpw_width)
+        self.add_pin("S", pinS.coords[::], width=p.cpw_width)
+        self.add_pin("E", pinE.coords[::-1], width=p.cpw_width)
+        self.add_pin("W", pinW.coords[::], width=p.cpw_width)
+
 
 class PolyBorderRectangle(QComponent):
     """Create a rectangle with a border of some thickness. Can either be solid metal or just a ground-plane cut-out.
@@ -84,7 +93,7 @@ class PolyBorderRectangle(QComponent):
         * is_ground_cutout - If True, the border is a ground cutout, otherwise it is a metallic square.
 
     As usual, the centre-positioning can be done dynamically via (pos_x,pos_y) with orientation specifying an optional rotation.
-        
+
     Pins:
         There are pins N, E, W and S on the rectangle on the centre across every edges of the outer border
         There are pins n, e, w and s on the rectangle on the centre across every edges of the inner border
@@ -119,13 +128,17 @@ class PolyBorderRectangle(QComponent):
         * is_ground_cutout=False
     """
 
-    default_options = Dict(pos_x='0um',pos_y='0um', orientation=0,
-                           width='50um',
-                           height='50um',
-                           border_thickness_X='20um',
-                           border_thickness_Y='20um',
-                           is_ground_cutout=False,
-                           cpw_width='10um')
+    default_options = Dict(
+        pos_x="0um",
+        pos_y="0um",
+        orientation=0,
+        width="50um",
+        height="50um",
+        border_thickness_X="20um",
+        border_thickness_Y="20um",
+        is_ground_cutout=False,
+        cpw_width="10um",
+    )
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -134,17 +147,29 @@ class PolyBorderRectangle(QComponent):
         #########################################################
 
         rectangle_inner = [
-                (+p.width*0.5, +p.height*0.5),
-                (-p.width*0.5, +p.height*0.5),
-                (-p.width*0.5, -p.height*0.5),
-                (+p.width*0.5, -p.height*0.5),
+            (+p.width * 0.5, +p.height * 0.5),
+            (-p.width * 0.5, +p.height * 0.5),
+            (-p.width * 0.5, -p.height * 0.5),
+            (+p.width * 0.5, -p.height * 0.5),
         ]
 
         rectangle_outer = [
-                (+p.width*0.5+p.border_thickness_X, +p.height*0.5+p.border_thickness_Y),
-                (-p.width*0.5-p.border_thickness_X, +p.height*0.5+p.border_thickness_Y),
-                (-p.width*0.5-p.border_thickness_X, -p.height*0.5-p.border_thickness_Y),
-                (+p.width*0.5+p.border_thickness_X, -p.height*0.5-p.border_thickness_Y),
+            (
+                +p.width * 0.5 + p.border_thickness_X,
+                +p.height * 0.5 + p.border_thickness_Y,
+            ),
+            (
+                -p.width * 0.5 - p.border_thickness_X,
+                +p.height * 0.5 + p.border_thickness_Y,
+            ),
+            (
+                -p.width * 0.5 - p.border_thickness_X,
+                -p.height * 0.5 - p.border_thickness_Y,
+            ),
+            (
+                +p.width * 0.5 + p.border_thickness_X,
+                -p.height * 0.5 - p.border_thickness_Y,
+            ),
         ]
 
         pinN = shapely.LineString(rectangle_outer[0:2])
@@ -167,19 +192,22 @@ class PolyBorderRectangle(QComponent):
         rectangle, pinN, pinS, pinE, pinW, pinn, pins, pine, pinw = polys
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(rectangle=rectangle),
-                           layer=p.layer,
-                           subtract=p.is_ground_cutout)
-        self.add_pin('N', pinN.coords[::-1], width=p.cpw_width)
-        self.add_pin('S', pinS.coords[::-1], width=p.cpw_width)
-        self.add_pin('E', pinE.coords[::-1], width=p.cpw_width)
-        self.add_pin('W', pinW.coords[::-1], width=p.cpw_width)
+        self.add_qgeometry(
+            "poly",
+            dict(rectangle=rectangle),
+            layer=p.layer,
+            subtract=p.is_ground_cutout,
+        )
+        self.add_pin("N", pinN.coords[::-1], width=p.cpw_width)
+        self.add_pin("S", pinS.coords[::-1], width=p.cpw_width)
+        self.add_pin("E", pinE.coords[::-1], width=p.cpw_width)
+        self.add_pin("W", pinW.coords[::-1], width=p.cpw_width)
         #
-        self.add_pin('n', pinn.coords[::-1], width=p.cpw_width)
-        self.add_pin('s', pins.coords[::-1], width=p.cpw_width)
-        self.add_pin('e', pine.coords[::-1], width=p.cpw_width)
-        self.add_pin('w', pinw.coords[::-1], width=p.cpw_width)
+        self.add_pin("n", pinn.coords[::-1], width=p.cpw_width)
+        self.add_pin("s", pins.coords[::-1], width=p.cpw_width)
+        self.add_pin("e", pine.coords[::-1], width=p.cpw_width)
+        self.add_pin("w", pinw.coords[::-1], width=p.cpw_width)
+
 
 class PolyShapely(QComponent):
     """Create a shapely polygon given the shapely string representation. Units will be in the default qiskit-metal units.
@@ -189,7 +217,7 @@ class PolyShapely(QComponent):
     The polygon either has a Metal or ground cutout Geometry as specified by is_ground_cutout:
         * strShapely - The string required to generate a shapely Polygon or MultiPolygon...
         * is_ground_cutout - If True, the border is a ground cutout, otherwise it is a metallic square.
-        
+
     Pins:
         No pins designated with this polygon
 
@@ -207,7 +235,7 @@ class PolyShapely(QComponent):
         * is_ground_cutout=False
     """
 
-    default_options = Dict(strShapely='', is_ground_cutout=False)
+    default_options = Dict(strShapely="", is_ground_cutout=False)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -218,7 +246,6 @@ class PolyShapely(QComponent):
         lePoly = shapely.wkt.loads(p.strShapely)
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(shapelyPoly=lePoly),
-                           layer=p.layer,
-                           subtract=p.is_ground_cutout)
+        self.add_qgeometry(
+            "poly", dict(shapelyPoly=lePoly), layer=p.layer, subtract=p.is_ground_cutout
+        )

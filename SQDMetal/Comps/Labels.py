@@ -11,9 +11,8 @@ import shapely
 
 from matplotlib.path import Path
 import matplotlib.path as mpath
-from matplotlib.textpath import TextPath, TextToPath
+from matplotlib.textpath import TextToPath
 from matplotlib.font_manager import FontProperties
-import matplotlib as mpl
 
 
 class LabelText(QComponent):
@@ -54,33 +53,37 @@ class LabelText(QComponent):
         * centre_text=False
     """
 
-    default_options = Dict(pos_x='0um',pos_y='0um',
-                           orientation=0,
-                           text='text',
-                           font_size='100um',
-                           is_latex=False,
-                           style="normal",
-                           font="sans-serif",
-                           is_gap=False,
-                           centre_text=False
-                           )
+    default_options = Dict(
+        pos_x="0um",
+        pos_y="0um",
+        orientation=0,
+        text="text",
+        font_size="100um",
+        is_latex=False,
+        style="normal",
+        font="sans-serif",
+        is_gap=False,
+        centre_text=False,
+    )
 
     def _matplotlib_path_to_polygons(self, path):
         codes_old = path.codes[path.codes != mpath.Path.CLOSEPOLY]
         verts_old = path.vertices[path.codes != mpath.Path.CLOSEPOLY]
-        
+
         # Find indices of MOVETO commands to split subpaths
-        subpath_start_indices = np.append(np.flatnonzero(codes_old == mpath.Path.MOVETO), len(codes_old))
-        
+        subpath_start_indices = np.append(
+            np.flatnonzero(codes_old == mpath.Path.MOVETO), len(codes_old)
+        )
+
         polygons_ext = []
         polygons_int = []
         for i in range(len(subpath_start_indices) - 1):
             start = subpath_start_indices[i]
             end = subpath_start_indices[i + 1]
-            
+
             # Extract vertices for the current subpath
             subpath_verts = verts_old[start:end]
-            
+
             # Create a Shapely Polygon from the subpath vertices
             if len(subpath_verts) > 2:  # Ensure enough points to form a polygon
                 lePoly = shapely.Polygon(subpath_verts[:-1])
@@ -101,10 +104,12 @@ class LabelText(QComponent):
         p = self.p
         #########################################################
 
-        allowed_styles = ['normal', 'italic', 'oblique']
-        assert p.style in allowed_styles, "The argument 'style' must be 'normal', 'italic', 'oblique'"
+        allowed_styles = ["normal", "italic", "oblique"]
+        assert p.style in allowed_styles, (
+            "The argument 'style' must be 'normal', 'italic', 'oblique'"
+        )
 
-        #TODO: Look up how to smooth the text...
+        # TODO: Look up how to smooth the text...
         # prevSimplify = mpl.rcParams['path.simplify']
         # mpl.rcParams['path.simplify_threshold'] = 1.0
         # mpl.rcParams['path.simplify'] = False
@@ -112,7 +117,9 @@ class LabelText(QComponent):
         fp = FontProperties(family=p.font, style=p.style)
         leText2PathObj = TextToPath()
         leText2PathObj.DPI = 300
-        verts, codes = leText2PathObj.get_text_path(fp, self.options.text, ismath=p.is_latex)
+        verts, codes = leText2PathObj.get_text_path(
+            fp, self.options.text, ismath=p.is_latex
+        )
         lePath = Path(verts, codes, closed=False)
 
         lePoly = self._matplotlib_path_to_polygons(lePath)
@@ -120,17 +127,16 @@ class LabelText(QComponent):
 
         polys = [lePoly]
         if p.centre_text:
-            polys = draw.translate(polys, -(xMin+xMax)/2, -(yMin+yMax)/2)
-        polys = draw.scale(polys, p.font_size/300, p.font_size/300, origin=(0,0))
+            polys = draw.translate(polys, -(xMin + xMax) / 2, -(yMin + yMax) / 2)
+        polys = draw.scale(polys, p.font_size / 300, p.font_size / 300, origin=(0, 0))
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        lePoly = polys[0]   #Remove [0] if there are multiple polygons later...
+        lePoly = polys[0]  # Remove [0] if there are multiple polygons later...
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(textLabel=lePoly),
-                           layer=p.layer,
-                           subtract=p.is_gap)
+        self.add_qgeometry(
+            "poly", dict(textLabel=lePoly), layer=p.layer, subtract=p.is_gap
+        )
 
         # #subtracts out ground plane on the layer it's on
         # self.add_qgeometry('poly',

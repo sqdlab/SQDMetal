@@ -3,7 +3,6 @@
 # Creation Date: 12/06/2023
 # Description: Collection of classes to draw holes.
 
-from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
@@ -12,6 +11,7 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.QUtilities import QUtilities
 from scipy.spatial import KDTree
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
+
 
 class HoleBorders(QComponent):
     """Draws holes some distance away from metallic objects - similar to via fencing in PCBs.
@@ -43,7 +43,7 @@ class HoleBorders(QComponent):
         3. Using exclude_geoms, a buffer area is made via dist_init and num_hole_lines. All holes in this area are culled.
 
     This class ignores pos_x and pos_y...
-        
+
     Pins:
         There are no pins in this object.
 
@@ -51,14 +51,14 @@ class HoleBorders(QComponent):
         Below is a sketch of the holes and their placement options.
         ::
             O   O   O   O   O   O   O
-                                       N   # = metals to which the holes are bordering 
+                                       N   # = metals to which the holes are bordering
             O   O   O   O   O   O   O      d = dist_holes
                 i                          i = dist_init
                 i                          N = num_hole_lines (2 in this example)
-            ##############        O   O     
-            ##############     O   
+            ##############        O   O
+            ##############     O
             i             iiiii     O
-            i       
+            i
             O   O   O   O   O   O   O d
                                       d
             O   O   O   O   O   O   O d
@@ -85,18 +85,20 @@ class HoleBorders(QComponent):
         * exclude_gaps=False
     """
 
-    default_options = Dict(hole_radius='5um', 
-                           dist_holes='20um', 
-                           dist_init='30um', 
-                           num_hole_lines=3, 
-                           segs_per_circle=12, 
-                           dist_min='10um', 
-                           hole_radius_gnd='6um', 
-                           border_layers=[1,2,3],
-                           exclude_geoms=[],
-                           include_geoms=[],
-                           layer_gnd_plane=1,
-                           exclude_gaps=False)
+    default_options = Dict(
+        hole_radius="5um",
+        dist_holes="20um",
+        dist_init="30um",
+        num_hole_lines=3,
+        segs_per_circle=12,
+        dist_min="10um",
+        hole_radius_gnd="6um",
+        border_layers=[1, 2, 3],
+        exclude_geoms=[],
+        include_geoms=[],
+        layer_gnd_plane=1,
+        exclude_gaps=False,
+    )
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -106,26 +108,26 @@ class HoleBorders(QComponent):
 
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates()
-        gsdf = gsdf[gsdf['layer'].isin(p.border_layers)]
+        gsdf = gsdf[gsdf["layer"].isin(p.border_layers)]
         if p.exclude_gaps:
             filt = gsdf
         else:
-            filt = gsdf.loc[gsdf['subtract'] == False]
+            filt = gsdf.loc[~gsdf["subtract"]]
 
         if len(p.exclude_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.exclude_geoms]
-            exfilt = filt[filt['component'].isin(leGeoms)]
+            exfilt = filt[filt["component"].isin(leGeoms)]
         if len(p.include_geoms) > 0:
             leGeoms = [self.design.components[x].id for x in self.options.include_geoms]
-            filt = filt[filt['component'].isin(leGeoms)]
+            filt = filt[filt["component"].isin(leGeoms)]
 
         units = QUtilities.get_units(self.design)
-        metal_polys = shapely.unary_union(filt['geometry'])
-        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, 1e-12/units)
+        metal_polys = shapely.unary_union(filt["geometry"])
+        metal_polys = ShapelyEx.fuse_polygons_threshold(metal_polys, 1e-12 / units)
 
         leHoles = []
         for hl in range(int(p.num_hole_lines)):
-            polys = metal_polys.buffer(p.dist_init + hl*p.dist_holes)
+            polys = metal_polys.buffer(p.dist_init + hl * p.dist_holes)
 
             lines = []
             if isinstance(polys, shapely.geometry.multipolygon.MultiPolygon):
@@ -144,45 +146,70 @@ class HoleBorders(QComponent):
                 points = [cur_line.interpolate(distance) for distance in distances]
                 leHoles += points
 
-        #Cull holes in excluded geometry
+        # Cull holes in excluded geometry
         if len(p.exclude_geoms) > 0:
-            ex_metal_polys = shapely.unary_union(exfilt['geometry'])
-            ex_metal_polys = ShapelyEx.fuse_polygons_threshold(ex_metal_polys, 1e-12/units)
-            polys = ex_metal_polys.buffer(p.dist_init + p.num_hole_lines*p.dist_holes)
+            ex_metal_polys = shapely.unary_union(exfilt["geometry"])
+            ex_metal_polys = ShapelyEx.fuse_polygons_threshold(
+                ex_metal_polys, 1e-12 / units
+            )
+            polys = ex_metal_polys.buffer(p.dist_init + p.num_hole_lines * p.dist_holes)
             leHoleFilts = []
             for m, cur_hole in enumerate(leHoles):
                 if not polys.contains(cur_hole):
                     leHoleFilts += [m]
             leHoles = [leHoles[m] for m in leHoleFilts]
 
-        leHoles = np.array([[h.x,h.y] for h in leHoles])
+        leHoles = np.array([[h.x, h.y] for h in leHoles])
 
-        #Cull holes that are too close
-        #Using 'fast' solution from: https://stackoverflow.com/questions/58114650/np-where-to-eliminate-data-where-coordinates-are-too-close-to-each-other
+        # Cull holes that are too close
+        # Using 'fast' solution from: https://stackoverflow.com/questions/58114650/np-where-to-eliminate-data-where-coordinates-are-too-close-to-each-other
         X_tree = KDTree(leHoles)
         in_radius = np.array(list(X_tree.query_pairs(p.dist_min))).flatten()
         leHoles = leHoles[np.where(~np.in1d(np.arange(leHoles.shape[0]), in_radius))[0]]
 
-        #Convert holes into n-polygons
+        # Convert holes into n-polygons
         polys = []
         for cur_hole in leHoles:
-            polys.append((
-                tuple( [(cur_hole[0]+p.hole_radius*np.cos(angl), cur_hole[1]+p.hole_radius*np.sin(angl)) for angl in np.linspace(0,2*np.pi, p.segs_per_circle)] ),
-                []))
+            polys.append(
+                (
+                    tuple(
+                        [
+                            (
+                                cur_hole[0] + p.hole_radius * np.cos(angl),
+                                cur_hole[1] + p.hole_radius * np.sin(angl),
+                            )
+                            for angl in np.linspace(0, 2 * np.pi, p.segs_per_circle)
+                        ]
+                    ),
+                    [],
+                )
+            )
 
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(holes=shapely.MultiPolygon(polys)),
-                           layer=p.layer)
+        self.add_qgeometry(
+            "poly", dict(holes=shapely.MultiPolygon(polys)), layer=p.layer
+        )
 
         if p.hole_radius_gnd > 0:
             polys = []
             for cur_hole in leHoles:
-                polys.append((
-                    tuple( [(cur_hole[0]+p.hole_radius_gnd*np.cos(angl), cur_hole[1]+p.hole_radius_gnd*np.sin(angl)) for angl in np.linspace(0,2*np.pi, p.segs_per_circle)] ),
-                    []))
-            self.add_qgeometry('poly',
-                               dict(holesGND=shapely.MultiPolygon(polys)),
-                               subtract=True,
-                               layer=p.layer_gnd_plane)
-
+                polys.append(
+                    (
+                        tuple(
+                            [
+                                (
+                                    cur_hole[0] + p.hole_radius_gnd * np.cos(angl),
+                                    cur_hole[1] + p.hole_radius_gnd * np.sin(angl),
+                                )
+                                for angl in np.linspace(0, 2 * np.pi, p.segs_per_circle)
+                            ]
+                        ),
+                        [],
+                    )
+                )
+            self.add_qgeometry(
+                "poly",
+                dict(holesGND=shapely.MultiPolygon(polys)),
+                subtract=True,
+                layer=p.layer_gnd_plane,
+            )
