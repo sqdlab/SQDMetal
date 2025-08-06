@@ -1,0 +1,37 @@
+[project]
+authors = [ { name = "Prasanna Pakkiam", email = "p.pakkiam@uq.edu.au" } ]
+description = "Tools to aid in simulating and fabricating superconducting quantum devices"
+readme = "README.md"
+name = "SQDMetal"
+requires-python = ">=3.10"
+keywords = [ 'superconducting qubits', 'comsol' ]
+version = "0.0.1.dev1"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3 :: Only",
+    "Operating System :: OS Independent",
+]
+urls = { repository = "https://github.com/sqdlab/SQDMetal" }
+dependencies = [
+ "gdstk>=0.9.60",
+ "geopandas>=1.1.1",
+ "gmsh>=4.11.1",
+ "mph>=1.2.4",
+ "pyvista>=0.45.2",
+ "qiskit-metal==0.1.2",
+]  
+
+[build-system]
+    requires      = ["uv_build>=0.8.4,<0.9.0"]
+    build-backend = "uv_build"
+
+# Accounting for flat layout
+[tool.uv.build-backend]
+    module-name = "SQDMetal"
+    module-root = ""
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29.5",
+    "ruff>=0.12.7",
+]
