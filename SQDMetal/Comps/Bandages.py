@@ -9,7 +9,6 @@ from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
-from SQDMetal.Utilities.QUtilities import QUtilities 
 
 class BandageRectPin(QComponent):
     """Create a rectangular bandage on a pin

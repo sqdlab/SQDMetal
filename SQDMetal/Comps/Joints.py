@@ -3,7 +3,6 @@
 # Creation Date: 01/05/2023
 # Description: Collection of classes to create joints/pins to be used in routing/positioning.
 
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 from qiskit_metal.toolbox_python.attr_dict import Dict
@@ -103,7 +102,7 @@ class JointExtend(QComponent):
             pt = ptJoint + p.dist_extend * np.array([np.cos(p.orientation/180*np.pi), np.sin(p.orientation/180*np.pi)])
 
         self.options.pos_x, self.options.pos_y = pt
-        if self.options.pin_orientation != None:
+        if self.options.pin_orientation is not None:
             ptJoint = pt - np.array([np.cos(self.options.pin_orientation/180*np.pi), np.sin(self.options.pin_orientation/180*np.pi)])
 
         self.add_pin('a', [ptJoint.tolist(), pt.tolist()], width=width, input_as_norm=True)

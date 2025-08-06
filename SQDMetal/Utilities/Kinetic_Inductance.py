@@ -1,5 +1,3 @@
-import scipy
-import scipy.integrate as integrate
 import numpy as np
 
 class Kinetic_Inductance:
@@ -10,7 +8,7 @@ class Kinetic_Inductance:
     def calculate_kinetic_inductance(self, coherence_len, delta_0, normal_cond, film_thickness, mean_free_path, t_crit, temp, omega):
         
         #constants
-        k_b = 1.380649e-23               #boltzman constant
+        k_b = 1.380649e-23               #boltzman constant  # noqa: F841 # abhishekchak52: unused variable k_b
         hbar = 1.05457e-34               #reduced plank's constant, h/2*pi
         q = 1.60218e-19                  #fundamental charge
         mu_0 = 1.256637e-6               #vacuum permeability

@@ -3,13 +3,12 @@
 # Creation Date: 24/05/2023
 # Description: Collection of classes to draw Josephson Junctions.
 
-from qiskit_metal import draw, Dict
+from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
 # for Manhattan JJ
-from shapely import Polygon, Point
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class JunctionDolan(QComponent):
@@ -419,8 +418,8 @@ class JunctionManhattan(QComponent):
             extension_taper_width1 = p.taper_width1
             extension_taper_width2 = p.taper_width2
         else:
-            extension_taper_width1 = p.width
-            extension_taper_width2 = p.width
+            extension_taper_width1 = p.width  # noqa: F841 # abhishekchak52: unused variable extension_taper_width1
+            extension_taper_width2 = p.width  # noqa: F841 # abhishekchak52: unused variable extension_taper_width2
 
         if p.target_comp:
             start_point = self.design.components[self.options.target_comp].pins[self.options.target_pin]

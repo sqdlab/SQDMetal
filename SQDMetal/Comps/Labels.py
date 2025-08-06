@@ -11,9 +11,8 @@ import shapely
 
 from matplotlib.path import Path
 import matplotlib.path as mpath
-from matplotlib.textpath import TextPath, TextToPath
+from matplotlib.textpath import TextToPath
 from matplotlib.font_manager import FontProperties
-import matplotlib as mpl
 
 
 class LabelText(QComponent):

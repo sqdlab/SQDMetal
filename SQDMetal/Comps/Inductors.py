@@ -8,8 +8,6 @@ from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
-from SQDMetal.Utilities.CpwParams import CpwParams
-from SQDMetal.Utilities.QUtilities import QUtilities
 
 class InductorMeander(QComponent):
     """Draws a meandering inductor with sharp corners as defined by the meander width, spacing and number

@@ -1,7 +1,5 @@
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
-from SQDMetal.Utilities.QUtilities import QUtilities
 
-import mph
 import jpype.types as jtypes
 import geopandas as gpd
 import shapely
@@ -70,8 +68,8 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
         fig, ax = plt.subplots(1)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel(f'Position (m)')
-        ax.set_ylabel(f'Position (m)')
+        ax.set_xlabel('Position (m)')
+        ax.set_ylabel('Position (m)')
 
     def run(self):
         '''

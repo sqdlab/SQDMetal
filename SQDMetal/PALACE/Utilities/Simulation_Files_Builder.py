@@ -1,4 +1,4 @@
-import os, subprocess
+import os
 import json
 import gmsh
 

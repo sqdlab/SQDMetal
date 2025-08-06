@@ -1,5 +1,3 @@
-from qiskit_metal.qgeometries.qgeometries_handler import QGeometryTables
-from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 import numpy as np
 import shapely
@@ -62,7 +60,7 @@ class GeomQiskitMetal(GeomBase):
         if not ground_plane['omit']:
             qmpl = QiskitShapelyRenderer(None, self.design, None)
             gsdf = qmpl.get_net_coordinates(fillet_resolution)
-            filt = gsdf.loc[gsdf['subtract'] == True]
+            filt = gsdf.loc[gsdf['subtract']]
             #TODO: It should only take stuff from the metallic layers specified when calculating spaces???
             space_polys = ShapelyEx.fuse_polygons_threshold(filt['geometry'].buffer(0), fuse_threshold / qm_units)
             space_polys = ShapelyEx.shapely_to_list(space_polys)

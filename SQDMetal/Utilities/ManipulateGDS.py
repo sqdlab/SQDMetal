@@ -2,7 +2,6 @@
 import gdstk
 from SQDMetal.Utilities.QUtilities import QUtilities
 from matplotlib.font_manager import FontProperties
-from matplotlib.textpath import TextPath
 from time import gmtime, strftime
 import warnings
 
@@ -38,7 +37,7 @@ class ManipulateGDS:
 
         # list available cells and import cells
         print(f"Available cells:\n {[c.name for c in self.gds_in.cells]}\n")
-        if import_cells == None:
+        if import_cells is None:
             total_polys = sum([len(c.polygons) for c in self.gds_in.cells])
             print(f"Imported: All ({total_polys} polygons)\n")
         else:
@@ -66,7 +65,7 @@ class ManipulateGDS:
         if not isinstance(cell_keys, list):
             print(f"Single cell: {cell_keys}")
         # get list of import cells (default: all)
-        if cell_keys == None:
+        if cell_keys is None:
             cell_keys = [c.name for c in self.gds_in.cells]
         else:
             cell_keys = list(cell_keys)
@@ -136,7 +135,7 @@ class ManipulateGDS:
         """
 
         # warning that labels do not work currently
-        if add_labels == True:
+        if add_labels:
             warnings.warn(
                 "Labels are not working currently! Setting add_labels = False and continuing the array process.\n\n"
             )
@@ -155,20 +154,18 @@ class ManipulateGDS:
             ), "If you are passing a list of labels, please ensure it is the same length as the total number of arrayed structures (i.e. rows * columns)."
 
         # parse values
-        sp_x = QUtilities.parse_value_length(spacing[0])
+        sp_x = QUtilities.parse_value_length(spacing[0])  # noqa: F841 # abhishekchak52: unused variable sp_x
         sp_y = QUtilities.parse_value_length(spacing[1])
-        if label_offset != None:
-            lbl_offset = QUtilities.parse_value_length(label_offset)
-        else:
-            lbl_offset = sp_y / 2
+
+        lbl_offset = sp_y / 2 if label_offset is None else QUtilities.parse_value_length(label_offset)  # noqa: F841 # abhishekchak52: unused variable lbl_offset
 
         # set font
-        fp = FontProperties(family="serif", style="italic")
+        fp = FontProperties(family="serif", style="italic")  # noqa: F841 # abhishekchak52: unused variable fp
 
         # default: copy all cells. Else use function input (if any), finally use class init input (if any)
-        if use_cells != None:
+        if use_cells is not None:
             self.flatten_cells(cell_keys=use_cells)
-        elif (self.import_cells == None) and (use_cells == None):
+        elif (self.import_cells is None) and (use_cells is None):
             self.flatten_cells(cell_keys=None)
         else:
             self.flatten_cells(cell_keys=self.import_cells)
@@ -191,8 +188,8 @@ class ManipulateGDS:
         # print(f'Polys: {[len(c.polygons) for c in self.lib.cells]}')
 
         # export if option is set
-        if export == True:
-            if export_path == None:
+        if export:
+            if export_path is None:
                 array_export = self.outfile
             else:
                 array_export = export_path
