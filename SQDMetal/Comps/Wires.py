@@ -10,6 +10,7 @@ import shapely
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from SQDMetal.Utilities.QUtilities import QUtilities
 
+
 class WirePinStretch(QRoute):
     """Creates a wire that extends some distance away from some target component's pin. It also has provisions to provide
     gaps in the start and/or end to the ground plane (e.g. for open-ended terminations).
@@ -28,7 +29,7 @@ class WirePinStretch(QRoute):
     The values are interpreted as follows:
         - start_gap, end_gap > 0, the gap to the ground plane is the supplied value
         - start_gap, end_gap == 0, the gap to the ground plane is taken as trace_gap
-        - start_gap, end_gap < 0, no gap is given.        
+        - start_gap, end_gap < 0, no gap is given.
 
     As usual trace_width and trace_gap specify the CPW dimensions.
 
@@ -38,8 +39,8 @@ class WirePinStretch(QRoute):
             * end_L
             * end_R
         where end is flush in the direction of the wire, while end_L and end_R are on the sides:
-        
-                        <-w->             x = start pin location 
+
+                        <-w->             x = start pin location
          _________________l__             e = 'end' pin
         |                    |  /|\       l = 'end_L' pin
         x                    e   w        r = 'end_R' pin
@@ -58,59 +59,70 @@ class WirePinStretch(QRoute):
         * end_gap='-1um'
     """
 
-    default_options = Dict(dist_extend='10um',
-                           start_gap='-1um',
-                           end_gap='-1um')
+    default_options = Dict(dist_extend="10um", start_gap="-1um", end_gap="-1um")
 
-    def __init__(self, design,
-                        name: str = None,
-                        options: Dict = None,
-                        type: str = "CPW",
-                        **kwargs):
-        #QRoute forces an end-pin to exist... So make it artificial...
-        options.pin_inputs['end_pin'] = Dict(component=options.pin_inputs.start_pin.component, pin=options.pin_inputs.start_pin.pin)
-        options.fillet='0um'
+    def __init__(
+        self,
+        design,
+        name: str = None,
+        options: Dict = None,
+        type: str = "CPW",
+        **kwargs,
+    ):
+        # QRoute forces an end-pin to exist... So make it artificial...
+        options.pin_inputs["end_pin"] = Dict(
+            component=options.pin_inputs.start_pin.component,
+            pin=options.pin_inputs.start_pin.pin,
+        )
+        options.fillet = "0um"
         super().__init__(design, name, options, **kwargs)
 
     def make(self):
         p = self.p
 
         self.set_pin("start")
-        
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
-        startPt = start_point['middle']
-        norm = start_point['normal']
-        endPt = startPt + norm*p.dist_extend
 
-        self.add_pin('end', [endPt-norm, endPt], width=p.trace_width, input_as_norm=True)
-        tang = np.array([-norm[1],norm[0]])
-        pt = endPt+tang*p.trace_width*0.5-norm*p.trace_width*0.5
-        self.add_pin('endL', [pt-tang, pt], width=p.trace_width, input_as_norm=True)
-        pt = endPt-tang*p.trace_width*0.5-norm*p.trace_width*0.5
-        self.add_pin('endR', [pt+tang, pt], width=p.trace_width, input_as_norm=True)
-        
+        start_point = self.design.components[
+            self.options.pin_inputs.start_pin.component
+        ].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point["middle"]
+        norm = start_point["normal"]
+        endPt = startPt + norm * p.dist_extend
+
+        self.add_pin(
+            "end", [endPt - norm, endPt], width=p.trace_width, input_as_norm=True
+        )
+        tang = np.array([-norm[1], norm[0]])
+        pt = endPt + tang * p.trace_width * 0.5 - norm * p.trace_width * 0.5
+        self.add_pin("endL", [pt - tang, pt], width=p.trace_width, input_as_norm=True)
+        pt = endPt - tang * p.trace_width * 0.5 - norm * p.trace_width * 0.5
+        self.add_pin("endR", [pt + tang, pt], width=p.trace_width, input_as_norm=True)
+
         line = shapely.LineString(np.array([startPt, endPt]))
         line_gap = np.array([startPt, endPt])
         if p.start_gap > 0:
-            line_gap[0] -= norm*p.start_gap
+            line_gap[0] -= norm * p.start_gap
         elif p.start_gap == 0:
-            line_gap[0] -= norm*p.trace_gap
+            line_gap[0] -= norm * p.trace_gap
         if p.end_gap > 0:
-            line_gap[1] += norm*p.end_gap
+            line_gap[1] += norm * p.end_gap
         elif p.end_gap == 0:
-            line_gap[1] += norm*p.trace_gap
+            line_gap[1] += norm * p.trace_gap
         line_gap = shapely.LineString(line_gap)
 
-        self.add_qgeometry('path', {'trace': line},
-                           width=p.trace_width,
-                           fillet=p.fillet,
-                           layer=p.layer)
-        self.add_qgeometry('path', {'cut': line_gap},
-                               width=p.trace_width + 2 * p.trace_gap,
-                               fillet=p.fillet,
-                               layer=p.layer,
-                               subtract=True)
+        self.add_qgeometry(
+            "path", {"trace": line}, width=p.trace_width, fillet=p.fillet, layer=p.layer
+        )
+        self.add_qgeometry(
+            "path",
+            {"cut": line_gap},
+            width=p.trace_width + 2 * p.trace_gap,
+            fillet=p.fillet,
+            layer=p.layer,
+            subtract=True,
+        )
         # self.make_elements(np.array([startPt, endPt]))
+
 
 class WirePins(QRoute):
     """Rudimentary manual routing wire that passes through all the listed pins. It supports CPW cutouts and an additional
@@ -147,43 +159,51 @@ class WirePins(QRoute):
         * end_gap='0um'
     """
 
-    default_options = Dict(pathObjPins=[],
-                           trace_width='10um', trace_gap='10um', fillet='50um', end_gap='0um',
-                           advanced=Dict(avoid_collision='false'))
-    
-    def __init__(self, design,
-                        name: str = None,
-                        options: Dict = None,
-                        type: str = "CPW",
-                        **kwargs):
-        #QRoute forces an end-pin to exist... So make it artificial...
+    default_options = Dict(
+        pathObjPins=[],
+        trace_width="10um",
+        trace_gap="10um",
+        fillet="50um",
+        end_gap="0um",
+        advanced=Dict(avoid_collision="false"),
+    )
+
+    def __init__(
+        self,
+        design,
+        name: str = None,
+        options: Dict = None,
+        type: str = "CPW",
+        **kwargs,
+    ):
+        # QRoute forces an end-pin to exist... So make it artificial...
         pins = []
         for cur_pin in [options.pathObjPins[0], options.pathObjPins[-1]]:
             if isinstance(cur_pin, list) or isinstance(cur_pin, tuple):
                 comp, pin = cur_pin[0], cur_pin[1]
             else:
-                comp, pin = cur_pin, 'a'
+                comp, pin = cur_pin, "a"
             pins += [(comp, pin)]
         assert len(pins) > 0, "Must have at least 2 pins/waypoints."
-        options.pin_inputs['start_pin'] = Dict(component=pins[0][0], pin=pins[0][1])
-        options.pin_inputs['end_pin'] = Dict(component=pins[1][0], pin=pins[1][1])
+        options.pin_inputs["start_pin"] = Dict(component=pins[0][0], pin=pins[0][1])
+        options.pin_inputs["end_pin"] = Dict(component=pins[1][0], pin=pins[1][1])
         super().__init__(design, name, options, **kwargs)
 
     def make(self):
         p = self.p
 
-        #Parse Path Joints...
+        # Parse Path Joints...
         pins = []
         for cur_pin in self.options.pathObjPins:
             if isinstance(cur_pin, list) or isinstance(cur_pin, tuple):
                 comp, pin = cur_pin[0], cur_pin[1]
             else:
-                comp, pin = cur_pin, 'a'
-            pins += [self.design.components[comp].pins[pin]['middle']]
+                comp, pin = cur_pin, "a"
+            pins += [self.design.components[comp].pins[pin]["middle"]]
 
         line = shapely.LineString(np.vstack(pins))
         if p.end_gap > 0:
-            norm_vec = pins[-1]-pins[-2]
+            norm_vec = pins[-1] - pins[-2]
             norm_vec = norm_vec / np.linalg.norm(norm_vec) * p.end_gap
             pins[-1] = pins[-1] + norm_vec
             line_gap = shapely.LineString(np.vstack(pins))
@@ -192,15 +212,18 @@ class WirePins(QRoute):
 
         self.set_pin("start")
         self.set_pin("end")
-        self.add_qgeometry('path', {'trace': line},
-                           width=p.trace_width,
-                           fillet=p.fillet,
-                           layer=p.layer)
-        self.add_qgeometry('path', {'cut': line_gap},
-                               width=p.trace_width + 2 * p.trace_gap,
-                               fillet=p.fillet,
-                               layer=p.layer,
-                               subtract=True)
+        self.add_qgeometry(
+            "path", {"trace": line}, width=p.trace_width, fillet=p.fillet, layer=p.layer
+        )
+        self.add_qgeometry(
+            "path",
+            {"cut": line_gap},
+            width=p.trace_width + 2 * p.trace_gap,
+            fillet=p.fillet,
+            layer=p.layer,
+            subtract=True,
+        )
+
 
 class WireElbowParallelPinPin(QRoute):
     """A rudimentary wire connector that mimics the 'Microsoft Office Autoshapes Elbow Connector with yellow handle' with curved corners.
@@ -249,49 +272,79 @@ class WireElbowParallelPinPin(QRoute):
         * end_gap='0um'
     """
 
-    default_options = Dict(frac_pos_elbow=0.5, fillet='20um', pin_pad='2um', end_gap='0um')
+    default_options = Dict(
+        frac_pos_elbow=0.5, fillet="20um", pin_pad="2um", end_gap="0um"
+    )
 
     def make(self):
         p = self.p
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
-        startPt = start_point['middle']
-        start_norm = start_point['normal']
+        start_point = self.design.components[
+            self.options.pin_inputs.start_pin.component
+        ].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point["middle"]
+        start_norm = start_point["normal"]
 
-        end_point = self.design.components[self.options.pin_inputs.end_pin.component].pins[self.options.pin_inputs.end_pin.pin]
-        endPt = end_point['middle']
-        end_norm = end_point['normal']
+        end_point = self.design.components[
+            self.options.pin_inputs.end_pin.component
+        ].pins[self.options.pin_inputs.end_pin.pin]
+        endPt = end_point["middle"]
+        end_norm = end_point["normal"]
 
-        assert np.abs(start_norm[0]*end_norm[1] - start_norm[1]*end_norm[0]) < 1e-15, "The two pins must be facing either parallel or anti-parallel."
+        assert (
+            np.abs(start_norm[0] * end_norm[1] - start_norm[1] * end_norm[0]) < 1e-15
+        ), "The two pins must be facing either parallel or anti-parallel."
 
-        matRot = np.array([[start_norm[0], start_norm[1]], [-start_norm[1], start_norm[0]]])
+        matRot = np.array(
+            [[start_norm[0], start_norm[1]], [-start_norm[1], start_norm[0]]]
+        )
         start_norm = matRot @ start_norm
         end_norm = matRot @ end_norm
-        endPt = matRot @ (endPt-startPt)
+        endPt = matRot @ (endPt - startPt)
 
         if end_norm[0] > 0:
-            #2 Elbows - parallel
+            # 2 Elbows - parallel
             if endPt[0] > 0:
-                path = [[0,0], [endPt[0]+p.pin_pad+p.fillet, 0], [endPt[0]+p.pin_pad+p.fillet, endPt[1]], endPt]
+                path = [
+                    [0, 0],
+                    [endPt[0] + p.pin_pad + p.fillet, 0],
+                    [endPt[0] + p.pin_pad + p.fillet, endPt[1]],
+                    endPt,
+                ]
             else:
-                path = [[0,0], [p.pin_pad+p.fillet,0], [p.pin_pad+p.fillet, endPt[1]], endPt]
-        elif endPt[0] >= 2*(p.pin_pad + p.fillet):
-            #2 Elbows - anti-parallel
-            path = [[0,0], [endPt[0]*p.frac_pos_elbow, 0], [endPt[0]*p.frac_pos_elbow, endPt[1]], endPt]
+                path = [
+                    [0, 0],
+                    [p.pin_pad + p.fillet, 0],
+                    [p.pin_pad + p.fillet, endPt[1]],
+                    endPt,
+                ]
+        elif endPt[0] >= 2 * (p.pin_pad + p.fillet):
+            # 2 Elbows - anti-parallel
+            path = [
+                [0, 0],
+                [endPt[0] * p.frac_pos_elbow, 0],
+                [endPt[0] * p.frac_pos_elbow, endPt[1]],
+                endPt,
+            ]
         else:
-            #4 Elbows - anti-parallel            
-            path = [[0,0], [p.pin_pad+p.fillet, 0],
-                    [p.pin_pad+p.fillet, endPt[1]*p.frac_pos_elbow], [endPt[0]-p.pin_pad-p.fillet, endPt[1]*p.frac_pos_elbow],
-                    [endPt[0]-p.pin_pad-p.fillet, endPt[1]], endPt]
-        
+            # 4 Elbows - anti-parallel
+            path = [
+                [0, 0],
+                [p.pin_pad + p.fillet, 0],
+                [p.pin_pad + p.fillet, endPt[1] * p.frac_pos_elbow],
+                [endPt[0] - p.pin_pad - p.fillet, endPt[1] * p.frac_pos_elbow],
+                [endPt[0] - p.pin_pad - p.fillet, endPt[1]],
+                endPt,
+            ]
+
         path = matRot.T @ np.array(path).T
         path = path.T
-        path[:,0] += startPt[0]
-        path[:,1] += startPt[1]
+        path[:, 0] += startPt[0]
+        path[:, 1] += startPt[1]
 
         line = shapely.LineString(np.vstack(path))
         if p.end_gap > 0:
-            norm_vec = path[-1]-path[-2]
+            norm_vec = path[-1] - path[-2]
             norm_vec = norm_vec / np.linalg.norm(norm_vec) * p.end_gap
             path[-1] = path[-1] + norm_vec
             line_gap = shapely.LineString(np.vstack(path))
@@ -300,15 +353,17 @@ class WireElbowParallelPinPin(QRoute):
 
         self.set_pin("start")
         self.set_pin("end")
-        self.add_qgeometry('path', {'trace': line},
-                           width=p.trace_width,
-                           fillet=p.fillet,
-                           layer=p.layer)
-        self.add_qgeometry('path', {'cut': line_gap},
-                               width=p.trace_width + 2 * p.trace_gap,
-                               fillet=p.fillet,
-                               layer=p.layer,
-                               subtract=True)
+        self.add_qgeometry(
+            "path", {"trace": line}, width=p.trace_width, fillet=p.fillet, layer=p.layer
+        )
+        self.add_qgeometry(
+            "path",
+            {"cut": line_gap},
+            width=p.trace_width + 2 * p.trace_gap,
+            fillet=p.fillet,
+            layer=p.layer,
+            subtract=True,
+        )
 
 
 class WireElbowSingle(QRoute):
@@ -349,33 +404,43 @@ class WireElbowSingle(QRoute):
         * fillet='20um'
     """
 
-    default_options = Dict(trace_width='10um',
-                           trace_gap='10um',
-                           fillet='20um')
+    default_options = Dict(trace_width="10um", trace_gap="10um", fillet="20um")
 
     def make(self):
         p = self.p  # noqa: F841 # abhishekchak52: unused variable p
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
-        startPt = start_point['middle']
-        start_norm = start_point['normal']
+        start_point = self.design.components[
+            self.options.pin_inputs.start_pin.component
+        ].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point["middle"]
+        start_norm = start_point["normal"]
 
-        end_point = self.design.components[self.options.pin_inputs.end_pin.component].pins[self.options.pin_inputs.end_pin.pin]
-        endPt = end_point['middle']
-        end_norm = end_point['normal']
-        
+        end_point = self.design.components[
+            self.options.pin_inputs.end_pin.component
+        ].pins[self.options.pin_inputs.end_pin.pin]
+        endPt = end_point["middle"]
+        end_norm = end_point["normal"]
+
         try:
-            t,u = np.linalg.solve([[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]], [endPt[0]-startPt[0], endPt[1]-startPt[1]])
+            t, u = np.linalg.solve(
+                [[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]],
+                [endPt[0] - startPt[0], endPt[1] - startPt[1]],
+            )
         except Exception:
-            raise Exception("The pins are parallel and this construct should not be used. Try for example, WireElbowParallelPinPin or WirePins instead.")
-        assert t > 0, "The pins are facing away and will cause the turn to occur at some point behind the components. Check direction of pins."
-        midPt = startPt+start_norm*t
+            raise Exception(
+                "The pins are parallel and this construct should not be used. Try for example, WireElbowParallelPinPin or WirePins instead."
+            )
+        assert t > 0, (
+            "The pins are facing away and will cause the turn to occur at some point behind the components. Check direction of pins."
+        )
+        midPt = startPt + start_norm * t
 
         path = [startPt, midPt, endPt]
 
         self.set_pin("start")
         self.set_pin("end")
         self.make_elements(path)
+
 
 class WireTaperPinStretch(QComponent):
     """A taper to change width of wire at some pin.
@@ -427,23 +492,34 @@ class WireTaperPinStretch(QComponent):
         * dist_extend='30um'
         * orig_gap='10um'
     """
-    default_options = Dict(trace_width='20um',
-                           trace_gap='10um',
-                           dist_extend='30um',
-                           orig_gap='10um')
 
-    def __init__(self, design,
-                    name: str = None,
-                    options: Dict = None,
-                    type: str = "CPW",
-                    **kwargs):
-        #QRoute forces an end-pin to exist... So make it artificial...
-        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
-        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
-        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
-        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+    default_options = Dict(
+        trace_width="20um", trace_gap="10um", dist_extend="30um", orig_gap="10um"
+    )
+
+    def __init__(
+        self,
+        design,
+        name: str = None,
+        options: Dict = None,
+        type: str = "CPW",
+        **kwargs,
+    ):
+        # QRoute forces an end-pin to exist... So make it artificial...
+        assert "pin_inputs" in options, (
+            "Must provide a starting pin input via 'pin_inputs'."
+        )
+        assert "start_pin" in options.pin_inputs, (
+            "Must provide 'start_pin' in 'pin_inputs'."
+        )
+        assert "component" in options.pin_inputs.start_pin, (
+            "Must provide 'component' in 'start_pin'."
+        )
+        assert "pin" in options.pin_inputs.start_pin, (
+            "Must provide 'pin' in 'start_pin'."
+        )
         super().__init__(design, name, options, **kwargs)
-        #TODO: Perhaps a pull request to add poppable options?
+        # TODO: Perhaps a pull request to add poppable options?
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -451,32 +527,45 @@ class WireTaperPinStretch(QComponent):
         p = self.p
         #########################################################
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
-        startPt = start_point['middle']
-        norm = start_point['normal']
+        start_point = self.design.components[
+            self.options.pin_inputs.start_pin.component
+        ].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point["middle"]
+        norm = start_point["normal"]
         rot_angle = np.arctan2(norm[1], norm[0])
-        width = start_point['width']
-        if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
-            gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
-            #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        width = start_point["width"]
+        if (
+            "trace_gap"
+            in self.design.components[
+                self.options.pin_inputs.start_pin.component
+            ].options
+        ):
+            gap = self.design.components[
+                self.options.pin_inputs.start_pin.component
+            ].options["trace_gap"]
+            # In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
                 if gap in self.design.variables:
                     gap = QUtilities.parse_value_length(self.design.variables[gap])
-                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
+                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(
+                    self.design
+                )
         else:
             gap = p.orig_gap
 
         taper = [
-                (0, width*0.5),
-                (p.dist_extend, p.trace_width*0.5),
-                (p.dist_extend, -p.trace_width*0.5),
-                (0, -width*0.5)]
+            (0, width * 0.5),
+            (p.dist_extend, p.trace_width * 0.5),
+            (p.dist_extend, -p.trace_width * 0.5),
+            (0, -width * 0.5),
+        ]
 
         taper_gap = [
-                    (0, width*0.5+gap),
-                    (p.dist_extend, p.trace_width*0.5+p.trace_gap),
-                    (p.dist_extend, -p.trace_width*0.5-p.trace_gap),
-                    (0, -width*0.5-gap)]
+            (0, width * 0.5 + gap),
+            (p.dist_extend, p.trace_width * 0.5 + p.trace_gap),
+            (p.dist_extend, -p.trace_width * 0.5 - p.trace_gap),
+            (0, -width * 0.5 - gap),
+        ]
 
         pin = shapely.LineString(taper[1:3])
         taper = shapely.Polygon(taper)
@@ -486,20 +575,18 @@ class WireTaperPinStretch(QComponent):
         polys = draw.rotate(polys, rot_angle, origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, *startPt)
         [taper, taper_gap, pin] = polys
-        
-        # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(taper=taper),
-                           layer=p.layer)
 
-        #subtracts out ground plane on the layer it's on
-        self.add_qgeometry('poly',
-                           dict(taper_gap=taper_gap),
-                           subtract=True,
-                           layer=p.layer)
+        # Adds the object to the qgeometry table
+        self.add_qgeometry("poly", dict(taper=taper), layer=p.layer)
+
+        # subtracts out ground plane on the layer it's on
+        self.add_qgeometry(
+            "poly", dict(taper_gap=taper_gap), subtract=True, layer=p.layer
+        )
 
         # Generates its own pins
-        self.add_pin('a', pin.coords, width=p.trace_width)
+        self.add_pin("a", pin.coords, width=p.trace_width)
+
 
 class WireTaperProbePinStretch(QComponent):
     """A taper that splits into two probes.
@@ -513,7 +600,7 @@ class WireTaperProbePinStretch(QComponent):
         * probe_gap1  - Gap between the two probes in the taper at origin
         * probe_gap2  - Gap between the two probes in the taper at the end of the extension
         * layer_probe2 - If greater than -1, it will place the second probe into this layer.
-        
+
     The parameters trace_width and trace_gap define the final CPW dimensions.
 
     The positioning can be done dynamically via:
@@ -529,7 +616,7 @@ class WireTaperProbePinStretch(QComponent):
               @@@@@@G
               @@@@  G           # = Taper
               @@    G           @ = Ground plane
-             g     #  W         
+             g     #  W
              g    ##L W         P = Pin to attach taper
              g  ####  W         W = trace_width
          w    ###  2            G = trace_gap
@@ -562,26 +649,40 @@ class WireTaperProbePinStretch(QComponent):
         * probe_gap2='4um'
         * layer_probe2=-1
     """
-    default_options = Dict(trace_width='20um',
-                           trace_gap='10um',
-                           dist_extend='30um',
-                           orig_gap='10um',
-                           probe_gap1='2um',
-                           probe_gap2='4um',
-                           layer_probe2=-1)
 
-    def __init__(self, design,
-                    name: str = None,
-                    options: Dict = None,
-                    type: str = "CPW",
-                    **kwargs):
-        #QRoute forces an end-pin to exist... So make it artificial...
-        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
-        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
-        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
-        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+    default_options = Dict(
+        trace_width="20um",
+        trace_gap="10um",
+        dist_extend="30um",
+        orig_gap="10um",
+        probe_gap1="2um",
+        probe_gap2="4um",
+        layer_probe2=-1,
+    )
+
+    def __init__(
+        self,
+        design,
+        name: str = None,
+        options: Dict = None,
+        type: str = "CPW",
+        **kwargs,
+    ):
+        # QRoute forces an end-pin to exist... So make it artificial...
+        assert "pin_inputs" in options, (
+            "Must provide a starting pin input via 'pin_inputs'."
+        )
+        assert "start_pin" in options.pin_inputs, (
+            "Must provide 'start_pin' in 'pin_inputs'."
+        )
+        assert "component" in options.pin_inputs.start_pin, (
+            "Must provide 'component' in 'start_pin'."
+        )
+        assert "pin" in options.pin_inputs.start_pin, (
+            "Must provide 'pin' in 'start_pin'."
+        )
         super().__init__(design, name, options, **kwargs)
-        #TODO: Perhaps a pull request to add poppable options?
+        # TODO: Perhaps a pull request to add poppable options?
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -589,36 +690,50 @@ class WireTaperProbePinStretch(QComponent):
         p = self.p
         #########################################################
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
-        startPt = start_point['middle']
-        norm = start_point['normal']
+        start_point = self.design.components[
+            self.options.pin_inputs.start_pin.component
+        ].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point["middle"]
+        norm = start_point["normal"]
         rot_angle = np.arctan2(norm[1], norm[0])
-        width = start_point['width']
-        if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
-            gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
-            #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        width = start_point["width"]
+        if (
+            "trace_gap"
+            in self.design.components[
+                self.options.pin_inputs.start_pin.component
+            ].options
+        ):
+            gap = self.design.components[
+                self.options.pin_inputs.start_pin.component
+            ].options["trace_gap"]
+            # In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
                 gap = QUtilities.parse_value_length(self.design.variables[gap])
-                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
+                gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(
+                    self.design
+                )
         else:
             gap = p.orig_gap
 
         taper1 = [
-                (0, width*0.5),
-                (0, p.probe_gap1*0.5),
-                (p.dist_extend, p.probe_gap2*0.5),
-                (p.dist_extend, p.trace_width + p.probe_gap2*0.5)]
+            (0, width * 0.5),
+            (0, p.probe_gap1 * 0.5),
+            (p.dist_extend, p.probe_gap2 * 0.5),
+            (p.dist_extend, p.trace_width + p.probe_gap2 * 0.5),
+        ]
         taper2 = [
-                (0, -p.probe_gap1*0.5),
-                (0, -width*0.5),
-                (p.dist_extend, -p.trace_width - p.probe_gap2*0.5),
-                (p.dist_extend, -p.probe_gap2*0.5)]
+            (0, -p.probe_gap1 * 0.5),
+            (0, -width * 0.5),
+            (p.dist_extend, -p.trace_width - p.probe_gap2 * 0.5),
+            (p.dist_extend, -p.probe_gap2 * 0.5),
+        ]
 
         taper_gap = [
-                    (0, width*0.5+gap),
-                    (p.dist_extend, p.trace_width + p.probe_gap2*0.5+p.trace_gap),
-                    (p.dist_extend, -p.trace_width - p.probe_gap2*0.5-p.trace_gap),
-                    (0, -width*0.5-gap)]
+            (0, width * 0.5 + gap),
+            (p.dist_extend, p.trace_width + p.probe_gap2 * 0.5 + p.trace_gap),
+            (p.dist_extend, -p.trace_width - p.probe_gap2 * 0.5 - p.trace_gap),
+            (0, -width * 0.5 - gap),
+        ]
 
         pinL = shapely.LineString(taper1[2:])
         pinR = shapely.LineString(taper2[2:])
@@ -630,25 +745,19 @@ class WireTaperProbePinStretch(QComponent):
         polys = draw.rotate(polys, rot_angle, origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, *startPt)
         [taper1, taper2, taper_gap, pinL, pinR] = polys
-        
+
         # Adds the object to the qgeometry table
-        self.add_qgeometry('poly',
-                           dict(taper1=taper1),
-                           layer=p.layer)
+        self.add_qgeometry("poly", dict(taper1=taper1), layer=p.layer)
 
         if p.layer_probe2 < 0:
             p.layer_probe2 = p.layer
-        self.add_qgeometry('poly',
-                           dict(taper2=taper2),
-                           layer=p.layer_probe2)
+        self.add_qgeometry("poly", dict(taper2=taper2), layer=p.layer_probe2)
 
-        #subtracts out ground plane on the layer it's on
-        self.add_qgeometry('poly',
-                           dict(taper_gap=taper_gap),
-                           subtract=True,
-                           layer=p.layer)
+        # subtracts out ground plane on the layer it's on
+        self.add_qgeometry(
+            "poly", dict(taper_gap=taper_gap), subtract=True, layer=p.layer
+        )
 
         # Generates its own pins
-        self.add_pin('L', pinL.coords[::-1], width=p.trace_width)
-        self.add_pin('R', pinR.coords[::-1], width=p.trace_width)
-
+        self.add_pin("L", pinL.coords[::-1], width=p.trace_width)
+        self.add_pin("R", pinR.coords[::-1], width=p.trace_width)

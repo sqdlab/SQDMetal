@@ -43,7 +43,6 @@ class ManipulateGDS:
         else:
             print(f"Imported:\n {import_cells}\n")
 
-
     def flatten_cells(self, cell_keys=None, export=False):
         """
         Takes `cell_keys` (or all cells by default) from a GdsLibrary object and flattens them as seperate layers to a single cell export object.
@@ -73,7 +72,7 @@ class ManipulateGDS:
         for layer_idx, key in enumerate(cell_keys):
             # copy polygons
             to_copy = self.gds_in[key]
-            #array = gdstk.Reference(to_copy, origin=self.origin)
+            # array = gdstk.Reference(to_copy, origin=self.origin)
             # self.cell_flattened = self.cell_temp.flatten().copy(
             #     name=cell_name
             # )  # flatten
@@ -82,9 +81,13 @@ class ManipulateGDS:
             self.cell_temp.remove(
                 *[poly for poly in self.cell.polygons if poly.layer == layer_idx]
             )
-            print(f"Copied {key:<13}-> layer {layer_idx} ({len(to_copy.polygons)} polygons)")
+            print(
+                f"Copied {key:<13}-> layer {layer_idx} ({len(to_copy.polygons)} polygons)"
+            )
         # Remove temp cell
-        target_cell = next((cell for cell in self.lib.cells if cell.name == temp_cell_name), None)
+        target_cell = next(
+            (cell for cell in self.lib.cells if cell.name == temp_cell_name), None
+        )
         if target_cell:
             self.lib.remove(target_cell)
 
@@ -147,17 +150,23 @@ class ManipulateGDS:
         # import assertions
         assert isinstance(chip_dimension, tuple) and isinstance(
             chip_dimension[0], str
-        ), r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."
+        ), (
+            r"Input argument 'chip_dimension' should be a tuple contining strings of the chip's (x, y) dimensions with units - e.g. 'chip_dimension=('20mm', '20mm')', as in qiskit and SQDMetal."
+        )
         if isinstance(label_string, list):
-            assert len(label_string) == (
-                columns * rows
-            ), "If you are passing a list of labels, please ensure it is the same length as the total number of arrayed structures (i.e. rows * columns)."
+            assert len(label_string) == (columns * rows), (
+                "If you are passing a list of labels, please ensure it is the same length as the total number of arrayed structures (i.e. rows * columns)."
+            )
 
         # parse values
         sp_x = QUtilities.parse_value_length(spacing[0])  # noqa: F841 # abhishekchak52: unused variable sp_x
         sp_y = QUtilities.parse_value_length(spacing[1])
 
-        lbl_offset = sp_y / 2 if label_offset is None else QUtilities.parse_value_length(label_offset)  # noqa: F841 # abhishekchak52: unused variable lbl_offset
+        lbl_offset = (
+            sp_y / 2
+            if label_offset is None
+            else QUtilities.parse_value_length(label_offset)
+        )  # noqa: F841 # abhishekchak52: unused variable lbl_offset
 
         # set font
         fp = FontProperties(family="serif", style="italic")  # noqa: F841 # abhishekchak52: unused variable fp
@@ -172,14 +181,15 @@ class ManipulateGDS:
 
         # initialise an array cell and do arraying
         self.cell_array = self.cell_flattened.copy(name="Array")
-        array_ref = gdstk.Reference(self.cell_array,
-                                    columns=columns,
-                                    rows=rows,
-                                    spacing=(
-                                        QUtilities.parse_value_length(spacing[0]) / self.gds_units,
-                                        QUtilities.parse_value_length(spacing[1]) / self.gds_units,
-                                        )
-                                    )
+        array_ref = gdstk.Reference(
+            self.cell_array,
+            columns=columns,
+            rows=rows,
+            spacing=(
+                QUtilities.parse_value_length(spacing[0]) / self.gds_units,
+                QUtilities.parse_value_length(spacing[1]) / self.gds_units,
+            ),
+        )
         self.cell_array.add(array_ref)
         self.cell_array.flatten()
         self.lib.add(self.cell_array)

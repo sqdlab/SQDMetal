@@ -17,6 +17,7 @@ from SQDMetal.Comps import Markers
 from SQDMetal.Utilities.QubitDesigner import ResonatorQuarterWave
 import matplotlib.pyplot as plt
 
+
 class QUtilities:
     @staticmethod
     def get_units(design):
@@ -40,7 +41,7 @@ class QUtilities:
         # So do this instead...
         if isinstance(strVal, int) or isinstance(strVal, float):
             return strVal
-        strVal = strVal.strip().replace(' ', '')
+        strVal = strVal.strip().replace(" ", "")
         assert len(strVal) > 1, f"Length '{strVal}' is invalid (no units?)."
         if strVal[-2:] == "mm":
             return float(strVal[:-2] + "e-3")
@@ -170,9 +171,9 @@ class QUtilities:
         if isinstance(dists, (list, tuple, np.ndarray)):
             dists = np.sort(dists)
             if dists_are_fractional:
-                assert (
-                    np.min(dists) >= 0 and np.max(dists) <= 1
-                ), "Fractional distances must be in the interval: [0,1]."
+                assert np.min(dists) >= 0 and np.max(dists) <= 1, (
+                    "Fractional distances must be in the interval: [0,1]."
+                )
                 dists = dists * total_dist
         else:
             dists = np.arange(0, total_dist, dists)
@@ -392,9 +393,7 @@ class QUtilities:
         unit_conv = QUtilities.get_units(design)
         for cur_layer_id in layer_id:
             if cur_layer_id > 0:
-                filt = gsdf.loc[
-                    (gsdf["layer"] == cur_layer_id) & (~gsdf["subtract"])
-                ]
+                filt = gsdf.loc[(gsdf["layer"] == cur_layer_id) & (~gsdf["subtract"])]
                 if filt.shape[0] == 0:
                     continue
                 # Merge the metallic elements
@@ -418,9 +417,9 @@ class QUtilities:
                 space_polys = ShapelyEx.fuse_polygons_threshold(
                     space_polys, fuse_threshold
                 )
-                assert (
-                    "ground_cutout" in kwargs
-                ), "Must supply ground_cutout if specifying layer 0."
+                assert "ground_cutout" in kwargs, (
+                    "Must supply ground_cutout if specifying layer 0."
+                )
                 xL, xR, yL, yR = kwargs.get("ground_cutout")
                 poly_sheet = shapely.Polygon([[xL, yL], [xR, yL], [xR, yR], [xL, yR]])
                 space_whole = shapely.unary_union(space_polys)
@@ -511,56 +510,61 @@ class QUtilities:
 
     @staticmethod
     def plot_highlight_component(component_name, design, **kwargs):
-        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
-        arrow_width = kwargs.get('arrow_width', 0.001)
-        push_to_back = kwargs.get('push_to_back', False)
+        len_pin_arrow_frac_axis = kwargs.get("len_pin_arrow_frac_axis", 0.2)
+        arrow_width = kwargs.get("arrow_width", 0.001)
+        push_to_back = kwargs.get("push_to_back", False)
 
         qmpl = QiskitShapelyRenderer(None, design, None)
-        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get("resolution", 4))
         # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
         # obstacles = shapely.unary_union(gsdf['geometry'])
-        
-        if 'ax' in kwargs:
-            ax = kwargs['ax']
+
+        if "ax" in kwargs:
+            ax = kwargs["ax"]
         else:
             fig, ax = plt.subplots(1)
 
         cur_comp_id = design.components[component_name].id
 
-        gsdf_gaps = gsdf[gsdf['subtract']]
-        sort_inds = np.argsort(gsdf_gaps['component'] == cur_comp_id)
+        gsdf_gaps = gsdf[gsdf["subtract"]]
+        sort_inds = np.argsort(gsdf_gaps["component"] == cur_comp_id)
         if push_to_back:
             sort_inds = sort_inds[::-1]
         gsdf_gaps = gsdf_gaps.iloc[sort_inds]
-        cols = gsdf_gaps['component'] == cur_comp_id
-        cols = [('#808080' if x else '#C5C9C7') for x in cols]
+        cols = gsdf_gaps["component"] == cur_comp_id
+        cols = [("#808080" if x else "#C5C9C7") for x in cols]
         if gsdf_gaps.size > 0:
             gsdf_gaps.plot(color=cols, ax=ax)
 
-
-        gsdf_metals = gsdf[~gsdf['subtract']]
-        sort_inds = np.argsort(gsdf_metals['component'] == cur_comp_id)
+        gsdf_metals = gsdf[~gsdf["subtract"]]
+        sort_inds = np.argsort(gsdf_metals["component"] == cur_comp_id)
         if push_to_back:
             sort_inds = sort_inds[::-1]
         gsdf_metals = gsdf_metals.iloc[sort_inds]
-        cols = gsdf_metals['component'] == cur_comp_id
-        cols = [('#069AF3' if x else 'lightblue') for x in cols]
+        cols = gsdf_metals["component"] == cur_comp_id
+        cols = [("#069AF3" if x else "lightblue") for x in cols]
         if gsdf_metals.size > 0:
             gsdf_metals.plot(color=cols, ax=ax)
 
         xLims = ax.get_xlim()
         yLims = ax.get_ylim()
-        min_dist = min(xLims[1]-xLims[0], yLims[1]-yLims[0])
-        vec_len = min_dist*len_pin_arrow_frac_axis
+        min_dist = min(xLims[1] - xLims[0], yLims[1] - yLims[0])
+        vec_len = min_dist * len_pin_arrow_frac_axis
 
         for cur_pin in design.components[component_name].pins:
-            vec_pt = design.components[component_name].pins[cur_pin]['middle']
-            vec_norm = design.components[component_name].pins[cur_pin]['normal']
-            vec_norm *= vec_len/np.linalg.norm(vec_norm)
-            ax.arrow(*vec_pt, *vec_norm, width=arrow_width, color='red')
-            vec_text = vec_pt+vec_norm/2
-            txt = ax.text(*vec_text, cur_pin, horizontalalignment='center', verticalalignment='center', color='red')
-            txt.set_bbox(dict(facecolor='white', alpha=0.7, edgecolor='white'))
+            vec_pt = design.components[component_name].pins[cur_pin]["middle"]
+            vec_norm = design.components[component_name].pins[cur_pin]["normal"]
+            vec_norm *= vec_len / np.linalg.norm(vec_norm)
+            ax.arrow(*vec_pt, *vec_norm, width=arrow_width, color="red")
+            vec_text = vec_pt + vec_norm / 2
+            txt = ax.text(
+                *vec_text,
+                cur_pin,
+                horizontalalignment="center",
+                verticalalignment="center",
+                color="red",
+            )
+            txt.set_bbox(dict(facecolor="white", alpha=0.7, edgecolor="white"))
 
     @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
@@ -572,10 +576,10 @@ class QUtilities:
 
         ids = []
         for x in comp_names:
-            assert x in design.components, f"Component \'{x}\' does not exist!"
+            assert x in design.components, f"Component '{x}' does not exist!"
             ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
-        if kwargs.get('metals_only', False):
+        if kwargs.get("metals_only", False):
             filt = gsdf[~gsdf["subtract"]]
 
         if filt.shape[0] == 0:
@@ -647,7 +651,7 @@ class QUtilities:
             design.components[route_name].options.trace_gap
         )
 
-        #In case it is using a parameter - e.g. cpw_width or cpw_gap...
+        # In case it is using a parameter - e.g. cpw_width or cpw_gap...
         if isinstance(padWid, str):
             padWid = QUtilities.parse_value_length(design.variables[padWid])
         if isinstance(padGap, str):
@@ -844,7 +848,7 @@ class QUtilities:
         )  # check coordinate list matches number of die
 
         # sort from top left, vertical down, end on bottom right
-        die_coords_sorted = sorted(die_coords, key=lambda tup: (tup[0],tup[1]))
+        die_coords_sorted = sorted(die_coords, key=lambda tup: (tup[0], tup[1]))
 
         return die_coords_sorted
 
@@ -947,15 +951,13 @@ class QUtilities:
         )
 
         # place launchpads
-        lp_L = LaunchpadWirebond(design, f"lp_L_die{die_number-1}", options=lp_L_ops)
-        lp_R = LaunchpadWirebond(design, f"lp_R_die{die_number-1}", options=lp_R_ops)
+        lp_L = LaunchpadWirebond(design, f"lp_L_die{die_number - 1}", options=lp_L_ops)
+        lp_R = LaunchpadWirebond(design, f"lp_R_die{die_number - 1}", options=lp_R_ops)
 
         # print statement after placing
         if print_checks:
             if die_number is not None:
-                print(
-                    f" Launchpads\n  name : ({lp_L.name}, {lp_R.name})"
-                )
+                print(f" Launchpads\n  name : ({lp_L.name}, {lp_R.name})")
             else:
                 print(f" Launchpads\n  name : ({lp_L.name}, {lp_R.name})")
 
@@ -986,7 +988,7 @@ class QUtilities:
         LC_calculations=True,
         print_statements=True,
         fillet="85um",
-        radius="100um"
+        radius="100um",
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
@@ -1035,7 +1037,7 @@ class QUtilities:
             transmission_line_y,
             launchpad_to_res,
             min_res_gap,
-            film_thickness
+            film_thickness,
         ]:
             assert isinstance(i, str)
         for i in [gap, width, fillet, radius]:
@@ -1045,23 +1047,31 @@ class QUtilities:
         assert len(die_origin) == 2 and len(die_dimension) == 2
         assert isinstance(die_index, int)
         if isinstance(gap, list):
-            assert isinstance(width, list), "If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
-            assert ((len(gap) == num_resonators) and (len(width) == num_resonators))
+            assert isinstance(width, list), (
+                "If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
+            )
+            assert (len(gap) == num_resonators) and (len(width) == num_resonators)
 
-        # check if width/gap and/or fillet is a list (for scaled)   
-        if (isinstance(width, list) or isinstance(gap, list)):
-            scaled_geometry = True 
-            print("Options for scaled gap/width geometry detected.\n") if print_statements else 0 
+        # check if width/gap and/or fillet is a list (for scaled)
+        if isinstance(width, list) or isinstance(gap, list):
+            scaled_geometry = True
+            print(
+                "Options for scaled gap/width geometry detected.\n"
+            ) if print_statements else 0
         else:
             scaled_geometry = False
         if isinstance(fillet, list):
-            scaled_fillet = True 
-            print("Options for scaled fillet size detected.\n") if print_statements else 0 
+            scaled_fillet = True
+            print(
+                "Options for scaled fillet size detected.\n"
+            ) if print_statements else 0
         else:
             scaled_fillet = False
         if isinstance(radius, list):
             scaled_radius = True  # noqa: F841 # abhishekchak52: unused variable scaled_radius
-            print("Options for scaled curve radius detected.\n") if print_statements else 0
+            print(
+                "Options for scaled curve radius detected.\n"
+            ) if print_statements else 0
         else:
             scaled_radius = False  # noqa: F841 # abhishekchak52: unused variable scaled_radius
 
@@ -1072,18 +1082,22 @@ class QUtilities:
             - (2 * QUtilities.parse_value_length(launchpad_to_res))
             - (1.5 * res_width_x)
         )
-        
+
         # initialise lists
         resonator_names, resonator_vals = [], []
-        if LC_calculations: 
+        if LC_calculations:
             capacitances, inductances = [], []
 
         for i in range(num_resonators):
             # name resonators
-            resonator_names.append(f"die{die_index}_res{i+1}_{frequencies[i] * 1e-9:.2f}GHz")
+            resonator_names.append(
+                f"die{die_index}_res{i + 1}_{frequencies[i] * 1e-9:.2f}GHz"
+            )
 
         # parse string valued arguments to floats
-        h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
+        h = np.abs(
+            QUtilities.parse_value_length(design.chips[chip_name].size["size_z"])
+        )
         ft = QUtilities.parse_value_length(film_thickness)
         tl_y = QUtilities.parse_value_length(transmission_line_y)
         if isinstance(coupling_gap, str):
@@ -1108,15 +1122,20 @@ class QUtilities:
         tl_end = x0 + tl_extent / 2
 
         # create resonator positions
-        resonator_positions = QUtilities.create_even_spacing_along_line_1d(tl_start, tl_end, num_resonators)
+        resonator_positions = QUtilities.create_even_spacing_along_line_1d(
+            tl_start, tl_end, num_resonators
+        )
 
         if num_resonators > 1:
-            assert (resonator_positions[1] - resonator_positions[0]) > res_width_x*1.5, "Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
+            assert (
+                resonator_positions[1] - resonator_positions[0]
+            ) > res_width_x * 1.5, (
+                "Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
+            )
 
         # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
-
             # set coupling gap based on user options
             if cg:
                 cg_cur = cg
@@ -1129,7 +1148,7 @@ class QUtilities:
                 width_cur = width[i]
                 gap_cur = gap[i]
                 radius_cur = radius[i]
-            
+
             x_pos_cur = resonator_positions[i]
 
             # calculate capacitance and inductance if requested
@@ -1151,40 +1170,48 @@ class QUtilities:
             )
 
             # calculate length for quarter-wave resonator
-            l_quarterwave_mm = f'{(l_fullwave / 4) * 1e3:.2f}mm'
+            l_quarterwave_mm = f"{(l_fullwave / 4) * 1e3:.2f}mm"
 
             # store resonator values (length, effective permittivity, filling factor)
             resonator_vals.append([l_fullwave, er_eff, F])
 
             # calculate y value of resonator start
-            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg_cur - (0.5 * w_float) - g_float
-            res_y_um = f'{res_y_val * 1e6:.3f}um'
+            res_y_val = (
+                y0
+                + tl_y
+                - (feedline_upscale * 0.5 * w_float)
+                - (feedline_upscale * g_float)
+                - cg_cur
+                - (0.5 * w_float)
+                - g_float
+            )
+            res_y_um = f"{res_y_val * 1e6:.3f}um"
 
             # calculate y value of resonator end
-            res_end_y_um = f'{(res_y_val - QUtilities.parse_value_length(res_vertical)) * 1e6:.3f}um'
+            res_end_y_um = f"{(res_y_val - QUtilities.parse_value_length(res_vertical)) * 1e6:.3f}um"
 
             # strings for x position
-            res_x_um = f'{x_pos_cur * 1e6:.3f}um'
+            res_x_um = f"{x_pos_cur * 1e6:.3f}um"
 
             # printouts
-            if print_statements: 
-                print(f' Resonator {i+1}:')
-                print(f'  name : {res}')
-                print(f'  l    : {l_quarterwave_mm}')
-                print(f'  f    : {frequencies[i] * 1e-9:.2f}GHz')
-            
+            if print_statements:
+                print(f" Resonator {i + 1}:")
+                print(f"  name : {res}")
+                print(f"  l    : {l_quarterwave_mm}")
+                print(f"  f    : {frequencies[i] * 1e-9:.2f}GHz")
+
             # create pin component for start-point (open, 10um pocket)
             res_start_pin = OpenToGround(
                 design,
                 res + "_startPin",
                 options=Dict(
-                    pos_x=res_x_um, 
-                    pos_y=res_y_um, 
-                    width=width_cur, 
-                    gap=gap_cur, 
-                    termination_gap="10um", 
-                    orientation="180"
-                )
+                    pos_x=res_x_um,
+                    pos_y=res_y_um,
+                    width=width_cur,
+                    gap=gap_cur,
+                    termination_gap="10um",
+                    orientation="180",
+                ),
             )
 
             # create pin component for start-point (shorted)
@@ -1192,13 +1219,13 @@ class QUtilities:
                 design,
                 res + "_endPin",
                 options=Dict(
-                    pos_x=res_x_um, 
-                    pos_y=res_end_y_um, 
-                    width=width_cur, 
-                    gap=gap_cur, 
-                    termination_gap="0um", 
-                    orientation="-90"
-                )
+                    pos_x=res_x_um,
+                    pos_y=res_end_y_um,
+                    width=width_cur,
+                    gap=gap_cur,
+                    termination_gap="0um",
+                    orientation="-90",
+                ),
             )
 
             # get pin ids
@@ -1208,47 +1235,59 @@ class QUtilities:
             # check for scaled filleting
             if scaled_fillet:
                 fillet_cur = fillet[i]
-            else: 
+            else:
                 fillet_cur = fillet
 
             # set resonator options
             res_options = Dict(
-                            total_length=l_quarterwave_mm, 
-                            constr_radius=radius_cur,
-                            constr_width_max="0um",
-                            trace_width=width_cur, 
-                            trace_gap=gap_cur,
-                            fillet=fillet_cur,
-                            # spacing="100um", # TODO: remove - this is temporary
-                            fillet_padding="10um",
-                            start_left=True,
-                            layer='1',
-                            pin_inputs = Dict(
-                                    start_pin=Dict(component=res + "_startPin", 
-                                                pin=start_pin_id),
-                                    end_pin=Dict(component=res + "_endPin",     
-                                                pin=end_pin_id))
-                            )
-            
+                total_length=l_quarterwave_mm,
+                constr_radius=radius_cur,
+                constr_width_max="0um",
+                trace_width=width_cur,
+                trace_gap=gap_cur,
+                fillet=fillet_cur,
+                # spacing="100um", # TODO: remove - this is temporary
+                fillet_padding="10um",
+                start_left=True,
+                layer="1",
+                pin_inputs=Dict(
+                    start_pin=Dict(component=res + "_startPin", pin=start_pin_id),
+                    end_pin=Dict(component=res + "_endPin", pin=end_pin_id),
+                ),
+            )
+
             # make resonator
-            res = RouteMeander(
-                design,
-                res,
-                options=Dict(**res_options)
-                )
-            
+            res = RouteMeander(design, res, options=Dict(**res_options))
+
             resonators.append(res)
 
         # sanity check and outputs
         # TODO: embed capacitances and inductances in resonator_vals
-        if LC_calculations: 
-            assert len(capacitances)==len(inductances)==num_resonators
-            return resonators, resonator_vals, resonator_names, capacitances, inductances
+        if LC_calculations:
+            assert len(capacitances) == len(inductances) == num_resonators
+            return (
+                resonators,
+                resonator_vals,
+                resonator_names,
+                capacitances,
+                inductances,
+            )
         else:
             return resonators, resonator_vals, resonator_names
-    
+
     @staticmethod
-    def place_transmission_line_from_launchpads(design, tl_y, gap, width, launchpads, die_index, die_origin=[0, 0], start_straight="100um", fillet="85um", anchor_inset="250um"):
+    def place_transmission_line_from_launchpads(
+        design,
+        tl_y,
+        gap,
+        width,
+        launchpads,
+        die_index,
+        die_origin=[0, 0],
+        start_straight="100um",
+        fillet="85um",
+        anchor_inset="250um",
+    ):
         """
         Function to place transmission lines between launchpad pins on a multi-die chip. Each transmission line is named as "tl_die{die_index}".
 
@@ -1263,7 +1302,7 @@ class QUtilities:
             - start_straight - (Defaults to "80um") Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to "50um"
             - fillet - (Defaults to "50um") Fillet size on transmission line
             - anchor_inset - (Defaults to "250um") Distance in x between launchpad connection and anchor
-        
+
         Outputs:
             - tl - transmission line QComponent
         """
@@ -1273,70 +1312,109 @@ class QUtilities:
         lp_L_pin = next(iter(launchpads[die_index][0].pins))
         lp_R = launchpads[die_index][1].name
         lp_R_pin = next(iter(launchpads[die_index][1].pins))
-        lp_L_pin_x = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][0] * 1e-3 # convert to m
-        lp_R_pin_x = launchpads[die_index][1].get_pin(lp_R_pin)['middle'][0] * 1e-3 # convert to m
+        lp_L_pin_x = (
+            launchpads[die_index][0].get_pin(lp_L_pin)["middle"][0] * 1e-3
+        )  # convert to m
+        lp_R_pin_x = (
+            launchpads[die_index][1].get_pin(lp_R_pin)["middle"][0] * 1e-3
+        )  # convert to m
 
-        lp_y = launchpads[die_index][0].get_pin(lp_L_pin)['middle'][1] * 1e-3 # convert to m
+        lp_y = (
+            launchpads[die_index][0].get_pin(lp_L_pin)["middle"][1] * 1e-3
+        )  # convert to m
 
         # calculate positions of anchors
         tl_y_cur = QUtilities.parse_value_length(tl_y) + die_origin[1]
-        anchor_L_x = lp_L_pin_x + (2 * QUtilities.parse_value_length(fillet)) + QUtilities.parse_value_length(start_straight)
-        anchor_R_x = lp_R_pin_x - (2 * QUtilities.parse_value_length(fillet)) - QUtilities.parse_value_length(start_straight)
-        anchor_L = np.array([f"{anchor_L_x * 1e6:.1f}um", 
-                               f"{tl_y_cur * 1e6:.1f}um"])
-        anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", 
-                               f"{tl_y_cur * 1e6:.1f}um"])
-        
-        anchor_L_low_x = lp_L_pin_x + QUtilities.parse_value_length(start_straight) + QUtilities.parse_value_length(fillet)
-        anchor_R_low_x = lp_R_pin_x - QUtilities.parse_value_length(start_straight) - QUtilities.parse_value_length(fillet)
+        anchor_L_x = (
+            lp_L_pin_x
+            + (2 * QUtilities.parse_value_length(fillet))
+            + QUtilities.parse_value_length(start_straight)
+        )
+        anchor_R_x = (
+            lp_R_pin_x
+            - (2 * QUtilities.parse_value_length(fillet))
+            - QUtilities.parse_value_length(start_straight)
+        )
+        anchor_L = np.array([f"{anchor_L_x * 1e6:.1f}um", f"{tl_y_cur * 1e6:.1f}um"])
+        anchor_R = np.array([f"{anchor_R_x * 1e6:.1f}um", f"{tl_y_cur * 1e6:.1f}um"])
 
-        anchor_L_low = np.array([f"{anchor_L_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
-        anchor_R_low = np.array([f"{anchor_R_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"])
+        anchor_L_low_x = (
+            lp_L_pin_x
+            + QUtilities.parse_value_length(start_straight)
+            + QUtilities.parse_value_length(fillet)
+        )
+        anchor_R_low_x = (
+            lp_R_pin_x
+            - QUtilities.parse_value_length(start_straight)
+            - QUtilities.parse_value_length(fillet)
+        )
 
+        anchor_L_low = np.array(
+            [f"{anchor_L_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"]
+        )
+        anchor_R_low = np.array(
+            [f"{anchor_R_low_x * 1e6:.1f}um", f"{lp_y * 1e6:.1f}um"]
+        )
 
-        #anchors = {1: anchor_L, 2: anchor_R}
+        # anchors = {1: anchor_L, 2: anchor_R}
         anchors = {1: anchor_L_low, 2: anchor_L, 3: anchor_R, 4: anchor_R_low}
 
         # transmission line options
         tl_options = Dict(
-                pin_inputs=Dict(
-                    start_pin=Dict(component=lp_L, pin=lp_L_pin),
-                    end_pin=Dict(component=lp_R, pin=lp_R_pin)
-                ),
-                trace_width=width,
-                trace_gap=gap,
-            )
+            pin_inputs=Dict(
+                start_pin=Dict(component=lp_L, pin=lp_L_pin),
+                end_pin=Dict(component=lp_R, pin=lp_R_pin),
+            ),
+            trace_width=width,
+            trace_gap=gap,
+        )
 
         # draw straight transmission line if in the center of chip vertically (lining up with launchpads)
         if tl_y in ["0nm", "0um", "0mm", "0cm", "0m"]:
-            tl = RouteStraight(design=design, 
-                            name=f"tl_die{die_index}", 
-                            options=tl_options)
-            print('Drew a straight transmission line connecting the two launchpads.')
+            tl = RouteStraight(
+                design=design, name=f"tl_die{die_index}", options=tl_options
+            )
+            print("Drew a straight transmission line connecting the two launchpads.")
         # else draw a tranmission line through the anchor points
         else:
             try:
                 tl_options.anchors = anchors
-                tl_options.advanced.avoid_collision = 'true'
+                tl_options.advanced.avoid_collision = "true"
                 tl_options.fillet = fillet
                 tl_options.lead.start_straight = start_straight
                 tl_options.lead.end_straight = start_straight
                 tl = RoutePathfinder(
-                                design=design, 
-                                name=f"tl_die{die_index}", 
-                                options=tl_options,
-                    )
+                    design=design,
+                    name=f"tl_die{die_index}",
+                    options=tl_options,
+                )
             except Exception:
                 raise Exception("Anchor-based routing failed - see Qiskit metal logs.")
             else:
                 max_len = max(map(len, np.concatenate((anchor_L, anchor_R))))
                 print(" Transmission line")
-                print("  Anchor left high  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L) + "]")
-                print("  Anchor right high : [" + " ".join(f"{x:>{max_len}}" for x in anchor_R) + "]")
-                print("  Anchor right low  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L_low) + "]")
-                print("  Anchor left low   : [" + " ".join(f"{x:>{max_len}}" for x in anchor_R_low) + "]")
+                print(
+                    "  Anchor left high  : ["
+                    + " ".join(f"{x:>{max_len}}" for x in anchor_L)
+                    + "]"
+                )
+                print(
+                    "  Anchor right high : ["
+                    + " ".join(f"{x:>{max_len}}" for x in anchor_R)
+                    + "]"
+                )
+                print(
+                    "  Anchor right low  : ["
+                    + " ".join(f"{x:>{max_len}}" for x in anchor_L_low)
+                    + "]"
+                )
+                print(
+                    "  Anchor left low   : ["
+                    + " ".join(f"{x:>{max_len}}" for x in anchor_R_low)
+                    + "]"
+                )
         return tl
-    
+
     @staticmethod
     def place_markers(design, die_origin, die_dim, die_index, marker_type="cross"):
         """
@@ -1359,30 +1437,40 @@ class QUtilities:
         x0, y0 = die_origin[0], die_origin[1]
 
         # marker coordinates
-        l_x = f'{(x0 - dx/2) * 1e3}mm'
-        r_x = f'{(x0 + dx/2) * 1e3}mm'
-        b_y = f'{(y0 - dy/2) * 1e3}mm'
-        t_y = f'{(y0 + dy/2) * 1e3}mm'
+        l_x = f"{(x0 - dx / 2) * 1e3}mm"
+        r_x = f"{(x0 + dx / 2) * 1e3}mm"
+        b_y = f"{(y0 - dy / 2) * 1e3}mm"
+        t_y = f"{(y0 + dy / 2) * 1e3}mm"
 
-        if (marker_type=="cross" or marker_type=="Cross"):
+        if marker_type == "cross" or marker_type == "Cross":
             # place markers
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=t_y)).make() #top left
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=t_y)).make() #top right
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=l_x, pos_y=b_y)).make() #bottom left
-            Markers.MarkerDicingCross(design, options=Dict(pos_x=r_x, pos_y=b_y)).make() #bottom right
-            # # only place bottom markers on the bottom die to avoid overlaps 
+            Markers.MarkerDicingCross(
+                design, options=Dict(pos_x=l_x, pos_y=t_y)
+            ).make()  # top left
+            Markers.MarkerDicingCross(
+                design, options=Dict(pos_x=r_x, pos_y=t_y)
+            ).make()  # top right
+            Markers.MarkerDicingCross(
+                design, options=Dict(pos_x=l_x, pos_y=b_y)
+            ).make()  # bottom left
+            Markers.MarkerDicingCross(
+                design, options=Dict(pos_x=r_x, pos_y=b_y)
+            ).make()  # bottom right
+            # # only place bottom markers on the bottom die to avoid overlaps
             # if die_index == 0:
-                
-        elif (marker_type=="square" or marker_type=="Square"):
+
+        elif marker_type == "square" or marker_type == "Square":
             # place markers
             Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=t_y)).make()
             Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=t_y)).make()
             if die_index == 0:
                 Markers.MarkerSquare(design, options=Dict(pos_x=l_x, pos_y=b_y)).make()
                 Markers.MarkerSquare(design, options=Dict(pos_x=r_x, pos_y=b_y)).make()
-        else: 
-            raise Exception("Currently, only marker_type=['cross', 'square'] available.")
-    
+        else:
+            raise Exception(
+                "Currently, only marker_type=['cross', 'square'] available."
+            )
+
     @staticmethod
     def is_string_or_list_of_strings(var):
         if isinstance(var, str):
@@ -1390,7 +1478,7 @@ class QUtilities:
         elif isinstance(var, list) and all(isinstance(item, str) for item in var):
             return True
         return False
-    
+
     @staticmethod
     def create_even_spacing_along_line_1d(start, end, n, inset_factor=0.2):
         # n == 1, return the middle point
