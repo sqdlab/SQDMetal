@@ -18,5 +18,5 @@ setuptools.setup(
     ],
     # python_requires='>=3.7',?
     keywords='superconducting qubits, comsol',
-    install_requires=['qiskit-metal==0.1.2', 'mph', 'pyvista', 'jupyter', 'geopandas', 'gmsh'] #Qiskit-Metal doesn't install geopandas and Jupyter...
+    install_requires=['qiskit-metal==0.1.2', 'mph', 'pyvista', 'jupyter', 'geopandas', 'gmsh==4.11.1'] #Qiskit-Metal doesn't install geopandas and Jupyter...
 )
