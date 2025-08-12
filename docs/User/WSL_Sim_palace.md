@@ -1,4 +1,23 @@
-# Prepare UBUNTU
+# Install guide for Palace on WSL
+
+
+# Install WSL
+
+ref: https://learn.microsoft.com/en-us/windows/wsl/install
+
+**NOTE: you mst be on windows10 version 2004 or Windows 11**
+
+>check your windows version in settings, then system section, scroll down to  "about".
+
+**Open powershell in admin mode**
+
+>press start, type powershell, right click on it and select "Run as administrator".
+
+```powershell
+wsl --set-default-version 2
+wsl --install Ubuntu-22.04
+```
+
 
 ## Install spack basic on a new WSL system:
 
