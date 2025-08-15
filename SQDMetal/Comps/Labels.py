@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam
 # Creation Date: 29/05/2023
 # Description: Collection of classes to draw Xmon qubits.
@@ -11,9 +14,8 @@ import shapely
 
 from matplotlib.path import Path
 import matplotlib.path as mpath
-from matplotlib.textpath import TextPath, TextToPath
+from matplotlib.textpath import TextToPath
 from matplotlib.font_manager import FontProperties
-import matplotlib as mpl
 
 
 class LabelText(QComponent):

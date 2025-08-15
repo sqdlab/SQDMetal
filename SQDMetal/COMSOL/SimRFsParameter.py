@@ -1,18 +1,17 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
-import mph
 import jpype.types as jtypes
-import geopandas as gpd
 import shapely
-import matplotlib.pyplot as plt
 import numpy as np
 import scipy.optimize
 
 import os
 
-from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
     def __init__(self, model, adaptive='None', modal_min_freq_num_eigs = (1e9,7), relative_tolerance=0.01, include_loss_tangents=False):
@@ -64,7 +63,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
             self.jc.study(self._study).feature(self._sub_study[0]).set("neigs", f"{self.modal_min_freq_num_eigs[1]}")
             #Only store the port solutions for Multi-Modal...
             lst_ports = ["geom1_"+cur_port['polys'][0] for cur_port in self._ports]
-            self.jc.study(self._study).feature(self._sub_study[1]).set("usestoresel", "selection");
+            self.jc.study(self._study).feature(self._sub_study[1]).set("usestoresel", "selection")
             self.jc.study(self._study).feature(self._sub_study[1]).set("storesel", jtypes.JArray(jtypes.JString)(lst_ports))
         self._soln = self.model._add_solution("solRFsparams")
         self.jc.sol().create(self._soln)
@@ -81,7 +80,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         int_name = "intMetals"
         self.jc.result().numerical().create(int_name, "IntSurface")
         self.jc.result().numerical(int_name).set("intvolume", jtypes.JBoolean(True))
-        self.jc.result().numerical(int_name).selection().named("geom1_condAll");
+        self.jc.result().numerical(int_name).selection().named("geom1_condAll")
         self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)(["emw.Ez"]))
         self.jc.result().numerical(int_name).set("descr", jtypes.JArray(jtypes.JString)(["Electric field, z-component"]))
         #
@@ -192,7 +191,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         for m,cur_current_src in enumerate(self._current_sources):
             assert False, "Do not add surface current sources for now"
             #TODO: Finish this feature later...
-            region, extrusion_depth, J_z = cur_current_src[1], cur_current_src[2], cur_current_src[3]
+            region, extrusion_depth, J_z = cur_current_src[1], cur_current_src[2], cur_current_src[3]  # noqa: F841
             
             if cur_current_src[0] == 'region':
                 cur_extrusion = f"ext{m}"
@@ -358,7 +357,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         C_J = kwargs.get('C_J', 0)
         R_J = kwargs.get('R_J', 0)
 
-        port_name = "rf_port_" + str(len(self._ports))
+        port_name = "rf_port_" + str(len(self._ports))  # noqa: F841
 
         unit_conv = QUtilities.get_units(self.model.design)
         pos1 = np.array(coords[0]) * unit_conv
@@ -391,7 +390,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         if num_points > 1:
             str_freqs = "range({0}[GHz],({1}[GHz]-({0}[GHz]))/{2},{1}[GHz])".format(freq_start*1e-9, freq_end*1e-9, num_points-1)
         else:
-            str_freqs = "{0}[GHz]*1^range(1,1)".format(freq_start*1e-9, freq_end*1e-9, num_points-1)
+            str_freqs = "{0}[GHz]*1^range(1,1)".format(freq_start*1e-9, )
         if self.adaptive == 'Multiple':
             self.jc.study(self._study).feature(self._sub_study[1]).set("plist", str_freqs)
         else:
@@ -429,7 +428,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
     def add_electric_point_dipole(self, vec_pos, dipole_moment_p, dipole_moment_vecdir):
         pt_name = f"pt{len(self._electric_point_dipoles)}"
-        sel_name = f"sel_" + pt_name
+        sel_name = "sel_" + pt_name
         self.jc.component("comp1").geom("geom1").create(pt_name, "Point")
         self.jc.component("comp1").geom("geom1").feature(pt_name).setIndex("p", str(vec_pos[0]), 0)
         self.jc.component("comp1").geom("geom1").feature(pt_name).setIndex("p", str(vec_pos[1]), 1)
@@ -560,7 +559,7 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
         self.jc.result().table().create("tbl1", "Table")
         self.jc.result().numerical("gev1").set("table", "tbl1")
         self.jc.result().numerical("gev1").computeResult()
-        self.jc.result().numerical("gev1").setResult();
+        self.jc.result().numerical("gev1").setResult()
 
         freqs = [1e9*np.complex128(str(y).replace('i','j')) for y in [x[0] for x in self.jc.result().table("tbl1").getTableData(True)]]
         dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])

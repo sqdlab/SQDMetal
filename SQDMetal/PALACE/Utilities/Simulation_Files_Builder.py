@@ -1,4 +1,7 @@
-import os, subprocess
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
+import os
 import json
 import gmsh
 

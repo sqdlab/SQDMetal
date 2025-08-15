@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam
 # Creation Date: 01/05/2023
 # Description: Collection of classes to wires - from routing objects to tapers.
 
 from qiskit_metal.qlibrary.core import QComponent, QRoute
-from qiskit_metal.qlibrary.tlines.anchored_path import RouteAnchors
 from qiskit_metal import draw
 import numpy as np
 import shapely
@@ -355,7 +357,7 @@ class WireElbowSingle(QRoute):
                            fillet='20um')
 
     def make(self):
-        p = self.p
+        p = self.p  # noqa: F841 # abhishekchak52: unused variable p
 
         start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
         startPt = start_point['middle']
@@ -367,8 +369,8 @@ class WireElbowSingle(QRoute):
         
         try:
             t,u = np.linalg.solve([[start_norm[0], end_norm[0]], [start_norm[1], end_norm[1]]], [endPt[0]-startPt[0], endPt[1]-startPt[1]])
-        except:
-            assert False, "The pins are parallel and this construct should not be used. Try for example, WireElbowParallelPinPin or WirePins instead."
+        except Exception:
+            raise Exception("The pins are parallel and this construct should not be used. Try for example, WireElbowParallelPinPin or WirePins instead.")
         assert t > 0, "The pins are facing away and will cause the turn to occur at some point behind the components. Check direction of pins."
         midPt = startPt+start_norm*t
 

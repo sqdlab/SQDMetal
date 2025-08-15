@@ -123,6 +123,12 @@ Save the package.py file for the Palace install, and then run
 spack install palace@0.13
 ```
 
+### Singularity/Apptainer container
+
+Instructions to build palace as a Singularity/Apptainer container are given [here](https://awslabs.github.io/palace/stable/install/#Build-using-Singularity/Apptainer). By default, this setup builds the latest commit of [awslabs/palace on main](https://github.com/awslabs/palace) with OpenMP support (no GPU). 
+
+To use these containers for simulations, set the `palace-dir` user option to point to the `palace.sif` file (or whatever you named your container).
+
 ### HPC cluster
 
 Working installation instructions for the Australian Bunya cluster are given [here](HPC_documentation.md).

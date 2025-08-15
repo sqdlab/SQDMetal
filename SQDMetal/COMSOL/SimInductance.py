@@ -1,12 +1,12 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 
-import mph
 import jpype.types as jtypes
-import geopandas as gpd
 import shapely
-import matplotlib.pyplot as plt
 import numpy as np
 
 class COMSOL_Simulation_Inductance(COMSOL_Simulation_Base):
@@ -78,7 +78,7 @@ class COMSOL_Simulation_Inductance(COMSOL_Simulation_Base):
         qmpl = QiskitShapelyRenderer(None, self.model.design, None)
         gsdf = qmpl.get_net_coordinates()
         comp_id = self.model.design.components[qObjName].id
-        metal_polys_all = gsdf.loc[(gsdf["component"] == comp_id) & (gsdf["subtract"] == False)]['geometry'].iloc[0]
+        metal_polys_all = gsdf.loc[(gsdf["component"] == comp_id) & (~gsdf["subtract"])]['geometry'].iloc[0]
         #
         unit_conv = kwargs.get("unit_conv", QUtilities.get_units(self.model.design))
         metal_polys_all = shapely.affinity.scale( metal_polys_all, xfact=unit_conv, yfact=unit_conv, origin=(0, 0) )
@@ -92,13 +92,14 @@ class COMSOL_Simulation_Inductance(COMSOL_Simulation_Base):
         if len(poly_interiors) > 0:
             pol_name_ints = []
             for ind,cur_int in enumerate(poly_interiors):
-                pol_name_int = f"loopClose"
+                pol_name_int = "loopClose"
                 pol_name_ints.append(pol_name_int)
                 #Convert coordinates into metres...
                 cur_poly_int = np.array(cur_int.coords[:])
                 cur_poly_int = self.model._simplify_geom(cur_poly_int, thresh)
                 sel_x, sel_y, sel_r = self.model._create_poly(pol_name_int, cur_poly_int[:-1])
             #Subtract interiors from the polygon
+            # abhishekchak52: undefined variable m
             diff_name = f"difInt{self.model._num_polys+m}"
             self.model._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
             self.model._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_name)

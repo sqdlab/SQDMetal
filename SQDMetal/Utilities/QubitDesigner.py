@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 import scipy.optimize
 from SQDMetal.Utilities.GenUtilities import GenUtilities
@@ -87,18 +90,18 @@ class ResonatorQuarterWave(ResonatorBase):
 
 class ResonatorLC(ResonatorBase):
     def __init__(self, f0=None, L=None, C=None):
-        if f0 == None:
-            assert L != None and C!= None, "Must supply L and C if omitting f0."
+        if f0 is None:
+            assert L is not None and C is not None, "Must supply L and C if omitting f0."
             self.L = L
             self.C = C
             self.f0 = 1/(2*np.pi * np.sqrt(L*C))
-        elif L == None:
-            assert f0 != None and C!= None, "Must supply f0 and C if omitting L."
+        elif L is None:
+            assert f0 is not None and C is not None, "Must supply f0 and C if omitting L."
             self.f0 = f0
             self.C = C
             self.L = 1/((2*np.pi*f0)**2 * C)
-        elif C == None:
-            assert f0 != None and L!= None, "Must supply f0 and L if omitting C."
+        elif C is None:
+            assert f0 is not None and L is not None, "Must supply f0 and L if omitting C."
             self.f0 = f0
             self.L = L
             self.C = 1/((2*np.pi*f0)**2 * L)
@@ -233,7 +236,8 @@ class XmonDesigner(TransmonBase):
 
         fres, Cres, Lres = self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()
 
-        func = lambda x: abs(self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
+        def func(x):
+            return abs(self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
 
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='TNC', tol=1e-5)
         x = sol.x
@@ -288,10 +292,11 @@ class FloatingTransmonDesigner(TransmonBase):
 
         fres, Cres, Lres = self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()
 
-        func = lambda x: abs(self._chi_hertz(self._eff_Cg(*x[1:5]), self._eff_Cq(*x[1:5])+x[5], x[0], fres, Cres, Lres) / x[mps['chi']] - 1) \
-              + abs(self.EJonEC(self._eff_CJ(self._eff_Cq(*x[1:5])+x[5], self._eff_Cg(*x[1:5]), Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1) \
-              + abs(self._Csigma(*x[1:6]) / x[mps['C_sigma']] - 1) \
-              + abs(self._beta(*x[1:6]) / x[mps['beta']] - 1)
+        def func(x):
+            return abs(self._chi_hertz(self._eff_Cg(*x[1:5]), self._eff_Cq(*x[1:5])+x[5], x[0], fres, Cres, Lres) / x[mps['chi']] - 1) \
+                      + abs(self.EJonEC(self._eff_CJ(self._eff_Cq(*x[1:5])+x[5], self._eff_Cg(*x[1:5]), Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1) \
+                      + abs(self._Csigma(*x[1:6]) / x[mps['C_sigma']] - 1) \
+                      + abs(self._beta(*x[1:6]) / x[mps['beta']] - 1)
 
         x0[mps['C_sigma']] = self._Csigma(*x0[1:6])
         x0[mps['beta']] = self._beta(*x0[1:6])

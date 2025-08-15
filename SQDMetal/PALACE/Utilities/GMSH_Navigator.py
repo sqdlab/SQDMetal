@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import gmsh
 import matplotlib.pyplot as plt
 import matplotlib
@@ -96,7 +99,7 @@ class GMSH_Navigator:
         #
         nodes = np.reshape(nodeCoords, (int(len(nodeCoords)/3), 3))
         faces = np.reshape(faceNodes, (int(len(faceNodes)/3), 3))
-        edges = np.reshape(edgeNodes, (int(len(edgeNodes)/2), 2))
+        edges = np.reshape(edgeNodes, (int(len(edgeNodes)/2), 2))   # noqa: F841 # abhishekchak52: edges is not used
 
         leNodes = {nodeTags[x]:nodes[x] for x in range(nodeTags.size)}
 

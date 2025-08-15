@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 # This code is part of Qiskit.
 #
 # (C) Copyright IBM 2017, 2021.
@@ -7,7 +11,6 @@
 # obtain a copy of this license in the LICENSE.txt file in the root directory
 # of this source tree or at http://www.apache.org/licenses/LICENSE-2.0.
 #
-# -*- coding: utf-8 -*-
 # Author: Divita Gautam
 # Creation Date: 21/05/2024
 # Description: Collection of classes to draw transmon qubits.
