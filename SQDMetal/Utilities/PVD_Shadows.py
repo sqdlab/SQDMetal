@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from qiskit_metal.toolbox_metal.parsing import parse_value
 from shapely.geometry import Polygon
 import numpy as np

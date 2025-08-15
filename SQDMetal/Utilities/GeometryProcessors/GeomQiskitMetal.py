@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 import numpy as np
 import shapely

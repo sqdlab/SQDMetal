@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Utilities.QUtilities import QUtilities
 import gmsh

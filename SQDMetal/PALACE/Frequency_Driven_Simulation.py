@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt

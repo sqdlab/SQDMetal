@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from qiskit_metal import designs
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.MakeGDS import MakeGDS

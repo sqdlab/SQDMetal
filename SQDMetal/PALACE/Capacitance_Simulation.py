@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.PALACE.Model import PALACE_Model
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats

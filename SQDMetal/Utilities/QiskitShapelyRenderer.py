@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from qiskit_metal.renderers.renderer_mpl.mpl_renderer import QMplRenderer
 import pandas as pd
 import geopandas as gpd

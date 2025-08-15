@@ -1,4 +1,7 @@
  # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam and Divita Gautam
 # Creation Date: 02/06/2023
 # Modified Date: 17/05/2024 (tapered bandages)

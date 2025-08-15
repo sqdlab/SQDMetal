@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import pyvista as pv
 import matplotlib
 import matplotlib.pyplot as plt

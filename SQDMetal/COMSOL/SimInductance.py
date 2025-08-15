@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.COMSOL.Model import COMSOL_Simulation_Base
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer

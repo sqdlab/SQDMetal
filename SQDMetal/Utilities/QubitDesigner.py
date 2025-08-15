@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 import scipy.optimize
 from SQDMetal.Utilities.GenUtilities import GenUtilities

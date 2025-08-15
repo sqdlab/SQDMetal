@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from pathlib import Path
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
