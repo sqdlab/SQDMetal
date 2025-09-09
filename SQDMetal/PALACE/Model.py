@@ -303,6 +303,17 @@ class PALACE_Model:
     def _check_if_QiskitMetalDesign(self):
         assert isinstance(self._geom_processor, GeomQiskitMetal), "This function can only be used on QiskitMetal designs."
 
+    def fine_mesh_fine_features(self, max_feature_size, **kwargs):
+        polys = self._geom_processor.get_polys_of_fine_features(max_feature_size, self._metallic_layers, self._ground_plane)
+        self._fine_meshes.append({
+            'type': 'arb_polys',
+            'polys': polys,
+            'min_size': kwargs.get('min_size', self.user_options['mesh_min']),
+            'max_size': kwargs.get('max_size', self.user_options['mesh_max']),
+            'taper_dist_min': kwargs.get('taper_dist_min', self.user_options['taper_dist_min']),
+            'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
+        })
+
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
         self._check_if_QiskitMetalDesign()
         leUnits = QUtilities.get_units(self._geom_processor.design)

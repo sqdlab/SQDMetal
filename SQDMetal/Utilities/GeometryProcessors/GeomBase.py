@@ -28,6 +28,13 @@ class GeomBase:
     def process_layers(self, metallic_layers, ground_plane, **kwargs):
         raise NotImplementedError()
 
+    def get_polys_of_fine_features(self, feature_size, metallic_layers, ground_plane, **kwargs):
+        metals, gaps = self.process_layers(metallic_layers, ground_plane, **kwargs)
+        poly_all = shapely.unary_union(metals)
+        
+        poly_fat = poly_all.buffer(-feature_size/2, join_style=2, cap_style=3).buffer(feature_size/2, join_style=2, cap_style=3)
+        return shapely.difference(poly_all, poly_fat)
+
     def create_CPW_feed_via_point(self, pt_near_centre_end, len_launch, metallic_layers, ground_plane, **kwargs):
         metals, gaps = self.process_layers(metallic_layers, ground_plane, **kwargs)
         poly_all = shapely.unary_union(metals)

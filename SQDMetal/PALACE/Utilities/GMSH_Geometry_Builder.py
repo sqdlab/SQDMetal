@@ -192,6 +192,18 @@ class GMSH_Geometry_Builder:
                 cur_mesh_attrb['taper_dist_max'] = cur_fine_mesh['taper_dist_max'] * 1e3
                 #
                 fine_mesh_elems.append(cur_mesh_attrb)
+            elif cur_fine_mesh['type'] == 'arb_polys':
+                cur_mesh_attrb = {}
+                polys = cur_fine_mesh['polys']
+                polys = shapely.affinity.scale(polys, xfact=1e3, yfact=1e3)  #Get it into mm
+                polys = ShapelyEx.shapely_to_list(polys)
+                cur_mesh_attrb['region'] = self._create_gmsh_geometry_from_shapely_polygons(polys)
+                cur_mesh_attrb['mesh_min'] = cur_fine_mesh['min_size'] * 1e3
+                cur_mesh_attrb['mesh_max'] = cur_fine_mesh['max_size'] * 1e3
+                cur_mesh_attrb['taper_dist_min'] = cur_fine_mesh['taper_dist_min'] * 1e3
+                cur_mesh_attrb['taper_dist_max'] = cur_fine_mesh['taper_dist_max'] * 1e3
+                #
+                fine_mesh_elems.append(cur_mesh_attrb)
             elif cur_fine_mesh['type'] == 'path':
                 cur_mesh_attrb = {}
                 #Get it in mm...
