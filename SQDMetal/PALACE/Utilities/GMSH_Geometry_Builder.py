@@ -195,7 +195,7 @@ class GMSH_Geometry_Builder:
             elif cur_fine_mesh['type'] == 'arb_polys':
                 cur_mesh_attrb = {}
                 polys = cur_fine_mesh['polys']
-                polys = shapely.affinity.scale(polys, xfact=1e3, yfact=1e3)  #Get it into mm
+                polys = shapely.affinity.scale(polys, xfact=1e3, yfact=1e3, origin=(0,0))  #Get it into mm
                 polys = ShapelyEx.shapely_to_list(polys)
                 cur_mesh_attrb['region'] = self._create_gmsh_geometry_from_shapely_polygons(polys)
                 cur_mesh_attrb['mesh_min'] = cur_fine_mesh['min_size'] * 1e3
