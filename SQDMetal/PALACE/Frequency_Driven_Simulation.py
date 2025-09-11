@@ -30,7 +30,9 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                  "fuse_threshold": 1e-9,
                  "gmsh_verbosity": 1,
                  "threshold": 1e-9,
-                 "simplify_edge_min_angle_deg": -1
+                 "simplify_edge_min_angle_deg": -1,
+                 'palace_mode': 'local',
+                 'palace_wsl_spack_repo_directory': '~/repo'
                 }
 
     #constructor

@@ -1,100 +1,105 @@
 # Install guide for Palace on WSL
 
 
-# Install WSL
+## Install WSL
 
-ref: https://learn.microsoft.com/en-us/windows/wsl/install
-
-**NOTE: you mst be on windows10 version 2004 or Windows 11**
+**NOTE: you must be on Windows 10 version 2004 or Windows 11**
 
 >check your windows version in settings, then system section, scroll down to  "about".
 
-**Open powershell in admin mode**
-
->press start, type powershell, right click on it and select "Run as administrator".
+Using the instructins from [here](https://learn.microsoft.com/en-us/windows/wsl/install), first **Open powershell in admin mode** (i.e. press start, type `powershell`, right click on it and select "Run as administrator") and type:
 
 ```powershell
 wsl --set-default-version 2
 wsl --install Ubuntu-22.04
 ```
 
+If this fails (e.g. `WslRegisterDistribution failed`), then run `wsl --update --web-download` first. Restart windows if it has pending updates. Note the username/password supplied during installation.
+
+From now onwards, when we state *enter WSL*, we mean:
+- Enter powershell (administrative mode)
+- Type `wsl` and hit `ENTER`
+
 
 ## Install spack basic on a new WSL system:
 
-ref : https://spack.readthedocs.io/en/latest/installing_prerequisites.html#verify-spack-prerequisites
+Enter WSL and verify that the nameservers are correct by first running:
+
+```bash
+sudo nano /etc/resolv.conf
+```
+
+Ensure it says `nameserver 8.8.8.8` (if not, edit it, hit `CTRL-X` and `Y`).
+
+Now install spack as outlined [here](https://spack.readthedocs.io/en/latest/installing_prerequisites.html#verify-spack-prerequisites) by typing:
 
 ```bash
 sudo apt update
 sudo apt install file bzip2 ca-certificates g++ gcc gfortran git gzip lsb-release patch python3 tar unzip xz-utils zstd
-```
-
-## Install some more ubuntu build stuff:
-
-```bash
 sudo apt install libxft-dev libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev build-essential
 ```
 
-**CLOSE THE SHELL NOW AND REOPEN**.
+**CLOSE THE POWERSHELL NOW AND REOPEN**.
 
-
-# Prepare DIR
-## Make a new directory where we clone all repos:
+Make a new directory where we clone all repositories:
 
 ```bash
+cd ~
 mkdir repo
 cd repo
 ```
 
+Note that we use `~/repo` as the default palace repository directory. Since we will be using virtual environments if it is in a different directory, then make sure to set `'palace_wsl_spack_repo_directory'` in the `user_options` dictionary in the palace simulation object later.
 
-# Prepare SPACK
-
-## Clone and source Spack here:
+Now clone the spack source and enter its environment here:
 
 ```bash
 git clone --depth=2 https://github.com/spack/spack.git
 . spack/share/spack/setup-env.sh
 ```
 
-## Update spack compilers:
+Update spack compilers:
 
 ```bash
 spack compiler find
 ```
 
-# Clone palace and install using spack:
+## Install Palace
 
-ref: https://github.com/awslabs/palace/issues/360#issuecomment-2874057931
-
-## Clone palace :
-
-and checkout cameron's branch, which has fixes that lets spack correctly install palace0.13.
+Clone palace and [install using spack](https://github.com/awslabs/palace/issues/360#issuecomment-2874057931):
 
 ```bash
 git clone https://github.com/awslabs/palace.git
 
-# These changes are now in master but need to be tested again.
+#Checkout cameron's branch, which has fixes that lets spack correctly install palace0.13.
+#But these changes are now in master but need to be tested again.
 #git checkout cameronrutherford/0.13.0-spack-cmake-constraints
 ```
 
-## More steps:
-
-* Create local env of spack called `spack-env`.
-* add local palace install as a repo in it.
-* concretize and install.
+Now the idea is that we create a local virtual environment in spack called `spack-env`, add local palace install as a repo in it and concretize+install. This is done via:
 
 ```bash
 source ./spack/share/spack/setup-env.sh
 spack env create -d ./spack-env
 spack env activate ./spack-env
-spack repo add ./palace/spack/local
+spack repo add ./palace/spack_repo/local
 spack add local.palace@develop
 ```
 
-now concretize and install error free!!!
+Now concretize+install via:
 
 ```bash
 spack concretize -f
 spack install --only-concrete
 ```
 
-## No need for EXTERNAL MFEM, libCEED or sundial !! palace ships with its own !!!!
+There is no need for EXTERNAL MFEM, libCEED or sundial as palace ships with its own versions.
+
+## When running the simulations
+
+When running Palace simulations, the simulation object receives a dictionary via the argument `user_options`. Make sure to set:
+
+- `'palace_mode': 'wsl'`,
+- `'palace_wsl_spack_repo_directory': '~/repo'`
+
+where the second argument points to a different directory if the repository directory was chosen to be different during the installation procedure.

@@ -17,6 +17,7 @@ from SQDMetal.Utilities.GeometryProcessors.GeomGDS import GeomGDS
 import numpy as np
 import os
 import subprocess
+import sys
 import gmsh
 import json
 import platform
@@ -44,7 +45,9 @@ class PALACE_Model:
             with open(options["HPC_Parameters_JSON"], "r") as f:
                 self.hpc_options = json.loads(f.read())
         else:
-            self.palace_dir = options.get('palace_dir', 'palace')                
+            self.palace_dir = options.get('palace_dir', 'palace')
+            self.palace_mode = options.get('palace_mode', 'local')  #Can be local, wsl, docker
+            self._palace_wsl_repo_location = options.get('palace_wsl_spack_repo_directory', '~/repo')
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
         self._full_3D_params = {'metal_thickness':0, 'substrate_trenching':0}
@@ -171,7 +174,101 @@ class PALACE_Model:
             # print(f"Error checking native architecture: {e}")
             return False
 
-    def _run_container(self, container_executable_name: str = "apptainer", **kwargs):
+    def _run_local(self, **kwargs):
+        """
+        Runs the PALACE simulation locally.
+        """
+
+        config_file = self._sim_config
+        leFile = os.path.basename(os.path.realpath(config_file))
+        leDir = os.path.dirname(os.path.realpath(config_file))
+
+        if not os.path.exists(self._output_data_dir):
+            os.makedirs(self._output_data_dir)
+        log_location = f"{self._output_data_dir}/out.log"
+        with open("temp.sh", "w+") as f:
+            f.write(f"cd \"{leDir}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+
+        # Set execute permission on temp.sh
+        os.chmod("temp.sh", 0o755)
+
+        with open(log_location, 'w'):
+            pass
+
+        # Get the current running architecture
+        running_arch = platform.machine()
+
+        # If the machine is native arm64 but running under x86_64, run temp.sh under arm64
+        if self._is_native_arm64() and running_arch == "x86_64":
+            # print("Running arm64 process from x86_64 environment...")
+            self.cur_process = subprocess.Popen(["arch", "-arm64", "bash", "./temp.sh"], shell=False)
+        else:
+            # Run the temp.sh script as usual
+            # print("Running temp.sh script under current architecture...")
+            self.cur_process = subprocess.Popen("./temp.sh", shell=True)
+        
+        try:
+            self.cur_process.wait()
+        except KeyboardInterrupt:
+            self.cur_process.kill()
+        self.cur_process = None
+
+    def _run_local_wsl(self, **kwargs):
+        """
+        Runs the PALACE simulation locally.
+        """
+
+        config_file = self._sim_config
+        leFile = os.path.basename(os.path.realpath(config_file))
+        leDir = os.path.dirname(os.path.realpath(config_file))
+        leCWD = os.getcwd()
+
+        def conv_winpath_to_WSLmount(lePath):
+            lePathWSL = lePath.replace('\\','/').replace(':','')  #Turn \ into / and remove the : after the drive letter...
+            lePathWSL = lePathWSL[0].lower() + lePathWSL[1:]        #Turn the C or D into c or d...
+            return '/mnt/' + lePathWSL
+
+        leDirWSL = conv_winpath_to_WSLmount(leDir)
+        leCWDWSL = conv_winpath_to_WSLmount(leCWD)
+
+        if not os.path.exists(self._output_data_dir):
+            os.makedirs(self._output_data_dir)
+        log_location = f"{self._output_data_dir}/out.log"
+        log_locationWSL = conv_winpath_to_WSLmount(log_location)
+
+        with open("temp.sh", "w+", newline='\n') as f:
+            f.write(f"cd {self._palace_wsl_repo_location}\n")
+            f.write(f"source ./spack/share/spack/setup-env.sh\n")
+            f.write(f"spack env create -d ./spack-env\n")
+            f.write(f"spack env activate ./spack-env\n")
+            f.write(f"cd \"{leDirWSL}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_locationWSL}\"\n")
+
+        # Set execute permission on temp.sh
+        os.chmod("temp.sh", 0o755)
+
+        self.cur_process = subprocess.Popen(f"wsl -e bash -ic \"{leCWDWSL}/temp.sh\"",
+                                                stdout=subprocess.PIPE,
+                                                stderr=subprocess.STDOUT,
+                                                bufsize=1,
+                                                text=True
+                                            )
+        while True:
+            output_line = self.cur_process.stdout.readline()
+            if output_line == '' and self.cur_process.poll() is not None:
+                break  # Process finished and no more output
+            if output_line:
+                print(output_line.strip()) # Print and remove trailing newline
+                sys.stdout.flush() # Ensure immediate display in the notebook
+        
+        try:
+            self.cur_process.wait()
+        except KeyboardInterrupt:
+            self.cur_process.kill()
+        self.cur_process = None
+
+    def _run_local_container(self, container_executable_name: str = "apptainer", **kwargs):
         """
         Runs the PALACE simulation using a container.
 
@@ -266,60 +363,21 @@ class PALACE_Model:
             print(f"Error: {e}")
             raise
 
-    def _run_local(self, **kwargs):
-        """
-        Runs the PALACE simulation locally.
-        """
-
-        config_file = self._sim_config
-        leFile = os.path.basename(os.path.realpath(config_file))
-        leDir = os.path.dirname(os.path.realpath(config_file))
-
-        if not os.path.exists(self._output_data_dir):
-            os.makedirs(self._output_data_dir)
-        log_location = f"{self._output_data_dir}/out.log"
-        with open("temp.sh", "w+") as f:
-            f.write(f"cd \"{leDir}\"\n")
-            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
-
-        # Set execute permission on temp.sh
-        os.chmod("temp.sh", 0o755)
-
-        with open(log_location, 'w'):
-            pass
-
-        # Get the current running architecture
-        running_arch = platform.machine()
-
-        # If the machine is native arm64 but running under x86_64, run temp.sh under arm64
-        if self._is_native_arm64() and running_arch == "x86_64":
-            # print("Running arm64 process from x86_64 environment...")
-            self.cur_process = subprocess.Popen(["arch", "-arm64", "bash", "./temp.sh"], shell=False)
-        else:
-            # Run the temp.sh script as usual
-            # print("Running temp.sh script under current architecture...")
-            self.cur_process = subprocess.Popen("./temp.sh", shell=True)
-        
-        try:
-            self.cur_process.wait()
-        except KeyboardInterrupt:
-            self.cur_process.kill()
-        self.cur_process = None
-
-        shutil.copy(self._sim_config, self._output_data_dir + '/config.json')
-
-        return self.retrieve_data()
-
     def run(self, **kwargs):
         """
         Runs the PALACE simulation.
         """
         assert self._sim_config != "", "Must run prepare_simulation at least once."
 
-        if self.palace_dir.endswith(".sif"):  # If palace is run using a container
-            self._run_container(**kwargs)
-        else:
+        if self.palace_mode == 'local':
             self._run_local(**kwargs)
+        elif self.palace_mode == 'wsl':
+            self._run_local_wsl(**kwargs)
+        elif self.palace_dir.endswith(".sif"):  # If palace is run using a container    #TODO: Need to test this properly...
+            self._run_local_container(**kwargs)
+
+        shutil.copy(self._sim_config, self._output_data_dir + '/config.json')
+        return self.retrieve_data()
 
     def retrieve_data(self):
         pass
