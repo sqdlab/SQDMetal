@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import shapely
 import numpy as np
 import geopandas as gpd
@@ -145,12 +148,12 @@ class ShapelyEx:
         ax.autoscale()
         ax.set_axis_off()
 
-        l = ax.figure.subplotpars.left
-        r = ax.figure.subplotpars.right
-        t = ax.figure.subplotpars.top
-        b = ax.figure.subplotpars.bottom
-        figw = float(size_x*px)/(r-l)
-        figh = float(size_y*px)/(t-b)
+        left = ax.figure.subplotpars.left
+        right = ax.figure.subplotpars.right
+        top = ax.figure.subplotpars.top
+        bottom = ax.figure.subplotpars.bottom
+        figw = float(size_x*px)/(right-left)
+        figh = float(size_y*px)/(top-bottom)
         ax.figure.set_size_inches(figw, figh)
 
         fig.canvas.draw()
@@ -176,7 +179,9 @@ class ShapelyEx:
                 p0 = coords_ring[m-1] if m > 0 else coords_ring[-2]
                 p1 = coords_ring[m]
                 p2 = coords_ring[m+1]
-                p0 = np.array(p0); p1 = np.array(p1); p2 = np.array(p2)
+                p0 = np.array(p0) 
+                p1 = np.array(p1) 
+                p2 = np.array(p2)
                 #
                 v2 = p2-p1
                 v2 /= np.linalg.norm(v2)
@@ -210,6 +215,7 @@ class ShapelyEx:
 
             intersect_pts = []
             lowest_dist = biggest_distance
+
             lowest_dist_ind = -1
             dist_intersection_m = np.zeros(len(rays))+biggest_distance*2
             dist_intersection_m_1 = np.zeros(len(rays))+biggest_distance*2
@@ -291,11 +297,11 @@ class ShapelyEx:
                     else:
                         continue
                     cur_dist = np.linalg.norm(rays[m]['pt'] - rays[m-1]['pt'])
-                    if min_dist == None or cur_dist < min_dist:
+                    if min_dist is None or cur_dist < min_dist:
                         min_dist = cur_dist
                         min_targ_pt = target_pt
                         min_targ_ind = target_ind
-                if min_dist == None:
+                if min_dist is None:
                     return False
 
                 child_vec = (rays[min_targ_ind]['next_edge'] + rays[min_targ_ind-1]['prev_edge'])/2

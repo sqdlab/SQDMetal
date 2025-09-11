@@ -1,4 +1,7 @@
  # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam and Divita Gautam
 # Creation Date: 02/06/2023
 # Modified Date: 17/05/2024 (tapered bandages)
@@ -9,7 +12,6 @@ from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
-from SQDMetal.Utilities.QUtilities import QUtilities 
 
 class BandageRectPin(QComponent):
     """Create a rectangular bandage on a pin

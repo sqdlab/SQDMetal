@@ -1,5 +1,6 @@
-import matplotlib.pyplot as plt
-import geopandas as gpd
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import numpy as np
 import shapely
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx

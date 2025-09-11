@@ -1,15 +1,17 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import gdstk
 import numpy as np
 import shapely
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
-from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
 
 
 class GeomGDS(GeomBase):
     def __init__(self, gds_file, **kwargs):
         self.gds_file = gds_file
-        cell_ind = kwargs.get('gds_cell_index', 0)
+        cell_ind = kwargs.get('gds_cell_index', 0) #noqa: F841 # abhishekchak52: unused variable cell_ind
         chip_thickness = kwargs.get('gds_chip_thickness', 500e-6)
 
         restrict_rect = kwargs.get('segment_rectangle', None)   #Given as [x1,y1,x2,y2]

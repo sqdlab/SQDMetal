@@ -1,15 +1,14 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.COMSOL.Model import COMSOL_Model
-from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
-from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
-import gmsh
 import pandas as pd
 
 class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
@@ -178,7 +177,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         }
         
         #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition 
-        if self._use_KI == True:
+        if self._use_KI:
             self._setup_kinetic_inductance(config, PEC_metals)
 
         if self.meshing == 'GMSH':
@@ -228,7 +227,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
-        headers = raw_data.columns
+        headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()
 
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
@@ -287,7 +286,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         col_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
 
         raw_dataEPR = pd.read_csv(output_directory + '/surface-Q.csv')
-        headersEPR = raw_dataEPR.columns
+        headersEPR = raw_dataEPR.columns # noqa: F841 # abhishekchak52: headersEPR is not used
         raw_dataEPR = raw_dataEPR.to_numpy()
 
         ret_list = []
@@ -391,11 +390,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         renormalised_freqs = np.transpose(np.matrix(frequencies * 2 * np.pi)) - lamb_shift #linear frequencies from eigenmode simulation are renormalised by lamb shift caused by non-linearity
 
         #Get values in megahertz (MHz) or gigahertz (GHz) to display to user
-        chi_freq = chi / (2 * np.pi * 1e6) 
+        chi_freq = chi / (2 * np.pi * 1e6)  # noqa: F841 # abhishekchak52: chi_freq is not used
         chi_anharm = chi_anharm / (2 * np.pi * 1e6) 
-        anharm_freq = anharm / (2 * np.pi * 1e6)
-        lamb_shift_freq = lamb_shift / (2 * np.pi * 1e6)
-        delta_freq = delta / (2 * np.pi * 1e9)
+        anharm_freq = anharm / (2 * np.pi * 1e6)  # noqa: F841 # abhishekchak52: anharm_freq is not used
+        lamb_shift_freq = lamb_shift / (2 * np.pi * 1e6)  
+        delta_freq = delta / (2 * np.pi * 1e9) 
         renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
 
         #create dataframes and print for user to see

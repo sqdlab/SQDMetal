@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam
 # Creation Date: 13/03/2024
 # Description: Collection of classes to draw simple polygons. These do NOT replace markers etc. These are general

@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 # from pint import UnitRegistry
 import shapely
 import numpy as np
@@ -149,8 +152,8 @@ class QUtilities:
             else:
                 dfGap = df[df["name"] == trace_name]
         else:
-            dfTrace = df[df["subtract"] == False]
-            dfGap = df[df["subtract"] == True]
+            dfTrace = df[~df["subtract"]]
+            dfGap = df[df["subtract"]]
         width = dfTrace["width"].iloc[0]
         if len(dfGap) > 0:
             gap = (dfGap["width"].iloc[0] - width) * 0.5
@@ -393,7 +396,7 @@ class QUtilities:
         for cur_layer_id in layer_id:
             if cur_layer_id > 0:
                 filt = gsdf.loc[
-                    (gsdf["layer"] == cur_layer_id) & (gsdf["subtract"] == False)
+                    (gsdf["layer"] == cur_layer_id) & (~gsdf["subtract"])
                 ]
                 if filt.shape[0] == 0:
                     continue
@@ -408,7 +411,7 @@ class QUtilities:
                     metal_polys, fuse_threshold
                 )
             else:
-                filt = gsdf.loc[gsdf["subtract"] == True]
+                filt = gsdf.loc[gsdf["subtract"]]
                 if filt.shape[0] == 0:
                     continue
                 space_polys = shapely.unary_union(filt["geometry"].buffer(0))
@@ -564,7 +567,7 @@ class QUtilities:
 
     @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
-        thresh = kwargs.get("threshold", -1)
+        thresh = kwargs.get("threshold", -1)  # noqa: F841 # abhishekchak52: unused variable thresh
         resolution = kwargs.get("resolution", 4)
 
         qmpl = QiskitShapelyRenderer(None, design, None)
@@ -576,7 +579,7 @@ class QUtilities:
             ids.append(design.components[x].id)
         filt = gsdf[gsdf["component"].isin(ids)]
         if kwargs.get('metals_only', False):
-            filt = gsdf[gsdf["subtract"] == False]
+            filt = gsdf[~gsdf["subtract"]]
 
         if filt.shape[0] == 0:
             return
@@ -697,7 +700,7 @@ class QUtilities:
     def get_RFport_CPW_coords_Route(
         design, qObjName, pin_name, len_launch=20e-6, unit_conv_extra=1
     ):
-        qObj = design.components[qObjName]
+        qObj = design.components[qObjName]  # noqa: F841 # abhishekchak52: unused variable qObj
 
         # TODO: Add in type-checking somehow here?
         vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(
@@ -889,9 +892,9 @@ class QUtilities:
             assert isinstance(i, (int, float))
 
         # check that user has passed a die number
-        if die_number == None:
+        if die_number is None:
             print(
-                f"No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input."
+                "No die number was passed - assuming you have only a single die! If this is not true, please retry with die_number as an input."
             )
 
         # calculate launchpad scaling
@@ -1045,25 +1048,25 @@ class QUtilities:
         assert len(die_origin) == 2 and len(die_dimension) == 2
         assert isinstance(die_index, int)
         if isinstance(gap, list):
-            assert isinstance(width, list), f"If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
+            assert isinstance(width, list), "If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
             assert ((len(gap) == num_resonators) and (len(width) == num_resonators))
 
         # check if width/gap and/or fillet is a list (for scaled)   
         if (isinstance(width, list) or isinstance(gap, list)):
             scaled_geometry = True 
-            print(f"Options for scaled gap/width geometry detected.\n") if print_statements else 0 
+            print("Options for scaled gap/width geometry detected.\n") if print_statements else 0 
         else:
             scaled_geometry = False
         if isinstance(fillet, list):
             scaled_fillet = True 
-            print(f"Options for scaled fillet size detected.\n") if print_statements else 0 
+            print("Options for scaled fillet size detected.\n") if print_statements else 0 
         else:
             scaled_fillet = False
         if isinstance(radius, list):
-            scaled_radius = True 
-            print(f"Options for scaled curve radius detected.\n") if print_statements else 0
+            scaled_radius = True  # noqa: F841 # abhishekchak52: unused variable scaled_radius
+            print("Options for scaled curve radius detected.\n") if print_statements else 0
         else:
-            scaled_radius = False
+            scaled_radius = False  # noqa: F841 # abhishekchak52: unused variable scaled_radius
 
         # calculate x-projected length of useable transmission line [m]
         tl_extent = (
@@ -1075,7 +1078,8 @@ class QUtilities:
         
         # initialise lists
         resonator_names, resonator_vals = [], []
-        if LC_calculations: capacitances, inductances = [], []
+        if LC_calculations: 
+            capacitances, inductances = [], []
 
         for i in range(num_resonators):
             # name resonators
@@ -1110,7 +1114,7 @@ class QUtilities:
         resonator_positions = QUtilities.create_even_spacing_along_line_1d(tl_start, tl_end, num_resonators)
 
         if num_resonators > 1:
-            assert (resonator_positions[1] - resonator_positions[0]) > res_width_x*1.5, f"Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
+            assert (resonator_positions[1] - resonator_positions[0]) > res_width_x*1.5, "Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
 
         # draw resonators
         resonators = []
@@ -1119,11 +1123,11 @@ class QUtilities:
             # set coupling gap based on user options
             if cg:
                 cg_cur = cg
-            elif cg == None:
+            elif cg is None:
                 cg_cur = QUtilities.parse_value_length(coupling_gap[i])
 
             # setup values for scaled geometry
-            if scaled_geometry == True:
+            if scaled_geometry:
                 # parse strings to float values (width and gap - per resonator)
                 width_cur = width[i]
                 gap_cur = gap[i]
@@ -1205,7 +1209,7 @@ class QUtilities:
             end_pin_id = next(iter(res_end_pin.pin_names))
 
             # check for scaled filleting
-            if scaled_fillet == True:
+            if scaled_fillet:
                 fillet_cur = fillet[i]
             else: 
                 fillet_cur = fillet
@@ -1311,7 +1315,7 @@ class QUtilities:
             tl = RouteStraight(design=design, 
                             name=f"tl_die{die_index}", 
                             options=tl_options)
-            print(f'Drew a straight transmission line connecting the two launchpads.')
+            print('Drew a straight transmission line connecting the two launchpads.')
         # else draw a tranmission line through the anchor points
         else:
             try:
@@ -1325,11 +1329,11 @@ class QUtilities:
                                 name=f"tl_die{die_index}", 
                                 options=tl_options,
                     )
-            except:
+            except Exception:
                 raise Exception("Anchor-based routing failed - see Qiskit metal logs.")
             else:
                 max_len = max(map(len, np.concatenate((anchor_L, anchor_R))))
-                print(f" Transmission line")
+                print(" Transmission line")
                 print("  Anchor left high  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L) + "]")
                 print("  Anchor right high : [" + " ".join(f"{x:>{max_len}}" for x in anchor_R) + "]")
                 print("  Anchor right low  : [" + " ".join(f"{x:>{max_len}}" for x in anchor_L_low) + "]")

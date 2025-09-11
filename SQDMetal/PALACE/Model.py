@@ -1,3 +1,7 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
+from pathlib import Path
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Utilities.Materials import MaterialInterface
@@ -11,7 +15,8 @@ from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMeta
 from SQDMetal.Utilities.GeometryProcessors.GeomGDS import GeomGDS
 
 import numpy as np
-import os, subprocess
+import os
+import subprocess
 import gmsh
 import json
 import platform
@@ -50,9 +55,48 @@ class PALACE_Model:
             self._geom_processor = GeomQiskitMetal(kwargs['metal_design'], **kwargs)
         elif 'gds_design' in kwargs:
             self._geom_processor = GeomGDS(kwargs['gds_design'], **kwargs)
-
+    
+    
     def create_batch_file(self):
-        pass
+        
+        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
+        #so I can get the slurm job number to use for testing
+
+        sbatch = {
+                "header": "#!/bin/bash --login",
+                "job_name": "#SBATCH --job-name=" + self.name,
+                "output_loc": "# SBATCH --output=" + self.name + ".out",
+                "error_out": "#SBATCH --error=" + self.name + ".err",
+                "partition": "#SBATCH --partition=general",
+                "nodes": "#SBATCH --nodes=" + self.hpc_options["HPC_nodes"],
+                "tasks": "#SBATCH --ntasks-per-node=20",
+                "cpus": "#SBATCH --cpus-per-task=1",
+                "memory": "#SBATCH --mem=" + self.hpc_options["sim_memory"],
+                "time": "#SBATCH --time=" + self.hpc_options['sim_time'],
+                "account": "#SBATCH --account=" + self.hpc_options['account_name'],
+                "foss": "module load foss/2021a",
+                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
+                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
+                "run_command": f"srun {self.hpc_options['palace_location']} " + self.hpc_options["input_dir"] + self.name + "/" + self.name + ".json"
+        }
+    
+        #check simulation mode and return appropriate parent directory 
+        parent_simulation_dir = self._check_simulation_mode()
+
+        #create sbatch file name
+        sim_file_name = self.name + '.sbatch'
+
+        #destination for config file
+        simulation_dir = parent_simulation_dir + str(self.name)
+
+        #save to created directory
+        file = os.path.join(simulation_dir, sim_file_name)
+
+        #write sbatch dictionary to file
+        with open(file, "w+", newline = '\n') as f:
+            for value in sbatch.values():
+                f.write('{}\n'.format(value))
+
     def create_config_file(self):
         pass
     def _prepare_simulation(self, metallic_layers, ground_plane):
@@ -123,12 +167,109 @@ class PALACE_Model:
             # Run the sysctl command to check the native architecture
             result = subprocess.run(["sysctl", "-n", "machdep.cpu.brand_string"], capture_output=True, text=True, check=True)
             return "M" in result.stdout  # M is for Apple M1/M2 chips
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             # print(f"Error checking native architecture: {e}")
             return False
 
-    def run(self):
-        assert self._sim_config != "", "Must run prepare_simulation at least once."
+    def _run_container(self, container_executable_name: str = "apptainer", **kwargs):
+        """
+        Runs the PALACE simulation using a container.
+
+        This method executes the PALACE simulation inside an Apptainer or Singularity
+        container image specified by `self.palace_dir`. It uses the simulation
+        configuration file prepared by `prepare_simulation` and the number of
+        CPUs specified by `self._num_cpus`.
+
+        Palace installation instructions for Apptainer can be found here: https://awslabs.github.io/palace/dev/install/#Build-using-Singularity/Apptainer
+
+        Args:
+            container_executable_name (str): The name of the container executable
+                                             to use ('apptainer' or 'singularity').
+                                             Default is 'apptainer'.
+
+        Raises:
+            AssertionError: If `prepare_simulation` has not been run.
+            ValueError: If `container_executable_name` is not 'apptainer' or 'singularity'.
+            AssertionError: If the container image specified by `self.palace_dir` does not exist.
+            Exception: If there is an error resolving the container path.
+        """
+
+        if container_executable_name not in ["apptainer", "singularity"]:
+            raise ValueError(
+                f"Invalid container executable name: {container_executable_name}. Must be 'apptainer' or 'singularity'."
+            )
+
+        container_executable_path = shutil.which(container_executable_name)
+        if container_executable_path is None:
+            raise FileNotFoundError(
+                f"Container executable {container_executable_name} not found in PATH."
+            )
+
+        if "~" in self.palace_dir:
+            container_path = Path(self.palace_dir).expanduser()
+        else:
+            container_path = Path(self.palace_dir)
+
+        config_file = Path(self._sim_config).resolve()
+        output_data_dir = Path(self._output_data_dir).resolve()
+        if not output_data_dir.exists():
+            output_data_dir.mkdir(parents=True)
+
+        # Prepare the command to run inside the container
+        # Assumes 'palace' executable is in the container's PATH
+        # The config file (config_file_name) will be accessible inside the container
+        # because subprocess.run's cwd is set to config_file_dir, which Apptainer mounts by default.
+
+        # Prepare the full command to execute using apptainer
+        # Use the resolved container path and pass the config file name as an argument
+        full_command = [
+            container_executable_path,
+            "run",
+            str(container_path),
+            "-np",
+            str(self._num_cpus),
+            config_file.name,
+        ]
+
+        # Open log file and run subprocess using nested context managers
+        log_output = []  # List to buffer output
+
+        try:
+            # Execute the command using subprocess.Popen for real-time output
+            # text=True decodes stdout/stderr as text
+            # cwd sets the working directory
+            with subprocess.Popen(
+                full_command,
+                cwd=config_file.parent,
+                stdout=subprocess.PIPE,
+                text=True,  # Decode stdout/stderr as text
+            ) as process:
+                # Read output in real-time and print to console and buffer
+                for line in iter(process.stdout.readline, ""):
+                    print(line, end="")
+                    log_output.append(line)  # Append to list
+
+                # The context manager waits for the process to terminate
+                # and checks the return code (raises CalledProcessError for non-zero exit)
+                # Any remaining output will have been read by the iter loops above
+
+            log_location = output_data_dir / "out.log"
+            with open(log_location, "w") as log_file:
+                log_file.writelines(log_output)
+            print(f"Output saved to {log_location}")
+
+            shutil.copy(self._sim_config, self._output_data_dir + "/config.json")
+
+            return self.retrieve_data()
+
+        except Exception as e:
+            print(f"Error: {e}")
+            raise
+
+    def _run_local(self, **kwargs):
+        """
+        Runs the PALACE simulation locally.
+        """
 
         config_file = self._sim_config
         leFile = os.path.basename(os.path.realpath(config_file))
@@ -144,7 +285,7 @@ class PALACE_Model:
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
 
-        with open(log_location, 'w') as fp:
+        with open(log_location, 'w'):
             pass
 
         # Get the current running architecture
@@ -165,66 +306,38 @@ class PALACE_Model:
             self.cur_process.kill()
         self.cur_process = None
 
-        shutil.copy(self._sim_config, self._output_data_dir + f'/config.json')
+        shutil.copy(self._sim_config, self._output_data_dir + '/config.json')
 
         return self.retrieve_data()
+
+    def run(self, **kwargs):
+        """
+        Runs the PALACE simulation.
+        """
+        assert self._sim_config != "", "Must run prepare_simulation at least once."
+
+        if self.palace_dir.endswith(".sif"):  # If palace is run using a container
+            self._run_container(**kwargs)
+        else:
+            self._run_local(**kwargs)
 
     def retrieve_data(self):
         pass
 
-    def create_batch_file(self):
-        
-        #note: I have disabled naming the output file by setting '# SBATCH' instead of '#SBATCH' 
-        #so I can get the slurm job number to use for testing
-
-        sbatch = {
-                "header": "#!/bin/bash --login",
-                "job_name": "#SBATCH --job-name=" + self.name,
-                "output_loc": "# SBATCH --output=" + self.name + ".out",
-                "error_out": "#SBATCH --error=" + self.name + ".err",
-                "partition": "#SBATCH --partition=general",
-                "nodes": "#SBATCH --nodes=" + self.hpc_options["HPC_nodes"],
-                "tasks": "#SBATCH --ntasks-per-node=20",
-                "cpus": "#SBATCH --cpus-per-task=1",
-                "memory": "#SBATCH --mem=" + self.hpc_options["sim_memory"],
-                "time": "#SBATCH --time=" + self.hpc_options['sim_time'],
-                "account": "#SBATCH --account=" + self.hpc_options['account_name'],
-                "foss": "module load foss/2021a",
-                "cmake": "module load cmake/3.20.1-gcccore-10.3.0",
-                "pkgconfig": "module load pkgconfig/1.5.4-gcccore-10.3.0-python",
-                "run_command": f"srun {self.hpc_options['palace_location']} " + self.hpc_options["input_dir"] + self.name + "/" + self.name + ".json"
-        }
     
-        #check simulation mode and return appropriate parent directory 
-        parent_simulation_dir = self._check_simulation_mode()
-
-        #create sbatch file name
-        sim_file_name = self.name + '.sbatch'
-
-        #destination for config file
-        simulation_dir = parent_simulation_dir + str(self.name)
-
-        #save to created directory
-        file = os.path.join(simulation_dir, sim_file_name)
-
-        #write sbatch dictionary to file
-        with open(file, "w+", newline = '\n') as f:
-            for value in sbatch.values():
-                f.write('{}\n'.format(value))
 
     def _check_simulation_mode(self):
-        '''method to check the type of simualtion being run and return
-            the parent directory to store the simulation files'''
+        """method to check the type of simualtion being run and return
+        the parent directory to store the simulation files"""
 
         parent_simulation_dir = None
 
-        if self.mode == "HPC":
-            parent_simulation_dir = self.sim_parent_directory
-        elif self.mode == "simPC" or self.mode == "PC":
+        # Check the simulation mode is valid.
+        if self.mode in ["HPC", "simPC", "PC"]:
             parent_simulation_dir = self.sim_parent_directory
         else:
-            Exception('Invalid simulation mode entered.')
-        
+            raise ValueError("Invalid simulation mode entered.")
+
         return parent_simulation_dir
 
 
@@ -248,7 +361,7 @@ class PALACE_Model:
 
     def _save_mesh_gmsh(self):
         '''function used to save the gmsh mesh file'''
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
@@ -271,7 +384,7 @@ class PALACE_Model:
 
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
@@ -390,7 +503,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
 
-            if self.create_files == True:
+            if self.create_files:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
@@ -403,9 +516,10 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
                 self._save_mesh_gmsh()
 
-            if self.view_design_gmsh_gui == True:
-                #plot design in gmsh gui
-                pgr.view_design_components() # TODO: error here: pgr not defined
+            # abhishekchak52: commented out for now since pgr is not defined
+            # if self.view_design_gmsh_gui == True:
+            #     #plot design in gmsh gui
+            #     pgr.view_design_components() # TODO: error here: pgr not defined
                     
         if self.meshing == 'COMSOL':
 
@@ -457,7 +571,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 #save comsol file
                 #cmsl.save(self.name)
 
-                if self.create_files == True:
+                if self.create_files:
                     #create directory to store simulation files
                     self._create_directory(self.name)
 
