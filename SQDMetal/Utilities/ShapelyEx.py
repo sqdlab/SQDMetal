@@ -53,7 +53,7 @@ class ShapelyEx:
 
     @staticmethod
     def shapely_to_list(shapely_obj):
-        if isinstance(shapely_obj, shapely.geometry.multipolygon.MultiPolygon) or isinstance(shapely_obj, shapely.geometry.multilinestring.MultiLineString):
+        if isinstance(shapely_obj, (shapely.geometry.multipolygon.MultiPolygon, shapely.geometry.multilinestring.MultiLineString, shapely.MultiPoint, shapely.geometry.collection.GeometryCollection)):
             return [x for x in shapely_obj.geoms]
         else:
             return [shapely_obj] #i.e. it's just a lonely Polygon or LineString object...
@@ -109,6 +109,8 @@ class ShapelyEx:
 
         filtered_polys = []
         for cur_poly in list_shapely_polys:
+            if cur_poly.is_empty:
+                continue
             exteriors = ShapelyEx.simplify_line_edges(cur_poly.exterior.coords[:], min_angle_deg)
             interiors = [ShapelyEx.simplify_line_edges(cur_int.coords[:], min_angle_deg) for cur_int in cur_poly.interiors]
             filtered_polys.append(shapely.Polygon(exteriors, interiors))
@@ -169,7 +171,8 @@ class ShapelyEx:
         return img_array[::-1,:].T, [xlim[0], ylim[0], xlim[1], ylim[1]]
 
     @staticmethod
-    def get_shapely_polygon_skeleton(shapely_polyon : shapely.Polygon, **kwargs):
+    def _get_shapely_polygon_skeleton_simple(shapely_polyon : shapely.Polygon, **kwargs):
+        assert len(shapely_polyon.interiors) == 0, "The shapely_polyon must be simply closed with no interior holes. Use get_shapely_polygon_skeleton when there are holes."
         def get_bisecting_rays(coords_ring: list, orient_CCW=True):
             rays = []
             for m in range(0, len(coords_ring)-1):    #Assuming repeated initial coordinate...
@@ -210,11 +213,12 @@ class ShapelyEx:
             minx,miny,maxx,maxy = shapely_poly.bounds
             biggest_distance =  maxx-minx + maxy-miny
 
-            intersect_pts = []  # noqa: F841 # abhishekchak52: unused variable intersect_pts
-            lowest_dist = 1e15
+            intersect_pts = []
+            lowest_dist = biggest_distance
+
             lowest_dist_ind = -1
-            dist_intersection_m = np.zeros(len(rays))+biggest_distance
-            dist_intersection_m_1 = np.zeros(len(rays))+biggest_distance
+            dist_intersection_m = np.zeros(len(rays))+biggest_distance*2
+            dist_intersection_m_1 = np.zeros(len(rays))+biggest_distance*2
             intersections = np.zeros((len(rays),2))
             for m in range(0,len(rays)):
                 a, a0 = rays[m-1]['dir'], rays[m-1]['pt']
@@ -228,6 +232,7 @@ class ShapelyEx:
                         new_pt = a0+a*t
                         # if shapely_poly.contains(shapely.LineString([new_pt,a0])) and shapely_poly.contains(shapely.LineString([new_pt,b0])):
                         if shapely.Point(*new_pt).within(shapely_poly):
+                        # if shapely.distance(shapely.Point(*new_pt),  shapely_poly) < 1e-15:
                             dist_m_1 = np.linalg.norm(new_pt-a0)
                             dist_m = np.linalg.norm(new_pt-b0)
                             dist_intersection_m[m] = dist_m
@@ -353,11 +358,11 @@ class ShapelyEx:
                 gdf.plot(ax=ax)
                 for cur_ray in rays:
                     vec, pt = cur_ray['dir'], cur_ray['pt']
-                    plt.plot([pt[0], pt[0]+vec[0]*vecMag], [pt[1], pt[1]+vec[1]*vecMag], 'r')
+                    ax.plot([pt[0], pt[0]+vec[0]*vecMag], [pt[1], pt[1]+vec[1]*vecMag], 'r')
                 for cur_ray in overall_rays:
-                    plt.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'b-')
+                    ax.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'b-')
                 for cur_ray in overall_rays_stilts:
-                    plt.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'g-')
+                    ax.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'g-')
 
             if not res:
                 break
@@ -368,14 +373,160 @@ class ShapelyEx:
             gdf.plot(ax=ax)
             for cur_ray in rays:
                 vec, pt = cur_ray['dir'], cur_ray['pt']
-                plt.plot([pt[0], pt[0]+vec[0]*vecMag], [pt[1], pt[1]+vec[1]*vecMag], 'r')
+                ax.plot([pt[0], pt[0]+vec[0]*vecMag], [pt[1], pt[1]+vec[1]*vecMag], 'r')
             for cur_ray in overall_rays:
-                plt.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'b-')
+                ax.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'b-')
             for cur_ray in overall_rays_stilts:
-                plt.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'g-')
+                ax.plot([cur_ray[0][0], cur_ray[1][0]], [cur_ray[0][1], cur_ray[1][1]], 'g-')
 
         return {
             'skeleton': overall_rays,
             'stilts': overall_rays_stilts
         }
 
+    @staticmethod
+    def partition_shape(shapely_poly : shapely.Polygon, **kwargs):
+        if len(shapely_poly.interiors) == 0:
+            return {
+                'polys': [shapely_poly],
+                'cuts': [],
+                'cut_polys': []
+            }
+
+        minx,miny,maxx,maxy = shapely_poly.bounds
+        biggest_distance =  maxx-minx + maxy-miny
+        outer_shape = shapely.LineString(shapely_poly.exterior.coords[:])
+        if len(shapely_poly.interiors) == 1:
+            le_hole = shapely.LineString(shapely_poly.interiors[0].coords[:])
+            pt_out, pt_hole = shapely.ops.nearest_points(outer_shape, le_hole)
+            #
+            cut1 = shapely.LineString([(pt_out.x, pt_out.y), (pt_hole.x, pt_hole.y)])
+            ray_length =  biggest_distance / np.sqrt((pt_hole.x-pt_out.x)**2+(pt_hole.y-pt_out.y)**2)
+            #
+            #Calculate point closest to the hole on opposite side of the boundary line...
+            #Note that a intersection calculation is dangerous due to parallel lines. So use, a closest-point test...
+            pt_opp = shapely.Point(pt_hole.x + (pt_hole.x-pt_out.x)*ray_length, pt_hole.y + (pt_hole.y-pt_out.y)*ray_length)
+            pt_opp, _ = shapely.ops.nearest_points(outer_shape, pt_opp)
+
+            cut2_1, cut2_2 = shapely.ops.nearest_points(le_hole, pt_opp) 
+            cut2 = shapely.LineString([cut2_1, cut2_2])
+            
+            all_cuts = [cut1, cut2]
+        else:
+            le_holes = [outer_shape]
+            le_holes += [shapely.LineString(x.coords[:]) for x in shapely_poly.interiors]
+            num_holes = len(le_holes)
+            adj_cuts = [[] for x in range(num_holes)]
+            adj_num = np.zeros(num_holes)
+            sample_coord = [None for x in range(num_holes)]
+
+            #First pass - go through all holes and find nearest points to create the cuts...
+            for m in range(num_holes):
+                for n in range(m+1, num_holes):
+                    pt1,pt2 = shapely.ops.nearest_points(le_holes[m], le_holes[n])
+                    cur_cut = shapely.geometry.LineString([pt1,pt2])
+                    #Check it doesn't intersect another hole
+                    intersecs = False
+                    for c in range(num_holes):
+                        if c == m or c == n:
+                            continue
+                        if cur_cut.intersects(le_holes[c]):
+                            intersecs = True
+                            break
+                    if intersecs:
+                        continue
+                    adj_cuts[m].append(cur_cut)
+                    adj_num[m] += 1
+                    adj_num[n] += 1
+                    sample_coord[m] = (pt1,pt2)
+                    sample_coord[n] = (pt2,pt1)
+
+            #Second pass - if all holes are paired up with two cuts each, then the algorithm is complete...
+            #In this case, go through all holes with only single cuts and manufacture another cut
+            for c in range(num_holes):
+                if adj_num[c] > 1:
+                    continue
+                rest_of_holes = shapely.unary_union([x for m,x in enumerate(le_holes) if m != c])
+
+                pt1, pt2 = sample_coord[c]
+                ray_length =  biggest_distance / shapely.distance(pt1,pt2)
+
+                #Check rest of holes to see nearest point 
+                if c == 0:  #i.e. the exterior outline
+                    pt_opp = shapely.Point(pt2.x + (pt2.x-pt1.x)*ray_length, pt2.y + (pt2.y-pt1.y)*ray_length)
+                    pt_opp, _ = shapely.ops.nearest_points(le_holes[c], pt_opp)
+                    #Find hole that is closet to this opposite point on the exterior outline
+                    min_dist = biggest_distance
+                    for r in range(1,num_holes):
+                        pt_test, _ = shapely.ops.nearest_points(le_holes[r], pt_opp)
+                        cur_dist = shapely.distance(pt_opp, pt_test)
+                        if cur_dist < min_dist:
+                            min_dist = cur_dist
+                            min_ind = r
+                            min_cut = shapely.LineString([pt_opp, pt_test])
+                else:
+                    le_ray = shapely.LineString([pt1, (pt1.x + (pt1.x-pt2.x)*ray_length, pt1.y + (pt1.y-pt2.y)*ray_length)])
+                    min_dist = biggest_distance
+                    for r in range(num_holes):
+                        if r == c:
+                            continue
+                        if not le_ray.intersects(le_holes[r]):
+                            continue
+                        pt1, pt2 = shapely.ops.nearest_points(le_holes[c], shapely.intersection(le_ray, le_holes[r]))
+                        cur_dist = shapely.distance(pt1,pt2)
+                        if cur_dist < min_dist:
+                            min_dist = cur_dist
+                            min_ind = r
+                            min_cut = shapely.LineString([pt1,pt2])
+                adj_cuts[c].append(min_cut)
+                adj_num[c] += 1
+                adj_num[min_ind] += 1
+
+            all_cuts = []
+            for cur_cuts in adj_cuts:
+                all_cuts += cur_cuts
+
+        if kwargs.get('plot_results', False):
+            fig, ax = plt.subplots(1)
+            gdf = gpd.GeoDataFrame(geometry=[shapely_poly] + all_cuts)
+            gdf.plot(ax=ax, color=['blue'] + ['red']*len(all_cuts))
+        
+        split_poly = shapely.ops.split(shapely_poly, shapely.geometry.multilinestring.MultiLineString(all_cuts))
+        split_polys = ShapelyEx.shapely_to_list(split_poly)
+
+        #Assign the cuts to the split polygons...
+        cut_inds = []
+        for cur_cut in all_cuts:
+            dists = [shapely.distance(split_polys, cur_cut)]
+            poly_ind1, poly_ind2 = np.argsort(dists)[0,:2]
+            cut_inds.append((poly_ind1, poly_ind2))
+
+        return {
+            'polys': split_polys,
+            'cuts': all_cuts,
+            'cut_polys': cut_inds
+        }
+
+    @staticmethod
+    def get_shapely_polygon_skeleton(shapely_polyon : shapely.Polygon|shapely.geometry.multipolygon.MultiPolygon, **kwargs):
+        if isinstance(shapely_polyon, shapely.geometry.multipolygon.MultiPolygon):
+            return shapely.unary_union([ShapelyEx.get_shapely_polygon_skeleton(x, **kwargs) for x in ShapelyEx.shapely_to_list(shapely_polyon)])
+        
+        result = ShapelyEx.partition_shape(shapely_polyon, plot_results=kwargs.get('plot_partitions', False))
+        skeletons = []
+        for poly in result['polys']:
+            cur_skeleton = ShapelyEx._get_shapely_polygon_skeleton_simple(poly, plot_result=kwargs.get('plot_individual_skeletons'))
+            skeletons.append( shapely.unary_union([shapely.LineString(x) for x in cur_skeleton['skeleton']]) )
+        bridge_rays = []
+        for m,cur_cut in enumerate(result['cuts']):
+            cut_mid_point = cur_cut.centroid
+            pt1,_ = shapely.ops.nearest_points(skeletons[result['cut_polys'][m][0]], cut_mid_point)
+            pt2,_ = shapely.ops.nearest_points(skeletons[result['cut_polys'][m][1]], cut_mid_point)
+            bridge_rays.append(shapely.LineString([pt1,cut_mid_point,pt2]))
+
+        if kwargs.get('plot_result', False):
+            fig, ax = plt.subplots(1)
+            gdf = gpd.GeoDataFrame(geometry=[shapely_polyon] + skeletons + bridge_rays)
+            gdf.plot(ax=ax, color=['blue'] + ['red']*(len(skeletons)) + ['green']*(len(bridge_rays)))
+
+        return shapely.unary_union(skeletons+bridge_rays)
