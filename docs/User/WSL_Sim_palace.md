@@ -93,7 +93,19 @@ spack concretize -f
 spack install --only-concrete
 ```
 
-There is no need for EXTERNAL MFEM, libCEED or sundial as palace ships with its own versions.
+There is no need for EXTERNAL MFEM, libCEED or sundial as palace ships with its own versions. Now run:
+
+```bash
+find -name palace*
+```
+
+The command will find the path of the Palace binary. Basically it's somewhere like:
+
+```bash
+./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
+```
+
+Executing the above block should show the command-line switches required for Palace. 
 
 ## When running the simulations
 
@@ -101,5 +113,6 @@ When running Palace simulations, the simulation object receives a dictionary via
 
 - `'palace_mode': 'wsl'`,
 - `'palace_wsl_spack_repo_directory': '~/repo'`
+- `'palace_dir':"~/repo/spack/opt/spack/linux-zen2/palace-develop-3ofp7n4fjqj5i6slvei3w6nptzdiwdma/bin/palace"`
 
-where the second argument points to a different directory if the repository directory was chosen to be different during the installation procedure.
+where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds `~/repo` to the path found using `find -name palace*` earlier.

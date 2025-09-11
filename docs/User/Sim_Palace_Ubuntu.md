@@ -54,7 +54,37 @@ Now concretize+install via:
 ```bash
 spack concretize -f
 spack install --only-concrete
+find -name palace*
 ```
+
+The second command will find the path of the Palace binary. Basically it's somewhere like (remember to add the `~/` for the full absolute path):
+
+```bash
+./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
+```
+
+Executing the above block should show the command-line switches required for Palace. 
+
+Optionally, install [Paraview](https://www.paraview.org/):
+
+```bash
+sudo apt install paraview
+```
+If this fails (e.g. some dependency clash), use its `flatpak`:
+
+```bash
+sudo apt install flatpak
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+sudo flatpak install flathub org.paraview.ParaView
+```
+
+Finally, in the Python virtual environment, if it has not been already installed, run:
+
+```bash
+pip install pyvista
+```
+
+This is required to open the simulation field data via the API functions.
 
 
 
