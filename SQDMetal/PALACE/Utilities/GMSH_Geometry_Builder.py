@@ -152,14 +152,6 @@ class GMSH_Geometry_Builder:
         #The air-box will have the substrate carved out of it. Find the 3D tags for the substrate (it'll be solitary) and the air-box...
         tag3D_chip_base = chip_and_air_box_map[0][0][1]
         tag3D_air_box = [x for x in chip_and_air_box_map[1] if x[1] != tag3D_chip_base][0][1]
-        #Get the outer-region for the far-field. Just find this by checking which planes have a centre-of-mass on the extents...
-        all_surfaces = gmsh.model.occ.getEntities(2)
-        far_field_surfaces = []
-        for dim, tag in all_surfaces:
-            com = gmsh.model.occ.getCenterOfMass(dim, tag)
-            if np.min(np.abs(self._extents.T - np.array(com))) < 1e-6:
-                far_field_surfaces.append(tag)
-        leFarField = gmsh.model.addPhysicalGroup(2, far_field_surfaces, name = 'far_field')
         #        
         gmsh.model.geo.synchronize()
         gmsh.model.occ.synchronize()
@@ -295,6 +287,14 @@ class GMSH_Geometry_Builder:
         leDielectricGaps = gmsh.model.addPhysicalGroup(2, leDielectricGaps, name = 'dielectric_gaps')
         leAirBox = gmsh.model.addPhysicalGroup(3, air_box_tags, name = 'air_box')
         
+        #Get the outer-region for the far-field. Just find this by checking which planes have a centre-of-mass on the extents...
+        all_surfaces = gmsh.model.occ.getEntities(2)
+        far_field_surfaces = []
+        for dim, tag in all_surfaces:
+            com = gmsh.model.occ.getCenterOfMass(dim, tag)
+            if np.min(np.abs(self._extents.T - np.array(com))) < 1e-6:
+                far_field_surfaces.append(tag)
+        leFarField = gmsh.model.addPhysicalGroup(2, far_field_surfaces, name = 'far_field')
 
         ret_dict = {
             'air_box'   : self._conv_to_lists(leAirBox),
