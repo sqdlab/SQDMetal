@@ -44,6 +44,7 @@ sudo apt install libxft-dev libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev b
 Make a new directory where we clone all repositories:
 
 ```bash
+wsl
 cd ~
 mkdir repo
 cd repo
@@ -116,3 +117,4 @@ When running Palace simulations, the simulation object receives a dictionary via
 - `'palace_dir':"~/repo/spack/opt/spack/linux-zen2/palace-develop-3ofp7n4fjqj5i6slvei3w6nptzdiwdma/bin/palace"`
 
 where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds `~/repo` to the path found using `find -name palace*` earlier.
+
