@@ -40,6 +40,10 @@ class PALACE_Model:
         self._rf_port_excitation = -1
 
         self._process_geometry_type(**kwargs)
+        self._boundary_distances = {}
+        self.set_xBoundary_as_proportion(0.1)
+        self.set_yBoundary_as_proportion(0.1)
+        self.set_zBoundary_as_proportion(1.0,0.0)
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -556,7 +560,12 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
 
             ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts, self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"], simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"], full_3D_params = self._full_3D_params)
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts,
+                                                               self._fine_meshes, self.user_options["fuse_threshold"],
+                                                               threshold=self.user_options["threshold"],
+                                                               simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"],
+                                                               full_3D_params = self._full_3D_params,
+                                                               boundary_distances = self._boundary_distances)
             
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
@@ -904,3 +913,45 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     "Attributes": [],
                 }
         
+
+    def set_xBoundary_as_proportion(self, x_prop:float):
+        assert x_prop >= 0, "oundary distance proportion along the x-axis must be a non-negative number."
+        self._boundary_distances.pop('x_pos',None)
+        self._boundary_distances.pop('x_neg',None)
+        self._boundary_distances['x_prop'] = x_prop
+
+    def set_yBoundary_as_proportion(self, y_prop:float):
+        assert y_prop >= 0, "Boundary distance proportion along the y-axis must be a non-negative number."
+        self._boundary_distances.pop('y_pos',None)
+        self._boundary_distances.pop('y_neg',None)
+        self._boundary_distances['y_prop'] = y_prop
+
+    def set_zBoundary_as_proportion(self, z_prop_top:float, z_prop_bottom:float):
+        assert z_prop_top >= 0, "Boundary distance proportion above the chip must be a non-negative number."
+        assert z_prop_bottom >= 0, "Boundary distance proportion below the chip must be a non-negative number."
+        self._boundary_distances.pop('z_pos',None)
+        self._boundary_distances.pop('z_neg',None)
+        self._boundary_distances['z_prop_top'] = z_prop_top
+        self._boundary_distances['z_prop_bottom'] = z_prop_bottom
+
+    def set_xBoundary_as_absolute(self, x_neg, y_pos):
+        assert x_neg >= 0, "Boundary on the negative x-axis of the chip must be a non-negative number."
+        assert x_pos >= 0, "Boundary on the positive x-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('x_prop',None)
+        self._boundary_distances['x_neg'] = x_neg
+        self._boundary_distances['x_pos'] = x_pos
+
+    def set_yBoundary_as_absolute(self, y_neg, y_pos):
+        assert y_neg >= 0, "Boundary on the negative y-axis of the chip must be a non-negative number."
+        assert y_pos >= 0, "Boundary on the positive y-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('y_prop',None)
+        self._boundary_distances['y_neg'] = y_neg
+        self._boundary_distances['y_pos'] = y_pos
+
+    def set_zBoundary_as_absolute(self, z_neg, z_pos):
+        assert z_neg >= 0, "Boundary on the negative z-axis of the chip must be a non-negative number."
+        assert z_pos >= 0, "Boundary on the positive z-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('z_prop_top',None)
+        self._boundary_distances.pop('z_prop_bottom',None)
+        self._boundary_distances['z_neg'] = z_neg
+        self._boundary_distances['z_pos'] = z_pos

@@ -46,18 +46,16 @@ class GMSH_Geometry_Builder:
         #and the metals
         metals, dielectric_gaps = self._geom_processor.process_layers(metallic_layers, ground_plane, fuse_threshold=fuse_threshold, fillet_resolution=self.fillet_resolution, unit_conv=1e-3, **kwargs)    #It's in mm...
 
-        unit_conv = 1e-3
+        self._unit_conv = 1e-3
 
         #Get dimensions of chip base and convert to design units in 'mm'
         chip_centre = self._geom_processor.chip_centre
-        self.center_x = chip_centre[0] / unit_conv
-        self.center_y = chip_centre[1] / unit_conv
-        self.center_z = chip_centre[2] / unit_conv
-        self.size_x = self._geom_processor.chip_size_x / unit_conv
-        self.size_y = self._geom_processor.chip_size_y / unit_conv
-        self.size_z = self._geom_processor.chip_size_z / unit_conv
-
-        bottom_grounded = True
+        self.center_x = chip_centre[0] / self._unit_conv
+        self.center_y = chip_centre[1] / self._unit_conv
+        self.center_z = chip_centre[2] / self._unit_conv
+        self.size_x = self._geom_processor.chip_size_x / self._unit_conv
+        self.size_y = self._geom_processor.chip_size_y / self._unit_conv
+        self.size_z = self._geom_processor.chip_size_z / self._unit_conv
 
         #Plot the shapely metals for user to see device
         # geoms = metals# + ground_plane
@@ -71,7 +69,7 @@ class GMSH_Geometry_Builder:
 
         #Create substrate and air box
         dict_all_entities['chip'] = [(3,self._create_chip_base())]
-        dict_all_entities['airbox'] = [(3,self._draw_air_box(bottom_grounded))]
+        dict_all_entities['airbox'] = [(3,self._draw_air_box(kwargs.get('boundary_distances', {})))]
         #Draw shapely metal and dielectric gap polygons into GMSH. If the polygon has an interior, the interior sections are subtracted from
         #the exterior boundary
         metal_names = []
@@ -431,37 +429,43 @@ class GMSH_Geometry_Builder:
         return chip_base
     
 
-    def _draw_air_box(self, bottom_grounded):
+    def _draw_air_box(self, boundary_distances):
         '''Creates the airbox which the chip will be placed in.
 
-        Args:
-            None.
+        Inputs:
+            boundary_distances - dictionary containing distances of the boundaries with respect to the chip. For example, the
+                                 keys x_prop/y_prop set the boundaries as a proportion of the x/y chip sizes, whereas the keys
+                                 x_neg/x_pos give the absolute distances along the x axes on the negative/positve sides (it's
+                                 the same for the y and z axes). One exception is for proportions along the z-axis, where it's
+                                 z_prop_top and z_prop_bottom (i.e. flexibility in having the chip grounded on its bottom etc.)
 
         Returns:
             Tuple of integers with the first value specifying the dimension and the second value the ID of the object in GMSH. 
         '''
 
-        #for air box choose increase in dimensions as a percentage of the chip dimensions
-        increase = 0.20 
-        air_box_delta_x = increase * self.size_x
-        air_box_delta_y = increase * self.size_y
-        
-        #bottom left corner of air box
-        x_point = self.center_x-self.size_x/2-air_box_delta_x/2 
-        y_point = self.center_y-self.size_y/2-air_box_delta_y/2
-
-        #Check to place ground plane on back side by choosing statring z point
-        if bottom_grounded: 
-            z_point = self.center_z - np.abs(self.size_z)
-            air_box_delta_z = 2 * np.abs(self.size_z)
+        if 'x_prop' in boundary_distances:
+            xMin = self.center_x - self.size_x/2 - boundary_distances['x_prop']*self.size_x
+            xMax = self.center_x + self.size_x/2 + boundary_distances['x_prop']*self.size_x
         else:
-            z_point = self.center_z - 2 * np.abs(self.size_z)
-            air_box_delta_z = 3 * np.abs(self.size_z)
+            xMin = self.center_x - self.size_x/2 - boundary_distances['x_neg']/self._unit_conv
+            xMax = self.center_x - self.size_x/2 - boundary_distances['x_pos']/self._unit_conv
 
-        air_box = gmsh.model.occ.addBox(x_point, y_point, z_point, self.size_x + air_box_delta_x, self.size_y + air_box_delta_y, air_box_delta_z)
-        self._extents = np.array([(x_point, x_point + self.size_x + air_box_delta_x),
-                                  (y_point, y_point + self.size_y + air_box_delta_y),
-                                  (z_point, z_point + air_box_delta_z)])
+        if 'y_prop' in boundary_distances:
+            yMin = self.center_y - self.size_y/2 - boundary_distances['y_prop']*self.size_y
+            yMax = self.center_y + self.size_y/2 + boundary_distances['y_prop']*self.size_y
+        else:
+            yMin = self.center_y - self.size_y/2 - boundary_distances['y_neg']/self._unit_conv
+            yMax = self.center_y - self.size_y/2 - boundary_distances['y_pos']/self._unit_conv
+
+        if 'z_prop_top' in boundary_distances:
+            zMin = self.center_z - self.size_z - boundary_distances['z_prop_bottom']*self.size_z
+            zMax = self.center_z + boundary_distances['z_prop_top']*self.size_z
+        else:
+            zMin = self.center_z - self.size_z - boundary_distances['z_neg']/self._unit_conv
+            zMax = self.center_z + boundary_distances['z_pos']/self._unit_conv
+
+        air_box = gmsh.model.occ.addBox(xMin, yMin, zMin, xMax-xMin, yMax-yMin, zMax-zMin)
+        self._extents = np.array([(xMin,xMax), (yMin,yMax), (zMin,zMax)])
 
         return air_box
 
