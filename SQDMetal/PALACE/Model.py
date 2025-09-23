@@ -541,6 +541,49 @@ class PALACE_Model:
             'MeshElements': config_json['Problem']['MeshElements']
         }
 
+    def set_xBoundary_as_proportion(self, x_prop:float):
+        assert x_prop >= 0, "oundary distance proportion along the x-axis must be a non-negative number."
+        self._boundary_distances.pop('x_pos',None)
+        self._boundary_distances.pop('x_neg',None)
+        self._boundary_distances['x_prop'] = x_prop
+
+    def set_yBoundary_as_proportion(self, y_prop:float):
+        assert y_prop >= 0, "Boundary distance proportion along the y-axis must be a non-negative number."
+        self._boundary_distances.pop('y_pos',None)
+        self._boundary_distances.pop('y_neg',None)
+        self._boundary_distances['y_prop'] = y_prop
+
+    def set_zBoundary_as_proportion(self, z_prop_top:float, z_prop_bottom:float):
+        assert z_prop_top >= 0, "Boundary distance proportion above the chip must be a non-negative number."
+        assert z_prop_bottom >= 0, "Boundary distance proportion below the chip must be a non-negative number."
+        self._boundary_distances.pop('z_pos',None)
+        self._boundary_distances.pop('z_neg',None)
+        self._boundary_distances['z_prop_top'] = z_prop_top
+        self._boundary_distances['z_prop_bottom'] = z_prop_bottom
+
+    def set_xBoundary_as_absolute(self, x_neg, y_pos):
+        assert x_neg >= 0, "Boundary on the negative x-axis of the chip must be a non-negative number."
+        assert x_pos >= 0, "Boundary on the positive x-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('x_prop',None)
+        self._boundary_distances['x_neg'] = x_neg
+        self._boundary_distances['x_pos'] = x_pos
+
+    def set_yBoundary_as_absolute(self, y_neg, y_pos):
+        assert y_neg >= 0, "Boundary on the negative y-axis of the chip must be a non-negative number."
+        assert y_pos >= 0, "Boundary on the positive y-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('y_prop',None)
+        self._boundary_distances['y_neg'] = y_neg
+        self._boundary_distances['y_pos'] = y_pos
+
+    def set_zBoundary_as_absolute(self, z_neg, z_pos):
+        assert z_neg >= 0, "Boundary on the negative z-axis of the chip must be a non-negative number."
+        assert z_pos >= 0, "Boundary on the positive z-axis of the chip must be a non-negative number."
+        self._boundary_distances.pop('z_prop_top',None)
+        self._boundary_distances.pop('z_prop_bottom',None)
+        self._boundary_distances['z_neg'] = z_neg
+        self._boundary_distances['z_pos'] = z_pos
+
+
 class PALACE_Model_RF_Base(PALACE_Model):
 
     def _prepare_simulation(self, metallic_layers, ground_plane):
@@ -912,46 +955,3 @@ class PALACE_Model_RF_Base(PALACE_Model):
         dict_json['Boundaries']['PEC'] = {
                     "Attributes": [],
                 }
-        
-
-    def set_xBoundary_as_proportion(self, x_prop:float):
-        assert x_prop >= 0, "oundary distance proportion along the x-axis must be a non-negative number."
-        self._boundary_distances.pop('x_pos',None)
-        self._boundary_distances.pop('x_neg',None)
-        self._boundary_distances['x_prop'] = x_prop
-
-    def set_yBoundary_as_proportion(self, y_prop:float):
-        assert y_prop >= 0, "Boundary distance proportion along the y-axis must be a non-negative number."
-        self._boundary_distances.pop('y_pos',None)
-        self._boundary_distances.pop('y_neg',None)
-        self._boundary_distances['y_prop'] = y_prop
-
-    def set_zBoundary_as_proportion(self, z_prop_top:float, z_prop_bottom:float):
-        assert z_prop_top >= 0, "Boundary distance proportion above the chip must be a non-negative number."
-        assert z_prop_bottom >= 0, "Boundary distance proportion below the chip must be a non-negative number."
-        self._boundary_distances.pop('z_pos',None)
-        self._boundary_distances.pop('z_neg',None)
-        self._boundary_distances['z_prop_top'] = z_prop_top
-        self._boundary_distances['z_prop_bottom'] = z_prop_bottom
-
-    def set_xBoundary_as_absolute(self, x_neg, y_pos):
-        assert x_neg >= 0, "Boundary on the negative x-axis of the chip must be a non-negative number."
-        assert x_pos >= 0, "Boundary on the positive x-axis of the chip must be a non-negative number."
-        self._boundary_distances.pop('x_prop',None)
-        self._boundary_distances['x_neg'] = x_neg
-        self._boundary_distances['x_pos'] = x_pos
-
-    def set_yBoundary_as_absolute(self, y_neg, y_pos):
-        assert y_neg >= 0, "Boundary on the negative y-axis of the chip must be a non-negative number."
-        assert y_pos >= 0, "Boundary on the positive y-axis of the chip must be a non-negative number."
-        self._boundary_distances.pop('y_prop',None)
-        self._boundary_distances['y_neg'] = y_neg
-        self._boundary_distances['y_pos'] = y_pos
-
-    def set_zBoundary_as_absolute(self, z_neg, z_pos):
-        assert z_neg >= 0, "Boundary on the negative z-axis of the chip must be a non-negative number."
-        assert z_pos >= 0, "Boundary on the positive z-axis of the chip must be a non-negative number."
-        self._boundary_distances.pop('z_prop_top',None)
-        self._boundary_distances.pop('z_prop_bottom',None)
-        self._boundary_distances['z_neg'] = z_neg
-        self._boundary_distances['z_pos'] = z_pos
