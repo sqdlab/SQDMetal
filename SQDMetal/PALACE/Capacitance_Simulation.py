@@ -21,7 +21,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     #Class Variables
     default_user_options = {
                  "fillet_resolution": 4,
-                 "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "solns_to_save": -1,
                  "solver_order": 2,
@@ -280,10 +279,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                     {
                         "Mesh":  self._mesh_name,
                         "L0": l0,  # mm
-                        "Refinement":
-                        {
-                            "UniformLevels": self.user_options["mesh_refinement"]
-                        },
+                        "Refinement": self._mesh_refinement
                     },
                     "Domains":
                     {

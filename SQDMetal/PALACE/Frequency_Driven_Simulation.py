@@ -15,7 +15,6 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
     #Class Variables
     default_user_options = {
                  "fillet_resolution": 4,
-                 "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "solns_to_save": 4,
                  "solver_order": 2,
@@ -139,10 +138,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 "Mesh":  self._mesh_name,
                 "L0": l0,  
                 "CrackDisplacementFactor":0,    #TODO: Remove if it is not required for both planar AND full-3D designs with CPW feeds. c.f. https://awslabs.github.io/palace/dev/config/model/
-                "Refinement":
-                {
-                "UniformLevels": self.user_options["mesh_refinement"]
-                },
+                "Refinement": self._mesh_refinement
             },
             "Domains":
             {

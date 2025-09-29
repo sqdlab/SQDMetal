@@ -38,6 +38,8 @@ class PALACE_Model:
         self._use_KI = False
         self._KI = 0
         self._rf_port_excitation = -1
+        #
+        self._mesh_refinement = {"UniformLevels": 0}
 
         self._process_geometry_type(**kwargs)
         self._boundary_distances = {}
@@ -599,6 +601,16 @@ class PALACE_Model:
                 }
         else:
             dict_config['Boundaries']['PEC']['Attributes'] += pec_list
+    
+    def enable_mesh_refinement(self, num_iterations, max_DoFs=0, tolerance=1e-2, Dorfler_marking_fraction = 0.7, save_iterations_data=True, save_iterations_mesh=True):
+        #https://awslabs.github.io/palace/dev/config/model/
+        self._mesh_refinement['Tol'] = tolerance
+        self._mesh_refinement['MaxIts'] = num_iterations
+        self._mesh_refinement['MaxSize'] =  max_DoFs
+        self._mesh_refinement['UpdateFraction'] = Dorfler_marking_fraction
+        self._mesh_refinement['UniformLevels'] = 0
+        self._mesh_refinement['SaveAdaptIterations'] = save_iterations_data
+        self._mesh_refinement['SaveAdaptMesh'] = save_iterations_mesh
 
 class PALACE_Model_RF_Base(PALACE_Model):
 
