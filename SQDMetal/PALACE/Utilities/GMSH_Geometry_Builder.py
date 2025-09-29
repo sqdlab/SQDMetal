@@ -79,9 +79,13 @@ class GMSH_Geometry_Builder:
             dict_all_entities[metal_name] = [cur_metal]
         dict_all_entities['dielectric_gaps'] = self._create_gmsh_geometry_from_shapely_polygons(dielectric_gaps)         #create all the gaps between the metal traces and the ground plane
         #Process simulation constructs - e.g. ports
+        wave_ports = []
         sim_construct_names = []
-        for cur_sim_poly in sim_constructs:
-            cur_key, cur_coords = cur_sim_poly
+        for cur_sim_construct in sim_constructs:
+            if cur_sim_construct['type'] == 'wave':
+                wave_ports.append(cur_sim_construct['metadata'])
+                continue
+            cur_key, cur_coords = cur_sim_construct['name'], cur_sim_construct['coords']
             sim_poly = self._draw_polygon_in_GMSH_from_coords(np.array(cur_coords)[:-1]*1e3) #i.e. ignore closed loop part as function closes it automatically and use mm
             sim_construct_names.append(cur_key)
             dict_all_entities[cur_key] = [(2,sim_poly)]
@@ -97,13 +101,7 @@ class GMSH_Geometry_Builder:
                 self._gmsh_cut_overlapping_parts(dict_all_entities, sim_construct_names, metal_names)
             else:
                 assert cleanup_sim_construct_metal_overlap == '', "The argument cleanup_sim_construct_metal_overlap must be either '', 'preserve_sim_constructs' or 'preserve_metals'"
-        
-        #Now cut out simulation constructs overlapping with the dielectric gaps (no need to do that with metals as it
-        #satisfies that by construction):
-        self._gmsh_cut_overlapping_parts(dict_all_entities, ['dielectric_gaps'], sim_construct_names)
-
-        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip'], ['airbox'], filter_tags=True)
-        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox'], metal_names +['dielectric_gaps']+sim_construct_names)
+            self._gmsh_cut_overlapping_parts(dict_all_entities, ['dielectric_gaps'], sim_construct_names)
 
         fine_mesh_elems = []
         for cur_fine_mesh in fine_meshes:
@@ -160,34 +158,17 @@ class GMSH_Geometry_Builder:
 
         #Process the metals into groups (extrude if required)
         full_3D_params = kwargs.get('full_3D_params', None)
+        metal_tags_on_boundaries = []
+        all_metal_3D_tags = []
         if full_3D_params and full_3D_params['metal_thickness'] > 0:
             metal_thickness = full_3D_params['metal_thickness'] * 1e3
 
             for metal_name in metal_names:
                 dict_all_entities[metal_name] = gmsh.model.occ.extrude(dict_all_entities[metal_name], 0, 0, metal_thickness)
                 self._gmsh_sync()
-
-            self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox'], metal_names)
-
-            #In making it conformal, Gmsh will mangle the 3D tags. Let's clean that up...
-            all_metal_3D_tags = []
-            for metal_name in metal_names:
-                #Collate all 3D parts inside this mapping...
-                tags_3D = [cur_tag[1] for cur_tag in dict_all_entities[metal_name] if cur_tag[0]==3]
-                cur_metal_surfaces = []
-                for cur_tag_3D in tags_3D:
-                    #Note that here getAdjacencies returns 3D and 2D entities (empty list for former)
-                    cur_metal_surfaces += gmsh.model.getAdjacencies(3, cur_tag_3D)[1].tolist()
-
-                all_metal_3D_tags += tags_3D
-                dict_all_entities[metal_name] = [(2,x) for x in cur_metal_surfaces]
-            #Now figure out the 3D tag for the air-box...
-            new_extrude_tags = []
-            dict_all_entities['airbox'] = [x for x in dict_all_entities['airbox'] if x[1] not in all_metal_3D_tags and x[0]==3]
-        lemetals_physgrps = []
-        for metal_name in metal_names:
-            metal_physical_group = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[metal_name]], name = metal_name)
-            lemetals_physgrps.append(metal_physical_group)
+        else:
+            dict_all_entities['metal_extrusions'] = []
+            dict_all_entities['metals_on_boundaries'] = []
         self._gmsh_sync()
 
         #Process trenching into dielectric
@@ -198,44 +179,159 @@ class GMSH_Geometry_Builder:
             self._gmsh_sync()
             dict_all_entities['temp_trenches'] = [x for x in trenches if x[0] == 3]
 
-            self._gmsh_fragment_make_conformal(dict_all_entities, ['chip'], ['temp_trenches'])
+            self._gmsh_cut_overlapping_parts(dict_all_entities, ['chip'], ['temp_trenches'], remove_tool=True)
+        self._gmsh_sync()
 
-            #In making it conformal, Gmsh will mangle the 3D tags. Let's clean that up...
-            trenches_3D = [y[1] for y in dict_all_entities['temp_trenches'] if y[0] == 3]
-            dict_all_entities['chip'] = [x for x in dict_all_entities['chip'] if x[1] not in trenches_3D and x[0]==3]
+        lePortPolys = {}
 
-            #There are more dielectric gaps now - let's capture them all:
+        #Process any wave-ports last
+        uc = self._unit_conv
+        waveport_surface_tags = []
+        wave_port_names = []
+        for cur_wave_port in wave_ports:
+            if cur_wave_port['plane'] == 'x_neg':
+                centre = self._extents[0][0], cur_wave_port['y']/uc, cur_wave_port['z']/uc
+                v1,v2 = [0,cur_wave_port['size_y']/2/uc,0], [0,0,cur_wave_port['size_z']/2/uc]
+            elif cur_wave_port['plane'] == 'x_pos':
+                centre = self._extents[0][1], cur_wave_port['y']/uc, cur_wave_port['z']/uc
+                v1,v2 = [0,cur_wave_port['size_y']/2/uc,0], [0,0,cur_wave_port['size_z']/2/uc]
+            elif cur_wave_port['plane'] == 'y_neg':
+                centre = cur_wave_port['x']/uc, self._extents[1][0], cur_wave_port['z']/uc
+                v1,v2 = [cur_wave_port['size_x']/2/uc,0,0], [0,0,cur_wave_port['size_z']/2/uc]
+            elif cur_wave_port['plane'] == 'y_pos':
+                centre = cur_wave_port['x']/uc, self._extents[1][1], cur_wave_port['z']/uc
+                v1,v2 = [cur_wave_port['size_x']/2/uc,0,0], [0,0,cur_wave_port['size_z']/2/uc]
+            elif cur_wave_port['plane'] == 'z_neg':
+                centre = cur_wave_port['x']/uc, cur_wave_port['y']/uc, self._extents[2][0]
+                v1,v2 = [cur_wave_port['size_x']/2/uc,0,0], [0,cur_wave_port['size_y']/2/uc,0]
+            elif cur_wave_port['plane'] == 'z_pos':
+                centre = cur_wave_port['x']/uc, cur_wave_port['y']/uc, self._extents[2][1]
+                v1,v2 = [cur_wave_port['size_x']/2/uc,0,0], [0,cur_wave_port['size_y']/2/uc,0]
+
+            if cur_wave_port['shape'] == 'rectangle':
+                new_wvprt = self._create_gmsh_plane(centre, v1, v2, message="Rectangular waveport")
+            #
+            wave_port_name = cur_wave_port['port_name']
+            wave_port_names.append(wave_port_name)
+            dict_all_entities[wave_port_name] = [(2,new_wvprt)]
+            self._gmsh_sync()
+            
+            #TODO: Should this also include lumped ports - but they shouldn't overlap; so perhaps have a check that they don't intersect?
+            # self._gmsh_fragment_make_conformal(dict_all_entities, metal_names+['dielectric_gaps', 'metal_extrusions', 'chip', 'airbox'], [wave_port_name])
+            waveport_surface_tags += [x[1] for x in dict_all_entities[wave_port_name] if x[0] == 2]
+
+        #Create Farfield Planes
+        centre = self._extents[0][0], self._ff_centre[1], self._ff_centre[2]
+        v1,v2 = [0,self._ff_sizes[1]/2,0], [0,0,self._ff_sizes[2]/2]
+        dict_all_entities['ffxNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        centre = self._extents[0][1], self._ff_centre[1], self._ff_centre[2]
+        v1,v2 = [0,self._ff_sizes[1]/2,0], [0,0,self._ff_sizes[2]/2]
+        dict_all_entities['ffxPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        centre = self._ff_centre[0], self._extents[1][0], self._ff_centre[2]
+        v1,v2 = [self._ff_sizes[0]/2,0,0], [0,0,self._ff_sizes[2]/2]
+        dict_all_entities['ffyNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        centre = self._ff_centre[0], self._extents[1][1], self._ff_centre[2]
+        v1,v2 = [self._ff_sizes[0]/2,0,0], [0,0,self._ff_sizes[2]/2]
+        dict_all_entities['ffyPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        centre = self._ff_centre[0], self._ff_centre[1], self._extents[2][0]
+        v1,v2 = [self._ff_sizes[0]/2,0,0], [0,self._ff_sizes[1]/2,0]
+        dict_all_entities['ffzNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        centre = self._ff_centre[0], self._ff_centre[1], self._extents[2][1]
+        v1,v2 = [self._ff_sizes[0]/2,0,0], [0,self._ff_sizes[1]/2,0]
+        dict_all_entities['ffzPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        #
+        ff_names = ['ffxNeg', 'ffxPos', 'ffyNeg', 'ffyPos', 'ffzNeg', 'ffzPos']
+
+        #Consolidate all overlapping surfaces
+        #NOTE: Strange embedding issue with fix here: https://gitlab.onelab.info/gmsh/gmsh/-/issues/2669
+        # - Basically consider a port that's off the chip and only in the air-box
+        # - The extrusions force remapping of the air-box and its adjacent surfaces - fine...
+        # - But it fails to return the remapping of the port unless it's added first - i.e. 1D, then 2D, then 3D?!
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip'], ['airbox'], filter_tags=True)
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip'],metal_names)
+        if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
+            # self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip']+metal_names,ff_names+wave_port_names,[])          
+            # dict_all_entities['chip'] = [x for x in dict_all_entities['chip'] if not (x[0] == 2 and x[1] in all_dielectric_gaps)]
             all_surfaces = gmsh.model.occ.getEntities(2)
+            all_dielectric_gaps = []
             dict_all_entities['dielectric_gaps'] = []
             for dim, tag in all_surfaces:
                 com = gmsh.model.occ.getCenterOfMass(dim, tag)
-                if com[2] < -0.25*trench_depth and com[2] > -1.25*trench_depth:
+                if com[2] < -0.25*trench_depth and com[2] > -1.25*trench_depth and np.min(np.abs(self._extents.T - np.array(com))) > 1e-6:
                     dict_all_entities['dielectric_gaps'].append((dim, tag))
-            dict_all_entities['airbox'] += [(3,x) for x in trenches_3D]
+                    all_dielectric_gaps.append(tag)
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox']+metal_names,ff_names+['dielectric_gaps']+sim_construct_names+wave_port_names,[])
 
-        leDielectric = gmsh.model.addPhysicalGroup(3, [x[1] for x in dict_all_entities['chip']], name = 'dielectric_substrate')       
-        leDielectricGaps = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities['dielectric_gaps']], name = 'dielectric_gaps')
-        leAirBox = gmsh.model.addPhysicalGroup(3, [x[1] for x in dict_all_entities['airbox']], name = 'air_box')
-        
+        metal_tags_on_boundaries = []
+        for metal_name in metal_names:
+            all_metal_3D_tags = [x[1] for x in dict_all_entities[metal_name] if x[0] == 3]
+            if len(all_metal_3D_tags) > 0:
+                all_metal_2D_tags = []
+                for cur_tag_3D in all_metal_3D_tags:
+                    all_metal_2D_tags += gmsh.model.getAdjacencies(3, cur_tag_3D)[1].tolist()
+                all_metal_2D_tags = [(2,x) for x in all_metal_2D_tags]
+            else:
+                all_metal_2D_tags = dict_all_entities[metal_name]
+            #Remove planes touching the walls of the simulation
+            allowed_tags = []
+            for x in all_metal_2D_tags:
+                com = gmsh.model.occ.getCenterOfMass(x[0], x[1])
+                if np.min(np.abs(self._extents.T - np.array(com))) > 1e-6:
+                    allowed_tags.append(x)
+                else:
+                    metal_tags_on_boundaries.append(x[1])
+            dict_all_entities[metal_name] = allowed_tags
+
+        all_metal_tags = []
+        for metal_name in metal_names:
+            all_metal_tags += [x[1] for x in dict_all_entities[metal_name]]
+
+        # metal_tags_on_boundaries = [x[1] for x in dict_all_entities['metals_on_boundaries']]
+        if len(wave_ports) > 0:
+            #Anything on the metal overlapping with the waveport belongs to the metal
+            for cur_wave_port in wave_port_names:
+                dict_all_entities[cur_wave_port] = [x for x in dict_all_entities[cur_wave_port] if not (x[0]==2 and x[1] in metal_tags_on_boundaries)]
+        # print(metal_tags_on_boundaries)
+        waveport_surface_tags = []
+        for wave_port_name in wave_port_names:
+            waveport_surface_tags += [x[1] for x in dict_all_entities[wave_port_name] if x[0] == 2]
+
         #Create a physical group for each port/junction simulation construct...
-        lePortPolys = {}
         for cur_sim_constr in sim_construct_names:
             lePortPolys[cur_sim_constr] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_sim_constr]], name = cur_sim_constr)
+        #Create physical groups for metals
+        lemetals_physgrps = []
+        for metal_name in metal_names:
+            metal_physical_group = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[metal_name]], name = metal_name)
+            lemetals_physgrps.append(metal_physical_group)
+        leAirBox_entities = []
+        chip_entities = [x[1] for x in dict_all_entities['chip']]
+        for cur_entity in dict_all_entities['airbox']:
+            if cur_entity[1] not in chip_entities:
+                leAirBox_entities.append(cur_entity[1])
+        leAirBox = gmsh.model.addPhysicalGroup(3, leAirBox_entities, name = 'air_box')
+        leDielectric = gmsh.model.addPhysicalGroup(3, [x[1] for x in dict_all_entities['chip']], name = 'dielectric_substrate')       
+        leDielectricGaps = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities['dielectric_gaps']], name = 'dielectric_gaps')
+        for wave_port_name in wave_port_names:
+            lePortPolys[wave_port_name] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[wave_port_name]], name = wave_port_name)
 
-        #Get the outer-region for the far-field. Just find this by checking which planes have a centre-of-mass on the extents...
-        all_surfaces = gmsh.model.occ.getEntities(2)
-        far_field_surfaces = []
-        for dim, tag in all_surfaces:
-            com = gmsh.model.occ.getCenterOfMass(dim, tag)
-            if np.min(np.abs(self._extents.T - np.array(com))) < 1e-6:
-                far_field_surfaces.append(tag)
-        leFarField = gmsh.model.addPhysicalGroup(2, far_field_surfaces, name = 'far_field')
+        ff_physgrps = {}
+        for ff_name in ff_names:
+            dict_all_entities[ff_name] = [x for x in dict_all_entities[ff_name] if not (x[0]==2 and (x[1] in metal_tags_on_boundaries or x[1] in waveport_surface_tags))]
+            ff_physgrps[ff_name] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[ff_name]], name = ff_name)
+
+        gmsh.model.occ.removeAllDuplicates()
 
         ret_dict = {
             'air_box'   : self._conv_to_lists(leAirBox),
             'metals'    : lemetals_physgrps,
             'metalsShapely'    : metals,
-            'far_field' : self._conv_to_lists(leFarField),
+            'far_field' : ff_physgrps,
             'ports'     : lePortPolys,
             'dielectric': self._conv_to_lists(leDielectric),
             'dielectric_gaps': self._conv_to_lists(leDielectricGaps),
@@ -272,7 +368,7 @@ class GMSH_Geometry_Builder:
         '''
         main_dim_tags = []
         for x in main_objects:
-            main_dim_tags += all_entities[x]
+            main_dim_tags += sorted(all_entities[x], key=lambda tup: tup[0])
         tool_dim_tags = []
         for x in tool_objects:
             tool_dim_tags += all_entities[x]
@@ -288,7 +384,7 @@ class GMSH_Geometry_Builder:
             for cur_dimTag in all_entities[cur_target]:
                 cur_target_dimTags += leMap[cur_index]
                 cur_index += 1
-            all_entities[cur_target] = cur_target_dimTags
+            all_entities[cur_target] = sorted(cur_target_dimTags, key=lambda tup: tup[0])
 
         if filter_tags:
             main_dim_tags = []
@@ -303,7 +399,7 @@ class GMSH_Geometry_Builder:
 
         self._gmsh_sync()
 
-    def _gmsh_cut_overlapping_parts(self, all_entities:dict, target_objects:list, tool_objects:list):
+    def _gmsh_cut_overlapping_parts(self, all_entities:dict, target_objects:list, tool_objects:list, remove_tool=False):
         '''
         This function runs gmsh.model.occ.cut in a nicer wrapper. The tool_objects are carved out of the target_objects while the
         tool_objects remain.
@@ -325,7 +421,7 @@ class GMSH_Geometry_Builder:
         for x in tool_objects:
             tool_dim_tags += all_entities[x]
 
-        dimTags,leMap = gmsh.model.occ.cut(target_dim_tags, tool_dim_tags, removeObject=True, removeTool=False)
+        dimTags,leMap = gmsh.model.occ.cut(target_dim_tags, tool_dim_tags, removeObject=True, removeTool=remove_tool)
 
         #Using leMap (which gives the list of dim,tag pairs that the original dim,tag pairs in target_dim_tags map onto), redo the target target_objects
         #making sure to keep the appropriate names
@@ -340,6 +436,16 @@ class GMSH_Geometry_Builder:
         self._gmsh_sync()
 
 
+    def _create_gmsh_plane(self, centre_vec, v1, v2, message=""):
+        centre_vec = np.array(centre_vec)
+        v1 = np.array(v1)
+        v2 = np.array(v2)
+        coords = [centre_vec-v1-v2, centre_vec+v1-v2, centre_vec+v1+v2, centre_vec-v1+v2]
+        coords = np.array(coords)
+        assert np.min(coords[:,0]) >= self._extents[0][0] and np.max(coords[:,0]) <= self._extents[0][1], f"Element {message} leaks outside x-axis boundary."
+        assert np.min(coords[:,1]) >= self._extents[1][0] and np.max(coords[:,1]) <= self._extents[1][1], f"Element {message} leaks outside y-axis boundary."
+        assert np.min(coords[:,2]) >= self._extents[2][0] and np.max(coords[:,1]) <= self._extents[2][1], f"Element {message} leaks outside z-axis boundary."
+        return self._draw_polygon_in_GMSH_from_coords(coords)
 
     def _create_gmsh_geometry_from_shapely_polygons(self, polygons):
         polygons_list = []
@@ -374,14 +480,16 @@ class GMSH_Geometry_Builder:
         Returns:
             surface - GMSH surface ID of newly drawn polygon.
         '''
-        #define lists to store points and lines
-        points = []
+        coords = np.array(coords)
+
+        #define list to store lines
         lines = []
     
         #create 2D points in gmsh
-        for coord in coords:
-            point = gmsh.model.occ.addPoint(coord[0], coord[1], self._geom_processor.chip_centre[2])
-            points.append(point)
+        if coords.shape[1] == 2:
+            points = [gmsh.model.occ.addPoint(coord[0], coord[1], self._geom_processor.chip_centre[2]) for coord in coords]
+        else:
+            points = [gmsh.model.occ.addPoint(coord[0], coord[1], coord[2]) for coord in coords]
 
         #update model with the created geometry items
         gmsh.model.occ.synchronize()
@@ -448,14 +556,14 @@ class GMSH_Geometry_Builder:
             xMax = self.center_x + self.size_x/2 + boundary_distances['x_prop']*self.size_x
         else:
             xMin = self.center_x - self.size_x/2 - boundary_distances['x_neg']/self._unit_conv
-            xMax = self.center_x - self.size_x/2 - boundary_distances['x_pos']/self._unit_conv
+            xMax = self.center_x + self.size_x/2 + boundary_distances['x_pos']/self._unit_conv
 
         if 'y_prop' in boundary_distances:
             yMin = self.center_y - self.size_y/2 - boundary_distances['y_prop']*self.size_y
             yMax = self.center_y + self.size_y/2 + boundary_distances['y_prop']*self.size_y
         else:
             yMin = self.center_y - self.size_y/2 - boundary_distances['y_neg']/self._unit_conv
-            yMax = self.center_y - self.size_y/2 - boundary_distances['y_pos']/self._unit_conv
+            yMax = self.center_y + self.size_y/2 + boundary_distances['y_pos']/self._unit_conv
 
         if 'z_prop_top' in boundary_distances:
             zMin = self.center_z - self.size_z - boundary_distances['z_prop_bottom']*self.size_z
@@ -466,6 +574,8 @@ class GMSH_Geometry_Builder:
 
         air_box = gmsh.model.occ.addBox(xMin, yMin, zMin, xMax-xMin, yMax-yMin, zMax-zMin)
         self._extents = np.array([(xMin,xMax), (yMin,yMax), (zMin,zMax)])
+        self._ff_centre = np.array([(xMin+xMax)/2, (yMin+yMax)/2, (zMin+zMax)/2])
+        self._ff_sizes = np.array([(xMax-xMin), (yMax-yMin), (zMax-zMin)])
 
         return air_box
 

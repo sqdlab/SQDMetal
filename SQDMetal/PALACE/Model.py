@@ -164,7 +164,7 @@ class PALACE_Model:
         #ff_type can be: 'absorbing' or 'pec'
         ff_type = ff_type.lower()
         assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
-        self._ff_type = ff_type
+        self._ff_type = {'ffxPos': 'pec', 'ffxNeg': 'pec', 'ffyPos': 'pec', 'ffyNeg': 'pec', 'ffzPos': 'pec', 'ffzNeg': 'pec'}
 
     def _is_native_arm64(self):
         '''
@@ -189,15 +189,16 @@ class PALACE_Model:
 
         if not os.path.exists(self._output_data_dir):
             os.makedirs(self._output_data_dir)
-        log_location = f"{self._output_data_dir}/out.log"
+        self.log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_location}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{self.log_location}\"\n")
 
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
 
-        with open(log_location, 'w'):
+        #Just create the output log file in case the terminal shell requires it to exist in order to write into it...
+        with open(self.log_location, 'w'):
             pass
 
         # Get the current running architecture
@@ -238,8 +239,8 @@ class PALACE_Model:
 
         if not os.path.exists(self._output_data_dir):
             os.makedirs(self._output_data_dir)
-        log_location = f"{self._output_data_dir}/out.log"
-        log_locationWSL = conv_winpath_to_WSLmount(log_location)
+        self.log_location = f"{self._output_data_dir}/out.log"
+        log_locationWSL = conv_winpath_to_WSLmount(self.log_location)
 
         with open("temp.sh", "w+", newline='\n') as f:
             f.write(f"cd {self._palace_wsl_repo_location}\n")
@@ -561,7 +562,7 @@ class PALACE_Model:
         self._boundary_distances['z_prop_top'] = z_prop_top
         self._boundary_distances['z_prop_bottom'] = z_prop_bottom
 
-    def set_xBoundary_as_absolute(self, x_neg, y_pos):
+    def set_xBoundary_as_absolute(self, x_neg, x_pos):
         assert x_neg >= 0, "Boundary on the negative x-axis of the chip must be a non-negative number."
         assert x_pos >= 0, "Boundary on the positive x-axis of the chip must be a non-negative number."
         self._boundary_distances.pop('x_prop',None)
@@ -583,6 +584,21 @@ class PALACE_Model:
         self._boundary_distances['z_neg'] = z_neg
         self._boundary_distances['z_pos'] = z_pos
 
+    def _process_farfield(self, dict_config, ff_physgrps):
+        abs_list = []
+        pec_list = []
+        for ff_plane in self._ff_type:
+            if self._ff_type[ff_plane] == 'absorbing':
+                abs_list.append(ff_physgrps[ff_plane])
+            elif self._ff_type[ff_plane] == 'pec':
+                pec_list.append(ff_physgrps[ff_plane])
+        if self._ff_type == 'absorbing':
+            dict_config['Boundaries']['Absorbing'] = {
+                    "Attributes": abs_list,
+                    "Order": 1
+                }
+        else:
+            dict_config['Boundaries']['PEC']['Attributes'] += pec_list
 
 class PALACE_Model_RF_Base(PALACE_Model):
 
@@ -595,12 +611,15 @@ class PALACE_Model_RF_Base(PALACE_Model):
             #Prepare the ports...
             #assert len(self._ports) > 0, "There must be at least one port in the RF simulation - do so via the create_port_CPW_on_Launcher or create_port_CPW_on_Route function."
             lePorts = []
+            #TODO: Move the coordinate creation code to here - i.e. don't hard-code it on calling the port functions; they store enough metadata anyway...
             for cur_port in self._ports:
-                if cur_port['elem_type'] == 'single':
-                    lePorts += [(cur_port['port_name'], cur_port['portCoords'])]
+                if cur_port['type'] == 'waveport':
+                    lePorts.append({'type':'wave', 'metadata':cur_port})
+                elif cur_port['elem_type'] == 'single':
+                    lePorts.append({'type':'lumped', 'name':cur_port['port_name'], 'coords':cur_port['portCoords']})
                 else:
-                    lePorts += [(cur_port['port_name'] + 'a', cur_port['portAcoords'])]
-                    lePorts += [(cur_port['port_name'] + 'b', cur_port['portBcoords'])]
+                    lePorts.append({'type':'lumped', 'name':cur_port['port_name']+'a', 'coords':cur_port['portAcoords']})
+                    lePorts.append({'type':'lumped', 'name':cur_port['port_name']+'b', 'coords':cur_port['portBcoords']})
 
             ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
             gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, lePorts,
@@ -701,7 +720,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
 
     def set_port_excitation(self, port_index):
         assert port_index > 0 and port_index <= len(self._ports), "Invalid index of port for excitation. Check if ports with R>0 have been correctly defined."
-        assert self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
+        assert self._ports[port_index-1]['type'] == 'waveport' or self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
         self._rf_port_excitation = port_index
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
@@ -716,6 +735,8 @@ class PALACE_Model_RF_Base(PALACE_Model):
         v_parl /= np.linalg.norm(v_parl)
 
         portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width, False)
+        portCoords = [x for x in portCoords]
+        portCoords = portCoords + [portCoords[0]]   #Close loop...
 
         self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width,
                          'vec_field': v_parl.tolist(),
@@ -826,6 +847,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             self._rf_port_excitation = len(self._ports)
 
     def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
+        assert self._ports[port_ind-1]['type'] != 'waveport', "Cannot set impedances to a waveport."
         #Enumerate port_ind from 1...
         #TODO: Override if different for Eigenmode...
         self._ports[port_ind-1]['impedance_R'] = impedance_R
@@ -839,6 +861,34 @@ class PALACE_Model_RF_Base(PALACE_Model):
             config_json['Boundaries']['LumpedPort'][port_ind-1]['C'] = impedance_C
             with open(self._sim_config, "w") as f:
                 json.dump(config_json, f, indent=2)
+
+    def create_waveport_on_boundary(self, plane:str, **kwargs):
+        port_name = "rf_wport_" + str(len(self._ports))
+
+        shape = kwargs.get('shape', 'rectangle')
+        supported_shapes = ['rectangle']
+        assert shape in supported_shapes, f"The shape '{shape}' is unsupported."
+
+        if plane == 'x_pos' or plane == 'x_neg':
+            assert 'y' in kwargs and 'z' in kwargs, "Must supply y and z arguments when placing waveport on positive x planar boundary."
+            assert 'size_y' in kwargs and 'size_z' in kwargs, "Must supply size_y and size_z arguments when placing waveport on a x planar boundary."
+            new_wvprt = {'y': kwargs['y'], 'z': kwargs['z'], 'size_y':kwargs['size_y'], 'size_z':kwargs['size_z']}
+        elif plane == 'y_pos' or plane == 'y_neg':
+            assert 'x' in kwargs and 'z' in kwargs, "Must supply x and z arguments when placing waveport on positive x planar boundary."
+            assert 'size_x' in kwargs and 'size_z' in kwargs, "Must supply size_x and size_z arguments when placing waveport on a x planar boundary."
+            new_wvprt = {'x': kwargs['x'], 'z': kwargs['z'], 'size_x':kwargs['size_x'], 'size_z':kwargs['size_z']}
+        elif plane == 'z_pos' or plane == 'z_neg':
+            assert 'x' in kwargs and 'y' in kwargs, "Must supply x and y arguments when placing waveport on positive x planar boundary."
+            assert 'size_x' in kwargs and 'size_y' in kwargs, "Must supply size_y and size_z arguments when placing waveport on a z planar boundary."
+            new_wvprt = {'x': kwargs['x'], 'y': kwargs['y'], 'size_x':kwargs['size_x'], 'size_y':kwargs['size_y']}
+        else:
+            assert False, "The argument 'plane' must be 'x_pos', 'y_pos', 'z_pos', 'x_neg', 'y_neg' or 'z_neg'."
+
+        new_wvprt['shape'] = shape
+        new_wvprt['plane'] = plane
+        new_wvprt['port_name'] = port_name
+        new_wvprt['type'] = 'waveport'
+        self._ports.append(new_wvprt)
 
     def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
         self._metallic_layers += [{
@@ -865,34 +915,43 @@ class PALACE_Model_RF_Base(PALACE_Model):
         #Assumes that ports is a dictionary that contains the port names (with separate keys with suffixes a and b for multi-element ports)
         #where each value is a list of element IDs corresponding to the particular port...
         config_ports = []
+        config_wports = []
         for m, cur_port in enumerate(self._ports):
-            port_name, vec_field = cur_port['port_name'], cur_port['vec_field']
-            leDict = {
-                    "Index": m+1,                    
-                }
-            if port_name + 'a' in ports:
-                leDict['Elements'] = [
-                        {
-                        "Attributes": [ports[port_name + 'a']],
-                        "Direction": vec_field + [0]
-                        },
-                        {
-                        "Attributes": [ports[port_name + 'b']],
-                        "Direction": [-x for x in vec_field] + [0]
-                        }
-                    ]
-            else:
-                leDict['Attributes'] = [ports[port_name]]
-                leDict['Direction'] = vec_field + [0]
+            if cur_port['type'] == 'waveport':
+                leDict = {
+                        "Index": m+1,                    
+                    }
 
-            if 'impedance_R' in cur_port:
-                leDict['R'] = cur_port['impedance_R']
-            if 'impedance_L' in cur_port:
-                leDict['L'] = cur_port['impedance_L']
-            if 'impedance_C' in cur_port:
-                leDict['C'] = cur_port['impedance_C']
-            config_ports.append(leDict)
-        return config_ports
+                leDict['Attributes'] = [ports[cur_port['port_name']]]
+                config_wports.append(leDict)
+            else:
+                port_name, vec_field = cur_port['port_name'], cur_port['vec_field']
+                leDict = {
+                        "Index": m+1,                    
+                    }
+                if port_name + 'a' in ports:
+                    leDict['Elements'] = [
+                            {
+                            "Attributes": [ports[port_name + 'a']],
+                            "Direction": vec_field + [0]
+                            },
+                            {
+                            "Attributes": [ports[port_name + 'b']],
+                            "Direction": [-x for x in vec_field] + [0]
+                            }
+                        ]
+                else:
+                    leDict['Attributes'] = [ports[port_name]]
+                    leDict['Direction'] = vec_field + [0]
+
+                if 'impedance_R' in cur_port:
+                    leDict['R'] = cur_port['impedance_R']
+                if 'impedance_L' in cur_port:
+                    leDict['L'] = cur_port['impedance_L']
+                if 'impedance_C' in cur_port:
+                    leDict['C'] = cur_port['impedance_C']
+                config_ports.append(leDict)
+        return config_ports, config_wports
 
     def setup_EPR_interfaces(self, substrate_air : MaterialInterface, substrate_metal : MaterialInterface, metal_air : MaterialInterface, **kwargs):
         self.substrate_air = substrate_air
@@ -955,3 +1014,22 @@ class PALACE_Model_RF_Base(PALACE_Model):
         dict_json['Boundaries']['PEC'] = {
                     "Attributes": [],
                 }
+
+    def set_farfield_plane(self, plane, ff_type='pec'):
+        #ff_type can be: 'absorbing' or 'pec'
+        ff_type = ff_type.lower()
+        assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
+        if plane == 'x_pos':
+            self._ff_type['ffxPos'] = ff_type
+        elif plane == 'x_neg':
+            self._ff_type['ffxneg'] = ff_type
+        elif plane == 'y_pos':
+            self._ff_type['ffyPos'] = ff_type
+        elif plane == 'y_neg':
+            self._ff_type['ffyneg'] = ff_type
+        elif plane == 'z_pos':
+            self._ff_type['ffzPos'] = ff_type
+        elif plane == 'z_neg':
+            self._ff_type['ffzneg'] = ff_type
+        else:
+            assert False, "Farfield plane must be 'x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg'."

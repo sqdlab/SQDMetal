@@ -213,7 +213,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #GMSH config file variables
             material_air = gmsh_render_attrs['air_box']
             material_dielectric = gmsh_render_attrs['dielectric']
-            far_field = gmsh_render_attrs['far_field']
+            far_field = [gmsh_render_attrs['far_field'][x] for x in gmsh_render_attrs['far_field']]
             
             self._cur_cap_terminals = gmsh_render_attrs['metalsShapely']
 

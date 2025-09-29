@@ -88,6 +88,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             material_air = list(comsol._model.java.component("comp1").material("Vacuum").selection().entities())
             material_dielectric = list(comsol._model.java.component("comp1").material("Substrate").selection().entities())
             PEC_metals = list(comsol._model.java.component("comp1").material("Metal").selection().entities())
+            #TODO: Add COMSOL Meshing support for separate far-field BCs...
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
@@ -107,9 +108,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = self._process_ports(ports)
-        # if self._rf_port_excitation > 0:
-        #     config_ports[self._rf_port_excitation-1]["Excitation"] = True
+        config_ports, config_wports = self._process_ports(ports)
 
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
@@ -127,6 +126,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             {
                 "Mesh":  self._mesh_name,
                 "L0": l0,  
+                "CrackDisplacementFactor":0,    #TODO: Remove if it is not required for both planar AND full-3D designs with CPW feeds. c.f. https://awslabs.github.io/palace/dev/config/model/
                 "Refinement":
                 {
                 "UniformLevels": self.user_options["mesh_refinement"]
@@ -156,7 +156,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                "LumpedPort": config_ports
+                "LumpedPort": config_ports,
+                "WavePort": config_wports
             },
             "Solver":
             {
@@ -185,13 +186,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         
-        if self._ff_type == 'absorbing':
-            config['Boundaries']['Absorbing'] = {
-                    "Attributes": far_field,
-                    "Order": 1
-                }
-        else:
-            config['Boundaries']['PEC']['Attributes'] += far_field
+        self._process_farfield(config, far_field)
         # if self.meshing == 'GMSH':
         #     config['Solver']['Linear']['Type'] = "Default"
         #     config['Solver']['Linear']['KSPType'] = "GMRES"

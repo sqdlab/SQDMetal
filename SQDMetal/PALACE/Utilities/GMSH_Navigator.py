@@ -38,7 +38,7 @@ class GMSH_Navigator:
                 visibility = 1 if show_metals else 0
             elif name.startswith('rf_port'):
                 visibility = 1 if show_metals else 0
-            elif name == 'far_field' or name == 'air_box':
+            elif name.startswith('ff') or name == 'air_box':
                 visibility = 0 if hide_box else 1
             elif name == 'dielectric_substrate':
                 visibility = 0 if hide_substrate else 1
