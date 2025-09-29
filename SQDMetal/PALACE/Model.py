@@ -545,7 +545,7 @@ class PALACE_Model:
         }
 
     def set_xBoundary_as_proportion(self, x_prop:float):
-        assert x_prop >= 0, "oundary distance proportion along the x-axis must be a non-negative number."
+        assert x_prop >= 0, "Boundary distance proportion along the x-axis must be a non-negative number."
         self._boundary_distances.pop('x_pos',None)
         self._boundary_distances.pop('x_neg',None)
         self._boundary_distances['x_prop'] = x_prop
