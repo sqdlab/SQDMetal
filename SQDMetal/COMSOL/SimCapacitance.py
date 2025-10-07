@@ -107,4 +107,19 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
                 capMatFull[:,cur_port] = capCol[:,cur_port]
             
             self.jc.result().numerical().remove("gmev1")
+        
         return capMatFull
+
+    def get_DoFs(self):
+        self.jc.result().numerical().create("gev1", "EvalGlobal")
+        self.jc.result().numerical("gev1").set("data", self.dset_name)
+        self.jc.result().numerical("gev1").set("expr", jtypes.JArray(jtypes.JString)(["numberofdofs"]))
+        self.jc.result().table().create("tbl1", "Table")
+        self.jc.result().numerical("gev1").set("table", "tbl1")
+        self.jc.result().numerical("gev1").computeResult()
+        self.jc.result().numerical("gev1").setResult()
+        dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])
+
+        self.jc.result().table().remove("tbl1")
+        self.jc.result().numerical().remove("gev1")
+        return dofs
