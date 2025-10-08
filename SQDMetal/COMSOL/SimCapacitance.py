@@ -37,6 +37,8 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
         self._study = self.model._add_study("stdCapMat")
         self.phys_es = self.model._add_physics("es")
         self.jc.component("comp1").physics().create(self.phys_es, "Electrostatics", "geom1")
+        self.jc.component("comp1").physics(self.phys_es).create("ccns1", "ChargeConservationSolid", 3)
+        self.jc.component("comp1").physics(self.phys_es).feature("ccns1").selection().all()
         self.jc.component("comp1").physics(self.phys_es).prop("PortSweepSettings").set("useSweep", jtypes.JBoolean(True))
         self.jc.component("comp1").physics(self.phys_es).prop("PortSweepSettings").set("PortParamName", "PortName")
 
