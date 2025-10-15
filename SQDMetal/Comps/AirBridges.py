@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam
 # Creation Date: 02/08/2023
 # Description: Collection of classes to draw air bridges.
 
-from qiskit_metal import draw
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.QUtilities import QUtilities
-from scipy.spatial import KDTree
 
 class AirBridgeCPW(QComponent):
     """Places air bridges along a given CPW path. The positions of the air-bridges are given in handy object attributes:

@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 # import gdspy
 import gdstk
 import shapely
@@ -104,14 +107,14 @@ class MakeGDS:
         # Assemble geometry for each layer
         all_layers = []
         # Assuming Layer 0 is GND Plane
-        gaps = gsdf.loc[(gsdf['subtract'] == True)]
+        gaps = gsdf.loc[(gsdf['subtract'])]
         gaps = ShapelyEx.fuse_polygons_threshold(gaps['geometry'].tolist(), threshold)
         chip = rect.difference(gaps)
         chip = shapely.affinity.scale(chip, xfact=unit_conv, yfact=unit_conv, origin=(0, 0))
         all_layers.append((0, chip))
         leLayers = np.unique(gsdf['layer'])  # metal layers
         for layer in leLayers:
-            metals = gsdf.loc[(gsdf['layer'] == layer) & (gsdf['subtract'] == False)]
+            metals = gsdf.loc[(gsdf['layer'] == layer) & (~gsdf['subtract'])]
             metals = ShapelyEx.fuse_polygons_threshold(metals['geometry'].tolist(), threshold)
             metals = shapely.affinity.scale(metals, xfact=unit_conv, yfact=unit_conv, origin=(0, 0))
             all_layers.append((layer, metals))
@@ -188,7 +191,7 @@ class MakeGDS:
 
     def add_boolean_layer(self, layer1_ind, layer2_ind, operation, output_layer=None):
         assert operation in ["and", "or", "xor", "not"], "Operation must be: \"and\", \"or\", \"xor\", \"not\""
-        if output_layer == None:
+        if output_layer is None:
             output_layer = max([x for x in self._layer_metals]) + 1
         try:
             new_metal = gdstk.boolean(self._layer_metals[layer1_ind], self._layer_metals[layer2_ind], operation, layer=int(output_layer), precision=self.precision)
@@ -229,16 +232,16 @@ class MakeGDS:
             print("Warning: text is being added with no action argument to a (non-ground-plane) layer already containing shapes. Consider changing the layer.")
 
         # default label
-        if text_label=="": 
-            t = datetime.now().strftime("%Y")
-            text_gds = f"Made with SQDMetal {t}." 
-        else: text_gds = text_label
+        text_gds = f"Made with SQDMetal {datetime.now().strftime('%Y')}." if text_label == "" else text_label
 
         # set default position (bottom left) or input position (normalised to 1)
         unit_conv = self.unit_conv
         default_pos = 0.48
-        if position==None: text_position = ((self.cx-default_pos*self.sx)*unit_conv, (self.cy-default_pos*self.sy)*unit_conv)
-        else: text_position = ((self.cx+(position[0] - 0.5)*self.sx)*unit_conv, (self.cy+(position[1] - 0.5)*self.sy)*unit_conv)
+
+        if position is None: 
+            text_position = ((self.cx-default_pos*self.sx)*unit_conv, (self.cy-default_pos*self.sy)*unit_conv)
+        else: 
+            text_position = ((self.cx+(position[0] - 0.5)*self.sx)*unit_conv, (self.cy+(position[1] - 0.5)*self.sy)*unit_conv)
         
         # subtract text from ground plane
         if layer == 0:
@@ -272,7 +275,7 @@ class MakeGDS:
     def delete_layers(self, layers_to_remove):
         if isinstance(layers_to_remove, int):
             layers_to_remove = [layers_to_remove]
-        self.cell.filter([(l, 0) for l in layers_to_remove])
+        self.cell.filter([(layer, 0) for layer in layers_to_remove])
     
     @staticmethod
     def merge_gds_per_layer_inplace(gds_input_file, inplace=True):
@@ -307,7 +310,7 @@ class MakeGDS:
             print(f"Attribute error: {e}. Please ensure you're using the correct KLayout API (i.e. NOT 'pip install pya' - this is a different library). Use 'pip install klayout' instead.")
 
     def export(self, file_name, export_type=None, export_layers=None):
-        if export_type != None:
+        if export_type is not None:
             self.export_type = export_type
             self.export_layers = None
             # remove any user layers
@@ -316,7 +319,7 @@ class MakeGDS:
             # keep user layers
             elif export_type == "all":
                 self.refresh()
-        if export_layers != None:
+        if export_layers is not None:
             self.export_layers = export_layers
             self.export_type = "all"
             self.refresh()

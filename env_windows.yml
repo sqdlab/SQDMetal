@@ -9,7 +9,7 @@ dependencies:
   - ipython==8.10.0
   - matplotlib==3.7.0
   - numpy==1.24.2
-  - pandas==1.5.3
+  - pandas==2.1
   - pint==0.20.1
   - pyepr-quantum==0.8.5.7
   - pygments==2.14.0
@@ -17,7 +17,7 @@ dependencies:
   - qdarkstyle==3.1
   - qutip==4.7.1
   - gdstk==0.9.60
-  - scipy==1.10.0
+  - scipy==1.12.0
   - shapely==2.0.1
   - jupyter==1.0.0
   - scqubits==3.1.0

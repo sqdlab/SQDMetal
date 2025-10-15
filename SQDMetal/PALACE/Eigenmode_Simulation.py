@@ -1,15 +1,14 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
-from SQDMetal.COMSOL.Model import COMSOL_Model
-from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.Utilities.Materials import Material
-from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
-import gmsh
 import pandas as pd
 
 class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
@@ -17,7 +16,6 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
     #Class Variables
     default_user_options = {
                  "fillet_resolution": 4,
-                 "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "starting_freq": 5.5e9,
                  "number_of_freqs": 5,
@@ -34,17 +32,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                  "HPC_Parameters_JSON": "",
                  "fuse_threshold": 1e-9,
                  "gmsh_verbosity": 1,
-                 "threshold": 1e-9
+                 "threshold": 1e-9,
+                 "simplify_edge_min_angle_deg": -1,
+                 'palace_mode': 'local',
+                 'palace_wsl_spack_repo_directory': '~/repo'
                 }
 
     #Parent Directory path
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = {}, 
-                 view_design_gmsh_gui = False, create_files = False):
+    def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
+                 view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.metal_design = metal_design
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.user_options = {}
@@ -53,7 +53,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing, mode, user_options)
+        super().__init__(meshing, mode, user_options, **kwargs)
 
     def create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -87,6 +87,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             material_air = list(comsol._model.java.component("comp1").material("Vacuum").selection().entities())
             material_dielectric = list(comsol._model.java.component("comp1").material("Substrate").selection().entities())
             PEC_metals = list(comsol._model.java.component("comp1").material("Metal").selection().entities())
+            #TODO: Add COMSOL Meshing support for separate far-field BCs...
             far_field = list(comsol._model.java.component("comp1").physics(sParams_sim.phys_emw).feature("pec1").selection().entities())
             ports = {}
             for m, cur_port in enumerate(self._ports):
@@ -106,9 +107,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = self._process_ports(ports)
-        # if self._rf_port_excitation > 0:
-        #     config_ports[self._rf_port_excitation-1]["Excitation"] = True
+        config_ports, config_wports = self._process_ports(ports)
 
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
@@ -126,10 +125,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             {
                 "Mesh":  self._mesh_name,
                 "L0": l0,  
-                "Refinement":
-                {
-                "UniformLevels": self.user_options["mesh_refinement"]
-                },
+                "CrackDisplacementFactor":0,    #TODO: Remove if it is not required for both planar AND full-3D designs with CPW feeds. c.f. https://awslabs.github.io/palace/dev/config/model/
+                "Refinement": self._mesh_refinement
             },
             "Domains":
             {
@@ -155,7 +152,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                "LumpedPort": config_ports
+                "LumpedPort": config_ports,
+                "WavePort": config_wports
             },
             "Solver":
             {
@@ -176,19 +174,20 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 }
             }
         }
+        
+        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition 
+        if self._use_KI:
+            self._setup_kinetic_inductance(config, PEC_metals)
+
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
-        if self._ff_type == 'absorbing':
-            config['Boundaries']['Absorbing'] = {
-                    "Attributes": far_field,
-                    "Order": 1
-                }
-        else:
-            config['Boundaries']['PEC']['Attributes'] += far_field
+        
+        self._process_farfield(config, far_field)
         # if self.meshing == 'GMSH':
         #     config['Solver']['Linear']['Type'] = "Default"
         #     config['Solver']['Linear']['KSPType'] = "GMRES"
 
+        
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
 
@@ -221,7 +220,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
-        headers = raw_data.columns
+        headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()
 
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
@@ -280,7 +279,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         col_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
 
         raw_dataEPR = pd.read_csv(output_directory + '/surface-Q.csv')
-        headersEPR = raw_dataEPR.columns
+        headersEPR = raw_dataEPR.columns # noqa: F841 # abhishekchak52: headersEPR is not used
         raw_dataEPR = raw_dataEPR.to_numpy()
 
         ret_list = []
@@ -313,7 +312,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = []):
+        '''Method to extract Hamiltonian from eigenmode simulation using the EPR method'''
         
+        #retrieve data from the simulation files
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
         
         #Constants used for calculations
@@ -373,7 +374,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         Ej = np.diag((phi0**2 / Lj).A1)
 
         #Calcultate Kerr matrix: chi = hbar/4 * (omega*P) * inv_Ej * (omega*P)^T
-        ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hetz divide by 2*pi###
+        ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hertz divide by 2*pi###
         chi = (hbar/4) * (omega*P) * np.linalg.inv(Ej) * np.transpose(omega*P)
         diag_matrix = (-1/2) * np.diag(np.ones(num_of_modes)) + np.ones(num_of_modes) #hacky way of creating ones matrix with values of 1/2 down the diagonal
         chi_anharm = np.multiply(diag_matrix,chi) #This is the kerr matrix but with the anharmonicity down the diagonal for the self-kerr term
@@ -381,12 +382,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         lamb_shift = (1/2) * chi * np.ones((np.shape(chi)[0],1))
         renormalised_freqs = np.transpose(np.matrix(frequencies * 2 * np.pi)) - lamb_shift #linear frequencies from eigenmode simulation are renormalised by lamb shift caused by non-linearity
 
-        #Get values in mehahertz (MHz) to display to user
-        chi_freq = chi / (2 * np.pi * 1e6) 
+        #Get values in megahertz (MHz) or gigahertz (GHz) to display to user
+        chi_freq = chi / (2 * np.pi * 1e6)  # noqa: F841 # abhishekchak52: chi_freq is not used
         chi_anharm = chi_anharm / (2 * np.pi * 1e6) 
-        anharm_freq = anharm / (2 * np.pi * 1e6)
-        lamb_shift_freq = lamb_shift / (2 * np.pi * 1e6)
-        delta_freq = delta / (2 * np.pi * 1e9)
+        anharm_freq = anharm / (2 * np.pi * 1e6)  # noqa: F841 # abhishekchak52: anharm_freq is not used
+        lamb_shift_freq = lamb_shift / (2 * np.pi * 1e6)  
+        delta_freq = delta / (2 * np.pi * 1e9) 
         renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
 
         #create dataframes and print for user to see

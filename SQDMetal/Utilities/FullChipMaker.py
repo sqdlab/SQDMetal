@@ -1,5 +1,7 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from qiskit_metal import designs
-from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.MakeGDS import MakeGDS
 from SQDMetal.Utilities.CpwParams import CpwParams
@@ -30,6 +32,7 @@ class MultiDieChip:
         export_type="all",
         export_threshold=1e-9,
         frequency_range=(6e9, 7e9),
+        frequency_list=None,
         num_resonators=5,
         cpw_width="9um",
         feedline_upscale=1.0,
@@ -69,6 +72,7 @@ class MultiDieChip:
             - export_type - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
             - export_threshold - (Defaults to 1e-9) The smallest feature width that can exist; anything smaller will get culled out. This is to help remove artefacts from floating-point inaccuracies. It is given in metre
             - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
+            - frequency_list - (Defaults to None) List containing discrete frequencies (must be same length as num_resonators) in Hz
             - num_resonators - (Defaults to 5) Number of resonators per die
             - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width. You can pass a list of strings if you want to scale each resonator seperately.
             - feedline_upscale - (Defaults to 1.0) scale of the feedline gap and width as a multiple of the resonator dimensions
@@ -99,6 +103,9 @@ class MultiDieChip:
             - design - Qiskit Metal design object for the generated chip
         """
 
+        if frequency_list:
+            assert len(frequency_list) == num_resonators, "frequency_list must be the same length as num resonators."
+
         assert film_material in [
             "aluminium",
             "tantalum",
@@ -106,11 +113,11 @@ class MultiDieChip:
         ], "Only aluminium and tantalum are supported for the film material currently."
 
         assert (
-            self.export_filename != None or export_filename != None
+            self.export_filename is not None or export_filename is not None
         ), "Please provide an export filename"
-        if self.export_filename == None:
+        if self.export_filename is None:
             self.export_filename = export_filename
-        elif export_filename == None:
+        elif export_filename is None:
             export_filename = self.export_filename
 
         if single_circuit_for_simulation:
@@ -127,10 +134,13 @@ class MultiDieChip:
 
         # check if chip geometry is constant or scaled per-resonator
         assert QUtilities.is_string_or_list_of_strings(cpw_width)
+        assert QUtilities.is_string_or_list_of_strings(coupling_gap), "If you want different coupling_gap per-resonator, pass as a list of strings (e.g. ['5um, '10um', ...])"
+        if isinstance(coupling_gap, list):
+            assert len(coupling_gap) == num_resonators
         if len(cpw_width) == 1:
             cpw_width = cpw_width[0]
         scaled_geometry = isinstance(cpw_width, list)
-        if scaled_geometry == True:
+        if scaled_geometry:
             assert (
                 len(cpw_width) == num_resonators
             ), "If cpw_width is a list, it must have the same length as num_resonators"
@@ -186,7 +196,7 @@ class MultiDieChip:
         cpw_params = c.fromQDesign(design=design)
 
         # calculate gap from specified width for 50 Ohm impedence
-        if scaled_geometry == True:
+        if scaled_geometry:
             gap = [
                 str(
                     f"{c.get_gap_from_width(trace_width=QUtilities.parse_value_length(i)) * 1e6:.2f}um"
@@ -230,9 +240,12 @@ class MultiDieChip:
         die_coords = QUtilities.calc_die_coords(chip_dimension, die_dimension, die_num)
 
         # calculate frequencies
-        freq_list = np.linspace(
-            frequency_range[0], frequency_range[1], num_resonators, endpoint=True
-        )
+        if frequency_list is None:
+            freq_list = np.linspace(
+                frequency_range[0], frequency_range[1], num_resonators, endpoint=True
+            )
+        elif frequency_list:
+            freq_list = frequency_list
 
         # calculate total launchpad width (from edge of die)
         lp_extent = (
@@ -257,7 +270,7 @@ class MultiDieChip:
 
         print(f"Chip Size: {chip_dimension[0]} x {chip_dimension[1]}")
         print(f"Die Size:  {die_dimension[0]} x {die_dimension[1]}\n")
-        print(f"Resonator properties:")
+        print("Resonator properties:")
         print(f" Frequencies    : {[f'{i * 1e-9:.3f} GHz' for i in freq_list]}")
         print(f" Gap            : {gap}")
         print(f" Width          : {cpw_width}")
@@ -278,7 +291,8 @@ class MultiDieChip:
         # loop through dies
         for i, origin in enumerate(die_coords):
 
-            if print_all_infos: print(f'\nPrinting die {i}')
+            if print_all_infos:
+                print(f'\nPrinting die {i}')
 
             # draw launchpads
             launchpads.append(
@@ -357,7 +371,7 @@ class MultiDieChip:
             sim_border = 0.4  # mm
             minxy = [np.inf, np.inf]
             maxxy = [-1 * np.inf, -1 * np.inf]
-            print(f"\nCropping chip for simulation:")
+            print("\nCropping chip for simulation:")
             # iterate over all components in the design to check smallest boundary
             for i, comp in enumerate(design.components.values()):
                 (minx, miny, maxx, maxy) = comp.qgeometry_bounds()
@@ -401,8 +415,8 @@ class MultiDieChip:
         )
 
         # add text label
-        if text_label != None:
-            if text_position == None:
+        if text_label is not None:
+            if text_position is None:
                 gds_export.add_text(
                     text_label=text_label, size=text_size, position=(0.05, 0.9)
                 )
@@ -414,12 +428,12 @@ class MultiDieChip:
     
         # setup export path based on user inputs
         if export_path == "":
-            if date_stamp_on_export == True:
+            if date_stamp_on_export:
                 full_export_path = os.path.join(f"{export_filename}_{t}.gds")
             else:
                 full_export_path = os.path.join(f"{export_filename}.gds")
         else:
-            if date_stamp_on_export == True:
+            if date_stamp_on_export:
                 full_export_path = os.path.join(
                     export_path, f"{export_filename}_{t}.gds"
                 )
@@ -430,12 +444,12 @@ class MultiDieChip:
         # do export
         gds_export.export(full_export_path)
         print(f"Exported at {os.path.abspath(full_export_path)}")
-        print(f"")
+        print("")
 
         # assign self.design
         self.design = design
 
-        if plot_inline_mpl == True:
+        if plot_inline_mpl:
             fig, ax = plt.subplots(figsize=(chip_dim_x * 3e3, chip_dim_y * 3e3))
             ax.set_aspect('equal', adjustable='datalim')
             for comp in design.components.values():
@@ -464,9 +478,9 @@ class MultiDieChip:
         """
         Setup and run Palace eigenmode simulations on a resonator chip (as per MultiDieChip.make_resonator_chip) Qiskit Metal design object. Automatically handles number of eigenmodes, start frequency, and fine-meshing around transmission line and resonators. Assumes that ports are setup on launchpads.
         """
-        assert self.design != None, "Please run make_resonator_chip() first."
+        assert self.design is not None, "Please run make_resonator_chip() first."
         assert (
-            run_locally == True
+            run_locally
         ), "Only local simulations are supported at the moment."
         # CPU num
         assert (leave_free_cpu_num or num_cpus) != None, "You must supply either 'num_cpus' or 'leave_free_cpu_num'."
@@ -489,39 +503,39 @@ class MultiDieChip:
         except ImportError:
             print("PALACE Eigenmode Simulation module not found. Exiting simulation")
             exit()
-        if start_freq == None:
+        if start_freq is None:
             start_freq = self.start_freq
         assert start_freq > 1e9, "Starting frequency should be given in Hz. It looks like you provided a value in GHz."
         # set number of eigenmodes
-        if num_eigenmodes == None:
+        if num_eigenmodes is None:
             num_eigenmodes = self.num_resonators + 1
         # set number of saved solutions
-        if num_saved_solns == None:
+        if num_saved_solns is None:
             num_saved_solns = num_eigenmodes # by default, save every eigenmode
         # Fine meshing resonators, tranmission line and launchpads
         fine_mesh_components_1 = []
-        print(f"\nResonator component names:")
+        print("\nResonator component names:")
         for name in self.design.components.keys():
             if name.endswith("GHz"):
                 print(f" {name}")
                 fine_mesh_components_1.append(name)
-        print(f"\nTransmission line name:")
+        print("\nTransmission line name:")
         for name in self.design.components.keys():
             if name.startswith("tl"):
                 print(f" {name}")
                 fine_mesh_components_1.append(name)
         fine_mesh_launchpads = []
-        print(f"\nLaunchpad names:")
+        print("\nLaunchpad names:")
         for name in self.design.components.keys():
             if name.startswith("lp"):
                 print(f" {name}")
                 fine_mesh_launchpads.append(name)
         assert len(fine_mesh_launchpads) == 2, f"There should only be 2 launchpad components, currently there are {len(fine_mesh_launchpads)}."
         # Setup for local simulation
-        if run_locally == True:
-            sim_mode = "SimPC"
+        if run_locally:
+            sim_mode = "SimPC"  # noqa: F841 # abhishekchak52: unused variable sim_mode
         else:
-            print(f"HPC setup not yet supported.")
+            print("HPC setup not yet supported.")
             exit()
         # Eigenmode Simulation Options
         user_defined_options = {

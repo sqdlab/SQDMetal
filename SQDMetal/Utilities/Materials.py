@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 # Author: Prasanna Pakkiam
 # Creation Date: 04/07/2023
 # Description: A simple structure class to house the parameters/properties of different materials/substrates.

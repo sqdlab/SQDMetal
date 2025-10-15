@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
 # Author: Prasanna Pakkiam
 # Creation Date: 01/06/2023
 # Description: Collection of classes to draw resonators (such as meander resonators).
 
-from qiskit_metal.qlibrary.core import QComponent, QRoute
-from qiskit_metal.qlibrary.tlines.anchored_path import RouteAnchors
+from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
 from qiskit_metal.toolbox_python.attr_dict import Dict
@@ -81,7 +83,7 @@ class ResonatorMeander(QComponent):
     def make(self):
         p = self.p
 
-        l = p.total_length
+        l = p.total_length  # noqa: E741
         L = p.constr_extend_length
         r = p.constr_radius
         wid_constr = p.constr_width_max
@@ -102,7 +104,7 @@ class ResonatorMeander(QComponent):
         self.add_pin('b', pin2.coords, width=p.trace_width)
 
     @staticmethod
-    def draw_resonator(l, L, r, wid_constr, f, start_left, trace_width, x, y, angle):
+    def draw_resonator(l, L, r, wid_constr, f, start_left, trace_width, x, y, angle):  # noqa: E741
         err_msg = "Overconstrained the meander. Only 2 of the 3 constraints may be set: constr_radius, constr_width_max and constr_extend_length. Currently constr_wid_max and constr_extend_length will not work as the chosen constraints - other combinations will."
         if r > 0 and wid_constr > 0:
             assert L == 0, err_msg
@@ -270,7 +272,7 @@ class ResonatorMeanderPin(QComponent):
         startPt = start_point['middle']
         norm = start_point['normal']
 
-        l = p.total_length
+        l = p.total_length  # noqa: E741
         L = p.constr_extend_length
         r = p.constr_radius
         wid_constr = p.constr_width_max
@@ -378,7 +380,7 @@ class ResonatorMeanderPinPin(QComponent):
         vec = endPt-startPt
         ori = np.arctan2(vec[1],vec[0])/np.pi*180
 
-        l = p.total_length
+        l = p.total_length  # noqa: E741
         L = np.linalg.norm(vec)
         r = p.constr_radius
         wid_constr = p.constr_width_max

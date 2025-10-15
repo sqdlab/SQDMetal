@@ -1,26 +1,20 @@
-import pandas as pd
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import geopandas as gpd
 import numpy as np
 import shapely
 from shapely.geometry import Polygon
-from shapely.ops import unary_union
 import matplotlib.pyplot as plt
-from addict import Dict
 
 import mph
 import jpype.types as jtypes
-from shapely.geometry import Polygon
 
-import matplotlib.pyplot as plt
-from matplotlib.collections import PolyCollection
-import matplotlib as mpl
 
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QUtilities import QUtilities
 
-import pandas as pd
-import geopandas as gpd
 
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
@@ -34,7 +28,7 @@ class COMSOL_Model:
 
     @staticmethod
     def init_engine(num_cores = 2):
-        if COMSOL_Model._engine == None:
+        if COMSOL_Model._engine is None:
             COMSOL_Model._engine = mph.start(cores=num_cores)
 
     @staticmethod
@@ -265,7 +259,7 @@ class COMSOL_Model:
         temp_conds_and_polys = []
         for cur_comp in comp_list:
             #Construct the net PVD shadowed polygon
-            polys = gsdf.loc[(gsdf['component'] == self.design.components[cur_comp].id) & (gsdf['subtract'] == False)]['geometry'].to_list()
+            polys = gsdf.loc[(gsdf['component'] == self.design.components[cur_comp].id) & (~gsdf['subtract'])]['geometry'].to_list()
             if len(polys) > 1:
                 poly = shapely.unary_union(polys)
                 assert isinstance(poly, shapely.Polygon), f"Component \'{cur_comp}\' is not a contiguous polygonal object."
@@ -318,7 +312,7 @@ class COMSOL_Model:
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(self._resolution)
 
-        filt = gsdf.loc[gsdf['subtract'] == True]
+        filt = gsdf.loc[gsdf['subtract']]
 
         unit_conv = QUtilities.get_units(self.design)
 
@@ -387,7 +381,7 @@ class COMSOL_Model:
                 else:
                     sel_x, sel_y, sel_r = self._create_poly(pol_name_cut, cur_poly_cut[:-1])
             #Subtract cuts from the polygon
-            diff_name = f"difGND"
+            diff_name = "difGND"
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(diff_name, "Difference")
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input").set(pol_name)
             self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(diff_name).selection("input2").set(*pol_name_cuts)
@@ -420,8 +414,8 @@ class COMSOL_Model:
         rect_name = f"mesh_rect{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(rect_name, "Rectangle")
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
-        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]));
-        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name); #Makes selection easier...
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]))
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name) #Makes selection easier...
         #
         sel_mesh_name = f"selMesh{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
@@ -436,8 +430,8 @@ class COMSOL_Model:
         rect_name = f"mesh_rect{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(rect_name, "Rectangle")
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
-        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]));
-        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name); #Makes selection easier...
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(rect_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]))
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(rect_name) #Makes selection easier...
         #
         sel_mesh_name = f"selMesh{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
@@ -446,14 +440,16 @@ class COMSOL_Model:
         leLine = shapely.LineString([[x1, y1], [x2, y1], [x2, y2], [x1, y2], [x1, y1]])
         self._fine_mesh += [{'type':'conds', 'poly':leLine, 'sel_rect':"wp1_"+sel_mesh_name, 'minElem':minElementSize, 'maxElem':maxElementSize}]
 
-    def fine_mesh_in_poly(self, poly, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
-        leCoords = np.array(poly.exterior.coords[:])
+    def fine_mesh_in_poly(self, poly, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True, buffer_size=0):
+        if buffer_size > 0 and qmUnits:
+            buffer_size *= QUtilities.get_units(self.design)
+        leCoords = np.array(poly.buffer(buffer_size, join_style=2, cap_style=3).exterior.coords[:])
         if qmUnits:
             leCoords *= QUtilities.get_units(self.design)
         ind = len(self._fine_mesh)
         pol_name = f"mesh_poly{ind}"
         sel_x, sel_y, sel_r = self._create_poly(pol_name, leCoords)
-        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name); #Makes selection easier...
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name) #Makes selection easier...
         #
         sel_mesh_name = f"selMesh{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
@@ -465,14 +461,16 @@ class COMSOL_Model:
         kwargs['restrict_rect'] = self.restrict_rect
         kwargs['resolution'] = self._resolution
         list_polys = QUtilities.get_perimetric_polygons(self.design, list_comp_names, **kwargs)
-        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False)
+        self.fine_mesh_in_polys(list_polys, minElementSize, maxElementSize, qmUnits=False, buffer_size=kwargs.get('buffer_size',0))
 
-    def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True):
+    def fine_mesh_in_polys(self, list_polys, minElementSize=1e-7, maxElementSize=5e-6, qmUnits=True, buffer_size=0):
         ind = len(self._fine_mesh)
         pol_names = []
         leLines = []
         for m, poly in enumerate(list_polys):
-            leCoords = np.array(poly.exterior.coords[:])
+            if buffer_size > 0 and qmUnits:
+                buffer_size *= QUtilities.get_units(self.design)
+            leCoords = np.array(poly.buffer(buffer_size, join_style=2, cap_style=3).exterior.coords[:])
             if leCoords.size == 0:
                 continue
             if qmUnits:
@@ -480,7 +478,7 @@ class COMSOL_Model:
             leLines += [shapely.LineString(leCoords)]
             pol_name = f"mesh_poly{ind}_{m}"
             sel_x, sel_y, sel_r = self._create_poly(pol_name, leCoords)
-            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name); #Makes selection easier...
+            self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name) #Makes selection easier...
             pol_names += [pol_name]
         sel_mesh_name = f"selMesh{ind}"
         self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_mesh_name, "ExplicitSelection")
@@ -650,19 +648,47 @@ class COMSOL_Model:
     def _get_java_comp(self):
         return self._model.java
 
+    def _dset_exists(self, dset_name):
+        return dset_name in [x.tag() for x in self._model.java.result().dataset()]
+
+    def _numeval_exists(self, numeval_name):
+        return numeval_name in [x.tag() for x in self._model.java.result().numerical()]
+
     def build_geom_mater_elec_mesh(self, mesh_structure='Normal', skip_meshing=False, substrate_material=None, substrate_permittivity=11.45, **kwargs):    #mesh_structure can be 'Fine'
         '''
         Builds geometry, sets up materials, sets up electromagnetic parameters/ports and builds the mesh.
         '''
+
+        #Prepare the dielectric selection...
+        pol_name = "polSurface"
+        x1 = self.chip_centre[0] - self.chip_len*0.5
+        x2 = self.chip_centre[0] + self.chip_len*0.5
+        y1 = self.chip_centre[1] - self.chip_wid*0.5
+        y2 = self.chip_centre[1] + self.chip_wid*0.5
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(pol_name, "Rectangle")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(pol_name).set("size", jtypes.JArray(jtypes.JDouble)([ x2-x1, y2-y1 ]) )
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(pol_name).set("pos", jtypes.JArray(jtypes.JDouble)([ x1, y1 ]))
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().run(pol_name) #Makes selection easier...
+        #
+        sel_surface_name = "selSurface"
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().create(sel_surface_name, "ExplicitSelection")
+        self._model.java.component("comp1").geom("geom1").feature("wp1").geom().feature(sel_surface_name).selection("selection").set(pol_name, 1)
+
         #Build geometry
         self._model.java.component("comp1").geom("geom1").run()
         #
-        select_3D_name = f"condAll"
+        select_3D_name = "condAll"
         self._model.java.component("comp1").geom("geom1").create(select_3D_name, "UnionSelection")
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).label(select_3D_name)
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("entitydim", jtypes.JInt(2))
         self._model.java.component("comp1").geom("geom1").feature(select_3D_name).set("input", jtypes.JArray(jtypes.JString)([x[1] for x in self._conds]))
         self._model.java.component("comp1").geom("geom1").run("condAll")
+        #
+        diff_sel_name = "dielectricSurface"
+        self._model.java.component("comp1").geom("geom1").create(diff_sel_name, "DifferenceSelection")
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("entitydim", jtypes.JInt(2))
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("add", jtypes.JArray(jtypes.JString)([f"wp1_{sel_surface_name}"]))
+        self._model.java.component("comp1").geom("geom1").feature(diff_sel_name).set("subtract", jtypes.JArray(jtypes.JString)(["condAll"]))
 
         #Create materials
         if isinstance(substrate_material, Material):
@@ -714,7 +740,7 @@ class COMSOL_Model:
         self._model.java.component("comp1").mesh("mesh1").feature("ftet10").create("size1", "Size")
         mesh_auto = {'Extremely fine' : 1, 'Extra fine' : 2, 'Finer' : 3, 'Fine' : 4, 'Normal' : 5, 'Coarse' : 6, 'Coarser' : 7, 'Extra coarse' : 8, 'Extremely coarse' : 9, 'Custom' : 1}
         assert mesh_structure in mesh_auto, f"Predefined mesh type \'{mesh_structure}\' is not supported/recognised."
-        self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set("hauto", jtypes.JInt(mesh_auto[mesh_structure]));
+        self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set("hauto", jtypes.JInt(mesh_auto[mesh_structure]))
         if mesh_structure == 'Custom':
             self._model.java.component("comp1").mesh("mesh1").feature("ftet10").feature("size1").set('custom', jtypes.JBoolean(True))
             if 'minElementSize' in kwargs:

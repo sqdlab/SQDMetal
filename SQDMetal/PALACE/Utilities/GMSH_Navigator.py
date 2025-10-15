@@ -1,3 +1,6 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 import gmsh
 import matplotlib.pyplot as plt
 import matplotlib
@@ -35,7 +38,7 @@ class GMSH_Navigator:
                 visibility = 1 if show_metals else 0
             elif name.startswith('rf_port'):
                 visibility = 1 if show_metals else 0
-            elif name == 'far_field' or name == 'air_box':
+            elif name.startswith('ff') or name == 'air_box':
                 visibility = 0 if hide_box else 1
             elif name == 'dielectric_substrate':
                 visibility = 0 if hide_substrate else 1
@@ -86,3 +89,52 @@ class GMSH_Navigator:
             file_path = '.'.join(self._file_path.split('.')[:-1]) + '.png'
         fig.savefig(file_path)
         plt.close(fig)
+
+    def plot_mesh(self, filt_names = ['metal', 'rf_port', 'dielectric_gaps'], **kwargs):
+        #Get mesh-coordinates
+        nodeTags, nodeCoords, _ = gmsh.model.mesh.getNodes()
+        elementType = gmsh.model.mesh.getElementType("triangle", 1)
+        faceNodes = gmsh.model.mesh.getElementFaceNodes(elementType, 3)
+        edgeNodes = gmsh.model.mesh.getElementEdgeNodes(elementType)
+        #
+        nodes = np.reshape(nodeCoords, (int(len(nodeCoords)/3), 3))
+        faces = np.reshape(faceNodes, (int(len(faceNodes)/3), 3))
+        edges = np.reshape(edgeNodes, (int(len(edgeNodes)/2), 2))   # noqa: F841 # abhishekchak52: edges is not used
+
+        leNodes = {nodeTags[x]:nodes[x] for x in range(nodeTags.size)}
+
+        #Triplot requires vertices and indices to be array indices...
+        normalised_indices = {x:m for m,x in enumerate(leNodes)}
+        x_vals = nodes[:,0]
+        y_vals = nodes[:,1]
+
+        fig, ax = plt.subplots(1)
+        for m, cur_phys_group in enumerate(self.physical_group_names_entities):
+            found_match = False
+            for filt_name in filt_names:
+                if filt_name in cur_phys_group[0]:
+                    found_match = True
+                    break                
+            if not found_match:
+                continue
+
+            if cur_phys_group[0] == 'dielectric_gaps':
+                col = kwargs.get('col_edge_dielectric_gaps', '#777777FF')
+                colF = kwargs.get('col_face_dielectric_gaps', '#7777777F')
+            elif cur_phys_group[0].startswith('metal'):
+                col = kwargs.get('col_edge_metal', '#2937ffFF')
+                colF = kwargs.get('col_face_metal', '#2937ff7F')
+            elif cur_phys_group[0].startswith('rf_port'):
+                col = kwargs.get('col_edge_rf_port','#9a0000FF')
+                colF = kwargs.get('col_face_rf_port', '#9a00007F')
+
+            filtNodeTags, _ = gmsh.model.mesh.getNodesForPhysicalGroup(*cur_phys_group[2])
+            face_triangles = [[normalised_indices[pt] for pt in x] for x in faces if x[0] in filtNodeTags and x[1] in filtNodeTags and x[2] in filtNodeTags]
+
+            cmap = matplotlib.colors.ListedColormap(colF)
+
+            #Trick adapted from: https://stackoverflow.com/questions/47648453/how-to-get-the-pure-color-filling-for-tripcolor-in-matplotlib
+            ax.tripcolor(x_vals, y_vals, face_triangles, np.ones(len(face_triangles)), edgecolor=col, alpha=None, lw=0.25, cmap=cmap)
+            ax.autoscale()
+
+        return fig, ax

@@ -1,12 +1,13 @@
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
 from SQDMetal.PALACE.Model import PALACE_Model
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
-import numpy as np
 import json
 import os
-import io
 import gmsh
 import shapely
 import pandas as pd
@@ -20,7 +21,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     #Class Variables
     default_user_options = {
                  "fillet_resolution": 4,
-                 "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "solns_to_save": -1,
                  "solver_order": 2,
@@ -34,7 +34,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                  "HPC_Parameters_JSON": "",
                  "fuse_threshold": 1e-9,
                  "gmsh_verbosity": 1,
-                 "threshold": 1e-9
+                 "threshold": 1e-9,
+                 "simplify_edge_min_angle_deg": -1,
+                 'palace_mode': 'local',
+                 'palace_wsl_spack_repo_directory': '~/repo'
     }
 
     # Parent Directory path
@@ -42,10 +45,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     simPC_parent_simulation_dir = "/home/experiment/PALACE/Simulations/input"
 
     #constructor
-    def __init__(self, name, metal_design, sim_parent_directory, mode, meshing, user_options = {}, 
-                                    view_design_gmsh_gui = False, create_files = False):
+    def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
+                                    view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.metal_design = metal_design
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
@@ -55,20 +57,25 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._cur_cap_terminals = []
-        super().__init__(meshing, mode, user_options)
+        super().__init__(meshing, mode, user_options, **kwargs)
 
 
     def prepare_simulation(self):
         '''set-up the simulation'''
 
         if self.meshing == 'GMSH':
-            ggb = GMSH_Geometry_Builder(self.metal_design, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [], self._fine_meshes, self.user_options["fuse_threshold"], threshold=self.user_options["threshold"])
+            ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [],
+                                                               self._fine_meshes, self.user_options["fuse_threshold"],
+                                                               threshold=self.user_options["threshold"],
+                                                               simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"],
+                                                               full_3D_params = self._full_3D_params,
+                                                               boundary_distances = self._boundary_distances)
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
 
-            if self.create_files == True:
+            if self.create_files:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
@@ -81,9 +88,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
                 self._save_mesh_gmsh()
 
-            if self.view_design_gmsh_gui == True:
-                #plot design in gmsh gui
-                pgr.view_design_components()
+
+            # abhishekchak52: commented out for now since pgr is not defined
+            # if self.view_design_gmsh_gui:
+            #     #plot design in gmsh gui
+            #     pgr.view_design_components()
             
                    
         if self.meshing == 'COMSOL':
@@ -94,7 +103,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
             #Create COMSOL capacitance sim object
             simCapMats = COMSOL_Simulation_CapMats(cmsl)
-            cmsl.initialize_model(self.metal_design, [simCapMats], bottom_grounded = True, resolution = 10)
+            cmsl.initialize_model(self._geom_processor.design, [simCapMats], bottom_grounded = True, resolution = 10)     #TODO: Make COMSOL actually compatible rather than assuming Qiskit-Metal designs?
 
             #Add metallic layers
             cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
@@ -110,7 +119,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #save comsol file
             #cmsl.save(self.name)
 
-            if self.create_files == True:
+            if self.create_files:
                 #create directory to store simulation files
                 self._create_directory(self.name)
 
@@ -127,7 +136,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # Directory
@@ -158,7 +167,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
-        if self.create_files == True:
+        if self.create_files:
             parent_simulation_dir = self._check_simulation_mode()
 
             # file_name
@@ -177,10 +186,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         '''
         assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
 
-        minX = (self.chip_centre[0] - self.chip_len*0.5)
-        maxX = (self.chip_centre[0] + self.chip_len*0.5)
-        minY = (self.chip_centre[1] - self.chip_wid*0.5)
-        maxY = (self.chip_centre[1] + self.chip_wid*0.5)
+        minX = (self._geom_processor.chip_centre[0] - self._geom_processor.chip_size_x*0.5)
+        maxX = (self._geom_processor.chip_centre[0] + self._geom_processor.chip_size_x*0.5)
+        minY = (self._geom_processor.chip_centre[1] - self._geom_processor.chip_size_y*0.5)
+        maxY = (self._geom_processor.chip_centre[1] + self._geom_processor.chip_size_y*0.5)
         chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
         
         leGeoms = [chip_bounding_poly] + self._cur_cap_terminals
@@ -188,8 +197,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
         fig, ax = plt.subplots(1)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel(f'Position (m)')
-        ax.set_ylabel(f'Position (m)')
+        ax.set_xlabel('Position (m)')
+        ax.set_ylabel('Position (m)')
         return fig
 
     def create_config_file(self, **kwargs):
@@ -203,7 +212,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #GMSH config file variables
             material_air = gmsh_render_attrs['air_box']
             material_dielectric = gmsh_render_attrs['dielectric']
-            far_field = gmsh_render_attrs['far_field']
+            far_field = [gmsh_render_attrs['far_field'][x] for x in gmsh_render_attrs['far_field']]
             
             self._cur_cap_terminals = gmsh_render_attrs['metalsShapely']
 
@@ -270,10 +279,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                     {
                         "Mesh":  self._mesh_name,
                         "L0": l0,  # mm
-                        "Refinement":
-                        {
-                            "UniformLevels": self.user_options["mesh_refinement"]
-                        },
+                        "Refinement": self._mesh_refinement
                     },
                     "Domains":
                     {
@@ -344,11 +350,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
-        headers = raw_data.columns
-        raw_data = raw_data.to_numpy()
+        headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
+        raw_data = raw_data.to_numpy()[:,1:]    #First column is just the indices...
 
         fig = self.display_conductor_indices()
-        fig.savefig(self._output_data_dir + f'/terminal_indices.png')
+        fig.savefig(self._output_data_dir + '/terminal_indices.png')
         plt.close(fig)
 
         lePlots = self._output_data_dir + '/paraview/electrostatic/electrostatic.pvd'

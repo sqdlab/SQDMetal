@@ -1,4 +1,7 @@
-from qiskit_metal.toolbox_metal.parsing import *
+# Copyright 2025 Prasanna Pakkiam
+# SPDX-License-Identifier: Apache-2.0
+
+from qiskit_metal.toolbox_metal.parsing import parse_value
 from shapely.geometry import Polygon
 import numpy as np
 import shapely
@@ -81,7 +84,7 @@ class PVD_Shadows:
         names = []
         new_metal_layers = [(0, shapely.Polygon(self._chip_bounds))]
         for layer_id in layer_ids:
-            filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
+            filt = gsdf.loc[(gsdf['layer'] == layer_id) & (~gsdf['subtract'])]
             if filt.shape[0] == 0:
                 continue    #Shouldn't trigger...
             metal_polys = shapely.unary_union(filt['geometry'])
@@ -112,7 +115,7 @@ class PVD_Shadows:
         assert len(unique_layers) == 2 or (len(unique_layers) == 1 and len(unique_steps) == 2), \
         "Error: The input data must contain either two unique layers or one layer with two unique steps."
 
-        if plot_overlap == True:
+        if plot_overlap:
             #separate the GeoDataFrame by layer or step
             if len(unique_layers) == 2: 
                 layer1 = gdf[gdf['layers'] == unique_layers[0]]
@@ -130,14 +133,14 @@ class PVD_Shadows:
 
         gdf.boundary.plot(ax=ax, color='black', linestyle='--', linewidth=1, alpha=0.25)
         gdf.plot(ax = ax, column='layers', cmap='jet', alpha=0.35, categorical=True, legend=True)
-        ax.set_xlabel(f'Position (m)')
-        ax.set_ylabel(f'Position (m)')
+        ax.set_xlabel('Position (m)')
+        ax.set_ylabel('Position (m)')
 
     def plot_layer(self, layer_id, mode='separate', **kwargs):
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
-        filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
+        filt = gsdf.loc[(gsdf['layer'] == layer_id) & (~gsdf['subtract'])]
         if filt.shape[0] == 0:
             return
         metal_polys = shapely.unary_union(filt['geometry'])
@@ -171,7 +174,7 @@ class PVD_Shadows:
         qmpl = QiskitShapelyRenderer(None, self.design, None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
-        filt = gsdf.loc[(gsdf['component'] == comp_id) & (gsdf['subtract'] == False)]
+        filt = gsdf.loc[(gsdf['component'] == comp_id) & (~gsdf['subtract'])]
         if filt.shape[0] == 0:
             return
         metal_polys = shapely.unary_union(filt['geometry'])
@@ -218,7 +221,7 @@ class PVD_Shadows:
     def get_all_shadows(self, cur_poly, layer_id, mode='merge', **kwargs):
         list_evap_metals = kwargs.get('list_evap_metals', [(0, shapely.Polygon(self._chip_bounds))])
 
-        if not layer_id in self.evap_profiles:
+        if layer_id not in self.evap_profiles:
             return cur_poly
         profiles = []
         for dict_evap_params in self.evap_profiles[layer_id]:
@@ -511,7 +514,7 @@ class PVD_Shadows:
             qmpl = QiskitShapelyRenderer(None, self.design, None)
             gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
-            filt = gsdf.loc[(gsdf['component'] == comp_id) & (gsdf['subtract'] == False)]
+            filt = gsdf.loc[(gsdf['component'] == comp_id) & (~gsdf['subtract'])]
             if filt.shape[0] == 0:
                 return
             metal_polys = shapely.unary_union(filt['geometry'])
@@ -532,7 +535,7 @@ class PVD_Shadows:
             qmpl = QiskitShapelyRenderer(None, self.design, None)
             gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
-            filt = gsdf.loc[(gsdf['layer'] == layer_id) & (gsdf['subtract'] == False)]
+            filt = gsdf.loc[(gsdf['layer'] == layer_id) & (~gsdf['subtract'])]
             if filt.shape[0] == 0:
                 return
             metal_polys = shapely.unary_union(filt['geometry'])
