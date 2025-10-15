@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import os
 from pprint import pprint
 from datetime import datetime
+import psutil
 
 
 class MultiDieChip:
@@ -59,6 +60,8 @@ class MultiDieChip:
         date_stamp_on_export=True,
         single_circuit_for_simulation=False,
         plot_inline_mpl=True,
+        fillet="85um",
+        radius="100um",
     ):
         """
         Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
@@ -147,6 +150,8 @@ class MultiDieChip:
         self.film_material = film_material
         self.start_freq = frequency_range[0]
         self.num_resonators = num_resonators
+        self.fillet = fillet
+        self.radius = radius
 
         # TODO: add per-die labels for easy ID during fabrication
 
@@ -306,6 +311,11 @@ class MultiDieChip:
             )
 
             # draw resonators
+            '''
+            Add resonators to the design. In progress: can we route better to avoid any bugs (WIP)? Testing filleting options, radius (?), etc. 
+            TODO: finish this function and ensure the results are same as older designs... 
+            There should be an option for qiskit_metal or sqdmetal routing (hopefully). 
+            '''
             resonators, resonator_val, resonator_name, capacitance, inductance = (
                 QUtilities.place_resonators_hanger(
                     design=design,
@@ -326,8 +336,8 @@ class MultiDieChip:
                     min_res_gap="50um",
                     LC_calculations=True,
                     print_statements=print_all_infos,
-                    radius="100um" # TODO: temporary
-                    #fillet="50um"
+                    radius=self.radius,
+                    fillet=self.fillet
                 )
             )
 
@@ -456,10 +466,13 @@ class MultiDieChip:
         palace_binary: str,
         num_eigenmodes=None,
         run_locally=True,
-        leave_free_cpu_num=1,
+        leave_free_cpu_num=None,
+        num_cpus=None,
         fine_mesh_min_max=(14e-6, 250e-6),
         start_freq=None,
         num_saved_solns=None,
+        solver_order=2,
+        solver_tol=1.0e-8,
         **kwargs,
     ):
         """
@@ -469,9 +482,20 @@ class MultiDieChip:
         assert (
             run_locally
         ), "Only local simulations are supported at the moment."
+        # CPU num
+        assert (leave_free_cpu_num or num_cpus) != None, "You must supply either 'num_cpus' or 'leave_free_cpu_num'."
+        if leave_free_cpu_num == None:
+            num_cpus = num_cpus
+        elif num_cpus == None:
+            physical_cores = psutil.cpu_count(logical=False)
+            num_cpus = physical_cores - leave_free_cpu_num, 
+            # print(f"Number of physical CPU cores: {physical_cores}")
+        else:
+            num_cpus = num_cpus
+        # import Palace
         try:
-            from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
-            from SQDMetal.Utilities.Materials import MaterialInterface
+            from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation # type: ignore
+            from SQDMetal.Utilities.Materials import MaterialInterface # type: ignore
 
             print(
                 "SQDMetal Palace modules successfully imported. Continuing with simulation."
@@ -519,15 +543,14 @@ class MultiDieChip:
             "dielectric_material": self.substrate_material,  # choose dielectric material - 'silicon' or 'sapphire'
             "starting_freq": start_freq - 0.5e9,  # starting frequency in Hz
             "number_of_freqs": num_eigenmodes,  # number of eigenmodes to find
-            "solns_to_save": 1,  # number of electromagnetic field visualizations to save
-            "solver_order": 2,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
-            "solver_tol": 1.0e-8,  # error residual tolerance foriterative solver
+            "solns_to_save": num_saved_solns,  # number of electromagnetic field visualizations to save
+            "solver_order": solver_order,  # increasing solver order increases accuracy of simulation, but significantly increases sim time
+            "solver_tol": solver_tol,  # error residual tolerance foriterative solver
             "solver_maxits": 200,  # number of solver iterations
             "mesh_sampling": 130,  # number of points to mesh along a geometry
             "fillet_resolution": 12,  # Number of vertices per quarter turn on a filleted path
             "palace_dir": palace_binary,  # "PATH/TO/PALACE/BINARY",
-            "num_cpus": os.cpu_count()
-            - leave_free_cpu_num,  # number of CPUs to use for simulation
+            "num_cpus": num_cpus,  # number of CPUs to use for simulation
             "mesh_min": fine_mesh_min_max[0]*1e3,  # minimum mesh size in mm
             "mesh_max": fine_mesh_min_max[1]*1e3  # maximum mesh size in mm
         }
@@ -557,6 +580,7 @@ class MultiDieChip:
         self.eigen_sim.create_port_CPW_on_Launcher("lp_L_die0", 30e-6)
         self.eigen_sim.create_port_CPW_on_Launcher("lp_R_die0", 30e-6)
         # Fine-mesh routed paths (resonators, transmission line)
+        # TODO: add option for mesh_around_path (new option that David wrote for CPW meshing)
         self.eigen_sim.fine_mesh_around_comp_boundaries(
             fine_mesh_components_1, min_size=fine_mesh_min_max[0], max_size=fine_mesh_min_max[1]
         )
