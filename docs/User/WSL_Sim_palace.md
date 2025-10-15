@@ -16,6 +16,8 @@ wsl --install Ubuntu-22.04
 
 If this fails (e.g. `WslRegisterDistribution failed`), then run `wsl --update --web-download` first. Restart windows if it has pending updates. Note the username/password supplied during installation.
 
+Note that you may also have to enable `Windows Subsystem for Linux` by checking the corresponding box in *Control Panel*'s *Windows Features*. It may also be required to enable Virtualization in the BIOS Setup, which can generally be accessed by using a manufacturer-specific shortcut key during boot.
+
 From now onwards, when we state *enter WSL*, we mean:
 - Enter powershell (administrative mode)
 - Type `wsl` and hit `ENTER`
