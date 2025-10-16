@@ -271,7 +271,14 @@ class TransmonTapered(BaseQubit):
         trapezoid_top = self.create_trapezoid(0, p.taper_width_top, p.taper_width_base, p.taper_height, (pad_gap / 2 )- float(p.taper_height), p.fillet_radius,p.pad_width/2)
         # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
         trapezoid_top_rotated = draw.rotate(trapezoid_top, 180, origin=(0,pad_gap/4+(pad_gap/2- float(p.taper_height))/2)) # Rotate trapezoid by 180 degrees
-        pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top_rotated)
+
+        # simple union can throw error if geometries do not overlap
+        # So we check if the geometries overlap before union
+        # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top_rotated)
+        pad_top_tmp = draw.union(
+            pad_top_tmp1.buffer(0), 
+            trapezoid_top_rotated.buffer(0)
+        )
 
 
 
