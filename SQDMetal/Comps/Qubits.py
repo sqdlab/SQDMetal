@@ -499,9 +499,8 @@ class TransmonTapered(BaseQubit):
                      width=cpw_width,
                      input_as_norm=True)
 
-        
-###################################################################################################################################
 
+###################################################################################################################################
 
 
 class TransmonTaperedInsets(BaseQubit):
@@ -631,7 +630,8 @@ class TransmonTaperedInsets(BaseQubit):
             cpw_extend='100um',
             pocket_extent='5um',
             pocket_rise='0um',
-            fillet_radius='1um',
+            fillet_radius_inner='6um',
+            fillet_radius_outer='10um',
             fillet_resolution=4,
             pin_y_distance='50um',
             loc_W='+1',  # width location  only +-1 or 0,
@@ -651,7 +651,7 @@ class TransmonTaperedInsets(BaseQubit):
                     options: Dict = None,
                     **kwargs):
         super().__init__(design, name, options, **kwargs)
-        
+
         # Compute and validate slope
         taper_width_top = float(options.get('taper_width_top', '100um')[:-2])
         taper_width_base = float(options.get('taper_width_base', '150um')[:-2])
@@ -674,10 +674,10 @@ class TransmonTaperedInsets(BaseQubit):
             (center_x + half_top, y_offset + height),
             (center_x + half_base, y_offset)
         ]
-        
+
         # Create a Polygon object from the coordinates
         trapezoid_polygon = Polygon(coordinates)
-        
+
         # Convert the coordinates to numpy array
         raw_data = np.array(trapezoid_polygon.exterior.coords)
 
@@ -697,15 +697,15 @@ class TransmonTaperedInsets(BaseQubit):
 
         # Curve the edges of the polygon
         data = QUtilities.calc_filleted_path(raw_data_1, rfillet, 9)
-        
+
         # Create a new Polygon object from the curved coordinates
         trapezoid_with_curved_edges = Polygon(data)
 
         return trapezoid_with_curved_edges
-    
+
     # """Makes standard transmon in a pocket."""
     def make_pocket(self):
-            
+
         # self.p allows us to directly access parsed values (string -> numbers) from the user option
         p = self.p
         #  pcop = self.p.coupled_pads[name]  # parser on connector options
@@ -742,7 +742,6 @@ class TransmonTaperedInsets(BaseQubit):
             trapezoid_top_rotated.buffer(0)
         )
 
-
         # COUPLER REGION - TOP PAD
         # In here you create the teeth part and then you union them as one with the pad. Teeth only belong to top pad.
         coupled_pad = draw.rectangle(coupled_pad_width,
@@ -770,10 +769,11 @@ class TransmonTaperedInsets(BaseQubit):
                     circ_right_top
                 ])
         pad_top = pad_top_tmp
-        #Curving the edges of the teeth where it joins the pad
+        # Curving the edges of the teeth where it joins the pad
+        # outer corners
         pad_top = pad_top.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(-p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
+        # inner corners
         pad_top = pad_top.buffer(-p.fillet_radius, join_style=2, cap_style=3).buffer(p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
-
 
         # BOTTOM PAD
         # Round part for the bottom pad. And again you should unite all of them.
@@ -790,55 +790,92 @@ class TransmonTaperedInsets(BaseQubit):
         # TAPER - Add trapezoid to the bottom pad
         trapezoid_bot = self.create_trapezoid(0, p.taper_width_top, p.taper_width_base, p.taper_height, -(pad_gap) / 2, p.taper_fillet_radius, p.pad_width/2)
         pad_bot = draw.union(pad_bot, trapezoid_bot)
-        pad_bot = pad_bot.buffer(p.fillet_radius, join_style=1).buffer(-p.fillet_radius, join_style=1)
+        # outer corners
+        pad_bot = pad_bot.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(-p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
+        # inner corners
+        pad_bot = pad_bot.buffer(-p.fillet_radius, join_style=2, cap_style=3).buffer(p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
+        # pad_bot = pad_bot.buffer(p.fillet_radius, join_style=1).buffer(-p.fillet_radius, join_style=1)
 
-###############################################################################################
+        ###############################################################################################
         # INSETS - cut into the pads for additional coupling
         # define trapezoid
-        inset = draw.rectangle(p.inset_depth-(2*p.inset_fillet_radius), p.inset_width-(2*p.inset_fillet_radius))
-        inset_rounded = inset.buffer(p.inset_fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=9)
-        inset = inset_rounded
-        # define x and y locations for insets
-        inset_y_top = (pad_gap / 2) + p.taper_height + (p.pad_height / 2) - (p.inset_width / 2)
-        inset_y_bot = -inset_y_top
-        inset_x_left = -(pad_width / 2) - (pad_height / 2) + (p.inset_depth / 2) - p.inset_fillet_radius
-        inset_x_right = -inset_x_left
-        # position trapezoids
-        inset_left_top = draw.translate(inset, inset_x_left, inset_y_top)
-        inset_right_top = draw.translate(inset, inset_x_right, inset_y_top)
-        inset_left_bot = draw.translate(inset, inset_x_left, inset_y_bot)
-        inset_right_bot = draw.translate(inset, inset_x_right, inset_y_bot)
-        # Subtract the insets from the pads
-        pad_top_tmp1 = draw.subtract(pad_top, inset_left_top)
-        pad_top_tmp2 = draw.subtract(pad_top_tmp1, inset_right_top)
-        pad_top = pad_top_tmp2
-        pad_bot_tmp1 = draw.subtract(pad_bot, inset_left_bot)
-        pad_bot_tmp2 = draw.subtract(pad_bot_tmp1, inset_right_bot)
-        pad_bot = pad_bot_tmp2
-        # re-round the new pads
-        pad_bot = pad_bot.buffer(p.fillet_radius, join_style=1).buffer(-p.fillet_radius, join_style=1)
+        if p.inset_depth != 0 and p.inset_width != 0:
+            inset = draw.rectangle(
+                p.inset_depth - (2 * p.inset_fillet_radius),
+                p.inset_width - (2 * p.inset_fillet_radius),
+            )
+            inset_rounded = inset.buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=9,
+            )
+            inset = inset_rounded
+            # define x and y locations for insets
+            inset_y_top = (
+                (pad_gap / 2)
+                + (p.pad_height / 2)
+            )
+            inset_y_bot = -inset_y_top
+            inset_x_left = (
+                -(pad_width / 2)
+                - (pad_height / 2)
+                + (p.inset_depth / 2)
+                - p.inset_fillet_radius
+            )
+            inset_x_right = -inset_x_left
+            # position trapezoids
+            inset_left_top = draw.translate(inset, inset_x_left, inset_y_top)
+            inset_right_top = draw.translate(inset, inset_x_right, inset_y_top)
+            inset_left_bot = draw.translate(inset, inset_x_left, inset_y_bot)
+            inset_right_bot = draw.translate(inset, inset_x_right, inset_y_bot)
+            # Subtract the insets from the pads
+            pad_top_tmp1 = draw.subtract(pad_top, inset_left_top)
+            pad_top_tmp2 = draw.subtract(pad_top_tmp1, inset_right_top)
+            pad_top = pad_top_tmp2
+            pad_bot_tmp1 = draw.subtract(pad_bot, inset_left_bot)
+            pad_bot_tmp2 = draw.subtract(pad_bot_tmp1, inset_right_bot)
+            pad_bot = pad_bot_tmp2
+            # re-round the new pads (inner corners only)
+            pad_bot = pad_bot.buffer(
+                -p.inset_fillet_radius, join_style=2, cap_style=3
+            ).buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=p.fillet_resolution * 3,
+            )
+            pad_top = pad_top.buffer(
+                -p.inset_fillet_radius, join_style=2, cap_style=3
+            ).buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=p.fillet_resolution * 3,
+            )
+            pad_bot = pad_bot.buffer(0)
+            pad_top = pad_top.buffer(0)
 
-###############################################################################################
-        # Pins from thr center of the qubit pads 
-        #Cordinates for the center of the pin
+        ###############################################################################################
+        # Pins from the center of the qubit pads
+        # Coordinates for the center of the pin
         taper_width_top = p.taper_width_top 
-
         top_pin = LineString([
             [0, pad_gap / 2],
             [0, pad_gap / 2 - p.taper_height/2 ]  
               # Extend outward
         ])
-
         bottom_pin = LineString([
             [0, -pad_gap / 2],
             [0, -pad_gap / 2 + p.taper_height/2 ] # Start from pad bottom edge
               # Extend outward
         ])
 
-        print(f"Pins: {top_pin}, {bottom_pin}")
-
-###############################################################################################
-        ##Pins outside the qubit pocket 
+        ###############################################################################################
+        # Pins outside the qubit pocket
         # Define the pin positions relative to (0,0)
         top_pocket_pin = LineString([
             [ p.pocket_width / 2 + p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
@@ -852,17 +889,14 @@ class TransmonTaperedInsets(BaseQubit):
               # Extend outward
         ])
 
-###############################################################################################
-        # rect_jj = draw.LineString([(0, -pad_gap / 2+p.taper_height), (0, +pad_gap / 2-p.taper_height)])
-        # the draw.rectangle representing the josephson junction
-        # rect_jj = draw.rectangle(p.inductor_width, p.inductor_height)
+        ###############################################################################################
+        # Josephson Junction
         rect_jj = draw.LineString([(0, -p.inductor_height / 2), (0, p.inductor_height / 2)])
-        
-        rect_pk = draw.rectangle(p.pocket_width, p.pocket_height)
 
+        # Pocket
+        rect_pk = draw.rectangle(p.pocket_width - 2*p.fillet_radius_gap, p.pocket_height - 2*p.fillet_radius_gap)
         # to curve the edges of the qubit pocket
         rect_pk = rect_pk.buffer(p.fillet_radius_gap, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
-        
 
         # Rotate and translate all qgeometry as needed.
         # Done with utility functions in Metal 'draw_utility' for easy rotation/translation
@@ -873,44 +907,23 @@ class TransmonTaperedInsets(BaseQubit):
         polys = draw.translate(polys, p.pos_x, p.pos_y)
         [rect_jj, pad_top, pad_bot, rect_pk,top_pin, bottom_pin,top_pocket_pin, bottom_pocket_pin] = polys
 
-        # Use the geometry to create Metal qgeometry
+        # Add shapes as qiskit geometries
         self.add_qgeometry('poly', dict(pad_top=pad_top, pad_bot=pad_bot))
         self.add_qgeometry('poly', dict(rect_pk=rect_pk), subtract=True)
-        # self.add_qgeometry('poly', dict(
-        #     rect_jj=rect_jj), helper=True)
         self.add_qgeometry('junction',
                            dict(rect_jj=rect_jj),
                            width=p.inductor_width)
-        
-        #Pins from the center of the qubit pads
+
+        # Pins from the center of the qubit pads
         self.add_pin("pin_island", points=list(top_pin.coords), width=taper_width_top, input_as_norm=True)
         self.add_pin("pin_reservior", points=list(bottom_pin.coords), width=taper_width_top, input_as_norm=True)
 
-         # Add pins to the component
+        # Add pins to the component
         self.add_pin("bottom_pin", points=list(top_pocket_pin.coords), width=taper_width_top)
         self.add_pin("top_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top, input_as_norm=True)
 
-        ##############################################################################################################
-        
-        # # Get the x-coordinates of the qubit pads (same as existing qubit pads)
-        # pad_x_position = p.pad_height / 2  # Center of the qubit pad
-
-        # # Define the new pins' start and end points aligned with the qubit pads
-        # extra_top_pin_start = np.array([pad_x_position, (p.pocket_width / 2) + p.pin_y_distance])
-        # extra_top_pin_end = np.array([pad_x_position, (p.pocket_width  / 2) + p.pin_y_distance + pin_length])
-
-        # extra_bottom_pin_start = np.array([pad_x_position, (-p.pocket_width  / 2) - p.pin_y_distance])
-        # extra_bottom_pin_end = np.array([pad_x_position, (-p.pocket_width  / 2) - p.pin_y_distance - pin_length])
-
-        # print("Pocket Height:", p.pocket_height)
-        # print("Pin Y Distance:", p.pin_y_distance)
-        # print("Expected Pin Locations:", extra_top_pin_start, extra_top_pin_end, extra_bottom_pin_start, extra_bottom_pin_end)
-
-        # # Add the new pins outside the pocket, aligned with the qubit pads
-        # self.add_pin("extra_pin_top", points=[extra_top_pin_start, extra_top_pin_end], width=taper_width_top, input_as_norm=True)
-        # self.add_pin("extra_pin_bottom", points=[extra_bottom_pin_start, extra_bottom_pin_end], width=taper_width_top, input_as_norm=True)
-
         #########################################################################################################################
+
     def make_connection_pads(self):
         # """Makes standard transmon in a pocket."""
         for name in self.options.connection_pads:
@@ -928,50 +941,137 @@ class TransmonTaperedInsets(BaseQubit):
         pc = self.p.connection_pads[name]  # parser on connector options
 
         # define commonly used variables once
+        r=pc.fillet_radius_inner
+        r_outer=pc.fillet_radius_outer
         cpw_width = pc.cpw_width
         cpw_extend = pc.cpw_extend
+        pad_width_fillet = pc.pad_width - 2*r
+        pad_height_fillet = pc.pad_height - 2*r
         pad_width = pc.pad_width
         pad_height = pc.pad_height
         pad_cpw_shift = pc.pad_cpw_shift
         pocket_rise = pc.pocket_rise
         pocket_extent = pc.pocket_extent
 
+        assert pad_width_fillet>=0, f"Error: pad_width {pad_width} is too small for the fillet radius {r}. Either increase the width or decrease the fillet radius of the connection pads."
+        assert pad_height_fillet>=0, f"Error: pad_height {pad_height} is too small for the fillet radius {r}. Either increase the height or decrease the fillet radius of the connection pads."
+        assert pad_width/2 - cpw_width/2 - r >= r_outer, f"Error: fillet_radius_outer {r_outer} is too large for the pad_width {pad_width} and cpw_width {cpw_width}. Either decrease the fillet_radius_outer or increase the pad_width."
+
         loc_W = float(pc.loc_W)
         loc_W, loc_H = float(pc.loc_W), float(pc.loc_H)
-        if float(loc_W) not in [-1., +1., 0] or float(loc_H) not in [-1., +1.]:
+        if float(loc_W) not in [-1.0, +1.0, 0] or float(loc_H) not in [-1.0, +1.0]:
             self.logger.info(
-                'Warning: Did you mean to define a transmon qubit with loc_W and'
-                ' loc_H that are not +1, -1, or 0? Are you sure you want to do this?'
+                "Warning: Did you mean to define a transmon qubit with loc_W and"
+                " loc_H that are not +1, -1, or 0? Are you sure you want to do this?"
             )
 
         # Define the geometry
         # Connector pad
-
         if float(loc_W) != 0:
-            connector_pad = draw.rectangle(pad_width, pad_height,
-                                           -pad_width / 2, pad_height / 2)
-            connector_pad = connector_pad.buffer(pc.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=pc.fillet_resolution) 
+            connector_pad = draw.rectangle(
+                pad_width_fillet, pad_height_fillet, -pad_width / 2, pad_height / 2
+            )
+            connector_pad = connector_pad.buffer(
+                r,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=pc.fillet_resolution,
+            )
+            # add corners
+            if r_outer > 0:
+                print("Skipping: connector pad rounding not yet implemented for W != 0")
+
+                # TODO: fix here
+
+                # # --- Add the small corner box first ---
+                # connector_pad_corners_sq = draw.rectangle(
+                #     r_outer, r_outer,
+                #     -pad_width / 2 - (cpw_width / 2) - (r_outer / 2),
+                #     pad_height + (r_outer / 2)
+                # )
+                # # --- Create a quarter circle to cut the outer corner ---
+                # corner_circle = draw.Point(
+                #     -pad_width / 2 - (cpw_width / 2) - (r_outer),
+                #     pad_height + r_outer
+                # ).buffer(r_outer, resolution=32)
+                # corner_subtract_l = draw.subtract(connector_pad_corners_sq, corner_circle)
+                # # repeat on right side
+                # connector_pad_corners_sq = draw.rectangle(
+                #     r_outer, r_outer,
+                #     -pad_width / 2 - (cpw_width / 2) + (r_outer / 2),
+                #     pad_height + (r_outer / 2)
+                # )
+                # corner_circle = draw.Point(
+                #     -pad_width / 2 - (cpw_width / 2) + (r_outer),
+                #     pad_height + r_outer
+                # ).buffer(r_outer, resolution=32)
+                # corner_subtract_r = draw.subtract(connector_pad_corners_sq, corner_circle)
+                # # Union the corners
+                # connector_pad = draw.union([
+                #     connector_pad, corner_subtract_l, corner_subtract_r
+                # ])
+
             # Connector CPW wire
-            connector_wire_path = draw.wkt.loads(f"""LINESTRING (\
+            connector_wire_path = draw.wkt.loads(
+                f"""LINESTRING (\
                 0 {pad_cpw_shift+cpw_width/2}, \
                 {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
                 {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
                 {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
-                                            )""")
+                                            )"""
+            )
         else:
-            connector_pad = draw.rectangle(pad_width, pad_height, 0,
-                                           pad_height / 2)
-            connector_pad = connector_pad.buffer(pc.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=pc.fillet_resolution)
-            
-        ## Made chnages here to add buffer to curve edges 
-            # connector_pad=connector_pad_1.buffer(p.edge_curve)
+            connector_pad = draw.rectangle(
+                pad_width_fillet, pad_height_fillet, 0, pad_height / 2
+            )
+            connector_pad = connector_pad.buffer(
+                r,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=pc.fillet_resolution,
+            )
+            # add corners
+            if r_outer > 0:
+                # --- Add the small corner box first ---
+                connector_pad_corners_sq = draw.rectangle(
+                    r_outer, r_outer,
+                    -(cpw_width / 2) - (r_outer / 2),
+                    pad_height + (r_outer / 2)
+                )
+                # --- Create a quarter circle to cut the outer corner ---
+                corner_circle = draw.Point(
+                    -(cpw_width / 2) - (r_outer),
+                    pad_height + r_outer
+                ).buffer(r_outer, resolution=32)
+                corner_subtract_l = draw.subtract(connector_pad_corners_sq, corner_circle)
+                # repeat on right side
+                connector_pad_corners_sq = draw.rectangle(
+                    r_outer, r_outer,
+                    (cpw_width / 2) + (r_outer / 2),
+                    pad_height + (r_outer / 2)
+                )
+                corner_circle = draw.Point(
+                    (cpw_width / 2) + (r_outer),
+                    pad_height + r_outer
+                ).buffer(r_outer, resolution=32)
+                corner_subtract_r = draw.subtract(connector_pad_corners_sq, corner_circle)
+                # Union the corners
+                connector_pad = draw.union([
+                    connector_pad, corner_subtract_l, corner_subtract_r
+                ])
+            # CPW path
             connector_wire_path = draw.LineString(
-                [[0, pad_height],
-                 [
-                     0,
-                     (p.pocket_width / 2 - p.pad_height - p.pad_gap / 2 -
-                      pc.pad_gap) + cpw_extend
-                 ]])
+                [
+                    [0, pad_height],
+                    [
+                        0,
+                        (p.pocket_width / 2 - p.pad_height - p.pad_gap / 2 - pc.pad_gap)
+                        + cpw_extend,
+                    ],
+                ]
+            )
 
         # Position the connector, rotate and translate
         objects = [connector_pad, connector_wire_path]
@@ -1005,4 +1105,3 @@ class TransmonTaperedInsets(BaseQubit):
                      points=points[-2:],
                      width=cpw_width,
                      input_as_norm=True)
-
