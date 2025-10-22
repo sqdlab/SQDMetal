@@ -17,6 +17,7 @@ from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
 from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Comps import Markers
+from SQDMetal.Comps.Resonators import ResonatorMeander
 from SQDMetal.Utilities.QubitDesigner import ResonatorQuarterWave
 import matplotlib.pyplot as plt
 
@@ -513,6 +514,46 @@ class QUtilities:
         return metal_polys_all, metal_sel_ids
 
     @staticmethod
+    def plot_all_components(design, **kwargs):
+        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
+        arrow_width = kwargs.get('arrow_width', 0.001)
+        push_to_back = kwargs.get('push_to_back', False)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
+        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
+        # obstacles = shapely.unary_union(gsdf['geometry'])
+        
+        qm_units = QUtilities.get_units(design)
+        filt = gsdf.loc[gsdf['subtract']]
+        space_polys = ShapelyEx.fuse_polygons_threshold(filt['geometry'].buffer(0), kwargs.get('fuse_threshold', 1e-10))
+        space_polys = ShapelyEx.shapely_to_list(space_polys)
+        space_polys = [shapely.affinity.scale(x, xfact=qm_units, yfact=qm_units, origin=(0,0)) for x in space_polys]
+        #
+        chip_size_x = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
+        chip_size_y = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
+        chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+        metal_surface = shapely.geometry.box(chip_centre[0] - 0.5*chip_size_x, chip_centre[1] - 0.5*chip_size_y,
+                                            chip_centre[0] + 0.5*chip_size_x, chip_centre[1] + 0.5*chip_size_y)
+        ground_plane_poly = shapely.difference(metal_surface, shapely.geometry.multipolygon.MultiPolygon(space_polys))
+        ground_plane_poly = shapely.affinity.scale(ground_plane_poly, xfact=1/qm_units, yfact=1/qm_units, origin=(0,0))
+
+        gdf = gpd.GeoDataFrame({'names':['ground_plane']}, geometry=[ground_plane_poly])
+        gsdf_metals = gsdf[~gsdf['subtract']]
+
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1)
+
+        cols = ['#004488']*gsdf_metals.shape[0]
+        gsdf_metals.plot(color=cols, ax=ax)
+        cols = ['#004488']*gdf.shape[0]
+        gdf.plot(color=cols, ax=ax)
+
+        ax.set_facecolor('#DDAA33')
+
+    @staticmethod
     def plot_highlight_component(component_name, design, **kwargs):
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
@@ -989,7 +1030,8 @@ class QUtilities:
         LC_calculations=True,
         print_statements=True,
         fillet="85um",
-        radius="100um"
+        radius="100um",
+        meander_method="qiskit_metal"
     ):
         """
         Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
@@ -1101,11 +1143,6 @@ class QUtilities:
         gap_cur = gap
         radius_cur = radius
 
-        # string values for gap/width (unscaled)
-        width_cur = width
-        gap_cur = gap
-        radius_cur = radius
-
         # Start and end coordinates of the usable transmission line
         tl_start = x0 - tl_extent / 2
         tl_end = x0 + tl_extent / 2
@@ -1144,7 +1181,8 @@ class QUtilities:
             w_float = QUtilities.parse_value_length(width_cur)
             g_float = QUtilities.parse_value_length(gap_cur)
 
-            # calculate length based on frequency
+            # calculate length based on frequency (neglecting kinetic inductance)
+            # TODO: can we integrate kinetic inductance into length calculation? 
             l_fullwave, er_eff, F = cpw_calculations.guided_wavelength(
                 freq=frequencies[i],
                 line_width=w_float,
@@ -1213,32 +1251,57 @@ class QUtilities:
                 fillet_cur = fillet[i]
             else: 
                 fillet_cur = fillet
+            
+            """
+            Add resonators.
+            We need to figure out the best routing options.. bug free and robust.add()
+            TODO: many checks for routing.
+            """
 
-            # set resonator options
-            res_options = Dict(
+            # make resonator
+            # TODO: replace with SQDMetal meander? 
+            if meander_method == "sqdmetal":
+                res = ResonatorMeander(design, 
+                                       res, 
+                                       options=dict(
+                                           pos_x=res_x_um, 
+                                           pos_y=res_y_um, 
+                                           orientation=90,
+                                           total_length=l_quarterwave_mm, 
+                                           trace_width=width_cur, 
+                                           trace_gap=gap_cur, 
+                                           fillet_padding='2um',
+                                           constr_radius=radius_cur, 
+                                           constr_width_max='250um', 
+                                           constr_extend_length=0)
+                                        )
+            else:
+                # set resonator options
+                res_options = Dict(
                             total_length=l_quarterwave_mm, 
                             constr_radius=radius_cur,
                             constr_width_max="0um",
                             trace_width=width_cur, 
                             trace_gap=gap_cur,
                             fillet=fillet_cur,
-                            # spacing="100um", # TODO: remove - this is temporary
-                            fillet_padding="10um",
+                            # fillet_padding="10um",
+                            fillet_padding="0um",
                             start_left=True,
                             layer='1',
+                            # lead = Dict(
+                            #     start_straight='0um'
+                            # ),
                             pin_inputs = Dict(
                                     start_pin=Dict(component=res + "_startPin", 
                                                 pin=start_pin_id),
                                     end_pin=Dict(component=res + "_endPin",     
                                                 pin=end_pin_id))
-                            )
-            
-            # make resonator
-            res = RouteMeander(
-                design,
-                res,
-                options=Dict(**res_options)
-                )
+                        )
+                res = RouteMeander(
+                    design,
+                    res,
+                    options=Dict(**res_options)
+                    )
             
             resonators.append(res)
 

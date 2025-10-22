@@ -16,6 +16,8 @@ wsl --install Ubuntu-22.04
 
 If this fails (e.g. `WslRegisterDistribution failed`), then run `wsl --update --web-download` first. Restart windows if it has pending updates. Note the username/password supplied during installation.
 
+Note that you may also have to enable `Windows Subsystem for Linux` by checking the corresponding box in *Control Panel*'s *Windows Features*. It may also be required to enable Virtualization in the BIOS Setup, which can generally be accessed by using a manufacturer-specific shortcut key during boot.
+
 From now onwards, when we state *enter WSL*, we mean:
 - Enter powershell (administrative mode)
 - Type `wsl` and hit `ENTER`
@@ -44,6 +46,7 @@ sudo apt install libxft-dev libglu1-mesa libxi-dev libxmu-dev libglu1-mesa-dev b
 Make a new directory where we clone all repositories:
 
 ```bash
+wsl
 cd ~
 mkdir repo
 cd repo
@@ -116,3 +119,4 @@ When running Palace simulations, the simulation object receives a dictionary via
 - `'palace_dir':"~/repo/spack/opt/spack/linux-zen2/palace-develop-3ofp7n4fjqj5i6slvei3w6nptzdiwdma/bin/palace"`
 
 where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds `~/repo` to the path found using `find -name palace*` earlier.
+

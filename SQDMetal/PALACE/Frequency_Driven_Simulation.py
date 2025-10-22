@@ -8,13 +8,13 @@ import numpy as np
 import json
 import os
 import pandas as pd
+import re
 
 class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
     #Class Variables
     default_user_options = {
                  "fillet_resolution": 4,
-                 "mesh_refinement":  0,
                  "dielectric_material": "silicon",
                  "solns_to_save": 4,
                  "solver_order": 2,
@@ -104,9 +104,16 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         dielectric = Material(self.user_options["dielectric_material"])
 
         #Process Ports
-        config_ports = self._process_ports(ports)
+        config_ports, config_wports = self._process_ports(ports)
         if self._rf_port_excitation > 0:
-            config_ports[self._rf_port_excitation-1]["Excitation"] = True
+            for cur_port in config_ports:
+                if cur_port['Index'] == self._rf_port_excitation:
+                    cur_port['Excitation'] = True
+                    break
+            for cur_port in config_wports:
+                if cur_port['Index'] == self._rf_port_excitation:
+                    cur_port['Excitation'] = True
+                    break
 
         if isinstance(self.freqs, tuple):
             fStart,fStop,fStep = self.freqs[0]/1e9, self.freqs[1]/1e9, self.freqs[2]/1e9
@@ -130,10 +137,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             {
                 "Mesh":  self._mesh_name,
                 "L0": l0,  
-                "Refinement":
-                {
-                "UniformLevels": self.user_options["mesh_refinement"]
-                },
+                "CrackDisplacementFactor":0,    #TODO: Remove if it is not required for both planar AND full-3D designs with CPW feeds. c.f. https://awslabs.github.io/palace/dev/config/model/
+                "Refinement": self._mesh_refinement
             },
             "Domains":
             {
@@ -159,7 +164,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 {
                     "Attributes": PEC_metals,  # Metal trace
                 },
-                "LumpedPort": config_ports
+                "LumpedPort": config_ports,
+                "WavePort": config_wports
             },
             "Solver":
             {
@@ -182,13 +188,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         }
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
-        if self._ff_type == 'absorbing':
-            config['Boundaries']['Absorbing'] = {
-                    "Attributes": far_field,
-                    "Order": 1
-                }
-        else:
-            config['Boundaries']['PEC']['Attributes'] += far_field
+        self._process_farfield(config, far_field)
         #Add in any surface current sources
         if len(self._current_sources) > 0:
             config['Boundaries']['SurfaceCurrent'] = []
@@ -300,5 +300,41 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         fig.tight_layout()
         fig.savefig(self._output_data_dir + '/s_params.png')
         plt.close(fig)
+
+        return ret_data
+
+    def get_waveport_modes(self):
+        return PALACE_Driven_Simulation.get_waveport_modes_from_file(self.log_location, self._output_data_dir + '/port-S.csv')
+
+    @staticmethod
+    def get_waveport_modes_from_file(filename_outLog, filename_PortScsv):
+        '''
+        Returns the waveport modes by reading the out.log file and its associated port-S.csv file. 
+        '''
+        #The string is usually like:
+        #   Port 1, mode 1: kₙ = 1.737e+02-5.076e-04i m⁻¹
+        lines_with_k = []
+        pattern = re.compile("Port (.*), mode (.*):")
+
+        with open(filename_outLog, "r") as f:
+            for line in f:
+                cur_line = line.rstrip()
+                cur_pattern = pattern.search(cur_line)
+                if cur_pattern:
+                    port_num = cur_pattern.group(1)
+                    mode_num = cur_pattern.group(2)
+                    cur_line = cur_line.split('=')[1].split('i')[0]
+                    lines_with_k.append([int(port_num), int(mode_num), np.complex128(cur_line+'j')])
+        with open(filename_PortScsv, "r") as f:
+            raw_data = pd.read_csv(filename_PortScsv)
+            raw_data = raw_data.to_numpy().T
+            freq_vals = raw_data[0]*1e9
+        num_data_per_freq = int(len(lines_with_k) / freq_vals.size)
+        assert num_data_per_freq*freq_vals.size == len(lines_with_k), "For some reason the number of ports/modes found does not match the number of simulated frequencies. Check that the simulation completed properly."
+        
+        ret_data = []
+        for m,cur_freq in enumerate(freq_vals):
+            for n in range(num_data_per_freq):
+                ret_data.append([cur_freq] + lines_with_k.pop(0))
 
         return ret_data

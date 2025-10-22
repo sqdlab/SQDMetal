@@ -37,6 +37,9 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
         self._study = self.model._add_study("stdCapMat")
         self.phys_es = self.model._add_physics("es")
         self.jc.component("comp1").physics().create(self.phys_es, "Electrostatics", "geom1")
+        if float(self.model._engine.version) > 6.2:
+            self.jc.component("comp1").physics(self.phys_es).create("ccns1", "ChargeConservationSolid", 3)
+            self.jc.component("comp1").physics(self.phys_es).feature("ccns1").selection().all()
         self.jc.component("comp1").physics(self.phys_es).prop("PortSweepSettings").set("useSweep", jtypes.JBoolean(True))
         self.jc.component("comp1").physics(self.phys_es).prop("PortSweepSettings").set("PortParamName", "PortName")
 
@@ -107,4 +110,19 @@ class COMSOL_Simulation_CapMats(COMSOL_Simulation_Base):
                 capMatFull[:,cur_port] = capCol[:,cur_port]
             
             self.jc.result().numerical().remove("gmev1")
+        
         return capMatFull
+
+    def get_DoFs(self):
+        self.jc.result().numerical().create("gev1", "EvalGlobal")
+        self.jc.result().numerical("gev1").set("data", self.dset_name)
+        self.jc.result().numerical("gev1").set("expr", jtypes.JArray(jtypes.JString)(["numberofdofs"]))
+        self.jc.result().table().create("tbl1", "Table")
+        self.jc.result().numerical("gev1").set("table", "tbl1")
+        self.jc.result().numerical("gev1").computeResult()
+        self.jc.result().numerical("gev1").setResult()
+        dofs = int(np.array(self.jc.result().numerical("gev1").computeResult())[0,0,0])
+
+        self.jc.result().table().remove("tbl1")
+        self.jc.result().numerical().remove("gev1")
+        return dofs
