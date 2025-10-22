@@ -320,7 +320,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
 
     @staticmethod
-    def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = []):
+    def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = [], Lj = []):
         '''Method to extract Hamiltonian from eigenmode simulation using the EPR method'''
         
         #retrieve data from the simulation files
@@ -375,12 +375,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         delta = np.ones((np.shape(omega)[0], np.shape(omega)[0])) #create delta/detuning matrix
 
         #Populate delta/detuning matrix
-        for j in range(np.shape(omega)[0]):
+        for j in range(np.shape(omega)[0]):  
             delta[:,j] = omega_vector - omega_vector[j]
 
         #Get Ej for each junction
-        Lj = np.matrix([[13e-9], [9e-9]]) ##### need function to extract this #####
-        Ej = np.diag((phi0**2 / Lj).A1)
+        Lj_matrix = np.matrix(Lj) ##### need function to extract this #####
+        Ej = np.diag((phi0**2 / Lj_matrix).A1)
 
         #Calcultate Kerr matrix: chi = hbar/4 * (omega*P) * inv_Ej * (omega*P)^T
         ###Please note all these values are angular frequencies radians/sec, to get frequencies in Hertz divide by 2*pi###
