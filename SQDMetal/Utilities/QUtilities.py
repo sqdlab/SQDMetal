@@ -514,6 +514,46 @@ class QUtilities:
         return metal_polys_all, metal_sel_ids
 
     @staticmethod
+    def plot_all_components(design, **kwargs):
+        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
+        arrow_width = kwargs.get('arrow_width', 0.001)
+        push_to_back = kwargs.get('push_to_back', False)
+
+        qmpl = QiskitShapelyRenderer(None, design, None)
+        gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
+        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
+        # obstacles = shapely.unary_union(gsdf['geometry'])
+        
+        qm_units = QUtilities.get_units(design)
+        filt = gsdf.loc[gsdf['subtract']]
+        space_polys = ShapelyEx.fuse_polygons_threshold(filt['geometry'].buffer(0), kwargs.get('fuse_threshold', 1e-10))
+        space_polys = ShapelyEx.shapely_to_list(space_polys)
+        space_polys = [shapely.affinity.scale(x, xfact=qm_units, yfact=qm_units, origin=(0,0)) for x in space_polys]
+        #
+        chip_size_x = QUtilities.parse_value_length(design.chips['main']['size']['size_x'])
+        chip_size_y = QUtilities.parse_value_length(design.chips['main']['size']['size_y'])
+        chip_centre = [QUtilities.parse_value_length(design.chips['main']['size'][x]) for x in ['center_x', 'center_y', 'center_z']]
+        metal_surface = shapely.geometry.box(chip_centre[0] - 0.5*chip_size_x, chip_centre[1] - 0.5*chip_size_y,
+                                            chip_centre[0] + 0.5*chip_size_x, chip_centre[1] + 0.5*chip_size_y)
+        ground_plane_poly = shapely.difference(metal_surface, shapely.geometry.multipolygon.MultiPolygon(space_polys))
+        ground_plane_poly = shapely.affinity.scale(ground_plane_poly, xfact=1/qm_units, yfact=1/qm_units, origin=(0,0))
+
+        gdf = gpd.GeoDataFrame({'names':['ground_plane']}, geometry=[ground_plane_poly])
+        gsdf_metals = gsdf[~gsdf['subtract']]
+
+        if 'ax' in kwargs:
+            ax = kwargs['ax']
+        else:
+            fig, ax = plt.subplots(1)
+
+        cols = ['#004488']*gsdf_metals.shape[0]
+        gsdf_metals.plot(color=cols, ax=ax)
+        cols = ['#004488']*gdf.shape[0]
+        gdf.plot(color=cols, ax=ax)
+
+        ax.set_facecolor('#DDAA33')
+
+    @staticmethod
     def plot_highlight_component(component_name, design, **kwargs):
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
