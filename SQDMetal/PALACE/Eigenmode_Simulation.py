@@ -254,6 +254,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
     def retrieve_mode_port_EPR(self):
         return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
 
+    def calculate_hamiltonian_parameters_EPR(self, modes_to_compare = [], print_output=True):
+        return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare = [], print_output=print_output)
+
     @staticmethod
     def retrieve_EPR_data_from_file(json_sim_config, output_directory):
         if os.path.exists(output_directory + '/config.json'):
@@ -311,7 +314,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
 
     @staticmethod
-    def calculate_hamiltonian_parameters_EPR(directory, modes_to_compare = [], Lj = []):
+    def calculate_hamiltonian_parameters_EPR_from_files(directory, config_json_path, modes_to_compare = [], print_output=True):
         '''Method to extract Hamiltonian from eigenmode simulation using the EPR method'''
         
         #retrieve data from the simulation files
@@ -369,8 +372,16 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         for j in range(np.shape(omega)[0]):  
             delta[:,j] = omega_vector - omega_vector[j]
 
+        #Extract port-inductances
+        with open(config_json_path, "r") as f:
+            config_json = json.loads(f.read())
+        Lj = []
+        for cur_port in config_json['Boundaries']['LumpedPort']:
+            if 'L' in cur_port and cur_port['L'] > 0:
+                Lj.append(cur_port['L'])
+            #Note that Palace only stores the port-EPR values for inductive ports.
         #Get Ej for each junction
-        Lj_matrix = np.matrix(Lj) ##### need function to extract this #####
+        Lj_matrix = np.matrix(Lj)
         Ej = np.diag((phi0**2 / Lj_matrix).A1)
 
         #Calcultate Kerr matrix: chi = hbar/4 * (omega*P) * inv_Ej * (omega*P)^T
@@ -391,39 +402,48 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
 
         #create dataframes and print for user to see
-        print('Simulation Mode Frequencies:')
         freq_df = pd.DataFrame(frequencies / (1e9), dataframe_label_mode, ['Freq (GHz)'])
-        print(freq_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Simulation Mode Frequencies:')
+            print(freq_df)
+            print('______________________________')
+            print('\n')
 
-        print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for lamb shift')
         freq_renorm_df = pd.DataFrame(renormalised_freqs, dataframe_label_mode, ['Freq (GHz)'])
-        print(freq_renorm_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for lamb shift')
+            print(freq_renorm_df)
+            print('______________________________')
+            print('\n')
 
-        print('Participation Ratios:')
         ratios_df = pd.DataFrame(np.abs(participation_ratios), dataframe_label_mode, dataframe_label_junc)
-        print(ratios_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Participation Ratios:')
+            print(ratios_df)
+            print('______________________________')
+            print('\n')
 
         chi_anharm_df = pd.DataFrame(chi_anharm, dataframe_label_mode, dataframe_label_mode)
-        print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
-        print(chi_anharm_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
+            print(chi_anharm_df)
+            print('______________________________')
+            print('\n')
 
         lamb_shift_df = pd.DataFrame(lamb_shift_freq, dataframe_label_mode, ['Lamb Shift (MHz)'])
-        print('Lamb Shifts:')
-        print(lamb_shift_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Lamb Shifts:')
+            print(lamb_shift_df)
+            print('______________________________')
+            print('\n')
 
         delta_df = pd.DataFrame(delta_freq, dataframe_label_mode, dataframe_label_mode)
-        print('Detuning (GHz):')
-        print(delta_df)
-        print('______________________________')
-        print('\n')
+        if print_output:
+            print('Detuning (GHz):')
+            print(delta_df)
+            print('______________________________')
+            print('\n')
+
+        #TODO: Strongly consider refactoring these keys/values...
+        return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
 

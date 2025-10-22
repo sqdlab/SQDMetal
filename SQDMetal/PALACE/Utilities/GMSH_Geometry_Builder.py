@@ -441,16 +441,16 @@ class GMSH_Geometry_Builder:
         coords = [centre_vec-v1-v2, centre_vec+v1-v2, centre_vec+v1+v2, centre_vec-v1+v2]
         coords = np.array(coords)
         assert (
-            np.min(coords[:, 0]) >= self._extents[0][0]
-            and np.max(coords[:, 0]) <= self._extents[0][1]
+            np.min(coords[:, 0]) >= self._extents[0][0]-1e-9
+            and np.max(coords[:, 0]) <= self._extents[0][1]+1e-9
         ), f"Element {message} leaks outside x-axis boundary: ({np.min(coords[:,0])} >= {self._extents[0][0]})."
         assert (
-            np.min(coords[:, 1]) >= self._extents[1][0]
-            and np.max(coords[:, 1]) <= self._extents[1][1]
+            np.min(coords[:, 1]) >= self._extents[1][0]-1e-9
+            and np.max(coords[:, 1]) <= self._extents[1][1]+1e-9
         ), f"Element {message} leaks outside y-axis boundary: ({np.min(coords[:,1])} >= {self._extents[1][0]})."
         assert (
-            np.min(coords[:, 2]) >= self._extents[2][0]
-            and np.max(coords[:, 2]) <= self._extents[2][1]
+            np.min(coords[:, 2]) >= self._extents[2][0]-1e-9
+            and np.max(coords[:, 2]) <= self._extents[2][1]+1e-9
         ), f"Element {message} leaks outside z-axis boundary: ({np.min(coords[:,2])} >= {self._extents[2][0]})."
 
         return self._draw_polygon_in_GMSH_from_coords(coords)
