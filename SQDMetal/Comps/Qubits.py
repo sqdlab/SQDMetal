@@ -592,7 +592,7 @@ class TransmonTaperedInsets(BaseQubit):
     default_options = Dict(
         # JJ box
         inductor_width='20um',
-        inductor_height='44um',
+        inductor_height='35um',
         # Pins
         chrgln_pin_x_offset = '30um',  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset = '50um', # User-defined vertical distance from the pocket edge
@@ -605,8 +605,8 @@ class TransmonTaperedInsets(BaseQubit):
         pocket_height='800um',
         pocket_lower_tighten = '120um',
         # Tapered part of qubit
-        taper_width_top="2um",
-        taper_width_base="150um",
+        taper_width_top="50um",
+        taper_width_base="200um",
         taper_height="25um",
         taper_fillet_radius="3um",
         fillet_resolution_tapered=16,
@@ -620,10 +620,11 @@ class TransmonTaperedInsets(BaseQubit):
         fillet_radius_gap="50um",
         fillet_resolution_gap=16,
         # Coupler - resonator
-        coupled_pad_height='150um',
-        coupled_pad_width='20um',
-        coupled_pad_gap='50um',
+        coupled_pad_height='0um',
+        coupled_pad_width='0um',
+        coupled_pad_gap='0um',
         # orientation = 90 has dipole aligned along the +X axis, while 0 aligns to the +Y axis
+        orientation=0,
         _default_connection_pads=Dict(
             pad_gap="120um",
             pad_height="30um",
@@ -632,9 +633,7 @@ class TransmonTaperedInsets(BaseQubit):
             pad_cpw_extent='25um',
             cpw_width='10um',
             cpw_gap='6um',
-            # edge_curve=0.1,
-            # : cpw_extend: how far into the ground to extend the CPW line from the coupling pads
-            cpw_extend='100um',
+            cpw_extend='200um',
             pocket_extent='5um',
             pocket_rise='0um',
             fillet_radius_inner="15um",
