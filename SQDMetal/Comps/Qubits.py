@@ -598,7 +598,7 @@ class TransmonTaperedInsets(BaseQubit):
         chrgln_pin_y_offset = '50um', # User-defined vertical distance from the pocket edge
         # Pads
         pad_gap="85um",
-        pad_width="700um",
+        pad_width="800um",
         pad_height="110um",
         # Pocket
         pocket_width='1000um',
@@ -616,9 +616,9 @@ class TransmonTaperedInsets(BaseQubit):
         inset_fillet_radius='10um',
         # Fillet settings
         fillet_radius='50um',     
-        fillet_resolution=16,
+        fillet_resolution=8,
         fillet_radius_gap="50um",
-        fillet_resolution_gap=16,
+        fillet_resolution_gap=8,
         # Coupler - resonator
         coupled_pad_height='0um',
         coupled_pad_width='0um',
