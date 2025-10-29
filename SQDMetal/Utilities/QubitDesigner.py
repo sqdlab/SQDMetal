@@ -268,7 +268,15 @@ class FloatingTransmonDesigner(TransmonBase):
     def __init__(self, resonator):
         assert resonator.is_res_parallelLC(), "Resonator must be in a parallel-coupled arrangment."
         self.resonator = resonator
-    
+    """
+    Symbol conventions
+    C_g1 : Pad 1 to resonator
+    C_g2 : Pad 2 to resonator
+    C_q1 : Pad 1 to ground
+    C_q2 : Pad 2 to ground
+    C_J  : Pad mutual inductance + JJ capacitance 
+    """
+
     def get_free_params(self):
         return {'fQubit':(1,20e9),
                 'C_q1':(1e-18,1e-9), 'C_q2':(1e-18,1e-9),

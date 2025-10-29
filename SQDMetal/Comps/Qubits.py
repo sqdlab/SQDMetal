@@ -582,7 +582,7 @@ class TransmonTaperedInsets(BaseQubit):
                 |                                |
                 |                                |
             -1  |________________________________|                          
-
+                                    ^^^^ pocket lower tighten
     .. meta::
         Transmon Pocket Tapered With Insets
 
@@ -590,37 +590,44 @@ class TransmonTaperedInsets(BaseQubit):
 
     # Default drawing options
     default_options = Dict(
-        pad_gap='100um',
+        # JJ box
         inductor_width='20um',
-        inductor_height='5um',
-        pad_width='400um',
-        pad_height='90um',
-        pocket_width='650um',
-        pocket_height='650um',
-        fillet_radius_gap='30um',
-        fillet_resolution=4,
+        inductor_height='44um',
+        # Pins
         chrgln_pin_x_offset = '30um',  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset = '50um', # User-defined vertical distance from the pocket edge
+        # Pads
+        pad_gap="85um",
+        pad_width="700um",
+        pad_height="110um",
+        # Pocket
+        pocket_width='1000um',
+        pocket_height='800um',
+        pocket_lower_tighten = '120um',
         # Tapered part of qubit
-        taper_width_top='100um',
-        taper_width_base='150um',
-        taper_height='30um',
-        taper_fillet_radius='50um',
+        taper_width_top="2um",
+        taper_width_base="150um",
+        taper_height="25um",
+        taper_fillet_radius="3um",
+        fillet_resolution_tapered=16,
         # Insets
-        inset_width='100um',
-        inset_depth='50um',
+        inset_width='0um',
+        inset_depth='100um',
         inset_fillet_radius='10um',
-        # General fillet radius for other edges
-        fillet_radius='1um',     
-        # coupled_pad belongs to the teeth part. Teeth will have same height/width and are symmetric.
+        # Fillet settings
+        fillet_radius='50um',     
+        fillet_resolution=16,
+        fillet_radius_gap="50um",
+        fillet_resolution_gap=16,
+        # Coupler - resonator
         coupled_pad_height='150um',
         coupled_pad_width='20um',
-        coupled_pad_gap='50um',  # One can arrange the gap between the teeth.
+        coupled_pad_gap='50um',
         # orientation = 90 has dipole aligned along the +X axis, while 0 aligns to the +Y axis
         _default_connection_pads=Dict(
-            pad_gap='15um',
-            pad_width='20um',
-            pad_height='150um',
+            pad_gap="120um",
+            pad_height="30um",
+            pad_width="200um",
             pad_cpw_shift='0um',
             pad_cpw_extent='25um',
             cpw_width='10um',
@@ -630,12 +637,12 @@ class TransmonTaperedInsets(BaseQubit):
             cpw_extend='100um',
             pocket_extent='5um',
             pocket_rise='0um',
-            fillet_radius_inner='6um',
-            fillet_radius_outer='10um',
-            fillet_resolution=4,
+            fillet_radius_inner="15um",
+            fillet_radius_outer="75um",
+            fillet_resolution=16,
             pin_y_distance='50um',
-            loc_W='+1',  # width location  only +-1 or 0,
-            loc_H='+1',  # height location  only +-1 or 0
+            loc_W='0',  # width location  only +-1 or 0,
+            loc_H='1',  # height location  only +-1 or 0
         ))
     # """Default drawing options"""
 
@@ -645,20 +652,20 @@ class TransmonTaperedInsets(BaseQubit):
                               _qgeometry_table_junction='True')
     # """Component metadata"""
 
-    # TOOLTIP = """Transmon pocket with teeth pads."""
+    # TOOLTIP = """Transmon pocket with tapering."""
     def __init__(self, design,
                     name: str = None,
                     options: Dict = None,
                     **kwargs):
         super().__init__(design, name, options, **kwargs)
 
-        # Compute and validate slope
-        taper_width_top = float(options.get('taper_width_top', '100um')[:-2])
-        taper_width_base = float(options.get('taper_width_base', '150um')[:-2])
-        taper_height = float(options.get('taper_height', '30um')[:-2])
+        # # Compute and validate slope
+        # taper_width_top = float(options.get('taper_width_top', '100um')[:-2])
+        # taper_width_base = float(options.get('taper_width_base', '150um')[:-2])
+        # taper_height = float(options.get('taper_height', '30um')[:-2])
 
-        computed_slope = (2 * taper_height) / (taper_width_base - taper_width_top)
-        assert computed_slope < 0.4, f"Slope {computed_slope:.2f} is too steep! Adjust taper dimensions for the slope to be less than 0.4."
+        #computed_slope = (2 * taper_height) / (taper_width_base - taper_width_top)
+        #assert computed_slope < 2, f"Slope {computed_slope:.2f} is too steep! Adjust taper dimensions for the slope to be less than 0.4."
 
     def make(self):   
         self.make_pocket()
@@ -894,7 +901,11 @@ class TransmonTaperedInsets(BaseQubit):
         rect_jj = draw.LineString([(0, -p.inductor_height / 2), (0, p.inductor_height / 2)])
 
         # Pocket
-        rect_pk = draw.rectangle(p.pocket_width - 2*p.fillet_radius_gap, p.pocket_height - 2*p.fillet_radius_gap)
+        rect_pk = draw.rectangle(p.pocket_width - 2*p.fillet_radius_gap, 
+                                 p.pocket_height - p.pocket_lower_tighten - 2*p.fillet_radius_gap, 
+                                 yoff=p.pocket_lower_tighten/2
+                                 )
+
         # to curve the edges of the qubit pocket
         rect_pk = rect_pk.buffer(p.fillet_radius_gap, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
 

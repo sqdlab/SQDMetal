@@ -180,7 +180,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
-    def display_conductor_indices(self):
+    def display_conductor_indices(self, save=False):
         '''
         Plots a coloured visualisation of the metallic conductors and their corresponding row/column indices of the capacitance matrix.
         '''
@@ -199,6 +199,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
         ax.set_xlabel('Position (m)')
         ax.set_ylabel('Position (m)')
+
+        if save==True:
+            fig.savefig("ConductorIndicides.png")
+
+
         return fig
 
     def create_config_file(self, **kwargs):

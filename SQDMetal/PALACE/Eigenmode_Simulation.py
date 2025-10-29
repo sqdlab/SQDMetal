@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 import os
+import io
+import sys
 import pandas as pd
 
 class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
@@ -401,6 +403,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         delta_freq = delta / (2 * np.pi * 1e9) 
         renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
 
+        #capture output for saving
+        output_buffer = io.StringIO()
+        original_stdout = sys.stdout
+        sys.stdout = output_buffer
+
         #create dataframes and print for user to see
         freq_df = pd.DataFrame(frequencies / (1e9), dataframe_label_mode, ['Freq (GHz)'])
         if print_output:
@@ -443,6 +450,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             print(delta_df)
             print('______________________________')
             print('\n')
+
+        #save output to file
+        sys.stdout = original_stdout
+        output_text = output_buffer.getvalue()
+        with open(directory + '/EPR_params.txt', 'w') as file:
+            file.write(output_text)
 
         #TODO: Strongly consider refactoring these keys/values...
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
