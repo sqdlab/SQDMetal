@@ -548,6 +548,18 @@ class COMSOL_Simulation_RFsParameters(COMSOL_Simulation_Base):
 
         return ret_vals
 
+    def get_interface_real_square_surface_integrals(self, field_type):
+        allowed_types = ['Ex', 'Ey', 'Ez', 'Bx', 'By', 'Bz', 'Dx', 'Dy', 'Dz', 'Hx', 'Hy', 'Hz']
+        assert field_type in allowed_types, f"The argument field_type must be in {allowed_types}"
+
+        ret_vals = {}
+        for int_name in ["intMetals", "intDielectric"]:
+            self.jc.result().numerical(int_name).set("expr", jtypes.JArray(jtypes.JString)([f"real(conj(emw.{field_type})*emw.{field_type})"]))
+            cur_res = self.jc.result().numerical(int_name).computeResult()
+            ret_vals[int_name] = cur_res[0][0][0]
+        
+        return ret_vals
+
     def run_only_eigenfrequencies(self, return_dofs=False):
         #TODO: Check it is in eigenmode type and find a better solution than this... This basically evaluates a table and then extracts the first column
         #which happens to hold the simulated eigenfrequencies...
