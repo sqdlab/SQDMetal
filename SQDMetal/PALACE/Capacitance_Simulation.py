@@ -388,7 +388,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         return raw_data
     
     def floatingTransmon_calc_params(self, conductor_indices=None, print_all_capacitances=False, 
-                                     res=None, qubit_freq=None, C_J=0):
+                                     res=None, qubit_freq=None, C_J=0, Z0_feedline=50):
         '''
         Calculate the charging energy E_C from the capacitance matrix
         for a floating transmon qubit. Can be either an isolated
@@ -403,9 +403,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             (ground, pad 1, pad 2, resonator, feedline)
 
         '''
-        self._num_conductors = len(self._cur_cap_terminals)
-        # print(f"Num conductors: {self._num_conductors}") 
-        
+        # Constants
+        e = 1.602176634e-19  # Coulombs
+        h = 6.62607015e-34   # J·s     
         # Fetch capacitance matrix (if needed)
         if self.cap_matrix is None:
             raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
@@ -413,7 +413,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         capMat = self.cap_matrix.values
         if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
             capMat = capMat[:, 1:]
-
+        # detect number of conductors
+        self._num_conductors = len(capMat[0])
+        print(f"Proceeding with calculations for {self._num_conductors} conductors...\n")
         #default indeces
         default_indeces = {
             'ground': 0,
@@ -422,7 +424,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             'res': 3,
             'feed': 4
         }
-        #Update indeces if given
+        #Update indices if given
         if conductor_indices:
             default_indeces.update(conductor_indices)
         idx_ground = default_indeces['ground']
@@ -454,20 +456,22 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             C2_readout = abs(capMat[idx_pad2, idx_res])
             C1_feed    = abs(capMat[idx_pad1, idx_feed])
             C2_feed    = abs(capMat[idx_pad2, idx_feed])
-
+            # Resonator couplings (for kappa)
+            C_rf       = abs(capMat[idx_res, idx_feed])
+            C_rg       = abs(capMat[idx_res, idx_ground])
+            C_rp1      = abs(capMat[idx_res, idx_pad1])
+            C_rp2      = abs(capMat[idx_res, idx_pad2])
+        
+        ## CALCULATIONS
         # Calculate total C
-        e = 1.602176634e-19  # Coulombs
-        h = 6.62607015e-34   # J·s
         C_sigma = (((C1_ground+C1_readout)*(C2_ground+C2_readout)) \
                   / (C1_ground+C1_readout+C2_ground+C2_readout)) + C12 + C_J
-
         # Compute charging energy E_C
         E_C_J = e**2 / (2 * C_sigma)
         E_C_GHz = E_C_J / h / 1e9
-
         # Calculate qubit parameters (if possible)
         if (res is not None) and (self._num_conductors >= 4) and (qubit_freq is not None):
-            # Perform qubit calculator for chi, g, Delta etc.
+            # Use qubit calculator for chi, g, Delta etc.
             params = FloatingTransmonDesigner(res).optimise(
                 {
                     "fQubit": qubit_freq,
@@ -482,17 +486,38 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 },
                 print_results=False
             )
-            g_MHz = params['g_Hz'] * 1e-6
-            chi_MHz = params['chi_Hz'] * 1e-6
+            g_MHz = -params['g_Hz'] * 1e-6
+            chi_MHz = -params['chi_Hz'] * 1e-6
             Delta_GHz = params['Delta_Hz'] * 1e-9
             anh_MHz = params['anh_Hz'] * 1e-6
+            f_r_Hz = res.get_res_frequency() # Hz
+            # Calculate kappa, Purcell decay (if applicable)
+            if self._num_conductors >= 5:
+                C_r = C_rg + C_rp1 + C_rp2 # res capacitance (except feedline)
+                C_c = C_rf # res-feedline mutual capacitance
+                # External quality factor and linewidth (frequency units)
+                Q_c = C_r / (2 * np.pi * f_r_Hz * Z0_feedline * C_c**2)
+                kappa_MHz = f_r_Hz / Q_c * 1e-6
+                T1p_ms = ((1 / (kappa_MHz*1e6)) * ((Delta_GHz * 1e9)**2 / (g_MHz*1e6)**2)) * 1e3
+            else:
+                kappa_MHz = None
+                T1p_ms = None
         else:
-            print("Could not calculate g, chi, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
+            print("Could not calculate g, chi, kappa, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
             g_MHz = 'N/A'
             chi_MHz = 'N/A'
             Delta_GHz = 'N/A'
             anh_MHz = 'N/A'
-            
+        
+        # Calculate junction parameters for target frequency (if applicable)
+        if qubit_freq:
+            phi_0 = h / (2*e) 
+            E_J_GHz = (h * qubit_freq + E_C_J)**2 / (8 * E_C_J) / h / 1e9
+            L_J_nH = phi_0**2 / (4 * np.pi**2 * h * E_J_GHz)
+        else:
+            E_J_GHz = 'N/A'
+            L_J_nH = 'N/A'
+
         if print_all_capacitances:
             print("Capacitance Results")
             print("--------------------")
@@ -503,17 +528,30 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'C1-Feedline':<16s} = {C1_feed * 1e15:>10.3f} fF")
             print(f"{'C2-Feedline':<16s} = {C2_feed * 1e15:>10.3f} fF")
             print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
-            print()  # blank line for readability
+            print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF\n")
 
         # Print charging energy
         print("Circuit Parameters")
         print("-------------------")
-        print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF")
-        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz\n")
+        if (res is not None) and (qubit_freq is not None):
+            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.1f} GHz")
+            print(f"{'f_qubit':<16s} = {qubit_freq * 1e-9:>10.1f} GHz")
+        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz")
         print(f"{'g':<16s} = {g_MHz if isinstance(g_MHz, str) else f'{g_MHz:>10.3f}'} MHz")
         print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
-        print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz\n")
+        print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
+        if kappa_MHz is not None:
+            print(f"{'kappa':<16s} = {kappa_MHz:>10.1f} MHz")
+            print(f"{'T_1,P':<16s} = {T1p_ms:>10.1f} ms")
+        print()
+
+        # Print required junction parameters for desired frequency
+        if qubit_freq:
+            print(f"Target Junction Parameters\n (for f_qubit = {qubit_freq * 1e-9:.1f} GHz)")
+            print("--------------------------")
+            print(f"{'E_J':<16s} = {E_J_GHz:>10.1f} GHz")
+            print(f"{'L_J':<16s} = {L_J_nH:>10.1f} nH")
 
         return {
             # Energies and key circuit parameters
