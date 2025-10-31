@@ -10,6 +10,7 @@ import json
 import os
 import gmsh
 import shapely
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
@@ -57,6 +58,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._cur_cap_terminals = []
+        self._num_conductors = 0
+        self.cap_matrix = None
         super().__init__(meshing, mode, user_options, **kwargs)
 
 
@@ -355,6 +358,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
+        self.cap_matrix = raw_data
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()[:,1:]    #First column is just the indices...
 
@@ -381,5 +385,105 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 print(f"Error in plotting: {e}")
 
         return raw_data
+    
+    def floatingTransmon_EC_from_capMat(self, conductor_indices=None, print_all_capacitances=False, c_j=0):
+        '''
+        Calculate the charging energy E_C from the capacitance matrix
+        for a floating transmon qubit. Can be either an isolated
+        floating transmon or a floating transmon coupled to a resonator,
+        depending on the number of conductors in the capacitance matrix.
+
+        3 conductors: isolated floating transmon 
+            (pad 1, pad 2, ground)
+        4 conductors: floating transmon coupled to resonator
+            (ground, pad 1, pad 2, resonator)
+        5 conductors: floating transmon coupled to resonator-feedline
+            (ground, pad 1, pad 2, resonator, feedline)
+
+        '''
+        
+        self._num_conductors = len(self._cur_cap_terminals)
+        # print(f"Num conductors: {self._num_conductors}") 
+        
+        # Fetch capacitance matrix (if needed)
+        if self.cap_matrix is None:
+            raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
+            self.cap_matrix = raw_data
+        capMat = self.cap_matrix.values
+        if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
+            capMat = capMat[:, 1:]
+
+        #default indeces
+        default_indeces = {
+            'ground': 0,
+            'pad1': 1,
+            'pad2': 2,
+            'res': 3,
+            'feed': 4
+        }
+        #Update indeces if given
+        if conductor_indices:
+            default_indeces.update(conductor_indices)
+        idx_ground = default_indeces['ground']
+        idx_pad1   = default_indeces['pad1']
+        idx_pad2   = default_indeces['pad2']
+        idx_res    = default_indeces['res']
+        idx_feed   = default_indeces['feed']
+
+        # define ground and pad capacitance (all cases)
+        C12 = abs(capMat[idx_pad1, idx_pad2])
+        C1_ground  = abs(capMat[idx_pad1, idx_ground])
+        C2_ground  = abs(capMat[idx_pad2, idx_ground])
+        
+        # 3 conductor case: qubit only
+        if self._num_conductors == 3:
+            C1_readout = 0
+            C2_readout = 0
+            C1_feed    = 0
+            C2_feed    = 0
+            return 0
+        # 4 conductors: qubit, res
+        elif self._num_conductors == 4:
+            C1_readout = abs(capMat[idx_pad1, idx_res])
+            C2_readout = abs(capMat[idx_pad2, idx_res])
+            C1_feed    = 0
+            C2_feed    = 0
+            return 0
+        # 5 conductors: qubit, res, feedline
+        elif self._num_conductors == 5:
+            C1_readout = abs(capMat[idx_pad1, idx_res])
+            C2_readout = abs(capMat[idx_pad2, idx_res])
+            C1_feed    = abs(capMat[idx_pad1, idx_feed])
+            C2_feed    = abs(capMat[idx_pad2, idx_feed])
+
+        # Calculate total C
+        e = 1.602176634e-19  # Coulombs
+        h = 6.62607015e-34   # J·s
+        C_sigma = (((C1_ground+C1_readout)*(C2_ground+C2_readout))/(C1_ground+C1_readout+C2_ground+C2_readout)) + C12 + c_j
+
+        # Compute charging energy
+        E_C_J = e**2 / (2 * C_sigma)
+        E_C_GHz = E_C_J / h / 1e9
+
+        if print_all_capacitances:
+            print("   Capacitance Results")
+            print("   --------------------")
+            print(f"{'C1-Ground':<16s} = {C1_ground * 1e15:>10.3f} fF")
+            print(f"{'C2-Ground':<16s} = {C2_ground * 1e15:>10.3f} fF")
+            print(f"{'C1-Readout':<16s} = {C1_readout * 1e15:>10.3f} fF")
+            print(f"{'C2-Readout':<16s} = {C2_readout * 1e15:>10.3f} fF")
+            print(f"{'C1-Feedline':<16s} = {C1_feed * 1e15:>10.3f} fF")
+            print(f"{'C2-Feedline':<16s} = {C2_feed * 1e15:>10.3f} fF")
+            print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
+            print(f"{'Total C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF")
+            print()  # blank line for readability
+
+        # Print charging energy
+        print("   Charging Energy")
+        print("   ----------------")
+        print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF")
+        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz\n")
+
+        return E_C_GHz
 
 
