@@ -5,6 +5,7 @@ from SQDMetal.PALACE.Model import PALACE_Model
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
+from SQDMetal.Utilities.QubitDesigner import FloatingTransmonDesigner
 import matplotlib.pyplot as plt
 import json
 import os
@@ -386,7 +387,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         return raw_data
     
-    def floatingTransmon_EC_from_capMat(self, conductor_indices=None, print_all_capacitances=False, c_j=0):
+    def floatingTransmon_calc_params(self, conductor_indices=None, print_all_capacitances=False, 
+                                     res=None, qubit_freq=None, C_J=0):
         '''
         Calculate the charging energy E_C from the capacitance matrix
         for a floating transmon qubit. Can be either an isolated
@@ -401,7 +403,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             (ground, pad 1, pad 2, resonator, feedline)
 
         '''
-        
         self._num_conductors = len(self._cur_cap_terminals)
         # print(f"Num conductors: {self._num_conductors}") 
         
@@ -441,14 +442,12 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             C2_readout = 0
             C1_feed    = 0
             C2_feed    = 0
-            return 0
         # 4 conductors: qubit, res
         elif self._num_conductors == 4:
             C1_readout = abs(capMat[idx_pad1, idx_res])
             C2_readout = abs(capMat[idx_pad2, idx_res])
             C1_feed    = 0
             C2_feed    = 0
-            return 0
         # 5 conductors: qubit, res, feedline
         elif self._num_conductors == 5:
             C1_readout = abs(capMat[idx_pad1, idx_res])
@@ -459,15 +458,44 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         # Calculate total C
         e = 1.602176634e-19  # Coulombs
         h = 6.62607015e-34   # J·s
-        C_sigma = (((C1_ground+C1_readout)*(C2_ground+C2_readout))/(C1_ground+C1_readout+C2_ground+C2_readout)) + C12 + c_j
+        C_sigma = (((C1_ground+C1_readout)*(C2_ground+C2_readout)) \
+                  / (C1_ground+C1_readout+C2_ground+C2_readout)) + C12 + C_J
 
-        # Compute charging energy
+        # Compute charging energy E_C
         E_C_J = e**2 / (2 * C_sigma)
         E_C_GHz = E_C_J / h / 1e9
 
+        # Calculate qubit parameters (if possible)
+        if (res is not None) and (self._num_conductors >= 4) and (qubit_freq is not None):
+            # Perform qubit calculator for chi, g, Delta etc.
+            params = FloatingTransmonDesigner(res).optimise(
+                {
+                    "fQubit": qubit_freq,
+                    "C_q1": C1_ground,
+                    "C_q2": C2_ground,
+                    "C_g1": C1_readout,
+                    "C_g2": C2_readout,
+                    "C_J": C12 + C_J,
+                    "chi": (-1e6, -0.2e6),
+                    "C_sigma": (1e-18, 1e-6),
+                    "Ej/Ec": (50, 200),
+                },
+                print_results=False
+            )
+            g_MHz = params['g_Hz'] * 1e-6
+            chi_MHz = params['chi_Hz'] * 1e-6
+            Delta_GHz = params['Delta_Hz'] * 1e-9
+            anh_MHz = params['anh_Hz'] * 1e-6
+        else:
+            print("Could not calculate g, chi, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
+            g_MHz = 'N/A'
+            chi_MHz = 'N/A'
+            Delta_GHz = 'N/A'
+            anh_MHz = 'N/A'
+            
         if print_all_capacitances:
-            print("   Capacitance Results")
-            print("   --------------------")
+            print("Capacitance Results")
+            print("--------------------")
             print(f"{'C1-Ground':<16s} = {C1_ground * 1e15:>10.3f} fF")
             print(f"{'C2-Ground':<16s} = {C2_ground * 1e15:>10.3f} fF")
             print(f"{'C1-Readout':<16s} = {C1_readout * 1e15:>10.3f} fF")
@@ -475,15 +503,34 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'C1-Feedline':<16s} = {C1_feed * 1e15:>10.3f} fF")
             print(f"{'C2-Feedline':<16s} = {C2_feed * 1e15:>10.3f} fF")
             print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
-            print(f"{'Total C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF")
             print()  # blank line for readability
 
         # Print charging energy
-        print("   Charging Energy")
-        print("   ----------------")
+        print("Circuit Parameters")
+        print("-------------------")
         print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF")
         print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz\n")
+        print(f"{'g':<16s} = {g_MHz if isinstance(g_MHz, str) else f'{g_MHz:>10.3f}'} MHz")
+        print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
+        print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
+        print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz\n")
 
-        return E_C_GHz
+        return {
+            # Energies and key circuit parameters
+            "E_C_GHz": E_C_GHz,
+            "C_sigma_fF": C_sigma * 1e15,
+            "g_MHz": g_MHz,
+            "chi_MHz": chi_MHz,
+            "Delta_GHz": Delta_GHz,
+            "anh_MHz": anh_MHz,
 
+            # Individual capacitances
+            "C1_ground_fF": C1_ground * 1e15,
+            "C2_ground_fF": C2_ground * 1e15,
+            "C1_readout_fF": C1_readout * 1e15,
+            "C2_readout_fF": C2_readout * 1e15,
+            "C1_feed_fF": C1_feed * 1e15,
+            "C2_feed_fF": C2_feed * 1e15,
+            "C12_fF": C12 * 1e15
+        }
 

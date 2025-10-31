@@ -295,7 +295,7 @@ class FloatingTransmonDesigner(TransmonBase):
     def _beta(self, C_q1, C_q2, C_g1, C_g2, C_J):
         return (C_g1*C_q2 - C_g2*C_q1) / ((C_q1+C_g1)*(C_q2+C_g2) + (C_q1 + C_q2 + C_g1 + C_g2)*C_J)
 
-    def optimise(self, param_constraints):
+    def optimise(self, param_constraints, print_results=True):
         x0, constrs, mps = self.parse_params(param_constraints)
 
         fres, Cres, Lres = self.resonator.get_res_frequency(), self.resonator.get_res_capacitance(), self.resonator.get_res_inductance()
@@ -320,24 +320,43 @@ class FloatingTransmonDesigner(TransmonBase):
         x[mps['Ej/Ec']] = self.EJonEC(self._eff_CJ(self._eff_Cq(*x[1:5])+x[5], self._eff_Cg(*x[1:5]), Cres), x[mps['fQubit']])
 
         sigfigs = 5
+        cost_err = func(sol.x)/2*100
+        if print_results:
+            print(f"Cost Function Error: {cost_err}%")
+            self.resonator.print()
+            print("Qubit:")
+            print(f"\tFrequency: {GenUtilities.add_units(sol.x[0],sigfigs)}Hz" + self.chk_constr_resp('fQubit', x,constrs,mps))
+            print(f"\tAnharmonicity: {GenUtilities.add_units(anh,sigfigs)}Hz")
+            print(f"\tg: {GenUtilities.add_units(g,sigfigs)}Hz")
+            print(f"\tDelta: {GenUtilities.add_units(x[mps['fQubit']]-fres,sigfigs)}Hz")
+            print(f"\tchi: {GenUtilities.add_units(chi,sigfigs)}Hz")
+            print(f"\tCq1: {GenUtilities.add_units(x[mps['C_q1']],sigfigs)}F" + self.chk_constr_resp('C_q1', x,constrs,mps))
+            print(f"\tCq2: {GenUtilities.add_units(x[mps['C_q2']],sigfigs)}F" + self.chk_constr_resp('C_q2', x,constrs,mps))
+            print(f"\tCg1: {GenUtilities.add_units(x[mps['C_g1']],sigfigs)}F" + self.chk_constr_resp('C_g1', x,constrs,mps))
+            print(f"\tCg2: {GenUtilities.add_units(x[mps['C_g2']],sigfigs)}F" + self.chk_constr_resp('C_g2', x,constrs,mps))
+            print(f"\tCJ: {GenUtilities.add_units(x[mps['C_J']],sigfigs)}F" + self.chk_constr_resp('C_J', x,constrs,mps))
+            print(f"\tEj/Ec: {GenUtilities.add_units(x[mps['Ej/Ec']],sigfigs, True)}" + self.chk_constr_resp('Ej/Ec', x,constrs,mps))
+            print(f"\tCΣ: {GenUtilities.add_units(x[mps['C_sigma']],sigfigs)}F" + self.chk_constr_resp('C_sigma', x,constrs,mps))
+            print(f"\tbeta: {GenUtilities.add_units(x[mps['beta']],sigfigs, True)}" + self.chk_constr_resp('beta', x,constrs,mps))
 
-        # print(sol.x)
-        print(f"Cost Function Error: {func(sol.x)/2*100}%")
-        self.resonator.print()
-        print("Qubit:")
-        print(f"\tFrequency: {GenUtilities.add_units(sol.x[0],sigfigs)}Hz" + self.chk_constr_resp('fQubit', x,constrs,mps))
-        print(f"\tAnharmonicity: {GenUtilities.add_units(anh,sigfigs)}Hz")
-        print(f"\tg: {GenUtilities.add_units(g,sigfigs)}Hz")
-        print(f"\tDelta: {GenUtilities.add_units(x[mps['fQubit']]-fres,sigfigs)}Hz")
-        print(f"\tchi: {GenUtilities.add_units(chi,sigfigs)}Hz")
-        print(f"\tCq1: {GenUtilities.add_units(x[mps['C_q1']],sigfigs)}F" + self.chk_constr_resp('C_q1', x,constrs,mps))
-        print(f"\tCq2: {GenUtilities.add_units(x[mps['C_q2']],sigfigs)}F" + self.chk_constr_resp('C_q2', x,constrs,mps))
-        print(f"\tCg1: {GenUtilities.add_units(x[mps['C_g1']],sigfigs)}F" + self.chk_constr_resp('C_g1', x,constrs,mps))
-        print(f"\tCg2: {GenUtilities.add_units(x[mps['C_g2']],sigfigs)}F" + self.chk_constr_resp('C_g2', x,constrs,mps))
-        print(f"\tCJ: {GenUtilities.add_units(x[mps['C_J']],sigfigs)}F" + self.chk_constr_resp('C_J', x,constrs,mps))
-        print(f"\tEj/Ec: {GenUtilities.add_units(x[mps['Ej/Ec']],sigfigs, True)}" + self.chk_constr_resp('Ej/Ec', x,constrs,mps))
-        print(f"\tCΣ: {GenUtilities.add_units(x[mps['C_sigma']],sigfigs)}F" + self.chk_constr_resp('C_sigma', x,constrs,mps))
-        print(f"\tbeta: {GenUtilities.add_units(x[mps['beta']],sigfigs, True)}" + self.chk_constr_resp('beta', x,constrs,mps))
+        results = {
+            "cost_error_%": {cost_err},
+            "fQubit_Hz": x[mps["fQubit"]],
+            "anh_Hz": anh,
+            "g_Hz": g,
+            "Delta_Hz": x[mps["fQubit"]] - fres,
+            "chi_Hz": chi,
+            "C_q1_F": x[mps["C_q1"]],
+            "C_q2_F": x[mps["C_q2"]],
+            "C_g1_F": x[mps["C_g1"]],
+            "C_g2_F": x[mps["C_g2"]],
+            "C_J_F": x[mps["C_J"]],
+            "Ej_Ec_ratio": x[mps["Ej/Ec"]],
+            "C_sigma_F": x[mps["C_sigma"]],
+            "beta": x[mps["beta"]],
+        }
+        # return results as dictionary
+        return results
 
 if __name__ == '__main__':
     XmonDesigner(ResonatorHalfWave(10.5e9)).optimise({
