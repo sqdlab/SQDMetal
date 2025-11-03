@@ -59,7 +59,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._cur_cap_terminals = []
-        self._num_conductors = 0
         self.cap_matrix = None
         super().__init__(meshing, mode, user_options, **kwargs)
 
