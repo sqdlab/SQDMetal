@@ -387,8 +387,15 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
         return raw_data
     
-    def floatingTransmon_calc_params(self, conductor_indices=None, print_all_capacitances=False, 
-                                     res=None, qubit_freq=None, C_J=0, Z0_feedline=50):
+    def floatingTransmon_calc_params(self, **kwargs):
+        return PALACE_Capacitance_Simulation.floatingTransmon_calc_params_from_files(
+            self._output_data_dir,
+            capacitance_matrix=self.cap_matrix,
+            **kwargs
+        )
+
+    @staticmethod
+    def floatingTransmon_calc_params_from_files(directory, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, res=None, qubit_freq=None, C_J=0, Z0_feedline=50):
         '''
         Calculate the charging energy E_C from the capacitance matrix
         for a floating transmon qubit. Can be either an isolated
@@ -401,21 +408,20 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             (ground, pad 1, pad 2, resonator)
         5 conductors: floating transmon coupled to resonator-feedline
             (ground, pad 1, pad 2, resonator, feedline)
-
         '''
         # Constants
         e = 1.602176634e-19  # Coulombs
         h = 6.62607015e-34   # J·s     
         # Fetch capacitance matrix (if needed)
-        if self.cap_matrix is None:
-            raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
-            self.cap_matrix = raw_data
-        capMat = self.cap_matrix.values
+        if capacitance_matrix is None:
+            raw_data = pd.read_csv(directory + '/terminal-C.csv')
+            capacitance_matrix = raw_data
+        capMat = capacitance_matrix.values
         if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
             capMat = capMat[:, 1:]
         # detect number of conductors
-        self._num_conductors = len(capMat[0])
-        print(f"Proceeding with calculations for {self._num_conductors} conductors...\n")
+        num_conductors = len(capMat[0])
+        print(f"Proceeding with calculations for {num_conductors} conductors...\n")
         #default indeces
         default_indeces = {
             'ground': 0,
@@ -439,19 +445,19 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         C2_ground  = abs(capMat[idx_pad2, idx_ground])
         
         # 3 conductor case: qubit only
-        if self._num_conductors == 3:
+        if num_conductors == 3:
             C1_readout = 0
             C2_readout = 0
             C1_feed    = 0
             C2_feed    = 0
         # 4 conductors: qubit, res
-        elif self._num_conductors == 4:
+        elif num_conductors == 4:
             C1_readout = abs(capMat[idx_pad1, idx_res])
             C2_readout = abs(capMat[idx_pad2, idx_res])
             C1_feed    = 0
             C2_feed    = 0
         # 5 conductors: qubit, res, feedline
-        elif self._num_conductors == 5:
+        elif num_conductors == 5:
             C1_readout = abs(capMat[idx_pad1, idx_res])
             C2_readout = abs(capMat[idx_pad2, idx_res])
             C1_feed    = abs(capMat[idx_pad1, idx_feed])
@@ -461,6 +467,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             C_rg       = abs(capMat[idx_res, idx_ground])
             C_rp1      = abs(capMat[idx_res, idx_pad1])
             C_rp2      = abs(capMat[idx_res, idx_pad2])
+        else:
+            print("Error in capacitance matrix indexing. Exiting.")
+            return 0
         
         ## CALCULATIONS
         # Calculate total C
@@ -470,7 +479,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         E_C_J = e**2 / (2 * C_sigma)
         E_C_GHz = E_C_J / h / 1e9
         # Calculate qubit parameters (if possible)
-        if (res is not None) and (self._num_conductors >= 4) and (qubit_freq is not None):
+        if (res is not None) and (num_conductors >= 4) and (qubit_freq is not None):
             # Use qubit calculator for chi, g, Delta etc.
             params = FloatingTransmonDesigner(res).optimise(
                 {
@@ -492,7 +501,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             anh_MHz = params['anh_Hz'] * 1e-6
             f_r_Hz = res.get_res_frequency() # Hz
             # Calculate kappa, Purcell decay (if applicable)
-            if self._num_conductors >= 5:
+            if num_conductors >= 5:
                 C_r = C_rg + C_rp1 + C_rp2 # res capacitance (except feedline)
                 C_c = C_rf # res-feedline mutual capacitance
                 # External quality factor and linewidth (frequency units)
@@ -508,6 +517,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             chi_MHz = 'N/A'
             Delta_GHz = 'N/A'
             anh_MHz = 'N/A'
+            kappa_MHz = None
+            T1p_ms = None
         
         # Calculate junction parameters for target frequency (if applicable)
         if qubit_freq:
@@ -551,7 +562,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"Target Junction Parameters\n (for f_qubit = {qubit_freq * 1e-9:.1f} GHz)")
             print("--------------------------")
             print(f"{'E_J':<16s} = {E_J_GHz:>10.1f} GHz")
-            print(f"{'L_J':<16s} = {L_J_nH:>10.1f} nH")
+            print(f"{'L_J':<16s} = {L_J_nH:>10.1f} nH\n")
+            print(f"{'E_J/E_C':<16s} = {E_J_GHz/E_C_GHz:>10.1f}")
 
         return {
             # Energies and key circuit parameters

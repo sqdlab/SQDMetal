@@ -644,7 +644,6 @@ class TransmonTaperedInsets(BaseQubit):
             loc_H='1',  # height location  only +-1 or 0
         ))
     # """Default drawing options"""
-
     component_metadata = Dict(short_name='Pocket',
                               _qgeometry_table_path='True',
                               _qgeometry_table_poly='True',
