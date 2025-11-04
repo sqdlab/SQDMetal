@@ -540,11 +540,20 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
             print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF\n")
 
+        # Print Readout resonator parameters
+        if res is not None:
+            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
+            print("Readout Resonator")
+            print("-------------------")
+            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.1f} GHz")
+            print(f"{'L_res':<16s} = {Lres * 1e12:>10.3f} pH")
+            print(f"{'C_res':<16s} = {Cres * 1e15:>10.3f} fF")
+            print()
+            
         # Print charging energy
         print("Circuit Parameters")
         print("-------------------")
-        if (res is not None) and (qubit_freq is not None):
-            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.1f} GHz")
+        if qubit_freq is not None:
             print(f"{'f_qubit':<16s} = {qubit_freq * 1e-9:>10.1f} GHz")
         print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz")
         print(f"{'g':<16s} = {g_MHz if isinstance(g_MHz, str) else f'{g_MHz:>10.3f}'} MHz")
@@ -573,13 +582,15 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             "Delta_GHz": Delta_GHz,
             "anh_MHz": anh_MHz,
 
-            # Individual capacitances
+            # Individual capacitances and inductances
             "C1_ground_fF": C1_ground * 1e15,
             "C2_ground_fF": C2_ground * 1e15,
             "C1_readout_fF": C1_readout * 1e15,
             "C2_readout_fF": C2_readout * 1e15,
             "C1_feed_fF": C1_feed * 1e15,
             "C2_feed_fF": C2_feed * 1e15,
-            "C12_fF": C12 * 1e15
+            "C12_fF": C12 * 1e15,
+            "C_res_fF": Cres * 1e15,
+            "L_res_pH": Lres * 1e12
         }
 
