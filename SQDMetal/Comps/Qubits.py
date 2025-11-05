@@ -592,22 +592,22 @@ class TransmonTaperedInsets(BaseQubit):
     default_options = Dict(
         # JJ box
         inductor_width='20um',
-        inductor_height='44um',
+        inductor_height='22um',
         # Pins
         chrgln_pin_x_offset = '30um',  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset = '50um', # User-defined vertical distance from the pocket edge
         # Pads
         pad_gap="85um",
-        pad_width="700um",
+        pad_width="800um",
         pad_height="110um",
         # Pocket
         pocket_width='1000um',
         pocket_height='800um',
         pocket_lower_tighten = '120um',
         # Tapered part of qubit
-        taper_width_top="2um",
-        taper_width_base="150um",
-        taper_height="25um",
+        taper_width_top="40um",
+        taper_width_base="200um",
+        taper_height="40um",
         taper_fillet_radius="3um",
         fillet_resolution_tapered=16,
         # Insets
@@ -616,25 +616,24 @@ class TransmonTaperedInsets(BaseQubit):
         inset_fillet_radius='10um',
         # Fillet settings
         fillet_radius='50um',     
-        fillet_resolution=16,
+        fillet_resolution=8,
         fillet_radius_gap="50um",
-        fillet_resolution_gap=16,
+        fillet_resolution_gap=8,
         # Coupler - resonator
-        coupled_pad_height='150um',
-        coupled_pad_width='20um',
-        coupled_pad_gap='50um',
+        coupled_pad_height='0um',
+        coupled_pad_width='0um',
+        coupled_pad_gap='0um',
         # orientation = 90 has dipole aligned along the +X axis, while 0 aligns to the +Y axis
+        orientation=0,
         _default_connection_pads=Dict(
-            pad_gap="120um",
+            pad_gap="100um",
             pad_height="30um",
             pad_width="200um",
             pad_cpw_shift='0um',
             pad_cpw_extent='25um',
             cpw_width='10um',
             cpw_gap='6um',
-            # edge_curve=0.1,
-            # : cpw_extend: how far into the ground to extend the CPW line from the coupling pads
-            cpw_extend='100um',
+            cpw_extend='200um',
             pocket_extent='5um',
             pocket_rise='0um',
             fillet_radius_inner="15um",
@@ -645,7 +644,6 @@ class TransmonTaperedInsets(BaseQubit):
             loc_H='1',  # height location  only +-1 or 0
         ))
     # """Default drawing options"""
-
     component_metadata = Dict(short_name='Pocket',
                               _qgeometry_table_path='True',
                               _qgeometry_table_poly='True',
@@ -933,8 +931,6 @@ class TransmonTaperedInsets(BaseQubit):
         self.add_pin("bottom_pin", points=list(top_pocket_pin.coords), width=taper_width_top)
         self.add_pin("top_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top, input_as_norm=True)
 
-        #########################################################################################################################
-
     def make_connection_pads(self):
         # """Makes standard transmon in a pocket."""
         for name in self.options.connection_pads:
@@ -994,7 +990,6 @@ class TransmonTaperedInsets(BaseQubit):
                 print("Skipping: connector pad rounding not yet implemented for W != 0")
 
                 # TODO: fix here
-
                 # # --- Add the small corner box first ---
                 # connector_pad_corners_sq = draw.rectangle(
                 #     r_outer, r_outer,

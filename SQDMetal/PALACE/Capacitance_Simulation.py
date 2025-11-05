@@ -5,11 +5,13 @@ from SQDMetal.PALACE.Model import PALACE_Model
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
+from SQDMetal.Utilities.QubitDesigner import FloatingTransmonDesigner
 import matplotlib.pyplot as plt
 import json
 import os
 import gmsh
 import shapely
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
@@ -57,6 +59,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._cur_cap_terminals = []
+        self.cap_matrix = None
         super().__init__(meshing, mode, user_options, **kwargs)
 
 
@@ -355,6 +358,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     def retrieve_data(self):
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
+        self.cap_matrix = raw_data
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()[:,1:]    #First column is just the indices...
 
@@ -381,5 +385,224 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 print(f"Error in plotting: {e}")
 
         return raw_data
+    
+    def floatingTransmon_calc_params(self, **kwargs):
+        return PALACE_Capacitance_Simulation.floatingTransmon_calc_params_from_files(
+            self._output_data_dir,
+            capacitance_matrix=self.cap_matrix,
+            **kwargs
+        )
 
+    @staticmethod
+    def floatingTransmon_calc_params_from_files(directory, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, res=None, qubit_freq=None, C_J=0, Z0_feedline=50):
+        '''
+        Calculate the charging energy E_C from the capacitance matrix
+        for a floating transmon qubit. Can be either an isolated
+        floating transmon or a floating transmon coupled to a resonator,
+        depending on the number of conductors in the capacitance matrix.
+
+        3 conductors: isolated floating transmon 
+            (pad 1, pad 2, ground)
+        4 conductors: floating transmon coupled to resonator
+            (ground, pad 1, pad 2, resonator)
+        5 conductors: floating transmon coupled to resonator-feedline
+            (ground, pad 1, pad 2, resonator, feedline)
+        '''
+        # Constants
+        e = 1.602176634e-19  # Coulombs
+        h = 6.62607015e-34   # J·s     
+        # Fetch capacitance matrix (if needed)
+        if capacitance_matrix is None:
+            raw_data = pd.read_csv(directory + '/terminal-C.csv')
+            capacitance_matrix = raw_data
+        capMat = capacitance_matrix.values
+        if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
+            capMat = capMat[:, 1:]
+        # detect number of conductors
+        num_conductors = len(capMat[0])
+        #default indeces
+        default_indeces = {
+            'ground': 0,
+            'pad1': 1,
+            'pad2': 2,
+            'res': 3,
+            'feed': 4
+        }
+        #Update indices if given
+        if conductor_indices:
+            default_indeces.update(conductor_indices)
+        idx_ground = default_indeces['ground']
+        idx_pad1   = default_indeces['pad1']
+        idx_pad2   = default_indeces['pad2']
+        idx_res    = default_indeces['res']
+        idx_feed   = default_indeces['feed']
+
+        # define ground and pad capacitance (all cases)
+        C12 = abs(capMat[idx_pad1, idx_pad2])
+        C1_ground  = abs(capMat[idx_pad1, idx_ground])
+        C2_ground  = abs(capMat[idx_pad2, idx_ground])
+        
+        # 3 conductor case: qubit only
+        if num_conductors == 3:
+            C1_readout = 0
+            C2_readout = 0
+            C1_feed    = 0
+            C2_feed    = 0
+        # 4 conductors: qubit, res
+        elif num_conductors == 4:
+            C1_readout = abs(capMat[idx_pad1, idx_res])
+            C2_readout = abs(capMat[idx_pad2, idx_res])
+            C1_feed    = 0
+            C2_feed    = 0
+        # 5 conductors: qubit, res, feedline
+        elif num_conductors == 5:
+            C1_readout = abs(capMat[idx_pad1, idx_res])
+            C2_readout = abs(capMat[idx_pad2, idx_res])
+            C1_feed    = abs(capMat[idx_pad1, idx_feed])
+            C2_feed    = abs(capMat[idx_pad2, idx_feed])
+            # Resonator couplings (for kappa)
+            C_rf       = abs(capMat[idx_res, idx_feed])
+            C_rg       = abs(capMat[idx_res, idx_ground])
+            C_rp1      = abs(capMat[idx_res, idx_pad1])
+            C_rp2      = abs(capMat[idx_res, idx_pad2])
+        else:
+            print("Error in capacitance matrix indexing. Exiting.")
+            return 0
+        
+        ## CALCULATIONS
+        # Calculate total C
+        C_sigma = (((C1_ground+C1_readout)*(C2_ground+C2_readout)) \
+                  / (C1_ground+C1_readout+C2_ground+C2_readout)) + C12 + C_J
+        # Compute charging energy E_C
+        E_C_J = e**2 / (2 * C_sigma)
+        E_C_GHz = E_C_J / h / 1e9
+        # Calculate qubit parameters (if possible)
+        if (res is not None) and (num_conductors >= 4) and (qubit_freq is not None):
+            # Use qubit calculator for chi, g, Delta etc.
+            params = FloatingTransmonDesigner(res).optimise(
+                {
+                    "fQubit": qubit_freq,
+                    "C_q1": C1_ground,
+                    "C_q2": C2_ground,
+                    "C_g1": C1_readout,
+                    "C_g2": C2_readout,
+                    "C_J": C12 + C_J,
+                    "chi": (-1e6, -0.2e6),
+                    "C_sigma": (1e-18, 1e-6),
+                    "Ej/Ec": (50, 200),
+                },
+                print_results=False
+            )
+            g_MHz = -params['g_Hz'] * 1e-6
+            chi_MHz = -params['chi_Hz'] * 1e-6
+            Delta_GHz = params['Delta_Hz'] * 1e-9
+            anh_MHz = params['anh_Hz'] * 1e-6
+            f_r_Hz = res.get_res_frequency() # Hz
+            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
+            # Calculate kappa, Purcell decay (if applicable)
+            if num_conductors >= 5:
+                C_r = C_rg + C_rp1 + C_rp2 # res capacitance (except feedline)
+                C_c = C_rf # res-feedline mutual capacitance
+                # External quality factor and linewidth (frequency units)
+                Q_c = C_r / (2 * np.pi * f_r_Hz * Z0_feedline * C_c**2)
+                kappa_MHz = f_r_Hz / Q_c * 1e-6
+                T1p_ms = ((1 / (kappa_MHz*1e6)) * ((Delta_GHz * 1e9)**2 / (g_MHz*1e6)**2)) * 1e3
+            else:
+                kappa_MHz = None
+                T1p_ms = None
+        else:
+            print("Could not calculate g, chi, kappa, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
+            g_MHz = 'N/A'
+            chi_MHz = 'N/A'
+            Delta_GHz = 'N/A'
+            anh_MHz = 'N/A'
+            Cres = 'N/A'
+            Lres = 'N/A'
+            kappa_MHz = 'N/A'
+            T1p_ms = 'N/A'
+        
+        # Calculate junction parameters for target frequency (if applicable)
+        if qubit_freq:
+            phi_0 = h / (2*e) 
+            E_J_GHz = (h * qubit_freq + E_C_J)**2 / (8 * E_C_J) / h / 1e9
+            L_J_nH = phi_0**2 / (4 * np.pi**2 * h * E_J_GHz)
+        else:
+            E_J_GHz = 'N/A'
+            L_J_nH = 'N/A'
+
+        if print_all_capacitances:
+            print("Capacitance Results")
+            print("--------------------")
+            print(f"{'C1-Ground':<16s} = {C1_ground * 1e15:>10.3f} fF")
+            print(f"{'C2-Ground':<16s} = {C2_ground * 1e15:>10.3f} fF")
+            print(f"{'C1-Readout':<16s} = {C1_readout * 1e15:>10.3f} fF")
+            print(f"{'C2-Readout':<16s} = {C2_readout * 1e15:>10.3f} fF")
+            print(f"{'C1-Feedline':<16s} = {C1_feed * 1e15:>10.3f} fF")
+            print(f"{'C2-Feedline':<16s} = {C2_feed * 1e15:>10.3f} fF")
+            print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
+            print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF\n")
+
+        # Print Readout resonator parameters
+        if res is not None:
+            print("Readout Resonator")
+            print("-------------------")
+            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.3f} GHz")
+            print(f"{'L_res':<16s} = {Lres * 1e12:>10.3f} pH")
+            print(f"{'C_res':<16s} = {Cres * 1e15:>10.3f} fF")
+            if num_conductors >= 5:
+                print(f"{'C_res-Feedline':<16s} = {C_c * 1e15:>10.3f} fF")
+            print()
+
+        # Print charging energy
+        print("Circuit Parameters")
+        print("-------------------")
+        if qubit_freq is not None:
+            print(f"{'f_qubit':<16s} = {qubit_freq * 1e-9:>10.3f} GHz")
+        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.3f} MHz")
+        print(f"{'g':<16s} = {g_MHz if isinstance(g_MHz, str) else f'{g_MHz:>10.3f}'} MHz")
+        print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
+        print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
+        print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
+        if kappa_MHz is not 'N/A':
+            print(f"{'kappa':<16s} = {kappa_MHz:>10.3f} MHz")
+            print(f"{'T_1,P':<16s} = {T1p_ms:>10.3f} ms")
+        print()
+
+        # Print required junction parameters for desired frequency
+        if qubit_freq is not None:
+            print(f"Target Junction Parameters\n (for f_qubit = {qubit_freq * 1e-9:.1f} GHz)")
+            print("--------------------------")
+            print(f"{'E_J':<16s} = {E_J_GHz:>10.3f} GHz")
+            print(f"{'L_J':<16s} = {L_J_nH:>10.3f} nH\n")
+            print(f"{'E_J/E_C':<16s} = {E_J_GHz/E_C_GHz:>10.3f}")
+
+        return {
+            # Energies and key circuit parameters
+            "E_C_GHz": E_C_GHz,
+            "C_sigma_fF": C_sigma * 1e15,
+            "g_MHz": g_MHz,
+            "chi_MHz": chi_MHz,
+            "Delta_GHz": Delta_GHz,
+            "anh_MHz": anh_MHz,
+            "f_q_GHz": qubit_freq * 1e-9,
+            "kappa_MHz": kappa_MHz,
+            "T1,p_ms": T1p_ms,
+
+            # Individual capacitances and inductances
+            "C1_ground_fF": C1_ground * 1e15,
+            "C2_ground_fF": C2_ground * 1e15,
+            "C1_readout_fF": C1_readout * 1e15,
+            "C2_readout_fF": C2_readout * 1e15,
+            "C1_feed_fF": C1_feed * 1e15,
+            "C2_feed_fF": C2_feed * 1e15,
+            "C12_fF": C12 * 1e15,
+            "Cres_fF": Cres * 1e15,
+            "Lres_pH": Lres * 1e12,
+
+            # Junction parameters
+            'L_J_nH': L_J_nH,
+            'E_J_GHz': E_J_GHz,
+            'I_C_nA': E_J_GHz/0.495,
+            'E_J/E_C': E_J_GHz/E_C_GHz
+        }
 
