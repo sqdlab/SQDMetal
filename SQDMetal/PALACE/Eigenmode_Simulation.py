@@ -257,7 +257,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
 
     def calculate_hamiltonian_parameters_EPR(self, modes_to_compare = [], print_output=True):
-        return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare = [], print_output=print_output)
+        return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare=modes_to_compare, print_output=print_output)
 
     @staticmethod
     def retrieve_EPR_data_from_file(json_sim_config, output_directory):
@@ -403,59 +403,50 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         delta_freq = delta / (2 * np.pi * 1e9) 
         renormalised_freqs = renormalised_freqs /  (2 * np.pi * 1e9)
 
-        #capture output for saving
+        #wrapper to print to both notebook and buffer
         output_buffer = io.StringIO()
         original_stdout = sys.stdout
-        sys.stdout = output_buffer
+        def dual_print(*args, **kwargs):
+            """Prints to both notebook and the output buffer."""
+            print(*args, **kwargs)             # normal notebook output
+            print(*args, **kwargs, file=output_buffer)  # captured copy
 
-        #create dataframes and print for user to see
-        freq_df = pd.DataFrame(frequencies / (1e9), dataframe_label_mode, ['Freq (GHz)'])
-        if print_output:
-            print('Simulation Mode Frequencies:')
-            print(freq_df)
-            print('______________________________')
-            print('\n')
-
+        freq_df = pd.DataFrame(frequencies / 1e9, dataframe_label_mode, ['Freq (GHz)'])
         freq_renorm_df = pd.DataFrame(renormalised_freqs, dataframe_label_mode, ['Freq (GHz)'])
-        if print_output:
-            print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for lamb shift')
-            print(freq_renorm_df)
-            print('______________________________')
-            print('\n')
-
         ratios_df = pd.DataFrame(np.abs(participation_ratios), dataframe_label_mode, dataframe_label_junc)
-        if print_output:
-            print('Participation Ratios:')
-            print(ratios_df)
-            print('______________________________')
-            print('\n')
-
         chi_anharm_df = pd.DataFrame(chi_anharm, dataframe_label_mode, dataframe_label_mode)
-        if print_output:
-            print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
-            print(chi_anharm_df)
-            print('______________________________')
-            print('\n')
-
         lamb_shift_df = pd.DataFrame(lamb_shift_freq, dataframe_label_mode, ['Lamb Shift (MHz)'])
-        if print_output:
-            print('Lamb Shifts:')
-            print(lamb_shift_df)
-            print('______________________________')
-            print('\n')
-
         delta_df = pd.DataFrame(delta_freq, dataframe_label_mode, dataframe_label_mode)
         if print_output:
-            print('Detuning (GHz):')
-            print(delta_df)
-            print('______________________________')
-            print('\n')
+            dual_print('Simulation Mode Frequencies:')
+            dual_print(freq_df)
+            dual_print('______________________________\n')
 
-        #save output to file
-        sys.stdout = original_stdout
+            dual_print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for Lamb shift')
+            dual_print(freq_renorm_df)
+            dual_print('______________________________\n')
+
+            dual_print('Participation Ratios:')
+            dual_print(ratios_df)
+            dual_print('______________________________\n')
+
+            dual_print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
+            dual_print(chi_anharm_df)
+            dual_print('______________________________\n')
+
+            dual_print('Lamb Shifts:')
+            dual_print(lamb_shift_df)
+            dual_print('______________________________\n')
+
+            dual_print('Detuning (GHz):')
+            dual_print(delta_df)
+            dual_print('______________________________\n')
+
+        #sSave output to file
         output_text = output_buffer.getvalue()
-        with open(directory + '/EPR_params.txt', 'w') as file:
-            file.write(output_text)
+        file_path = directory + '/EPR_params.txt'
+        with open(file_path, 'w') as f:
+            f.write(output_text)
 
         #TODO: Strongly consider refactoring these keys/values...
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}

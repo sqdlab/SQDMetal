@@ -420,7 +420,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             capMat = capMat[:, 1:]
         # detect number of conductors
         num_conductors = len(capMat[0])
-        print(f"Proceeding with calculations for {num_conductors} conductors...\n")
         #default indeces
         default_indeces = {
             'ground': 0,
@@ -499,6 +498,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             Delta_GHz = params['Delta_Hz'] * 1e-9
             anh_MHz = params['anh_Hz'] * 1e-6
             f_r_Hz = res.get_res_frequency() # Hz
+            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
             # Calculate kappa, Purcell decay (if applicable)
             if num_conductors >= 5:
                 C_r = C_rg + C_rp1 + C_rp2 # res capacitance (except feedline)
@@ -516,8 +516,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             chi_MHz = 'N/A'
             Delta_GHz = 'N/A'
             anh_MHz = 'N/A'
-            kappa_MHz = None
-            T1p_ms = None
+            Cres = 'N/A'
+            Lres = 'N/A'
+            kappa_MHz = 'N/A'
+            T1p_ms = 'N/A'
         
         # Calculate junction parameters for target frequency (if applicable)
         if qubit_freq:
@@ -538,40 +540,41 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'C1-Feedline':<16s} = {C1_feed * 1e15:>10.3f} fF")
             print(f"{'C2-Feedline':<16s} = {C2_feed * 1e15:>10.3f} fF")
             print(f"{'Mutual C12':<16s} = {C12 * 1e15:>10.3f} fF")
-            print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.1f} fF\n")
+            print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF\n")
 
         # Print Readout resonator parameters
         if res is not None:
-            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
             print("Readout Resonator")
             print("-------------------")
-            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.1f} GHz")
+            print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.3f} GHz")
             print(f"{'L_res':<16s} = {Lres * 1e12:>10.3f} pH")
             print(f"{'C_res':<16s} = {Cres * 1e15:>10.3f} fF")
+            if num_conductors >= 5:
+                print(f"{'C_res-Feedline':<16s} = {C_c * 1e15:>10.3f} fF")
             print()
-            
+
         # Print charging energy
         print("Circuit Parameters")
         print("-------------------")
         if qubit_freq is not None:
-            print(f"{'f_qubit':<16s} = {qubit_freq * 1e-9:>10.1f} GHz")
-        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.1f} MHz")
+            print(f"{'f_qubit':<16s} = {qubit_freq * 1e-9:>10.3f} GHz")
+        print(f"{'E_C':<16s} = {E_C_GHz * 1e3:>10.3f} MHz")
         print(f"{'g':<16s} = {g_MHz if isinstance(g_MHz, str) else f'{g_MHz:>10.3f}'} MHz")
         print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
         print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
-        if kappa_MHz is not None:
-            print(f"{'kappa':<16s} = {kappa_MHz:>10.1f} MHz")
-            print(f"{'T_1,P':<16s} = {T1p_ms:>10.1f} ms")
+        if kappa_MHz is not 'N/A':
+            print(f"{'kappa':<16s} = {kappa_MHz:>10.3f} MHz")
+            print(f"{'T_1,P':<16s} = {T1p_ms:>10.3f} ms")
         print()
 
         # Print required junction parameters for desired frequency
-        if qubit_freq:
+        if qubit_freq is not None:
             print(f"Target Junction Parameters\n (for f_qubit = {qubit_freq * 1e-9:.1f} GHz)")
             print("--------------------------")
-            print(f"{'E_J':<16s} = {E_J_GHz:>10.1f} GHz")
-            print(f"{'L_J':<16s} = {L_J_nH:>10.1f} nH\n")
-            print(f"{'E_J/E_C':<16s} = {E_J_GHz/E_C_GHz:>10.1f}")
+            print(f"{'E_J':<16s} = {E_J_GHz:>10.3f} GHz")
+            print(f"{'L_J':<16s} = {L_J_nH:>10.3f} nH\n")
+            print(f"{'E_J/E_C':<16s} = {E_J_GHz/E_C_GHz:>10.3f}")
 
         return {
             # Energies and key circuit parameters
@@ -581,6 +584,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             "chi_MHz": chi_MHz,
             "Delta_GHz": Delta_GHz,
             "anh_MHz": anh_MHz,
+            "f_q_GHz": qubit_freq * 1e-9,
+            "kappa_MHz": kappa_MHz,
+            "T1,p_ms": T1p_ms,
 
             # Individual capacitances and inductances
             "C1_ground_fF": C1_ground * 1e15,
@@ -590,7 +596,13 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             "C1_feed_fF": C1_feed * 1e15,
             "C2_feed_fF": C2_feed * 1e15,
             "C12_fF": C12 * 1e15,
-            "C_res_fF": Cres * 1e15,
-            "L_res_pH": Lres * 1e12
+            "Cres_fF": Cres * 1e15,
+            "Lres_pH": Lres * 1e12,
+
+            # Junction parameters
+            'L_J_nH': L_J_nH,
+            'E_J_GHz': E_J_GHz,
+            'I_C_nA': E_J_GHz/0.495,
+            'E_J/E_C': E_J_GHz/E_C_GHz
         }
 
