@@ -1111,3 +1111,9 @@ class TransmonTaperedInsets(BaseQubit):
                      points=points[-2:],
                      width=cpw_width,
                      input_as_norm=True)
+        
+    def get_resonator_length_mm(self, connection_pad='readout'):
+        """
+        Gives total length of resonator segment. 
+        """
+        return QUtilities.calc_points_on_path([0], self.design, component_name=self.name, trace_name=f"{connection_pad}_wire")[-1]
