@@ -6,6 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
+
+
 # Distribution / packaging
 .Python
 build/
@@ -159,6 +161,12 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# os generated file
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 
 outputFiles/
 /docs/User/WorkedExamples/GMSH_eigen_test
 docs/User/WorkedExamples/temp.sh
