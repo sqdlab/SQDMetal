@@ -5,6 +5,7 @@ from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 from SQDMetal.Utilities.QUtilities import QUtilities
 import gmsh
 import numpy as np
+import shapely
 
 from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
 from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
