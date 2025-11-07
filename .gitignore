@@ -163,7 +163,10 @@ cython_debug/
 
 # os generated file
 .DS_Store
+Thumbs.db
+Desktop.ini
 
+# 
 outputFiles/
 /docs/User/WorkedExamples/GMSH_eigen_test
 docs/User/WorkedExamples/temp.sh
