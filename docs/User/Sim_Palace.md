@@ -4,6 +4,7 @@ Once the design has been completed using *Qiskit-Metal*, the design object can b
 
 - Capacitance matrix simulations
 - RF s-parameter simulations
+- Eigenmode simulations
 
 ## Installation
 
