@@ -4,6 +4,7 @@ Once the design has been completed using *Qiskit-Metal*, the design object can b
 
 - Capacitance matrix simulations
 - RF s-parameter simulations
+- Eigenmode simulations
 
 ## Installation
 
@@ -29,48 +30,48 @@ Working installation instructions for the Australian Bunya cluster are given [he
 
 ```python
 from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
+from SQDMetal.Utilities.Materials import MaterialInterface
 
 #Eigenmode Simulation Options
 user_defined_options = {
-                 "mesh_refinement":  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
-                 "dielectric_material": "silicon",                  #choose dielectric material - 'silicon' or 'sapphire'
-                 "starting_freq": 7.5e9,                            #starting frequency in Hz 
-                 "number_of_freqs": 4,                              #number of eigenmodes to find
-                 "solns_to_save": 4,                                #number of electromagnetic field visualizations to save
-                 "solver_order": 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
-                 "solver_tol": 1.0e-8,                              #error residual tolerance foriterative solver
-                 "solver_maxits": 100,                              #number of solver iterations
-                 "comsol_meshing": "Extremely fine",                #level of COMSOL meshing: 'Extremely fine', 'Extra fine', 'Finer', 'Fine', 'Normal'
-                 "mesh_max": 120e-3,                                #maxiumum element size for the mesh in mm
-                 "mesh_min": 10e-3,                                 #minimum element size for the mesh in mm
-                 "mesh_sampling": 130,                              #number of points to mesh along a geometry
-                 "sim_memory": '300G',                              #amount of memory for each HPC node i.e. 4 nodes x 300 GB = 1.2 TB
-                 "sim_time": '20:00:00',                            #allocated time for simulation 
-                 "HPC_nodes": '4',                                  #number of Bunya nodes. By default 20 cpus per node are selected, then total cores = 20 x HPC_nodes
-                 "fillet_resolution":12                             #Number of vertices per quarter turn on a filleted path
+                "mesh_refinement":  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
+                "dielectric_material": "silicon",                  #choose dielectric material - 'silicon' or 'sapphire'
+                "starting_freq": 5e9,                              #starting frequency in Hz 
+                "number_of_freqs": 1,                              #number of eigenmodes to find
+                "solns_to_save": 1,                                #number of electromagnetic field visualizations to save
+                "solver_order": 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
+                "solver_tol": 1.0e-8,                              #error residual tolerance foriterative solver
+                "solver_maxits": 200,                              #number of solver iterations
+                "fillet_resolution":12,                            #number of vertices per quarter turn on a filleted path
+                "palace_dir":"~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace",#"PATH/TO/PALACE/BINARY",
+                "num_cpus": 16                                     #number of cpus used in simulation
                 }
 
-#Creat the Palace Eigenmode simulation
-eigen_sim = PALACE_Eigenmode_Simulation(name ='single_resonator_example_eigen',                     #name of simulation
+#Create the Palace Eigenmode simulation
+eigen_sim = PALACE_Eigenmode_Simulation(name ='x-mon_test',                                         #name of simulation
                                         metal_design = design,                                      #feed in qiskit metal design
-                                        sim_parent_directory = "",            #choose directory where mesh file, config file and HPC batch file will be saved
-                                        mode = 'HPC',                                               #choose simulation mode 'HPC' or 'simPC'                                          
+                                        sim_parent_directory = "",                                  #choose directory where mesh file and config file are saved
+                                        mode = 'simPC',                                             #choose simulation mode 'HPC' or 'simPC'                                  
                                         meshing = 'GMSH',                                           #choose meshing 'GMSH' or 'COMSOL'
                                         user_options = user_defined_options,                        #provide options chosen above
-                                        view_design_gmsh_gui = False,                               #view design in GMSH gui 
                                         create_files = True)                                        #create mesh, config and HPC batch files
+
+#Add in metals from layer 1 of the design file
 eigen_sim.add_metallic(1)
+
+#Add in ground plane for simulation
 eigen_sim.add_ground_plane()
 
-#Add in the RF ports
-eigen_sim.create_port_CPW_on_Launcher('LP1', 20e-3)
-eigen_sim.create_port_CPW_on_Launcher('LP2', 20e-3)
-#Fine-mesh routed paths
-eigen_sim.fine_mesh_along_path(100e-6, 'resonator1', mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
-eigen_sim.fine_mesh_along_path(100e-6, 'TL', mesh_sampling=130, mesh_min=7e-3, mesh_max=120e-3)
-#Fine-mesh a rectangular region
-eigen_sim.fine_mesh_in_rectangle(-0.14e-3, -1.33e-3, 0.14e-3, -1.56e-3, mesh_sampling=130, mesh_min=5e-3, mesh_max=120e-3)
+#Add in the Josephson junction as a lumped port
+eigen_sim.create_port_JosephsonJunction('junction', L_J=4.3e-9, C_J=10e-15)
 
+#Fine-mesh x-mon
+eigen_sim.fine_mesh_around_comp_boundaries(['x-mon'], min_size=8e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=False)
+
+#Sets up the lossy interfaces for MA, SA and MS interfaces 
+eigen_sim.setup_EPR_interfaces(metal_air=MaterialInterface('Aluminium-Vacuum'), substrate_air=MaterialInterface('Silicon-Vacuum'), substrate_metal=MaterialInterface('Silicon-Aluminium'))
+
+#Prepares the mesh file and config file
 eigen_sim.prepare_simulation()
 ```
 
