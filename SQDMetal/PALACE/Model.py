@@ -56,6 +56,7 @@ class PALACE_Model:
             self._palace_wsl_repo_location = options.get('palace_wsl_spack_repo_directory', '~/repo')
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
+        self._num_threads = options.get('num_threads', 1)
         self._full_3D_params = {'metal_thickness':0, 'substrate_trenching':0}
 
 
@@ -194,7 +195,7 @@ class PALACE_Model:
         self.log_location = f"{self._output_data_dir}/out.log"
         with open("temp.sh", "w+") as f:
             f.write(f"cd \"{leDir}\"\n")
-            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{self.log_location}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} -nt {self._num_threads} {leFile} | tee \"{self.log_location}\"\n")
 
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
@@ -250,7 +251,7 @@ class PALACE_Model:
             f.write(f"spack env create -d ./spack-env\n")
             f.write(f"spack env activate ./spack-env\n")
             f.write(f"cd \"{leDirWSL}\"\n")
-            f.write(f"{self.palace_dir} -np {self._num_cpus} {leFile} | tee \"{log_locationWSL}\"\n")
+            f.write(f"{self.palace_dir} -np {self._num_cpus} -nt {self._num_threads} {leFile} | tee \"{log_locationWSL}\"\n")
 
         # Set execute permission on temp.sh
         os.chmod("temp.sh", 0o755)
@@ -282,7 +283,8 @@ class PALACE_Model:
         This method executes the PALACE simulation inside an Apptainer or Singularity
         container image specified by `self.palace_dir`. It uses the simulation
         configuration file prepared by `prepare_simulation` and the number of
-        CPUs specified by `self._num_cpus`.
+        CPUs specified by `self._num_cpus`. It also sets the number of threads per CPU
+        by 'self._num_threads'.
 
         Palace installation instructions for Apptainer can be found here: https://awslabs.github.io/palace/dev/install/#Build-using-Singularity/Apptainer
 
@@ -332,6 +334,8 @@ class PALACE_Model:
             str(container_path),
             "-np",
             str(self._num_cpus),
+            "-nt",
+            str(self._num_threads),
             config_file.name,
         ]
 
