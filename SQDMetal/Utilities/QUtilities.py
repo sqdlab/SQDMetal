@@ -111,6 +111,13 @@ class QUtilities:
             return min(x_vals), min(y_vals), max(x_vals), max(y_vals)
 
     @staticmethod
+    def calc_length_of_path(design, component_name, trace_name=""):
+        """
+        Variant of calc_point_on_path that returns the total length of a path.
+        """
+        return QUtilities.calc_points_on_path([0], design, component_name, trace_name=trace_name)[-1]
+
+    @staticmethod
     def calc_points_on_path(
         dists,
         design,

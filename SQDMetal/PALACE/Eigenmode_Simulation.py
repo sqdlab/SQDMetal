@@ -262,6 +262,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
     def calculate_hamiltonian_parameters_EPR(self, modes_to_compare = [], print_output=True):
         return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare=modes_to_compare, print_output=print_output)
 
+    def plot_fields_with_data(self, save=True, columns=4):
+        return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, columns=columns)
+
     @staticmethod
     def retrieve_EPR_data_from_file(json_sim_config, output_directory):
         if os.path.exists(output_directory + '/config.json'):
@@ -424,23 +427,18 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             dual_print('Simulation Mode Frequencies:')
             dual_print(freq_df)
             dual_print('______________________________\n')
-
             dual_print('Renormalised Frequencies:\n ***Freqs from simulation are adjusted for Lamb shift')
             dual_print(freq_renorm_df)
             dual_print('______________________________\n')
-
             dual_print('Participation Ratios:')
             dual_print(ratios_df)
             dual_print('______________________________\n')
-
             dual_print('Chi Matrix (MHz):\n ***Diag is Anharmonicity, Off-Diag is Cross-Kerr')
             dual_print(chi_anharm_df)
             dual_print('______________________________\n')
-
             dual_print('Lamb Shifts:')
             dual_print(lamb_shift_df)
             dual_print('______________________________\n')
-
             dual_print('Detuning (GHz):')
             dual_print(delta_df)
             dual_print('______________________________\n')
@@ -455,12 +453,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
     
     @staticmethod
-    def plot_fields_with_data_from_files(directory, save=True, columns=5):
-        mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
-        print(mode_dict['eigenfrequencies'])
-
-        participations = PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(json_sim_config=directory+r"/config.json", output_directory=directory)
-        # print(ret_dict[0].keys())
+    def plot_fields_with_data_from_files(directory, save=True, columns=4):
+        mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(
+            directory)
+        participations = PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(
+            json_sim_config=directory+r"/config.json", output_directory=directory)
         # collect png files
         r = re.compile(r"eig(\d+)_ErealMag\.png")
         png_files = []
@@ -469,11 +466,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 png_files.append(filename)
         n_modes = len(png_files)
         # plotting
-        cols = columns
-        rows = -(-n_modes // cols)
         fig = plt.figure(figsize=(8, 3 * n_modes))
         gs = GridSpec(n_modes, 2, width_ratios=[2, 1], figure=fig)
-        #axes = axes.flatten()
         for i, filename in enumerate(png_files):
             eig_num = int(r.match(filename).group(1))
             img = mpimg.imread(os.path.join(directory, filename))
@@ -486,9 +480,10 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             ax_txt.axis("off")
             ax_txt.text(
                 0, 0.8,
-                f"Mode #: {eig_num}\n"
+                f"Mode {eig_num}\n\n"
                 f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
                 f"Q = {participations[eig_num]['Q']:.0f}\n"
+                f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
                 f"p_MS = {participations[eig_num]['MS']['p']:.2e}\n"
                 f"p_MA = {participations[eig_num]['MA']['p']:.2e}\n"
                 f"p_SA = {participations[eig_num]['SA']['p']:.2e}\n",
@@ -498,6 +493,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         plt.tight_layout()
         if save:
             plt.savefig(directory + r"/eigenmodes.png")
+            print(f"Plot saved: {directory}/eigenmodes.png")
         plt.show()
+        return {'mode_dict': mode_dict, 'participations': participations}
 
 
