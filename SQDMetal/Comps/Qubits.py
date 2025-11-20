@@ -597,7 +597,7 @@ class TransmonTaperedInsets(BaseQubit):
         chrgln_pin_x_offset = '30um',  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset = '50um', # User-defined vertical distance from the pocket edge
         # Pads
-        pad_gap="85um",
+        pad_gap="100um",
         pad_width="800um",
         pad_height="110um",
         # Pocket
