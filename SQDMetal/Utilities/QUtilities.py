@@ -1478,3 +1478,21 @@ class QUtilities:
         if start > end:
             values = values[::-1]
         return values
+
+    @staticmethod
+    def get_cpw_resonator_length(f0_Hz, resonator_type="quarter", cpw_width=10e-6, cpw_gap=6e-6, substrate_thickness=500e-6, film_thickness=200e-9):
+        assert resonator_type in ["quarter", "half", "full"], \
+            'Chooses resonator_type from "quarter", "half", or "full".'
+        l_full, _, _ = cpw_calculations.guided_wavelength(
+            freq=f0_Hz,
+            line_width=cpw_width,
+            line_gap=cpw_gap,
+            substrate_thickness=substrate_thickness,
+            film_thickness=film_thickness)
+        if resonator_type == "quarter":
+            l = l_full / 4
+        elif resonator_type == "half":
+            l = l_full / 2
+        else:
+            l = l_full
+        return l

@@ -506,8 +506,16 @@ class GMSH_Geometry_Builder:
         # draw lines from points
         for j,value in enumerate(points):
             if(j<len(points)-1):
-                line = gmsh.model.occ.add_line(points[j], points[j+1])
-                lines.append(line)
+                # skip lines on problematic points
+                try:
+                    line = gmsh.model.occ.add_line(points[j], points[j+1])
+                    lines.append(line)
+                except:
+                    print(f"GMSH: skipped line ({coords[j]}, {coords[j+1]})")
+
+                # # original
+                # line = gmsh.model.occ.add_line(points[j], points[j+1])
+                # lines.append(line)
 
         line = gmsh.model.occ.add_line(points[len(points)-1], points[0])
         lines.append(line)      
