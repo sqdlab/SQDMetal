@@ -4,7 +4,7 @@
 from pathlib import Path
 from SQDMetal.Utilities.QUtilities import QUtilities
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
-from SQDMetal.Utilities.Materials import MaterialInterface
+from SQDMetal.Utilities.Materials import MaterialInterface, MaterialConductor
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimRFsParameter import COMSOL_Simulation_RFsParameters
 from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builder
@@ -33,7 +33,10 @@ class PALACE_Model:
         self._sim_config = ""
         self._input_dir = ""
         self._output_subdir = ""
+        #TODO: Move this to the RF-only daughter class...
+        self._ff_type = {}
         self.set_farfield()
+        #
         self._EPR_setup = False
         self._use_KI = False
         self._KI = 0
@@ -163,11 +166,6 @@ class PALACE_Model:
         '''
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
 
-    def set_farfield(self, ff_type='pec'):
-        #ff_type can be: 'absorbing' or 'pec'
-        ff_type = ff_type.lower()
-        assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
-        self._ff_type = {'ffxPos': 'pec', 'ffxNeg': 'pec', 'ffyPos': 'pec', 'ffyNeg': 'pec', 'ffzPos': 'pec', 'ffzNeg': 'pec'}
 
     def _is_native_arm64(self):
         '''
@@ -590,22 +588,6 @@ class PALACE_Model:
         self._boundary_distances['z_neg'] = z_neg
         self._boundary_distances['z_pos'] = z_pos
 
-    def _process_farfield(self, dict_config, ff_physgrps):
-        abs_list = []
-        pec_list = []
-        for ff_plane in self._ff_type:
-            if self._ff_type[ff_plane] == 'absorbing':
-                abs_list.append(ff_physgrps[ff_plane])
-            elif self._ff_type[ff_plane] == 'pec':
-                pec_list.append(ff_physgrps[ff_plane])
-        if self._ff_type == 'absorbing':
-            dict_config['Boundaries']['Absorbing'] = {
-                    "Attributes": abs_list,
-                    "Order": 1
-                }
-        else:
-            dict_config['Boundaries']['PEC']['Attributes'] += pec_list
-    
     def enable_mesh_refinement(self, num_iterations, max_DoFs=0, tolerance=1e-2, Dorfler_marking_fraction = 0.7, save_iterations_data=True, save_iterations_mesh=True):
         #https://awslabs.github.io/palace/dev/config/model/
         self._mesh_refinement['Tol'] = tolerance
@@ -1031,21 +1013,46 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     "Attributes": [],
                 }
 
-    def set_farfield_plane(self, plane, ff_type='pec'):
+    def set_farfield(self, ff_type='pec', ff_plane='', ff_material: MaterialConductor=None):
         #ff_type can be: 'absorbing' or 'pec'
         ff_type = ff_type.lower()
-        assert ff_type == 'pec' or ff_type == 'absorbing', "ff_type must be: 'absorbing' or 'pec'"
-        if plane == 'x_pos':
-            self._ff_type['ffxPos'] = ff_type
-        elif plane == 'x_neg':
-            self._ff_type['ffxneg'] = ff_type
-        elif plane == 'y_pos':
-            self._ff_type['ffyPos'] = ff_type
-        elif plane == 'y_neg':
-            self._ff_type['ffyneg'] = ff_type
-        elif plane == 'z_pos':
-            self._ff_type['ffzPos'] = ff_type
-        elif plane == 'z_neg':
-            self._ff_type['ffzneg'] = ff_type
-        else:
-            assert False, "Farfield plane must be 'x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg'."
+        assert ff_type == 'pec' or ff_type == 'absorbing' or ff_type == 'conductor', "ff_type must be: 'absorbing', 'pec' or 'conductor'"
+        ff_planes = ['x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg']
+        if ff_plane != '':
+            assert ff_plane in ff_planes, "Farfield plane must be 'x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg'."
+            ff_planes = [ff_plane]
+        for cur_ff_plane in ff_planes:
+            if ff_type == 'conductor':
+                assert ff_material != None, "Must supply a MaterialConductor object when specifying farfields as a conductor."
+                cur_ff_type = (ff_type, ff_material)
+            else:
+                cur_ff_type = (ff_type,None)
+            self._ff_type[cur_ff_plane] = cur_ff_type
+
+    def _process_farfield(self, dict_config, ff_physgrps):
+        abs_list = []
+        pec_list = []
+        con_list = []
+        for ff_plane in self._ff_type:
+            if self._ff_type[ff_plane][0] == 'absorbing':
+                abs_list.append(ff_physgrps[ff_plane])
+            elif self._ff_type[ff_plane][0] == 'pec':
+                pec_list.append(ff_physgrps[ff_plane])
+            elif self._ff_type[ff_plane][0] == 'conductor':
+                con_list.append((ff_physgrps[ff_plane], self._ff_type[ff_plane][1]))
+        #
+        if len(abs_list) > 0:
+            dict_config['Boundaries']['Absorbing'] = {"Attributes": abs_list, "Order": 1}
+        if len(pec_list) > 0:
+            dict_config['Boundaries']['PEC']['Attributes'] += pec_list
+        for cur_cond_plane in con_list:
+            if not 'Conductivity' in dict_config['Boundaries']:
+                dict_config['Boundaries']['Conductivity'] = []
+            attrs, material_cond = cur_cond_plane
+            dict_config['Boundaries']['Conductivity'].append(
+                {
+                    'Attributes': [attrs],
+                    'Conductivity': material_cond.conductivity,
+                    'Permeability': material_cond.permeability
+                    # 'Thickness': <float>
+                })
