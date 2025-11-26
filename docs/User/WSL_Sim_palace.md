@@ -117,6 +117,7 @@ When running Palace simulations, the simulation object receives a dictionary via
 - `'palace_mode': 'wsl'`,
 - `'palace_wsl_spack_repo_directory': '~/repo'`
 - `'palace_dir':"~/repo/spack/opt/spack/linux-zen2/palace-develop-3ofp7n4fjqj5i6slvei3w6nptzdiwdma/bin/palace"`
+- `'palace_wsl_spack_env_name': 'spack-env'`
 
-where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds `~/repo` to the path found using `find -name palace*` earlier.
+where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds `~/repo` to the path found using `find -name palace*` earlier. If for some reason the spack venv was under a different name, specify `palace_wsl_spack_env_name`.
 
