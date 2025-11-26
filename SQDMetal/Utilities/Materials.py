@@ -114,3 +114,28 @@ class MaterialInterface:
                 self.loss_tangent = 0.005
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
+
+class MaterialConductor:
+    def __init__(self, name="", **kwargs):
+        if name == "":
+            self.conductivity = kwargs.pop('conductivity', 1)   #In S/m
+            self.permeability = kwargs.pop('permeability', 1)   #Relative Permeability
+            for m in kwargs:
+                assert False, f"Option {m} is not recognised"
+        else:
+            #The names can have capitals and can be delimited via spaces, underscores or camelcase
+            orig_name = name
+            name = name.lower().replace(" ", "").replace("_", "").replace("-", "")
+            ################################
+            #
+            #OFHC (DEOXYGENATED COPPER)
+            #
+            #References
+            #[1] 
+            if name == "deoxygenatedcopper" or name == "ofhc" or name == "oxygenfreecopper":
+                self.conductivity = 1/2e-9
+                self.permeability = 1
+            ################################
+            else:
+                assert False, f"Material \"{orig_name}\" unrecognised."
+

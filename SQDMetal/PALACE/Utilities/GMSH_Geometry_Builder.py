@@ -223,29 +223,29 @@ class GMSH_Geometry_Builder:
         # Create Farfield Planes
         centre = self._extents[0][0], self._ff_centre[1], self._ff_centre[2]
         v1,v2 = [0,self._ff_sizes[1]/2,0], [0,0,self._ff_sizes[2]/2]
-        dict_all_entities['ffxNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['x_neg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
         centre = self._extents[0][1], self._ff_centre[1], self._ff_centre[2]
         v1,v2 = [0,self._ff_sizes[1]/2,0], [0,0,self._ff_sizes[2]/2]
-        dict_all_entities['ffxPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['x_pos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
         centre = self._ff_centre[0], self._extents[1][0], self._ff_centre[2]
         v1,v2 = [self._ff_sizes[0]/2,0,0], [0,0,self._ff_sizes[2]/2]
-        dict_all_entities['ffyNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['y_neg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
         centre = self._ff_centre[0], self._extents[1][1], self._ff_centre[2]
         v1,v2 = [self._ff_sizes[0]/2,0,0], [0,0,self._ff_sizes[2]/2]
-        dict_all_entities['ffyPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['y_pos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
         centre = self._ff_centre[0], self._ff_centre[1], self._extents[2][0]
         v1,v2 = [self._ff_sizes[0]/2,0,0], [0,self._ff_sizes[1]/2,0]
-        dict_all_entities['ffzNeg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['z_neg'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
         centre = self._ff_centre[0], self._ff_centre[1], self._extents[2][1]
         v1,v2 = [self._ff_sizes[0]/2,0,0], [0,self._ff_sizes[1]/2,0]
-        dict_all_entities['ffzPos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
+        dict_all_entities['z_pos'] = [(2,self._create_gmsh_plane(centre, v1, v2, message="Farfield"))]
         #
-        ff_names = ['ffxNeg', 'ffxPos', 'ffyNeg', 'ffyPos', 'ffzNeg', 'ffzPos']
+        ff_names = ['x_neg', 'x_pos', 'y_neg', 'y_pos', 'z_neg', 'z_pos']
 
         # Consolidate all overlapping surfaces
         # NOTE: Strange embedding issue with fix here: https://gitlab.onelab.info/gmsh/gmsh/-/issues/2669
