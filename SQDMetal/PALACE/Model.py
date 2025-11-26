@@ -57,6 +57,7 @@ class PALACE_Model:
             self.palace_dir = options.get('palace_dir', 'palace')
             self.palace_mode = options.get('palace_mode', 'local')  #Can be local, wsl, docker
             self._palace_wsl_repo_location = options.get('palace_wsl_spack_repo_directory', '~/repo')
+            self._palace_wsl_spack_env_name = options.get('palace_wsl_spack_env_name', 'spack-env')
             self.hpc_options = {"input_dir":""}
         self._num_cpus = options.get('num_cpus', 16)
         self._num_threads = options.get('num_threads', 1)
@@ -246,8 +247,7 @@ class PALACE_Model:
         with open("temp.sh", "w+", newline='\n') as f:
             f.write(f"cd {self._palace_wsl_repo_location}\n")
             f.write(f"source ./spack/share/spack/setup-env.sh\n")
-            f.write(f"spack env create -d ./spack-env\n")
-            f.write(f"spack env activate ./spack-env\n")
+            f.write(f"spack env activate ./{self._palace_wsl_spack_env_name}\n")
             f.write(f"cd \"{leDirWSL}\"\n")
             f.write(f"{self.palace_dir} -np {self._num_cpus} -nt {self._num_threads} {leFile} | tee \"{log_locationWSL}\"\n")
 
