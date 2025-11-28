@@ -609,16 +609,16 @@ class TransmonTaperedInsets(BaseQubit):
         taper_width_base="200um",
         taper_height="40um",
         taper_fillet_radius="3um",
-        fillet_resolution_tapered=16,
+        fillet_resolution_tapered=64,
         # Insets
         inset_width="0um",
         inset_depth="100um",
         inset_fillet_radius="10um",
         # Fillet settings
         fillet_radius="50um",
-        fillet_resolution=8,
+        fillet_resolution=16,
         fillet_radius_gap="50um",
-        fillet_resolution_gap=8,
+        fillet_resolution_gap=16,
         # Coupler - resonator
         coupled_pad_height="0um",
         coupled_pad_width="0um",
