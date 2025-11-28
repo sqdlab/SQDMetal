@@ -131,11 +131,18 @@ class MaterialConductor:
             #OFHC (DEOXYGENATED COPPER)
             #
             #References
-            #[1] 
+            # [1] https://link.springer.com/chapter/10.1007/978-1-4899-3751-3_13
             if name == "deoxygenatedcopper" or name == "ofhc" or name == "oxygenfreecopper":
-                self.conductivity = 1/2e-9
+                self.conductivity = 1/31.5e-9
+                self.permeability = 1
+            ################################
+            #GOLD
+            #
+            #References
+            # [1] https://royalsocietypublishing.org/doi/epdf/10.1098/rsta.1982.0016
+            if name == "gold" or name == "au":
+                self.conductivity = 1/5e-9
                 self.permeability = 1
             ################################
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
-
