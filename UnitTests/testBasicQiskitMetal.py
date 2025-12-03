@@ -7,8 +7,9 @@ from qiskit_metal import designs, Dict
 # To create plots after geting solution data.
 import numpy as np
 # Packages for the simple design
-from SQDMetal.Comps.Xmon import Xmon
+# from SQDMetal.Comps.Xmon import Xmon
 # from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
+import SQDMetal
 
 # from SQDMetal.Utilities.QUtilities import QUtilities
 # from qiskit_metal.toolbox_python.attr_dict import Dict
@@ -24,6 +25,7 @@ class TestBasic(unittest.TestCase):
     ERR_TOL = 5e-13
     
     def test_XmonDesign(self):
+        print(SQDMetal.__path__)
         # Set up chip design as planar, multiplanar also available
         design = designs.DesignPlanar({}, overwrite_enabled=True)
         # Set up chip dimensions 
