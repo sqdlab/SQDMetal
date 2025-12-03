@@ -7,7 +7,7 @@ from qiskit_metal import designs, Dict
 # To create plots after geting solution data.
 import numpy as np
 # Packages for the simple design
-# from SQDMetal.Comps.Xmon import Xmon
+from SQDMetal.Comps.Xmon import Xmon
 # from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
 # from SQDMetal.Utilities.QUtilities import QUtilities
