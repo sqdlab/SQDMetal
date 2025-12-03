@@ -29,6 +29,10 @@ jobs:
           # conda init
           # Verify conda is available and initialized
           conda --version
+      
+      - name: Get Conda location
+        run: |
+          conda info --envs 
 
       - name: Create environment from yml and activate
         run: |
