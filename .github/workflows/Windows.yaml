@@ -1,15 +1,6 @@
 name: SQDMetal Test Workflow
 
-on:
-  push:
-    paths:
-      - 'SQDMetal/env_windows.yml'
-      - '.github/workflows/test-windows.yml'
-  pull_request:
-    paths:
-      - 'SQDMetal/env_windows.yml'
-      - '.github/workflows/test-windows.yml'
-  workflow_dispatch:
+on: [pull_request, push, workflow_dispatch]
 
 jobs:
   test:
