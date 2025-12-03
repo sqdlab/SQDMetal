@@ -22,7 +22,6 @@ dependencies = [
  "pyvista>=0.45.2",
  "mapclassify==2.8.1",
  "scipy==1.10.1",
- "matplotlib==3.7.0",
  "qiskit-metal==0.1.2",
 ]  
 
