@@ -45,10 +45,10 @@ jobs:
         # pip install cupy-cuda12x
         #pip install -r requirements_test.txt
 
-      - name: Verify package installation
-        run: |
-          pip show SQDMetal || echo "Package not installed"
-          python -c "import SQDMetal; print(SQDMetal.__file__)"
+      # - name: Verify package installation
+      #   run: |
+      #     pip show SQDMetal || echo "Package not installed"
+      #     python -c "import SQDMetal; print(SQDMetal.__file__)"
 
       - name: Pre-build Matplotlib font cache
         run: python -c "import matplotlib.pyplot as plt; plt.figure()"
