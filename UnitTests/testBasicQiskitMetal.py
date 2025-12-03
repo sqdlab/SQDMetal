@@ -2,6 +2,7 @@ import os
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 os.environ["PMIX_MCA_gds"]="hash"
 # Import useful packages
+print('Starting Import for Tests')
 import qiskit_metal as metal
 from qiskit_metal import designs, draw
 from qiskit_metal import MetalGUI, Dict, open_docs
@@ -17,7 +18,9 @@ from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
 from qiskit_metal import designs
 from SQDMetal.Utilities.QUtilities import QUtilities
+print('Importing Matplotlib')
 import matplotlib.pyplot as plt
+print('Imported Matplotlib')
 import numpy as np
 from qiskit_metal.toolbox_python.attr_dict import Dict
 #
