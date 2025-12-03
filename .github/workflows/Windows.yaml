@@ -34,6 +34,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
 
+      - name: Install Visual C++ Build Tools
+        run: |
+          choco install visualcpp-build-tools
+          echo "Visual C++ Build Tools Installed"
+
       - name: Install
         run: |
           pip install -e .
