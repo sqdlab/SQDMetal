@@ -14,7 +14,7 @@ import numpy as np
 # from qiskit_metal.toolbox_python.attr_dict import Dict
 # #
 # from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
-# from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 import shutil
 
@@ -34,6 +34,8 @@ class TestBasic(unittest.TestCase):
         design.chips.main.size.center_y = '0mm'
         # Create the x-mon
         print("Test")
+        LaunchpadWirebond(design, 'LP1', options = dict(chip='main', orientation='45', lead_length='20um', pad_height='20um', 
+                            pad_width='40um', pad_gap='20um'))
         # xmon = Xmon(design, 'x-mon', options=Dict(pos_x=0, pos_y=0,
         #                                     vBar_width='24um', hBar_width='24um', vBar_gap=f'{16}um', hBar_gap=f'{16}um',
         #                                     cross_width=f'{60*2+24}um', cross_height=f'{60*2+24}um',
