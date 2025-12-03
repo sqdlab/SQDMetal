@@ -41,14 +41,14 @@ jobs:
 
       - name: Install the package in editable mode
         run: |
-          pip install -e .
+          ~\.conda\envs\sqdmetal_env\python.exe -m pip install -e .
 
       - name: Pre-build Matplotlib font cache
-        run: python -c "import matplotlib.pyplot as plt; plt.figure()"
+        run: ~\.conda\envs\sqdmetal_env\python.exe -c "import matplotlib.pyplot as plt; plt.figure()"
 
       - name: Run tests
         run: |
-          python UnitTests/testBasicQiskitMetal.py
+          ~\.conda\envs\sqdmetal_env\python.exe UnitTests/testBasicQiskitMetal.py
           
       - name: Run unittest tests
-        run: python -m unittest discover -s UnitTests
+        run: ~\.conda\envs\sqdmetal_env\python.exe -m unittest discover -s UnitTests
