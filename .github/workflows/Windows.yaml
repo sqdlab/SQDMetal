@@ -1,0 +1,41 @@
+name: Windows
+
+on: [pull_request, push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["windows-latest"]
+        #os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.10"]
+    # XXX Workaround for Windows runners redirecting the output of commands to files.
+    # See: https://github.com/databrickslabs/dbx/issues/455#issuecomment-1312770919
+    env:
+      PYTHONIOENCODING: "utf8"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v2
+
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      # - uses: Jimver/cuda-toolkit@v0.2.11
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: '12.1.0'
+
+      - name: Install
+        run: |
+          pip install -e .
+        # pip install cupy-cuda12x
+        #pip install -r requirements_test.txt          
+
+      - name: Run tests
+        run: python -m unittest discover -s UnitTests
+        #pytest
