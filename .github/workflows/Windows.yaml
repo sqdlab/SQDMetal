@@ -33,7 +33,7 @@ jobs:
         run: |
           # conda activate base      # Activate base environment
           conda env create -n sqdmetal_env -f env_windows.yml  # Create environment
-          "$CONDA\Scripts\activate" sqdmetal_env  # Activate the environment
+          C:\Miniconda3\Scripts\activate sqdmetal_env  # Activate the environment
 
       - name: Install the package in editable mode
         run: |
