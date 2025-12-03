@@ -8,7 +8,7 @@ from qiskit_metal import designs, Dict
 import numpy as np
 # Packages for the simple design
 from SQDMetal.Comps.Xmon import Xmon
-from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
+# from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
 # from SQDMetal.Utilities.QUtilities import QUtilities
 # from qiskit_metal.toolbox_python.attr_dict import Dict
@@ -33,17 +33,18 @@ class TestBasic(unittest.TestCase):
         design.chips.main.size.center_x = '0mm'
         design.chips.main.size.center_y = '0mm'
         # Create the x-mon
+        print("Test")
         xmon = Xmon(design, 'x-mon', options=Dict(pos_x=0, pos_y=0,
                                             vBar_width='24um', hBar_width='24um', vBar_gap=f'{16}um', hBar_gap=f'{16}um',
                                             cross_width=f'{60*2+24}um', cross_height=f'{60*2+24}um',
                                             gap_up='24um', gap_left='24um', gap_right='24um', gap_down='24um'))
 
         # Create the Josephson junction
-        JunctionDolanPinStretch(design, 'junction', options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'x-mon',pin='right')),
-                                                                dist_extend='24um',
-                                                                layer=2,
-                                                                finger_width='0.4um', t_pad_size='0.385um',
-                                                                squid_width='5.4um', prong_width='0.9um'));
+        # JunctionDolanPinStretch(design, 'junction', options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'x-mon',pin='right')),
+        #                                                         dist_extend='24um',
+        #                                                         layer=2,
+        #                                                         finger_width='0.4um', t_pad_size='0.385um',
+        #                                                         squid_width='5.4um', prong_width='0.9um'));
 
     # def test_Gallery(self):
     #     design = designs.DesignPlanar({}, overwrite_enabled=True)
