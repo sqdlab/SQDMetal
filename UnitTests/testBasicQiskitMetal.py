@@ -3,8 +3,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 os.environ["PMIX_MCA_gds"]="hash"
 # Import useful packages
 import qiskit_metal as metal
-from qiskit_metal import designs, draw
-from qiskit_metal import MetalGUI, Dict, open_docs
+from qiskit_metal import designs, Dict
 from qiskit_metal.toolbox_metal import math_and_overrides
 from qiskit_metal.qlibrary.core import QComponent
 from collections import OrderedDict
