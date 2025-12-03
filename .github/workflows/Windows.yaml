@@ -29,10 +29,6 @@ jobs:
           # conda init
           # Verify conda is available and initialized
           conda --version
-      
-      - name: Get Conda location
-        run: |
-          conda info --envs 
 
       - name: Create environment from yml and activate
         run: |
@@ -40,10 +36,9 @@ jobs:
           conda init powershell
           # conda env create -n sqdmetal_env -f env_windows.yml  # Create environment
           conda create -n sqdmetal_env python=3.11  # Force Python 3.10
-          powershell -command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
-          powershell -command "~/.conda/envs/sqdmetal_env/python.exe -m pip install -e ."
+          conda info --envs
           # conda env update -n sqdmetal_env --file env_windows.yml
-          conda activate sqdmetal_env  # Activate the environment
+          # conda activate sqdmetal_env  # Activate the environment
 
       - name: Install the package in editable mode
         run: |
