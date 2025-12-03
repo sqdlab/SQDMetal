@@ -32,6 +32,7 @@ class TestBasic(unittest.TestCase):
     ERR_TOL = 5e-13
     
     def test_XmonDesign(self):
+        print("---Testing-Xmon-Design---")
         # Set up chip design as planar, multiplanar also available
         design = designs.DesignPlanar({}, overwrite_enabled=True)
         # Set up chip dimensions 
@@ -54,6 +55,7 @@ class TestBasic(unittest.TestCase):
                                                                 squid_width='5.4um', prong_width='0.9um'));
 
     def test_Gallery(self):
+        print("---Testing-Gallery-Functionality---")
         design = designs.DesignPlanar({}, overwrite_enabled=True)
         design.delete_all_components()
         LaunchpadWirebond(design, 'LP1', options = dict(chip='main', orientation='45', lead_length='20um', pad_height='20um', 
