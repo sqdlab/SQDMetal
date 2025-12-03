@@ -29,7 +29,7 @@
 
 # import shutil
 
-# import unittest
+import unittest
 
 class TestBasic(unittest.TestCase):
     ERR_TOL = 5e-13
