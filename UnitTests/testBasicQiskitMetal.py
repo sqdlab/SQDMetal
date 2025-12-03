@@ -9,23 +9,23 @@ from qiskit_metal import MetalGUI, Dict, open_docs
 from qiskit_metal.toolbox_metal import math_and_overrides
 from qiskit_metal.qlibrary.core import QComponent
 from collections import OrderedDict
-# To create plots after geting solution data.
-import matplotlib.pyplot as plt
-import numpy as np
-# Packages for the simple design
-from SQDMetal.Comps.Xmon import Xmon
-from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
+# # To create plots after geting solution data.
+# import matplotlib.pyplot as plt
+# import numpy as np
+# # Packages for the simple design
+# from SQDMetal.Comps.Xmon import Xmon
+# from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
-from qiskit_metal import designs
-from SQDMetal.Utilities.QUtilities import QUtilities
-print('Importing Matplotlib')
-import matplotlib.pyplot as plt
-print('Imported Matplotlib')
-import numpy as np
-from qiskit_metal.toolbox_python.attr_dict import Dict
-#
-from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
-from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+# from qiskit_metal import designs
+# from SQDMetal.Utilities.QUtilities import QUtilities
+# print('Importing Matplotlib')
+# import matplotlib.pyplot as plt
+# print('Imported Matplotlib')
+# import numpy as np
+# from qiskit_metal.toolbox_python.attr_dict import Dict
+# #
+# from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
+# from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 # import shutil
 
