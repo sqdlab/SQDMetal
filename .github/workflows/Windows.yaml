@@ -1,66 +1,59 @@
-name: Windows
+name: SQDMetal Test Workflow
 
-on: [pull_request, push, workflow_dispatch]
+on:
+  push:
+    paths:
+      - 'SQDMetal/env_windows.yml'
+      - '.github/workflows/test-windows.yml'
+  pull_request:
+    paths:
+      - 'SQDMetal/env_windows.yml'
+      - '.github/workflows/test-windows.yml'
+  workflow_dispatch:
 
 jobs:
   test:
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: true
       matrix:
-        os: ["windows-latest"]
-        #os: ["ubuntu-latest", "windows-latest", "macos-latest"]
-        python-version: ["3.10"]
-    # XXX Workaround for Windows runners redirecting the output of commands to files.
-    # See: https://github.com/databrickslabs/dbx/issues/455#issuecomment-1312770919
-    env:
-      PYTHONIOENCODING: "utf8"
+        os: [windows-latest]
+
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Setup python
-        uses: actions/setup-python@v2
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v2
         with:
-          python-version: ${{ matrix.python-version }}
-          architecture: x64
-
-      # - uses: Jimver/cuda-toolkit@v0.2.11
-      #   id: cuda-toolkit
-      #   with:
-      #     cuda: '12.1.0'
-
-      - name: Upgrade pip
+          miniconda-version: "latest"   # Ensure the latest version is installed
+          auto-activate-base: true      # Automatically activate base environment
+          activate-environment: false  # Don't activate environment yet
+          
+      - name: Initialize Conda for PowerShell (if using pwsh)
         run: |
-          python -m pip install --upgrade pip setuptools wheel
+          # conda init
+          # Verify conda is available and initialized
+          conda --version
 
-      - name: Install Visual C++ Build Tools
+      - name: Create environment from yml and activate
         run: |
-          choco install visualcpp-build-tools
-          echo "Visual C++ Build Tools Installed"
+          # conda activate base      # Activate base environment
+          conda env create -n sqdmetal_env -f env_windows.yml  # Create environment
+          $CONDA/bin/activate sqdmetal_env  # Activate the environment
 
-      - name: Install
+      - name: Install the package in editable mode
         run: |
           pip install -e .
-        # pip install cupy-cuda12x
-        #pip install -r requirements_test.txt
-
-      # - name: Verify package installation
-      #   run: |
-      #     pip show SQDMetal || echo "Package not installed"
-      #     python -c "import SQDMetal; print(SQDMetal.__file__)"
 
       - name: Pre-build Matplotlib font cache
         run: python -c "import matplotlib.pyplot as plt; plt.figure()"
 
-      - name: Test package import with detailed logging
-        run: |
-          python -Xdev -c "import SQDMetal; print('SQDMetal imported successfully')"
-
-      - name: Test
+      - name: Run tests
         run: |
           python UnitTests/testBasicQiskitMetal.py
-
-      - name: Run tests
+          
+      - name: Run unittest tests
         run: python -m unittest discover -s UnitTests
-        #pytest
