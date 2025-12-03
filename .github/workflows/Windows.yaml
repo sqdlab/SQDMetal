@@ -35,6 +35,9 @@ jobs:
           pip install -e .
         # pip install cupy-cuda12x
         #pip install -r requirements_test.txt
+
+      - name: Pre-build Matplotlib font cache
+        run: python -c "import matplotlib.pyplot as plt; plt.figure()"
       
       - name: Test
         run: |
