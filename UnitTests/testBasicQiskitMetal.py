@@ -9,7 +9,12 @@ import numpy as np
 # Packages for the simple design
 # from SQDMetal.Comps.Xmon import Xmon
 # from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
-import SQDMetal
+try:
+    import SQDMetal
+    print("SQDMetal imported successfully")
+except ImportError as e:
+    print("ImportError:", e)
+    raise
 
 # from SQDMetal.Utilities.QUtilities import QUtilities
 # from qiskit_metal.toolbox_python.attr_dict import Dict
