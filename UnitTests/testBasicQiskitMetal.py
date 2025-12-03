@@ -7,7 +7,7 @@ from qiskit_metal import designs, Dict
 # To create plots after geting solution data.
 import numpy as np
 # Packages for the simple design
-from SQDMetal.Comps.Xmon import Xmon
+# from SQDMetal.Comps.Xmon import Xmon
 # from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
 # from SQDMetal.Utilities.QUtilities import QUtilities
@@ -34,10 +34,10 @@ class TestBasic(unittest.TestCase):
         design.chips.main.size.center_y = '0mm'
         # Create the x-mon
         print("Test")
-        xmon = Xmon(design, 'x-mon', options=Dict(pos_x=0, pos_y=0,
-                                            vBar_width='24um', hBar_width='24um', vBar_gap=f'{16}um', hBar_gap=f'{16}um',
-                                            cross_width=f'{60*2+24}um', cross_height=f'{60*2+24}um',
-                                            gap_up='24um', gap_left='24um', gap_right='24um', gap_down='24um'))
+        # xmon = Xmon(design, 'x-mon', options=Dict(pos_x=0, pos_y=0,
+        #                                     vBar_width='24um', hBar_width='24um', vBar_gap=f'{16}um', hBar_gap=f'{16}um',
+        #                                     cross_width=f'{60*2+24}um', cross_height=f'{60*2+24}um',
+        #                                     gap_up='24um', gap_left='24um', gap_right='24um', gap_down='24um'))
 
         # Create the Josephson junction
         # JunctionDolanPinStretch(design, 'junction', options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'x-mon',pin='right')),
