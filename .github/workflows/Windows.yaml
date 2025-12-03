@@ -12,6 +12,11 @@ jobs:
       matrix:
         os: [windows-latest]
 
+    # XXX Workaround for Windows runners redirecting the output of commands to files.
+    # See: https://github.com/databrickslabs/dbx/issues/455#issuecomment-1312770919
+    env:
+      PYTHONIOENCODING: "utf8"
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -48,9 +53,9 @@ jobs:
       # - name: Pre-build Matplotlib font cache
       #   run: C:/Miniconda3/envs/sqdmetal_env/python.exe -c "import matplotlib.pyplot as plt; plt.figure()"
 
-      - name: Run tests
-        run: |
-          powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe UnitTests/testBasicQiskitMetal.py"
+      # - name: Run tests
+      #   run: |
+      #     powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe UnitTests/testBasicQiskitMetal.py"
           
       - name: Run unittest tests
         run: powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe -m unittest discover -s UnitTests"
