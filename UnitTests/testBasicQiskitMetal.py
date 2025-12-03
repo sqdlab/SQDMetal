@@ -9,16 +9,12 @@ from qiskit_metal.toolbox_metal import math_and_overrides
 from qiskit_metal.qlibrary.core import QComponent
 from collections import OrderedDict
 # To create plots after geting solution data.
-import matplotlib.pyplot as plt
 import numpy as np
 # Packages for the simple design
 from SQDMetal.Comps.Xmon import Xmon
 from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
-from qiskit_metal import designs
 from SQDMetal.Utilities.QUtilities import QUtilities
-# import matplotlib.pyplot as plt
-import numpy as np
 from qiskit_metal.toolbox_python.attr_dict import Dict
 #
 from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
