@@ -52,7 +52,11 @@ jobs:
 
       - name: Pre-build Matplotlib font cache
         run: python -c "import matplotlib.pyplot as plt; plt.figure()"
-      
+
+      - name: Test package import with detailed logging
+        run: |
+          python -Xdev -c "import SQDMetal; print('SQDMetal imported successfully')"
+
       - name: Test
         run: |
           python UnitTests/testBasicQiskitMetal.py
