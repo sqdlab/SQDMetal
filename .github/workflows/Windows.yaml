@@ -25,6 +25,7 @@ jobs:
           
       - name: Initialize Conda for PowerShell (if using pwsh)
         run: |
+          powershell -l "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
           # conda init
           # Verify conda is available and initialized
           conda --version
@@ -32,10 +33,11 @@ jobs:
       - name: Create environment from yml and activate
         run: |
           # conda activate base      # Activate base environment
+          conda init powershell
           conda env create python=3.11 -n sqdmetal_env -f env_windows.yml  # Create environment
           # conda create -n sqdmetal_env python=3.11  # Force Python 3.10
           # conda env update -n sqdmetal_env --file env_windows.yml
-          C:\Miniconda3\Scripts\activate.bat sqdmetal_env  # Activate the environment
+          conda activate sqdmetal_env  # Activate the environment
 
       - name: Install the package in editable mode
         run: |
