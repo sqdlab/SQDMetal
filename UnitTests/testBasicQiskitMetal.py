@@ -11,10 +11,9 @@ import SQDMetal
 from SQDMetal.Comps.Xmon import Xmon
 from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
 
-# from SQDMetal.Utilities.QUtilities import QUtilities
-# from qiskit_metal.toolbox_python.attr_dict import Dict
+from SQDMetal.Utilities.QUtilities import QUtilities
 # #
-# from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
+from SQDMetal.Comps.Capacitors import CapacitorInterdigitalPinStretch
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
 
 import shutil
