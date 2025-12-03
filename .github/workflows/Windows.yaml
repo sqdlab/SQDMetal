@@ -35,7 +35,7 @@ jobs:
           # Verify conda is available and initialized
           conda --version
 
-      - name: Create environment from yml and activate
+      - name: Create environment from yml
         run: |
           # conda activate base      # Activate base environment
           conda init powershell
