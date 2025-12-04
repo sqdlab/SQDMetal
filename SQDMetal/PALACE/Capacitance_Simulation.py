@@ -200,8 +200,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
         fig, ax = plt.subplots(1)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel('Position (m)')
-        ax.set_ylabel('Position (m)')
+        ax.set_xlabel('Position (mm)')
+        ax.set_ylabel('Position (mm)')
 
         if save==True:
             fig.savefig("ConductorIndicides.png")
