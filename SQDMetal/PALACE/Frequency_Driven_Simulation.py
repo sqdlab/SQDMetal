@@ -14,7 +14,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
     #Class Variables
     default_user_options = {
-                 "fillet_resolution": 4,
+                 "fillet_resolution": 12,
                  "dielectric_material": "silicon",
                  "solns_to_save": 4,
                  "solver_order": 2,
@@ -43,6 +43,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
+        self._ff_type = {}
+        self.set_farfield()
         for key in PALACE_Driven_Simulation.default_user_options:
             self.user_options[key] = user_options.get(key, PALACE_Driven_Simulation.default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui

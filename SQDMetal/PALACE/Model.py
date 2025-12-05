@@ -33,10 +33,6 @@ class PALACE_Model:
         self._sim_config = ""
         self._input_dir = ""
         self._output_subdir = ""
-        #TODO: Move this to the RF-only daughter class...
-        self._ff_type = {}
-        self.set_farfield()
-        #
         self._EPR_setup = False
         self._use_KI = False
         self._KI = 0
@@ -588,21 +584,22 @@ class PALACE_Model:
         self._boundary_distances['z_neg'] = z_neg
         self._boundary_distances['z_pos'] = z_pos
 
-    def enable_mesh_refinement(self, num_iterations, max_DoFs=0, tolerance=1e-2, Dorfler_marking_fraction = 0.7, save_iterations_data=True, save_iterations_mesh=True):
+    def enable_mesh_refinement(self, num_iterations, max_DoFs=0, tolerance=1e-2, Dorfler_marking_fraction = 0.7, save_iterations_data=True, save_iterations_mesh=False, nonconformal=True):
         #https://awslabs.github.io/palace/dev/config/model/
         self._mesh_refinement['Tol'] = tolerance
         self._mesh_refinement['MaxIts'] = num_iterations
         self._mesh_refinement['MaxSize'] =  max_DoFs
         self._mesh_refinement['UpdateFraction'] = Dorfler_marking_fraction
         self._mesh_refinement['UniformLevels'] = 0
+        self._mesh_refinement['Nonconformal'] = nonconformal
         self._mesh_refinement['SaveAdaptIterations'] = save_iterations_data
         self._mesh_refinement['SaveAdaptMesh'] = save_iterations_mesh
 
 class PALACE_Model_RF_Base(PALACE_Model):
 
+
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''
-        
         
 
         if self.meshing == 'GMSH':

@@ -22,7 +22,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
 
     #Class Variables
     default_user_options = {
-                 "fillet_resolution": 4,
+                 "fillet_resolution": 12,
                  "dielectric_material": "silicon",
                  "solns_to_save": -1,
                  "solver_order": 2,
