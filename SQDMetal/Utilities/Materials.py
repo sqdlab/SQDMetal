@@ -150,7 +150,7 @@ class MaterialConductor:
             #
             #References
             # [1] https://royalsocietypublishing.org/doi/epdf/10.1098/rsta.1982.0016
-            if name == "gold" or name == "au":
+            elif name == "gold" or name == "au":
                 self.conductivity = 1/5e-9
                 self.permeability = 1
             ################################
