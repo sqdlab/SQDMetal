@@ -907,7 +907,7 @@ def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, round
         raise ValueError("No areas were calculated since no target values were supplied.")
     width_JJ_nm = np.sqrt(A_m2) * 1e9
     if rounding:
-        width_JJ_nm = np.array([(round(i / 10.0) * 10) for i in width_JJ_nm])
+        width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
     width_JJ_um = width_JJ_nm * 1e-3
     return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
 

@@ -46,6 +46,16 @@ class Material:
                 self.permeability = 1
                 self.loss_tangent = 1.2e-6  #TODO: Change this to actual value!
             ################################
+            #
+            # FAKE ULTRA-LOW-LOSS MATERIAL (SILICON-LIKE)
+            # Uses the permittivity of silicon, used for studying losses arising not from the bulk substrate.
+            #
+            # References: https://indico.fnal.gov/event/4162/attachments/54289/64791/SapphireAndOtherMaterialsAt_100K.pdf
+            elif name == "ultralowlosssilicon" or name == "lowlosssilicon" or name == "fakesilicon":
+                self.permittivity = 11.7
+                self.permeability = 1
+                self.loss_tangent = 1.0e-10
+            ################################
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
 

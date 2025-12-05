@@ -1014,7 +1014,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 }
 
     def set_farfield(self, ff_type='pec', ff_plane='', ff_material: MaterialConductor=None):
-        #ff_type can be: 'absorbing' or 'pec'
+        #ff_type can be: 'absorbing', 'pec' or 'conductor'
         ff_type = ff_type.lower()
         assert ff_type == 'pec' or ff_type == 'absorbing' or ff_type == 'conductor', "ff_type must be: 'absorbing', 'pec' or 'conductor'"
         ff_planes = ['x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg']

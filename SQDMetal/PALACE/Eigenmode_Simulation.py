@@ -318,8 +318,9 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         headers = raw_dataE.columns
         raw_dataE = raw_dataE.to_numpy()
         col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
+        col_Ref_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
 
-        return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
+        return {'mat_mode_port': raw_data[:, 1:], 'eigenfrequencies': raw_dataE[:, col_Ref]*1e9, 'loaded_Q': raw_dataE[:, col_Ref_Q]}
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR_from_files(directory, config_json_path, modes_to_compare = [], print_output=True):
@@ -453,11 +454,15 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
     
     @staticmethod
-    def plot_fields_with_data_from_files(directory, save=True, columns=4):
+    def plot_fields_with_data_from_files(directory, save=True, columns=4, skip_postprocessing=False):
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(
             directory)
-        participations = PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(
-            json_sim_config=directory+r"/config.json", output_directory=directory)
+        if not skip_postprocessing:
+            try:
+                participations = PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(
+                    json_sim_config=directory+r"/config.json", output_directory=directory)
+            except:
+                skip_postprocessing = True
         # collect png files
         r = re.compile(r"eig(\d+)_ErealMag\.png")
         png_files = []
@@ -478,23 +483,33 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             # add text
             ax_txt = fig.add_subplot(gs[i, 1])
             ax_txt.axis("off")
-            ax_txt.text(
-                0, 0.8,
-                f"Mode {eig_num}\n\n"
-                f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
-                f"Q = {participations[eig_num]['Q']:.0f}\n"
-                f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
-                f"p_MS = {participations[eig_num]['MS']['p']:.2e}\n"
-                f"p_MA = {participations[eig_num]['MA']['p']:.2e}\n"
-                f"p_SA = {participations[eig_num]['SA']['p']:.2e}\n",
-                fontsize=10,
-                va="top"
-            )
+            if skip_postprocessing:
+                ax_txt.text(
+                    0, 0.8,
+                    f"Mode {eig_num}\n\n"
+                    f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
+                    f"Q = {mode_dict['loaded_Q'][eig_num]}"
+                )
+            else:
+                ax_txt.text(
+                    0, 0.8,
+                    f"Mode {eig_num}\n\n"
+                    f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
+                    f"Q = {participations[eig_num]['Q']:.0f}\n"
+                    f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
+                    f"p_MS = {participations[eig_num]['MS']['p']:.2e}\n"
+                    f"p_MA = {participations[eig_num]['MA']['p']:.2e}\n"
+                    f"p_SA = {participations[eig_num]['SA']['p']:.2e}\n",
+                    fontsize=10,
+                    va="top"
+                )
         plt.tight_layout()
         if save:
             plt.savefig(directory + r"/eigenmodes.png")
             print(f"Plot saved: {directory}/eigenmodes.png")
         plt.show()
-        return {'mode_dict': mode_dict, 'participations': participations}
-
+        if skip_postprocessing:
+            return {'mode_dict': mode_dict}
+        else:
+            return {'mode_dict': mode_dict, 'participations': participations}
 
