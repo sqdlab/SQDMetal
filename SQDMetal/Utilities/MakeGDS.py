@@ -309,6 +309,52 @@ class MakeGDS:
         except AttributeError as e:
             print(f"Attribute error: {e}. Please ensure you're using the correct KLayout API (i.e. NOT 'pip install pya' - this is a different library). Use 'pip install klayout' instead.")
 
+    def perforate_layer(self, layer_ind=0, x_space=20e-6, y_space=20e-6, hole_size=2e-6, keep_hole_layer=False, **kwargs):
+        #TODO: Add options to perhaps output into different layer?
+        #TODO: Add ability to avoid other layers or rather the edges of the layer (i.e. don't tread close to edge of ground plane etc...)
+
+        x_space /= self.gds_units
+        y_space /= self.gds_units
+        dx0 = kwargs.get('x_space_edge_proportion', 0.5) * x_space
+        dy0 = kwargs.get('x_space_edge_proportion', 0.5) * y_space
+
+        xMin = (self.cx-self.sx/2) * self.unit_conv
+        xMax = (self.cx+self.sx/2) * self.unit_conv
+        yMin = (self.cy-self.sy/2) * self.unit_conv
+        yMax = (self.cy+self.sy/2) * self.unit_conv
+
+        x_pos = np.arange(xMin+dx0, xMax-dx0+x_space/2, x_space)
+        y_pos = np.arange(yMin+dy0, yMax-dy0+y_space/2, y_space)
+        hole_size /= self.gds_units
+
+        gds_metal = None
+        hole_layer = int(np.max([x for x in self._layer_metals]) + 10)
+
+        cur_coords = [[x_pos[0]-hole_size/2, y_pos[0]-hole_size/2], [x_pos[0]+hole_size/2, y_pos[0]-hole_size/2], [x_pos[0]+hole_size/2, y_pos[0]+hole_size/2], [x_pos[0]-hole_size/2, y_pos[0]+hole_size/2]]
+        seed_hole = gdstk.Polygon(cur_coords, layer=hole_layer)
+
+        temp_cell = self.lib.new_cell(f'Holes{hole_layer}')
+        temp_cell.add(seed_hole)
+        # Create a reference to the cell
+        ref = gdstk.Reference(temp_cell)
+        # Define a rectangular repetition for the reference
+        ref.repetition = gdstk.Repetition(columns=x_pos.size, rows=y_pos.size, spacing=(x_space, y_space))
+        # ref.repetition = gdstk.Repetition(columns=5, rows=3, spacing=(x_space, y_space))
+        temp_cell.flatten()
+
+        holed_metal = gdstk.boolean(self._layer_metals[layer_ind], ref, 'not', layer=layer_ind, precision=self.precision)
+        #Delete original layer
+        self.cell.filter([(int(layer_ind), 0)], True)
+        self.cell.add(*holed_metal)
+
+        if not keep_hole_layer:
+            self.cell.filter([(int(hole_layer), 0)], True)
+            self.lib.remove(temp_cell)
+            return None
+        else:
+            self._layer_metals[hole_layer] = ref
+        return hole_layer
+
     def export(self, file_name, export_type=None, export_layers=None):
         if export_type is not None:
             self.export_type = export_type
