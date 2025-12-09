@@ -22,7 +22,6 @@ class TestPalace(unittest.TestCase):
         shutil.rmtree(self._folder_path)
 
     def test_TransmonResDesign(self):
-        return
         self.initialise()
 
         design = designs.DesignPlanar({}, True)
@@ -78,7 +77,7 @@ class TestPalace(unittest.TestCase):
         #Create a lumped element port for the Josephson junction and assign Jospehson inductance and junction capacitance
         eigen_sim.create_port_JosephsonJunction('Q1', L_J = 11e-9, C_J = 0e-15)
         #Fine mesh the qubit and resonator - min_size/max_size is the min/max mesh element size
-        eigen_sim.fine_mesh_around_comp_boundaries(['Q1'], min_size=12e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=True)
+        eigen_sim.fine_mesh_components(['Q1'], min_size=12e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=True)
         eigen_sim.fine_mesh_along_path(qObjName='readout', dist_resolution=10e-6, min_size=12e-6, max_size=150e-6, taper_dist_min=10e-6)
         #Lossy participatoin ratios calculated for MA, SA and MS
         eigen_sim.setup_EPR_interfaces(metal_air=MaterialInterface('Aluminium-Vacuum'), substrate_air=MaterialInterface('Silicon-Vacuum'), substrate_metal=MaterialInterface('Silicon-Aluminium'))

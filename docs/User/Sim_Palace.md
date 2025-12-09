@@ -66,7 +66,7 @@ eigen_sim.add_ground_plane()
 eigen_sim.create_port_JosephsonJunction('junction', L_J=4.3e-9, C_J=10e-15)
 
 #Fine-mesh x-mon
-eigen_sim.fine_mesh_around_comp_boundaries(['x-mon'], min_size=8e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=False)
+eigen_sim.fine_mesh_components(['x-mon'], min_size=8e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=False)
 
 #Sets up the lossy interfaces for MA, SA and MS interfaces 
 eigen_sim.setup_EPR_interfaces(metal_air=MaterialInterface('Aluminium-Vacuum'), substrate_air=MaterialInterface('Silicon-Vacuum'), substrate_metal=MaterialInterface('Silicon-Aluminium'))
@@ -91,3 +91,88 @@ Here, some extra parameters need to be supplied. Specifically the path to a JSON
     "input_dir": "/scratch/project/palace-sqdlab/inputFiles/"
 }
 ```
+
+# Functions
+
+## General functions
+
+- `add_metallic`
+- `add_ground_plane`
+
+- `enforce_full_3D_simulation`
+
+- `set_xBoundary_as_proportion` (note it uses that percentage on both sides. So 0.1 on a 1mm chip means 100um on negative side and 100um on positive side)
+- `set_yBoundary_as_proportion`
+- `set_zBoundary_as_proportion`
+- `set_xBoundary_as_absolute`
+- `set_yBoundary_as_absolute`
+- `set_zBoundary_as_absolute`
+
+
+- `fine_mesh_features`
+- `fine_mesh_along_path` (QM)
+- `fine_mesh_in_rectangle`
+- `fine_mesh_components` (QM)
+
+- `enable_mesh_refinement`
+
+- `prepare_simulation`
+- `set_local_output_subdir`
+- `run`
+
+- `retrieve_data`
+- `retrieve_simulation_sizes`
+- `retrieve_simulation_sizes_from_file` (Static)
+- `open_mesh_gmsh`
+
+## RF (Eigenmode and Frequency-Driven)
+
+- `create_port_2_conds` (QM)
+- `create_port_JosephsonJunction` (QM)
+- `create_port_CPW_on_Launcher` (QM)
+- `create_port_CPW_on_Route` (QM)
+- `create_port_CPW_via_edge_point`
+
+- `create_CPW_feed_Uclip_on_Launcher` (QM)
+- `create_CPW_feed_Uclip_on_Route` (QM)
+
+- `set_port_impedance`
+- `create_waveport_on_boundary`
+
+- `setup_EPR_interfaces`
+- `add_kinetic_inductance`
+
+- `set_farfield`
+
+## Eigenmode
+
+- `set_freq_search`
+- `retrieve_field_plots`
+- `retrieve_EPR_data`
+- `retrieve_EPR_data_from_file`
+- `retrieve_mode_port_EPR`
+- `retrieve_mode_port_EPR_from_file`
+
+- `calculate_hamiltonian_parameters_EPR`
+- `calculate_hamiltonian_parameters_EPR_from_files`
+
+## Frequency-Driven
+
+- `set_port_excitation`
+- `set_freq_values`
+
+- `add_surface_current_source_region`
+
+- `retrieve_data_from_file`
+
+- `get_waveport_modes`
+- `get_waveport_modes_from_file`
+
+
+## Capacitance Matrix
+
+- `display_conductor_indices`
+
+- `calc_params_floating_Transmon`
+- `calc_params_floating_Transmon_from_files`
+

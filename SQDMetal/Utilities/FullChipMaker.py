@@ -581,11 +581,11 @@ class MultiDieChip:
         self.eigen_sim.create_port_CPW_on_Launcher("lp_R_die0", 30e-6)
         # Fine-mesh routed paths (resonators, transmission line)
         # TODO: add option for mesh_around_path (new option that David wrote for CPW meshing)
-        self.eigen_sim.fine_mesh_around_comp_boundaries(
+        self.eigen_sim.fine_mesh_components(
             fine_mesh_components_1, min_size=fine_mesh_min_max[0], max_size=fine_mesh_min_max[1]
         )
         # Fine-mesh launchpads (less fine)
-        self.eigen_sim.fine_mesh_around_comp_boundaries(
+        self.eigen_sim.fine_mesh_components(
             fine_mesh_launchpads, min_size=fine_mesh_min_max[1], max_size=250e-6
         )
         # setup interfaces
