@@ -25,6 +25,23 @@ import shapely
 import shutil
 
 class PALACE_Model:
+    default_user_options_parent = {
+        "dielectric_material": "silicon",
+        "mesh_max": 100e-6,
+        "mesh_min": 10e-6,
+        "taper_dist_min": 30e-6,
+        "taper_dist_max": 200e-6,
+        "fuse_threshold": 1e-9,
+        "threshold": 1e-9,
+        "simplify_edge_min_angle_deg": -1,
+        "gmsh_verbosity": 1,
+        "gmsh_dist_func_discretisation": 120,
+        "fillet_resolution": 12,
+        'palace_mode': 'local',
+        'palace_wsl_spack_repo_directory': '~/repo',
+        "comsol_meshing": "Extremely fine"
+    }
+
     def __init__(self, meshing, mode, options, **kwargs):
         self.meshing = meshing
         self._metallic_layers = []
@@ -36,7 +53,6 @@ class PALACE_Model:
         self._EPR_setup = False
         self._use_KI = False
         self._KI = 0
-        self._rf_port_excitation = -1
         #
         self._mesh_refinement = {"UniformLevels": 0}
 
@@ -45,6 +61,9 @@ class PALACE_Model:
         self.set_xBoundary_as_proportion(0.1)
         self.set_yBoundary_as_proportion(0.1)
         self.set_zBoundary_as_proportion(1.0,0.0)
+
+        for key in PALACE_Model.default_user_options_parent:
+            self.user_options[key] = options.get(key, PALACE_Model.default_user_options_parent[key])
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -107,7 +126,7 @@ class PALACE_Model:
             for value in sbatch.values():
                 f.write('{}\n'.format(value))
 
-    def create_config_file(self):
+    def _create_config_file(self):
         pass
     def _prepare_simulation(self, metallic_layers, ground_plane):
         raise NotImplementedError()
@@ -294,6 +313,9 @@ class PALACE_Model:
             Exception: If there is an error resolving the container path.
         """
 
+        #TODO: Make container_executable_name a global option if even required...abs
+        #Then delete all kwargs in run
+
         if container_executable_name not in ["apptainer", "singularity"]:
             raise ValueError(
                 f"Invalid container executable name: {container_executable_name}. Must be 'apptainer' or 'singularity'."
@@ -461,6 +483,7 @@ class PALACE_Model:
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
 
     def _get_folder_prefix(self):
+        #TODO: Consider removing?
         return self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
 
     def set_local_output_subdir(self, name, update_config_file=True):
@@ -479,7 +502,7 @@ class PALACE_Model:
     def _check_if_QiskitMetalDesign(self):
         assert isinstance(self._geom_processor, GeomQiskitMetal), "This function can only be used on QiskitMetal designs."
 
-    def fine_mesh_fine_features(self, max_feature_size, **kwargs):
+    def fine_mesh_features(self, max_feature_size, **kwargs):
         polys = self._geom_processor.get_polys_of_fine_features(max_feature_size, self._metallic_layers, self._ground_plane)
         self._fine_meshes.append({
             'type': 'arb_polys',
@@ -491,6 +514,7 @@ class PALACE_Model:
         })
 
     def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
+        #TODO: Look into whether dist_resolution should be inferred? Perhaps from the filletting? Make sure to check/test with GMSH GUI
         self._check_if_QiskitMetalDesign()
         leUnits = QUtilities.get_units(self._geom_processor.design)
         lePath = QUtilities.calc_points_on_path(dist_resolution/leUnits, self._geom_processor.design, qObjName, trace_name)[0] * leUnits
@@ -515,6 +539,12 @@ class PALACE_Model:
         })
 
     def fine_mesh_around_comp_boundaries(self, list_comp_names, **kwargs):
+        #TODO: Deprecate in March 2026
+        print("fine_mesh_around_comp_boundaries has been refactored! It's called fine_mesh_components now; please make changes before it gets deprecated")
+        self.fine_mesh_components(list_comp_names, **kwargs)
+
+    def fine_mesh_components(self, list_comp_names, **kwargs):
+        self._check_if_QiskitMetalDesign()
         self._fine_meshes.append({
             'type': 'comp_bounds',
             'list_comp_names': list_comp_names,
@@ -525,15 +555,15 @@ class PALACE_Model:
             'metals_only': kwargs.get('metals_only', False)
         })
 
-    def retrieve_SimulationSizes(self):
-        return self.retrieve_SimulationSizes_from_file(self._output_data_dir + '/palace.json')
+    def retrieve_simulation_sizes(self):
+        return self.retrieve_simulation_sizes_from_file(self._output_data_dir + '/palace.json')
 
     def enforce_full_3D_simulation(self, metal_thickness, substrate_trenching=0):
         self._full_3D_params['metal_thickness'] = metal_thickness
         self._full_3D_params['substrate_trenching'] = substrate_trenching
 
     @staticmethod
-    def retrieve_SimulationSizes_from_file(path_palace_json):
+    def retrieve_simulation_sizes_from_file(path_palace_json):
         #Returns dictionary of DoF and Mesh size...
         with open(path_palace_json, "r") as f:
             config_json = json.loads(f.read())
@@ -596,8 +626,6 @@ class PALACE_Model:
         self._mesh_refinement['SaveAdaptMesh'] = save_iterations_mesh
 
 class PALACE_Model_RF_Base(PALACE_Model):
-
-
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''
         
@@ -632,7 +660,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 self._create_directory(self.name)
 
                 #create config file
-                self.create_config_file(gmsh_render_attrs = gmsh_render_attrs)
+                self._create_config_file(gmsh_render_attrs = gmsh_render_attrs)
 
                 # #create batch file
                 # if self.mode == 'HPC':
@@ -662,9 +690,9 @@ class PALACE_Model_RF_Base(PALACE_Model):
                         cmsl.add_metallic(**cur_layer)
                     elif cur_layer.get('type') == 'Uclip':
                         if cur_layer['clip_type'] == 'inplaneLauncher':
-                            sim_sParams.create_RFport_CPW_groundU_Launcher_inplane(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
+                            sim_sParams.create_CPW_feed_Uclip_on_Launcher(cur_layer['qObjName'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
                         elif cur_layer['clip_type'] == 'inplaneRoute':
-                            sim_sParams.create_RFport_CPW_groundU_Route_inplane(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
+                            sim_sParams.create_CPW_feed_Uclip_on_Route(cur_layer['route_name'], cur_layer['pin_name'], cur_layer['thickness_side'], cur_layer['thickness_back'], cur_layer['separation_gap'])
                 if not ground_plane['omit']:
                     cmsl.add_ground_plane(threshold=ground_plane['threshold'])
                 #cmsl.fuse_all_metals()
@@ -684,7 +712,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                         y_bnds = fine_mesh['y_bnds']
                         cmsl.fine_mesh_in_rectangle(x_bnds[0], y_bnds[0], x_bnds[1], y_bnds[1], fine_mesh['min_size'], fine_mesh['max_size'])
                     elif fine_mesh['type'] == 'comp_bounds':
-                        cmsl.fine_mesh_around_comp_boundaries(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
+                        cmsl.fine_mesh_components(fine_mesh['list_comp_names'], fine_mesh['min_size'], fine_mesh['max_size'])
 
                 #build model
                 cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
@@ -700,7 +728,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     self._create_directory(self.name)
 
                     #create config file
-                    self.create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
+                    self._create_config_file(comsol_obj = cmsl, simRF_object = sim_sParams)
 
                     #create batch file
                     if self.mode == 'HPC':
@@ -713,10 +741,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 cmsl.save("ERROR_" + self.name)
                 assert False, f"COMSOL threw an error (file has been saved): {error}"
 
-    def set_port_excitation(self, port_index):
-        assert port_index > 0 and port_index <= len(self._ports), "Invalid index of port for excitation. Check if ports with R>0 have been correctly defined."
-        assert self._ports[port_index-1]['type'] == 'waveport' or self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
-        self._rf_port_excitation = port_index
 
     def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         self._check_if_QiskitMetalDesign()
@@ -737,8 +761,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'vec_field': v_parl.tolist(),
                          'portCoords': portCoords,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
-        if self._rf_port_excitation == -1 and impedance_R > 0:
-            self._rf_port_excitation = len(self._ports)
 
     def create_port_JosephsonJunction(self, qObjName, **kwargs):
         self._check_if_QiskitMetalDesign()
@@ -807,8 +829,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
-        if self._rf_port_excitation == -1 and impedance_R > 0:
-            self._rf_port_excitation = len(self._ports)
 
     def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
         self._check_if_QiskitMetalDesign()
@@ -822,8 +842,6 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
-        if self._rf_port_excitation == -1 and impedance_R > 0:
-            self._rf_port_excitation = len(self._ports)
 
     def create_port_CPW_via_edge_point(self, pt_near_centre_end, len_launch, impedance_R=50, impedance_L=0, impedance_C=0, **kwargs):
         port_name = "rf_port_" + str(len(self._ports))
@@ -838,8 +856,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portBcoords': launchesB + [launchesB[0]],
                          'vec_field': vec_perp,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
-        if self._rf_port_excitation == -1 and impedance_R > 0:
-            self._rf_port_excitation = len(self._ports)
+
 
     def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
         assert self._ports[port_ind-1]['type'] != 'waveport', "Cannot set impedances to a waveport."
@@ -885,7 +902,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
         new_wvprt['type'] = 'waveport'
         self._ports.append(new_wvprt)
 
-    def create_RFport_CPW_groundU_Launcher_inplane(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+    def create_CPW_feed_Uclip_on_Launcher(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneLauncher',
@@ -895,7 +912,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'separation_gap':separation_gap
         }]
 
-    def create_RFport_CPW_groundU_Route_inplane(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+    def create_CPW_feed_Uclip_on_Route(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneRoute',
@@ -905,6 +922,8 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'thickness_back':thickness_back,
             'separation_gap':separation_gap
         }]
+        #TODO: Do this in general for GDS as well?
+        #TODO: Also consider a single-conductor feed onto the U-Clip?
 
     def _process_ports(self, ports):
         #Assumes that ports is a dictionary that contains the port names (with separate keys with suffixes a and b for multi-element ports)

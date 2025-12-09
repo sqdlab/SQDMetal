@@ -35,10 +35,6 @@ Clone palace and [install using spack](https://github.com/awslabs/palace/issues/
 
 ```bash
 git clone https://github.com/awslabs/palace.git
-
-#Checkout cameron's branch, which has fixes that lets spack correctly install palace0.13.
-#But these changes are now in master but need to be tested again.
-#git checkout cameronrutherford/0.13.0-spack-cmake-constraints
 ```
 
 Now the idea is that we create a local virtual environment in spack called `spack-env`, add local palace install as a repo in it and concretize+install. This is done via:
@@ -46,6 +42,8 @@ Now the idea is that we create a local virtual environment in spack called `spac
 ```bash
 source ./spack/share/spack/setup-env.sh
 spack repo add ./palace/spack_repo/local
+spack env create spack-env
+spack env activate spack-env
 spack add local.palace@develop
 ```
 

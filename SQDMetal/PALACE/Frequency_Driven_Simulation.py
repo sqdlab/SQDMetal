@@ -14,25 +14,11 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
     #Class Variables
     default_user_options = {
-                 "fillet_resolution": 12,
-                 "dielectric_material": "silicon",
                  "solns_to_save": 4,
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 300,
-                 "mesh_max": 100e-6,
-                 "mesh_min": 10e-6,
-                 "taper_dist_min": 30e-6,
-                 "taper_dist_max": 200e-6,
-                 "gmsh_dist_func_discretisation": 120,
-                 "comsol_meshing": "Extremely fine",
-                 "HPC_Parameters_JSON": "",
-                 "fuse_threshold": 1e-9,
-                 "gmsh_verbosity": 1,
-                 "threshold": 1e-9,
-                 "simplify_edge_min_angle_deg": -1,
-                 'palace_mode': 'local',
-                 'palace_wsl_spack_repo_directory': '~/repo'
+                 "HPC_Parameters_JSON": ""
                 }
 
     #constructor
@@ -53,9 +39,9 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         super().__init__(meshing, mode, user_options, **kwargs)
         self.freqs = None
         self._current_sources = []
+        self._rf_port_excitation = -1
 
-
-    def create_config_file(self, **kwargs):
+    def _create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
 
         if self.meshing == 'GMSH':
@@ -104,6 +90,13 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         #get material parameters
         dielectric = Material(self.user_options["dielectric_material"])
+
+        #Select first resistive port if excitation is not explicitly set
+        if self._rf_port_excitation == -1:
+            for m,cur_port in enumerate(self._ports):
+                if cur_port['impedance_R'] > 0:
+                    self._rf_port_excitation = m+1
+                    break
 
         #Process Ports
         config_ports, config_wports = self._process_ports(ports)
@@ -228,6 +221,11 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         assert region in ['metals', 'dielectric'], "Must set region to either 'metals' or 'dielectric'"
         assert direction == -1 or direction == 1, "Direction must be either 1 or -1 for +z or -z"
         self._current_sources.append(('region', region, direction))
+
+    def set_port_excitation(self, port_index):
+        assert port_index > 0 and port_index <= len(self._ports), "Invalid index of port for excitation. Check if ports with R>0 have been correctly defined."
+        assert self._ports[port_index-1]['type'] == 'waveport' or self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
+        self._rf_port_excitation = port_index
 
     def set_freq_values(self, freq_start, freq_end, freq_step):
         #Frequencies in Hertz
