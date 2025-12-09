@@ -873,3 +873,41 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
+
+def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+    """
+    Function to calculate the dimensions for a Josephson junction fabricated with a
+    certain critical current density (J_C), where I_C = J_C * A. The critical current 
+    density must be supplied in units of micro-Amperes per square micro-metre (uA/um^2).
+
+    A target Josephson inductance (L_J, unbits of nH) or Josephson energy (E_J, units of GHz)
+    must be given. Accepts a list of values, or a single value.
+
+    Returns width = height in um of the required JJ area. 
+    """
+    #assert (target_EJ_GHz is not None) or (target_LJ_nH is not None), "Must supply target EJ or LJ."
+    assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
+    assert isinstance(J_C_uA_um2, (float, int))
+    phi_0 = 2.067833848 * 1e-15 # Wb
+    h = 6.62607015 * 1e-34 # J s
+    J_C_A_m2 = J_C_uA_um2 * 1e6
+    # calculate areas for supplied LJ values
+    if target_LJ_nH is not None:
+        if not isinstance(target_LJ_nH, np.ndarray):
+            target_LJ_nH = np.atleast_1d(np.array(target_LJ_nH, dtype=float))
+        target_LJ_H = target_LJ_nH * 1e-9 # convert to H
+        A_m2 = np.array([phi_0/(2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
+    # calculate areas for supplied EJ values
+    elif target_EJ_GHz is not None:
+        if not isinstance(target_EJ_GHz, np.ndarray):
+            target_EJ_GHz = np.atleast_1d(np.array(target_EJ_GHz, dtype=float))
+        target_EJ_Hz = target_EJ_GHz * 1e9
+        A_m2 = np.array([(i * h * 2 * np.pi)/(phi_0 * J_C_A_m2) for i in target_EJ_Hz])
+    else:
+        raise ValueError("No areas were calculated since no target values were supplied.")
+    width_JJ_nm = np.sqrt(A_m2) * 1e9
+    if rounding:
+        width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
+    width_JJ_um = width_JJ_nm * 1e-3
+    return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+
