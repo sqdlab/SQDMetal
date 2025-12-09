@@ -20,27 +20,13 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     #Class Variables
     default_user_options = {
-                 "fillet_resolution": 4,
-                 "dielectric_material": "silicon",
                  "starting_freq": 5.5e9,
                  "number_of_freqs": 5,
                  "solns_to_save": 5,
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 100,
-                 "mesh_max": 100e-6,
-                 "mesh_min": 10e-6,
-                 "taper_dist_min": 30e-6,
-                 "taper_dist_max": 200e-6,
-                 "gmsh_dist_func_discretisation": 120,
-                 "comsol_meshing": "Extremely fine",
-                 "HPC_Parameters_JSON": "",
-                 "fuse_threshold": 1e-9,
-                 "gmsh_verbosity": 1,
-                 "threshold": 1e-9,
-                 "simplify_edge_min_angle_deg": -1,
-                 'palace_mode': 'local',
-                 'palace_wsl_spack_repo_directory': '~/repo'
+                 "HPC_Parameters_JSON": ""
                 }
 
     #Parent Directory path
@@ -53,6 +39,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.user_options = {}
+        self._ff_type = {}
+        self.set_farfield()
         for key in PALACE_Eigenmode_Simulation.default_user_options:
             self.user_options[key] = user_options.get(key, PALACE_Eigenmode_Simulation.default_user_options[key])
         self.view_design_gmsh_gui = view_design_gmsh_gui
@@ -60,8 +48,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self._ports = []
         super().__init__(meshing, mode, user_options, **kwargs)
 
-    def create_config_file(self, **kwargs):
-        '''create the configuration file which specifies the simulation type and the parameters'''    
+    def _create_config_file(self, **kwargs):
+        '''Create the configuration file for the simulation.
+        
+           This function creates the .json file which contains all the details of the simulation including simulation type,
+           boundary conditions, postprocessing and solver conditions.
+
+           Args:
+                **kwargs: Arbitrary keyword arguments.
+            
+           Returns:
+                None
+        
+        '''    
 
         if self.meshing == 'GMSH':
 
@@ -180,7 +179,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             }
         }
         
-        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition 
+        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before  
         if self._use_KI:
             self._setup_kinetic_inductance(config, PEC_metals)
 
@@ -224,6 +223,18 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 json.dump(config_json, f, indent=2)
 
     def retrieve_data(self):
+        '''Retrieve data from simulation output files.
+        
+           This function retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.
+
+           Args:
+                None.
+            
+           Returns:
+                None.
+        
+        '''   
+
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()
@@ -324,7 +335,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR_from_files(directory, config_json_path, modes_to_compare = [], print_output=True):
-        '''Method to extract Hamiltonian from eigenmode simulation using the EPR method'''
+        '''Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method'''
         
         #retrieve data from the simulation files
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)

@@ -122,6 +122,22 @@ class MaterialInterface:
                 self.permittivity = 20.0
                 self.permeability = 1
                 self.loss_tangent = 0.005
+            ################################
+            #
+            #SAPPHIRE-ALUMINIUM
+            #
+            elif name == "sapphirealuminium" or name == "aluminiumsapphire":
+                self.permittivity = 3.85 # need to update this value
+                self.permeability = 1 # need to update this value
+                self.loss_tangent = 0.006 # need to update this value
+            ################################
+            #
+            #SAPPHIRE-AIR
+            #
+            elif name == "sapphireair" or name == "airsapphire":
+                self.permittivity = 3.85 # need to update this value
+                self.permeability = 1 # need to update this value
+                self.loss_tangent = 0.006 # need to update this value
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."
 

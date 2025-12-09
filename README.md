@@ -1,5 +1,7 @@
 # SQDMetal
 
+[![UnitTests](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml/badge.svg)](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml)
+
 Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [Qiskit-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
 
 - Extra components with more flexible user-friendly options (see [gallery](https://nbviewer.org/github/sqdlab/SQDMetal/blob/main/docs/User/Comps_All.ipynb))
