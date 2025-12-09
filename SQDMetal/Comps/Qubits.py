@@ -1191,12 +1191,6 @@ class TransmonTaperedInsets(BaseQubit):
         """
         return QUtilities.calc_points_on_path([0], self.design, component_name=self.name, trace_name=f"{connection_pad}_wire")[-1]
 
-from qiskit_metal.qlibrary.core import BaseQubit
-
-
-
-        
-        
 class _FluxoniumPocket(BaseQubit):
     # -*- coding: utf-8 -*-
 
