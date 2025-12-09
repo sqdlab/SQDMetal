@@ -14,6 +14,66 @@ import shapely
 # for Manhattan JJ
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
+
+from qiskit_metal.qlibrary.qubits.JJ_Manhattan import jj_manhattan
+
+
+
+class JunctionManhattan(jj_manhattan):
+    # -*- coding: utf-8 -*-
+    # Author: Alexander Nguyen
+    # Creation Date: 2025
+    # Description: Class to draw Manhattan junctions. Inherits jj_manhattan native to Qiskit Metal
+    #only difference is that it can rotate with the orientation parameter
+    def make(self):
+        """Qiskit Metal JJ"""
+
+        p = self.parse_options()  # Parse the string options into numbers
+
+        # draw the lower pad as a rectangle
+        JJ_pad_lower = draw.rectangle(p.JJ_pad_lower_width,
+                                      p.JJ_pad_lower_height,
+                                      p.JJ_pad_lower_pos_x,
+                                      p.JJ_pad_lower_pos_y)
+
+        finger_lower = draw.rectangle(
+            p.finger_lower_width, p.finger_lower_height, p.JJ_pad_lower_pos_x,
+            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height))
+
+        # fudge factor to merge the two options
+        finger_lower = draw.translate(finger_lower, 0.0, -0.0001)
+
+        # merge the lower pad and the finger into a single object
+        design = draw.union(JJ_pad_lower, finger_lower)
+
+        # copy the pad/finger and rotate it by 90 degrees
+        design2 = draw.rotate(design, 90.0)
+
+        # translate the second pad/finger to achieve the desired extension
+        design2 = draw.translate(
+            design2, 0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
+            0.5 * p.finger_lower_width - p.extension,
+            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
+            0.5 * p.finger_lower_width - p.extension)
+
+        final_design = draw.union(design, design2)
+
+        # translate the final design so that the bottom left
+        # corner of the lower pad is at the origin
+        final_design = draw.translate(final_design, 0.5 * p.JJ_pad_lower_width,
+                                      0.5 * p.JJ_pad_lower_height)
+        
+        #rotate final design around the origin (bottom left hand corner...)
+        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))#only new line of code
+
+        # now translate so that the design is centered on the
+        # user-defined coordinates (pos_x, pos_y)
+        final_design = draw.translate(final_design, p.pos_x, p.pos_y)
+
+        geom = {'design': final_design}
+        self.add_qgeometry('poly', geom, layer=p.layer, subtract=False)
+
+
 class JunctionDolan(QComponent):
     """Create a Dolan Bridge Josephson Junction
 
