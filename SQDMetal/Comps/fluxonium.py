@@ -542,7 +542,8 @@ class FluxoniumPocketSQD(FluxoniumPocket):
                            bot_wire_center_y='-0.0097mm',
                            bot_wire_height='0.015mm',
                            bot_wire_width='0.0039mm',
-                           make_rol_left=False#make the mirror image of the flux line on the other side
+                           make_rol_left=False,#make the mirror image of the flux line on the other side
+                           round_edge=False#make the edges of the rectangular part round.
                            )
     
     def make(self):
@@ -588,11 +589,15 @@ class FluxoniumPocketSQD(FluxoniumPocket):
         if nanowire_inductor == True:
             inductor = draw.LineString([(l_arm_length, l_length/2), (l_arm_length, -l_length/2)])#MY COMMENT: I don't know how l_length is defined here since it is only defined
             #in the else below. regardless, this just defines the inductor as a straight simple line.
+            if p.round_edge:#note that the inductor is backwards when using the default value of inductor_orientation of -1
+                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), (l_length/2)-(l_arm_width/2)), (((pad_width+pad_height)/2)+(l_arm_length/4), -((l_length/2)-(l_arm_width/2)))])#((pad_gap+pad_height)/2)-l_arm_width
         else:
             l_length = p.array_length
             # This one is for JJ array
             io = float(p.inductor_orientation)#MY COMMENT: This just makes the inductor longer/shorter, inductor_orientation is just a scaling factor
             inductor = draw.LineString([(l_arm_length-l_arm_width, io*l_length/2), (l_arm_length-l_arm_width, -io*l_length/2)])
+            if p.round_edge:
+                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), io*((l_length/2)-(l_arm_width/2))), (((pad_width+pad_height)/2)+(l_arm_length/4), -io*((l_length/2)-(l_arm_width/2)))])
 
         # Draw 'the arms' and make them curvy, first top arm and then same goes for the bottom
         l_arm_up = draw.Polygon([
@@ -601,6 +606,11 @@ class FluxoniumPocketSQD(FluxoniumPocket):
             (l_arm_length, l_length/2), # point c
             (pad_width/2, l_length/2), # point d
             ])
+        if p.round_edge:
+            #l_arm_up=draw.translate(l_arm_up, (pad_height/2)+(l_arm_length/4), pad_height/2)
+            l_arm_up=draw.rectangle(l_arm_length, l_arm_width, (pad_width+pad_height)/2, (pad_gap+pad_height)/2)
+            #self.add_qgeometry('poly', dict(l_arm_up=l_arm_up))
+
         """l_arm_up_fillet = draw.Point(l_arm_length, l_length/2).buffer(l_arm_width) # Having semicircle with subtracting the geometries
         cut_ply_up = draw.Polygon([
              (l_arm_length-l_arm_width*2, l_length/2+l_arm_width*2),   # point o
@@ -619,6 +629,8 @@ class FluxoniumPocketSQD(FluxoniumPocket):
             (l_arm_length, -(l_length/2+l_arm_width)), # point g
             (pad_width/2, -(l_length/2+l_arm_width)), # point h
             ])
+        if p.round_edge:
+            l_arm_bot=draw.rectangle(l_arm_length, l_arm_width, (pad_width+pad_height)/2, -(pad_gap+pad_height)/2)
         """l_arm_bot_fillet = draw.Point(l_arm_length, -l_length/2).buffer(l_arm_width)
         cut_ply_bot = draw.Polygon([
              ((l_arm_length-l_arm_width*2), -(l_length/2+l_arm_width*2)),   # point o
@@ -634,9 +646,17 @@ class FluxoniumPocketSQD(FluxoniumPocket):
         pad_rect_top = draw.rectangle(pad_width, pad_height, 0, (pad_gap+pad_height)/2)
         pad_circle_top = draw.Point(0, (pad_radius+pad_height)).buffer(pad_radius)
         pad_top = draw.union(pad_rect_top, pad_circle_top, l_arm_up)#, l_arm_up_fillet)
+        if p.round_edge:
+            pad_right_circle_top=draw.Point(pad_width/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_left_circle_top=draw.Point(-(pad_width)/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_top=draw.union(pad_top, pad_right_circle_top, pad_left_circle_top)
         pad_rect_bot = draw.rectangle(pad_width, pad_height, 0, -(pad_gap+pad_height)/2)
         pad_circle_bot = draw.Point(0, -(pad_radius+pad_height)).buffer(pad_radius)
         pad_bot = draw.union(pad_rect_bot, pad_circle_bot, l_arm_bot)#, l_arm_bot_fillet)
+        if p.round_edge:
+            pad_right_circle_bot=draw.Point(pad_width/2, -(pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_left_circle_bot=draw.Point(-(pad_width)/2, -(pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_bot=draw.union(pad_bot, pad_right_circle_bot, pad_left_circle_bot)
 
         if p.top_wire_connector:
             connector_top = draw.rectangle(
@@ -787,10 +807,10 @@ class FluxoniumPocketSQD(FluxoniumPocket):
         ####################################################################
 
         # add pins
-        """"port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
-        self.add_pin('flux_bias_line', 
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('flux_bias_line2', 
                     port_line_cords, cpw_width)
         
         fake_port_line_cords = list(draw.shapely.geometry.shape(fake_port_line).coords)
-        self.add_pin('fake_flux_bias_line', 
-                    fake_port_line_cords, cpw_width)"""
+        self.add_pin('fake_flux_bias_line2', 
+                    fake_port_line_cords, cpw_width)

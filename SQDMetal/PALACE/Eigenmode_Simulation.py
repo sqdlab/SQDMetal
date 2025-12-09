@@ -234,6 +234,18 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                 json.dump(config_json, f, indent=2)
 
     def retrieve_data(self):
+        '''Retrieve data from simulation output files.
+        
+           This function retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.
+
+           Args:
+                None.
+            
+           Returns:
+                None.
+        
+        '''   
+
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()
