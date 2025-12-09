@@ -12,6 +12,7 @@ from qiskit_metal.qlibrary.core import QComponent
 import numpy as np
 import shapely
 
+
 class MarkerDicingCross(QComponent):
     """Create a cross that can be used as a dicing marker.
 
@@ -275,4 +276,39 @@ class MarkerSquare4(QComponent):
                            dict(square1=square1, square2=square2, square3=square3, square4=square4),
                            layer=p.layer,
                            subtract=p.is_ground_cutout)
+
+
+class MarkerSquarePocket(QComponent):
+    """Create a solitary square marker in a pocket. Deters cheese holes
+    """
+
+    default_options = Dict(pos_x='0um',pos_y='0um', orientation=0,
+                           square_width='20um',
+                           square_height='20um',
+                           pocket_distance='5um')
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+
+        square = draw.rectangle(p.square_width, p.square_height, 0, 0)
+        pocket = draw.rectangle(p.square_width+p.pocket_distance, p.square_width+p.pocket_distance, 0, 0)
+
+        polys = [square, pocket]
+        polys = draw.rotate(polys, p.orientation, origin=(0, 0))
+        polys = draw.translate(polys, p.pos_x, p.pos_y)
+        [square, pocket] = polys
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(square=square),
+                           layer=p.layer)
+        
+        self.add_qgeometry('poly',
+                           dict(pocket=pocket),
+                           layer=p.layer,
+                           subtract=True)
 
