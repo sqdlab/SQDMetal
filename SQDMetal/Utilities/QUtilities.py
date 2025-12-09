@@ -111,6 +111,13 @@ class QUtilities:
             return min(x_vals), min(y_vals), max(x_vals), max(y_vals)
 
     @staticmethod
+    def calc_length_of_path(design, component_name, trace_name=""):
+        """
+        Variant of calc_point_on_path that returns the total length of a path.
+        """
+        return QUtilities.calc_points_on_path([0], design, component_name, trace_name=trace_name)[-1]
+
+    @staticmethod
     def calc_points_on_path(
         dists,
         design,
@@ -1471,3 +1478,21 @@ class QUtilities:
         if start > end:
             values = values[::-1]
         return values
+
+    @staticmethod
+    def get_cpw_resonator_length(f0_Hz, resonator_type="quarter", cpw_width=10e-6, cpw_gap=6e-6, substrate_thickness=500e-6, film_thickness=200e-9):
+        assert resonator_type in ["quarter", "half", "full"], \
+            'Chooses resonator_type from "quarter", "half", or "full".'
+        l_full, _, _ = cpw_calculations.guided_wavelength(
+            freq=f0_Hz,
+            line_width=cpw_width,
+            line_gap=cpw_gap,
+            substrate_thickness=substrate_thickness,
+            film_thickness=film_thickness)
+        if resonator_type == "quarter":
+            l = l_full / 4
+        elif resonator_type == "half":
+            l = l_full / 2
+        else:
+            l = l_full
+        return l
