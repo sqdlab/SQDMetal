@@ -10,9 +10,8 @@ Once the design has been completed using *Qiskit-Metal*, the design object can b
 
 Make sure to install the `gmsh` in the Python environment. Now to run simulations in Palace, the distribution must be installed either on a local computer or a cluster. We offer several implementations for a local PC:
 
-- [Ubuntu](Sim_Palace_Ubuntu.md) (recommended)
+- [Ubuntu/Mac](Sim_Palace_Ubuntu.md) (recommended)
 - [Windows via WSL](WSL_Sim_palace.md)
-
 
 
 ### Singularity/Apptainer container

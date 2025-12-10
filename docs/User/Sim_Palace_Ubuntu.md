@@ -1,4 +1,4 @@
-# Install guide for Palace on Ubuntu
+# Install guide for Palace on Ubuntu and Mac
 
 In terminal, run:
 
@@ -37,7 +37,11 @@ Clone palace and [install using spack](https://github.com/awslabs/palace/issues/
 git clone https://github.com/awslabs/palace.git
 ```
 
-Now the idea is that we create a local virtual environment in spack called `spack-env`, add local palace install as a repo in it and concretize+install. This is done via:
+From here, we go through the Palace installation process for [Ubuntu](#ubuntu) and [Mac] separately, before covering the [installation of Paraview and Pyvista](#recommended-add-ons).
+
+### Ubuntu
+
+Now the idea is that we create a local virtual environment in spack called `spack-env`, add local palace install as a repo in it and concretize+install. Note that you can skip the creation and activation of the environment, but you may run into issues due to dependecies if you have used spack previously. This is done via:
 
 ```bash
 source ./spack/share/spack/setup-env.sh
@@ -63,6 +67,25 @@ The second command will find the path of the Palace binary. Basically it's somew
 
 Executing the above block should show the command-line switches required for Palace. 
 
+### Mac
+
+Note that the exact process for Mac installation changes depending on your chip and operating system. The method documented here has been tested on a M5 MacBook with Tahoe 26.1 installed.
+
+To install Palace, ope the terminal from the directory containing `/spack`, run:
+
+```bash
+source ./spack/share/spack/setup-env.sh
+spack install veclibfort
+spack install palace +mumps +slepc ^blas=veclibfort ^lapack=veclibfort
+```
+
+The first line activates `spack` in your shell. The second line installs a wrapper for the builtin MacOS Accelerator (which can replace BLAS and LAPACK). The third line initiates a full Palace installation that is suitable for arm64 MacBooks.
+
+After the installation is complete (roughly 30 mins) the Palace binary can be found in `spack/opt/spack/darwin-m1/palace-0.14.0-aijcrhkhxpjki7lbvx336dbzvwh52enp/bin/palace`.
+
+
+## Recommended add-ons
+
 Optionally, install [Paraview](https://www.paraview.org/):
 
 ```bash
@@ -86,6 +109,7 @@ This is required to open the simulation field data via the API functions.
 
 
 
+___
 
 ## OLD NOTES LEFT IN CASE OF ISSUES - TO BE REMOVED IN FUTURE
 
