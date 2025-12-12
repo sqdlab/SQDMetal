@@ -446,7 +446,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         Parameters
         ----------
         output_directory : str 
-            The directory where the simulations files are stored.
+            The directory where the simulation files are stored.
         
         Returns
         -------
