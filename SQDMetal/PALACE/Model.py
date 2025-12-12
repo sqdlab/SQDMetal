@@ -25,6 +25,8 @@ import shapely
 import shutil
 
 class PALACE_Model:
+    #TODO: Refactor with suffix "Base"
+
     default_user_options_parent = {
         "dielectric_material": "silicon",
         "mesh_max": 100e-6,
@@ -42,7 +44,34 @@ class PALACE_Model:
         "comsol_meshing": "Extremely fine"
     }
 
-    def __init__(self, meshing, mode, options, **kwargs):
+    def __init__(self, meshing, mode, options: dict, **kwargs):
+        """The base class for AWS Palace simulations. It holds all the simulation parameters
+        to then run on Palace. Currently, it supports input models in Qiskit-Metal and GDS.
+
+        Args:
+            table_handle: An open smalltable.Table instance.
+            options: Dictionary containing user-configuration parameters.
+                dielectric_material: (Default: "silicon") string matching a `Material` object
+                                     to set as the dielectric material for the substrate.
+                mesh_min: Minimum mesh element size 
+
+        Returns:
+            A dict mapping keys to the corresponding table row data
+            fetched. Each row is represented as a tuple of strings. For
+            example:
+
+            {b'Serak': ('Rigel VII', 'Preparer'),
+            b'Zim': ('Irk', 'Invader'),
+            b'Lrrr': ('Omicron Persei 8', 'Emperor')}
+
+            Returned keys are always bytes.  If a key from the keys argument is
+            missing from the dictionary, then that row was not found in the
+            table (and require_all_keys must have been False).
+
+        Raises:
+            IOError: An error occurred accessing the smalltable.
+        """
+
         self.meshing = meshing
         self._metallic_layers = []
         self._ground_plane = {'omit': True}
@@ -1030,7 +1059,7 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 }
 
     def set_farfield(self, ff_type='pec', ff_plane='', ff_material: MaterialConductor=None):
-        #ff_type can be: 'absorbing' or 'pec'
+        #ff_type can be: 'absorbing', 'pec' or 'conductor'
         ff_type = ff_type.lower()
         assert ff_type == 'pec' or ff_type == 'absorbing' or ff_type == 'conductor', "ff_type must be: 'absorbing', 'pec' or 'conductor'"
         ff_planes = ['x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg']

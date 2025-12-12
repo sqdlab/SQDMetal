@@ -299,11 +299,11 @@ class MakeGDS:
             # Commit the transaction (finalize the operation)
             layers_in_design = [layout.get_info(layer_index) for layer_index in layout.layer_indices()]
             if inplace:
-                layout.write(f"{gds_input_file}.gds")
-                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.gds.\n Merged layers: {list(layers_in_design)}")
+                layout.write(f"{gds_input_file}")
+                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.\n Merged layers: {list(layers_in_design)}")
             else:
-                layout.write(f"{gds_input_file}_merged.gds")
-                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.gds.\n Merged layers: {list(layers_in_design)}")
+                layout.write(f"{gds_input_file}_merged")
+                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.\n Merged layers: {list(layers_in_design)}")
         except ImportError:
             print("KLayout (pya) is not installed. Please install it with 'pip install klayout' to run this function.")
         except AttributeError as e:

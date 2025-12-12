@@ -14,6 +14,66 @@ import shapely
 # for Manhattan JJ
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
+
+from qiskit_metal.qlibrary.qubits.JJ_Manhattan import jj_manhattan
+
+
+
+class JunctionManhattan(jj_manhattan):
+    # -*- coding: utf-8 -*-
+    # Author: Alexander Nguyen
+    # Creation Date: 2025
+    # Description: Class to draw Manhattan junctions. Inherits jj_manhattan native to Qiskit Metal
+    #only difference is that it can rotate with the orientation parameter
+    def make(self):
+        """Qiskit Metal JJ"""
+
+        p = self.parse_options()  # Parse the string options into numbers
+
+        # draw the lower pad as a rectangle
+        JJ_pad_lower = draw.rectangle(p.JJ_pad_lower_width,
+                                      p.JJ_pad_lower_height,
+                                      p.JJ_pad_lower_pos_x,
+                                      p.JJ_pad_lower_pos_y)
+
+        finger_lower = draw.rectangle(
+            p.finger_lower_width, p.finger_lower_height, p.JJ_pad_lower_pos_x,
+            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height))
+
+        # fudge factor to merge the two options
+        finger_lower = draw.translate(finger_lower, 0.0, -0.0001)
+
+        # merge the lower pad and the finger into a single object
+        design = draw.union(JJ_pad_lower, finger_lower)
+
+        # copy the pad/finger and rotate it by 90 degrees
+        design2 = draw.rotate(design, 90.0)
+
+        # translate the second pad/finger to achieve the desired extension
+        design2 = draw.translate(
+            design2, 0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
+            0.5 * p.finger_lower_width - p.extension,
+            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
+            0.5 * p.finger_lower_width - p.extension)
+
+        final_design = draw.union(design, design2)
+
+        # translate the final design so that the bottom left
+        # corner of the lower pad is at the origin
+        final_design = draw.translate(final_design, 0.5 * p.JJ_pad_lower_width,
+                                      0.5 * p.JJ_pad_lower_height)
+        
+        #rotate final design around the origin (bottom left hand corner...)
+        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))#only new line of code
+
+        # now translate so that the design is centered on the
+        # user-defined coordinates (pos_x, pos_y)
+        final_design = draw.translate(final_design, p.pos_x, p.pos_y)
+
+        geom = {'design': final_design}
+        self.add_qgeometry('poly', geom, layer=p.layer, subtract=False)
+
+
 class JunctionDolan(QComponent):
     """Create a Dolan Bridge Josephson Junction
 
@@ -873,3 +933,41 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
+
+def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+    """
+    Function to calculate the dimensions for a Josephson junction fabricated with a
+    certain critical current density (J_C), where I_C = J_C * A. The critical current 
+    density must be supplied in units of micro-Amperes per square micro-metre (uA/um^2).
+
+    A target Josephson inductance (L_J, unbits of nH) or Josephson energy (E_J, units of GHz)
+    must be given. Accepts a list of values, or a single value.
+
+    Returns width = height in um of the required JJ area. 
+    """
+    #assert (target_EJ_GHz is not None) or (target_LJ_nH is not None), "Must supply target EJ or LJ."
+    assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
+    assert isinstance(J_C_uA_um2, (float, int))
+    phi_0 = 2.067833848 * 1e-15 # Wb
+    h = 6.62607015 * 1e-34 # J s
+    J_C_A_m2 = J_C_uA_um2 * 1e6
+    # calculate areas for supplied LJ values
+    if target_LJ_nH is not None:
+        if not isinstance(target_LJ_nH, np.ndarray):
+            target_LJ_nH = np.atleast_1d(np.array(target_LJ_nH, dtype=float))
+        target_LJ_H = target_LJ_nH * 1e-9 # convert to H
+        A_m2 = np.array([phi_0/(2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
+    # calculate areas for supplied EJ values
+    elif target_EJ_GHz is not None:
+        if not isinstance(target_EJ_GHz, np.ndarray):
+            target_EJ_GHz = np.atleast_1d(np.array(target_EJ_GHz, dtype=float))
+        target_EJ_Hz = target_EJ_GHz * 1e9
+        A_m2 = np.array([(i * h * 2 * np.pi)/(phi_0 * J_C_A_m2) for i in target_EJ_Hz])
+    else:
+        raise ValueError("No areas were calculated since no target values were supplied.")
+    width_JJ_nm = np.sqrt(A_m2) * 1e9
+    if rounding:
+        width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
+    width_JJ_um = width_JJ_nm * 1e-3
+    return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+
