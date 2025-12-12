@@ -46,17 +46,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         super().__init__(meshing, mode, user_options, **kwargs)
 
     def _create_config_file(self, **kwargs):
-        '''Create the configuration file for the simulation.
-        
-           This function creates the .json file which contains all the details of the simulation including simulation type,
-           boundary conditions, postprocessing and solver conditions.
+        '''
+        Creates the configuration file for the simulation. This function creates the json file which contains all the details of the simulation including simulation type,
+        boundary conditions, postprocessing and solver conditions. The json file is written to the specified output directory.
 
-           Args:
-                **kwargs: Arbitrary keyword arguments.
+        Parameters
+        ----------
+        **kwargs : dict
+            gmsh_render_attrs is a dictionary containing the boundary conditions for the simulation.
             
-           Returns:
-                None
-        
+        Returns
+        -------
+            None : 
+                This function does not return any value.
         '''    
 
         if self.meshing == 'GMSH':
@@ -176,7 +178,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             }
         }
         
-        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before  
+        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before processing
+        # the farfield. 
         if self._use_KI:
             self._setup_kinetic_inductance(config, PEC_metals)
 
@@ -184,11 +187,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         
         self._process_farfield(config, far_field)
-        # if self.meshing == 'GMSH':
-        #     config['Solver']['Linear']['Type'] = "Default"
-        #     config['Solver']['Linear']['KSPType'] = "GMRES"
 
-        
         #check simulation mode and return appropriate parent directory 
         parent_simulation_dir = self._check_simulation_mode()
 
@@ -208,7 +207,24 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)
     
-    def set_freq_search(self, min_freq_Hz, num_freq):
+    def set_freq_search(self, min_freq_Hz:float, num_freq:float):
+        '''
+        Sets the starting frequency and number of modes to search for for an eigenmode simulation.
+        The eigenmode solver will look to find eigenmodes above this frequency. The number of eigenmodes the solver 
+        will search for above the minimum/starting frequency is also set by the user.
+
+        Parameters
+        ----------
+        min_freq_Hz : float 
+            Starting frequency from which the eigenmode solver will start searching for eigenmodes.
+        num_freq : float 
+            Number of eigenmodes which eigenmode solver will search for.
+
+        Returns
+        -------
+            None : 
+                this function does not return any value.
+        '''
         self.user_options["starting_freq"] = min_freq_Hz / 1e9
         self.user_options["number_of_freqs"] = num_freq
         if self._sim_config != "":
@@ -219,19 +235,21 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             with open(self._sim_config, "w") as f:
                 json.dump(config_json, f, indent=2)
 
-    def retrieve_data(self):
-        '''Retrieve data from simulation output files.
-        
-           This function retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.
+    def retrieve_data(self) -> pd.DataFrame:
+        '''
+        Retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.
 
-           Args:
-                None.
+        Parameters
+        ----------
+        None : 
+            This function does not take any arguments.
             
-           Returns:
-                None.
-        
+        Returns
+        -------
+        Dataframe 
+            A pandas dataframe containing the data from the output of the eigenmode simulation inlcuding the real and imaginary
+            components of the eigenfrequency and the quality factor.
         '''   
-
         raw_data = pd.read_csv(self._output_data_dir + '/eig.csv')
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
         raw_data = raw_data.to_numpy()
@@ -256,22 +274,123 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
                     plt.close(fig)
                 except Exception as e:
                     print(f"Error in plotting: {e}")
+        
+        return raw_data
 
     def retrieve_field_plots(self):
+        '''
+        Produces plots of the electric field distribution for the eigenmodes found in the simulation.
+
+        Parameters
+        ----------
+        None : 
+            This function does not take any arguments.
+            
+        Returns
+        -------
+        Plot 
+            A Matplotlib plot of the electric field for each eigenmode found.
+        '''
         lePlots = self._output_data_dir + '/paraview/eigenmode/eigenmode.pvd'
         return PVDVTU_Viewer(lePlots)
 
-    def retrieve_EPR_data(self):
-        return PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(self._sim_config, self._output_data_dir)
+    def retrieve_interface_EPR_data(self):
+        '''
+        Retrieves the energy participation ratios for the lossy interfaces captured from a completed eigenmode simulation.
+        The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
+        respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.
 
-    def retrieve_mode_port_EPR(self):
+        Parameters
+        ----------
+        None :
+            This function has no input arguments.
+        
+        Returns
+        -------
+        list
+            Returns a list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.
+            The dictionary for a found mode contains:
+                - Frequency (complex) : real and imaginary components of the mode frequency.
+                - Q (float) : quality factor of mode.
+                - SA (dict) : lossy surface-air interface with a dict containing the participation ratio and quality factor.
+                - MS (dict) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.
+                - MA (dict) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.
+        '''
+        return PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(self._sim_config, self._output_data_dir)
+
+    def retrieve_mode_port_EPR(self) -> dict:
+        '''
+        Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
+        The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
+        respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.
+
+        Parameters
+        ----------
+        None : 
+            This function has no input arguments.
+        
+        Returns
+        -------
+        dict
+            A dictionary containing the following data for each mode included in the comparison:
+                - mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.
+                - eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.
+        '''
         return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
 
     def calculate_hamiltonian_parameters_EPR(self, modes_to_compare = [], print_output=True):
+        '''
+        Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method. 
+        This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the 
+        current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
+        npj Quantum Information (2021)7:131 https://doi.org/10.1038/s41534-021-00461-8. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
+        Hamiltonian should be performed.  
+
+        Parameters
+        ----------
+        modes_to_compare : list 
+            Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].
+        print_output : bool 
+            (defaults to True) print out the results of the EPR calculations.
+
+        Returns
+        -------
+        Dictionary containing the following data for each mode included in the comparison.
+            - f_modes_GHz (pd.Dataframe): the linearized resonant frequency for each mode.
+            - f_norms_GHz (pd.Dataframe): the dressed/renormalized frequencies.
+            - EPR (pd.Dataframe): the energy participation ratios.
+            - Chi (pd.Dataframe): the dispersive shifts.
+            - Lamb (pd.Dataframe): the Lamb shifts.
+            - Detuning (pd.Dataframe): the differnce in frequency betweem the modes.
+        '''
         return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare=modes_to_compare, print_output=print_output)
 
     @staticmethod
-    def retrieve_EPR_data_from_file(json_sim_config, output_directory):
+    def retrieve_interface_EPR_data_from_file(json_sim_config, output_directory) -> list:
+        '''
+        Retrieves the energy participation ratios for the lossy interfaces captured from a completed eigenmode simulation.
+        The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
+        respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.
+
+        Parameters
+        ----------
+        json_sim_config : str
+            The directory where the json config file is stored.
+        output_directory : str  
+            The directory where the simulations files are stored.
+        
+        Returns
+        -------
+        List
+            Returns a list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.\n
+            The dictionary for a found mode contains:
+                - Frequency (complex) : real and imaginary components of the mode frequency.
+                - Q (float) : quality factor of mode.
+                - SA (dict) : lossy surface-air interface with a dict containing the participation ratio and quality factor.
+                - MS (dict) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.
+                - MA (dict) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.
+        '''
+
         if os.path.exists(output_directory + '/config.json'):
             #Newer version stores configuration in output directory... Use this as it is the exact one used in this simulation...
             json_sim_config = output_directory + '/config.json'
@@ -312,9 +431,25 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return ret_list
 
     @staticmethod
-    def retrieve_mode_port_EPR_from_file(output_directory):
-        #Returns matrix where modes on rows, ports on columns
+    def retrieve_mode_port_EPR_from_file(output_directory: str) -> dict:
+        '''
+        Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
+        The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
+        respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.
 
+        Parameters
+        ----------
+        output_directory : str 
+            The directory where the simulations files are stored.
+        
+        Returns
+        -------
+        Dict
+            A dictionary containing the following data for each mode included in the comparison:
+                - mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.
+                - eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.
+        '''
+   
         raw_data = pd.read_csv(output_directory + '/port-EPR.csv')
         headers = raw_data.columns
         raw_data = raw_data.to_numpy()
@@ -327,8 +462,35 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         return {'mat_mode_port': raw_data[:,1:], 'eigenfrequencies': raw_dataE[:,col_Ref]*1e9}
 
     @staticmethod
-    def calculate_hamiltonian_parameters_EPR_from_files(directory, config_json_path, modes_to_compare = [], print_output=True):
-        '''Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method'''
+    def calculate_hamiltonian_parameters_EPR_from_files(directory: str, config_json_path: str, modes_to_compare = [], print_output=True) -> dict:
+        '''
+        Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method. 
+        This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the 
+        current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
+        npj Quantum Information (2021)7:131 https://doi.org/10.1038/s41534-021-00461-8. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
+        Hamiltonian should be performed.  
+
+        Parameters
+        ----------
+        directory : str 
+            Directory where output files of the simulation are stored e.g. 'C:\Two_Transmon\outputFiles'.
+        config_json_path : str 
+            Path for the json configuration file e.g. 'C:\Two_Transmon\Two_Transmon.json'.
+        modes_to_compare : list 
+            Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].
+        print_output : bool 
+            (defaults to True) print out the results of the EPR calculations.
+
+        Returns
+        -------
+        Dictionary containing the following data for each mode included in the comparison.
+            - f_modes_GHz (pd.Dataframe): the linearized resonant frequency for each mode.
+            - f_norms_GHz (pd.Dataframe): the dressed/renormalized frequencies.
+            - EPR (pd.Dataframe): the energy participation ratios.
+            - Chi (pd.Dataframe): the dispersive shifts.
+            - Lamb (pd.Dataframe): the Lamb shifts.
+            - Detuning (pd.Dataframe): the differnce in frequency betweem the modes.
+        '''
         
         #retrieve data from the simulation files
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
@@ -392,7 +554,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         for cur_port in config_json['Boundaries']['LumpedPort']:
             if 'L' in cur_port and cur_port['L'] > 0:
                 Lj.append(cur_port['L'])
-            #Note that Palace only stores the port-EPR values for inductive ports.
+        #Note that Palace only stores the port-EPR values for inductive ports.
         #Get Ej for each junction
         Lj_matrix = np.matrix(Lj)
         Ej = np.diag((phi0**2 / Lj_matrix).A1)
@@ -453,7 +615,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
             dual_print(delta_df)
             dual_print('______________________________\n')
 
-        #sSave output to file
+        #Save output to file
         output_text = output_buffer.getvalue()
         file_path = directory + '/EPR_params.txt'
         with open(file_path, 'w') as f:
