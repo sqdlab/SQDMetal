@@ -7,6 +7,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
+    'nbsphinx'
 ]
 
 # Automatically generate summary pages (tables) for classes, functions, and methods
@@ -32,3 +33,5 @@ html_static_path = ['_static']
 html_theme_options = {
     'navigation_depth': 10
 }
+
+nbsphinx_execute = 'never'
