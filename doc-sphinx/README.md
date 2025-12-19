@@ -15,6 +15,32 @@ Then open `doc-sphinx/build/index.html`.
 
 It is recommended that one installs the extension `reStructuredText` by `lextudio` if using *VSCode*.
 
+## Docstring convention
 
+The convention was chosen to maintain readibility while being compatible with `sphinx`. Here is an example covering all the important details (note the important line breaks):
+
+```python
+"""
+Comment on the function
+
+Parameters
+----------
+param1 : str 
+    Description of parameter un
+param2 : int 
+    Description of parameter deux
+options : dict
+    This is a dictionary (e.g. kwargs):
+
+    *   ``'key1'`` (`float`):
+            Description of this key
+    *   ``'key2'`` (`int`):
+            Description of this other key
+
+Returns
+-------
+    Details of the return structure. Use similar structure to the dict above if returning dictionaries.
+"""
+```
 
 

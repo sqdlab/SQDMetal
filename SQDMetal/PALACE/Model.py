@@ -29,48 +29,105 @@ class PALACE_Model:
 
     default_user_options_parent = {
         "dielectric_material": "silicon",
-        "mesh_max": 100e-6,
+        "fillet_resolution": 12,
         "mesh_min": 10e-6,
+        "mesh_max": 100e-6,
         "taper_dist_min": 30e-6,
         "taper_dist_max": 200e-6,
-        "fuse_threshold": 1e-9,
         "threshold": 1e-9,
+        "fuse_threshold": 1e-9,
         "simplify_edge_min_angle_deg": -1,
         "gmsh_verbosity": 1,
         "gmsh_dist_func_discretisation": 120,
-        "fillet_resolution": 12,
         'palace_mode': 'local',
+        'palace_dir': '',
         'palace_wsl_spack_repo_directory': '~/repo',
         "comsol_meshing": "Extremely fine"
     }
 
-    def __init__(self, meshing, mode, options: dict, **kwargs):
-        """The base class for AWS Palace simulations. It holds all the simulation parameters
-        to then run on Palace. Currently, it supports input models in Qiskit-Metal and GDS.
-
-        Args:
-            table_handle: An open smalltable.Table instance.
-            options: Dictionary containing user-configuration parameters.
-                dielectric_material: (Default: "silicon") string matching a `Material` object
-                                     to set as the dielectric material for the substrate.
-                mesh_min: Minimum mesh element size 
-
-        Returns:
-            A dict mapping keys to the corresponding table row data
-            fetched. Each row is represented as a tuple of strings. For
-            example:
-
-            {b'Serak': ('Rigel VII', 'Preparer'),
-            b'Zim': ('Irk', 'Invader'),
-            b'Lrrr': ('Omicron Persei 8', 'Emperor')}
-
-            Returned keys are always bytes.  If a key from the keys argument is
-            missing from the dictionary, then that row was not found in the
-            table (and require_all_keys must have been False).
-
-        Raises:
-            IOError: An error occurred accessing the smalltable.
+    def __init__(self, meshing:str, mode:str, options: dict, **kwargs):
         """
+        Base class for PALACE simulation classes.
+
+        Parameters
+        ----------
+        meshing : str 
+            The meshing engine to use. It can be either 'GMSH' or 'COMSOL' with the latter
+            requiring a local COMSOL installation.
+        mode : str 
+            Either 'PC' to run locally or 'HPC' to just generate the scripts to be run on
+            a cluster/computer later.
+        options : dict
+            One must supply **one** of these keyword arguments depending on the input format of
+            the design to simulate:
+
+            *   ``'metal_design'`` (QDesign):
+                    The Qiskit-Metal design object to simulate
+            *   ``'gds_design'`` (`str`):
+                    Path to the GDS file with the design to simulate
+
+            Additional options which include those of the daughter classes and:
+
+            *   ``'dielectric_material'`` (`str`):
+                    Name of the dielectric to use on the substrate
+            *   ``'fillet_resolution'`` (`float`):
+                    All curved sections of paths (e.g. a CPW line) will be discretised into line
+                    segments. This value is the number of such segments observed over a 90° arc.
+            *   ``'mesh_min'`` (`float`):
+                    The default minimum mesh element size to use when using the fine-meshing functions.
+            *   ``'mesh_max'`` (`float`):
+                    The default maximum mesh element size to use when using the fine-meshing functions.
+            *   ``'taper_dist_min'`` (`float`):
+                    The default distance to which the size of the mesh elements remain at mesh_min.
+            *   ``'taper_dist_max'`` (`float`):
+                    The default distance to which the size of the mesh elements begin to be set at mesh_max.
+            *   ``'threshold'`` (`float`):
+                    The default threshold to which elements in a given layer are simplified. That is,
+                    adjacent vertices that are closer than this value are simplified into a single vertex.
+            *   ``'fuse_threshold'`` (`float`):
+                    The default threshold to which cracks are bridged together. Gaps that are twice this
+                    value are effectively bridged together so that there are no seams etc.
+            *   ``'simplify_edge_min_angle_deg'`` (`float`):
+                    The default simplification used to delete unnecessary vertices when they are adjacent
+                    and collinear. It weights them based on the distance from the central vertex. For
+                    example, consider three vertices ABC. If AB and BC are equidistant and the angle ABC
+                    is less than the supplied value, then B is removed as it is considered collinear. If
+                    the length of AB is greater than BC, then the ratio of the lengths R is multiplied by
+                    the angle ABC before checking for this threshold. That is, if there is a genuine sharp
+                    feature, it is not simplified. This is mostly designed for curved edges that may have
+                    an unnecessary number of vertices.
+            *   ``'gmsh_verbosity'`` (`int`):
+                    The default level of messages to print from GMSH. The levels symbolised by the integers
+                    are: Nothing (0), Errors (1), Warnings (2), Direct (3), Information (4), Status (5),
+                    Debug (99). The verbosity of the messages increase with the listed levels.
+            *   ``'gmsh_dist_func_discretisation'`` (`int`):
+                    When a path or polygon is given for a fine-mesh field, GMSH needs to compute distances
+                    from these 1D or 2D regions in order to compute the mesh element size at a given location.
+                    Thus, it must be able to numerically approximate these lines/polygons. It does so by chopping
+                    every line-segment or polygon into smaller portions given by this supplied value. Note
+                    that making this too large will make the generation of the mesh slower as it will take
+                    longer to compute all the mesh field distances.
+            *   ``'palace_mode'`` (`str`):
+                    When running Palace locally, one may run it via a 'local' installation (e.g. Mac-OS,
+                    Linux etc.) or 'wsl' (e.g. Windows).
+            *   ``'palace_dir'`` (`str`):
+                    When running Palace locally, the location of the Palace binary must be supplied so that
+                    SQDMetal can call it directly.
+            *   ``'palace_wsl_spack_repo_directory'`` (`str`):
+                    When running Palace in WSL (i.e. Windows), the location of the cloned repository (inside
+                    the WSL VM) needs to be supplied unless it is in the default '~/repo' folder.
+            *   ``'comsol_meshing'`` (`str`):
+                    The default meshing size to use if using COMSOL to mesh the simulation. Acceptable values
+                    are: Can be: 'Extremely fine', 'Extra fine', 'Finer', 'Fine', 'Normal', 'Coarse', 'Coarser',
+                    'Extra coarse' or 'Extremely coarse'.
+
+        Returns
+        -------
+            The constructed PALACE_Model object.
+        """
+
+        #TODO: Look to refactor/remove mode?
+        #TODO: Add link to WSL installation details when mentioning `palace_wsl_spack_repo_directory`?
 
         self.meshing = meshing
         self._metallic_layers = []
