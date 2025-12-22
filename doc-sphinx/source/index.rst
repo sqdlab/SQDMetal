@@ -14,5 +14,3 @@ This is the documentation for the `SQDMetal` Python package. Below are the main 
    :maxdepth: 5
 
    API reference <reference/index>
-
-modules

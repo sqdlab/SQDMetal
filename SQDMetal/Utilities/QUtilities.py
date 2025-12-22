@@ -56,7 +56,7 @@ class QUtilities:
         return unit_conv
 
     @staticmethod
-    def parse_value_length(strVal):
+    def parse_value_length(strVal:str|float|int):
         '''
         Parse a length value with units and convert it to meters.
 
@@ -72,16 +72,21 @@ class QUtilities:
             - fm → 1e-15 m
             - m  → 1 m (base unit)
 
-        Args:
-            strVal (str | float | int): Length value to parse. May be a string with
-                units or a raw numeric value.
+        Parameters
+        ----------
+            strVal : str | float | int
+                Length value to parse. May be a string with units or a raw numeric value.
 
-        Returns:
-            float: The value converted to meters.
-            str: Returned unchanged only if the format is invalid and no unit can
+        Returns
+        -------
+            value : float
+                The value converted to meters - returned if successful.
+            error : str
+                Returns string unchanged if the format is invalid and no unit can
                 be parsed (fallback case).
 
-        Raises:
+        Raises
+        ------
             AssertionError: If the string is too short to contain meaningful units
                 or appears malformed.
         '''
@@ -660,25 +665,26 @@ class QUtilities:
         The plot can optionally be drawn on an existing axes object and supports
         several keyword arguments for tweaking visual appearance.
 
-        Args:
-            design (QDesign):
-                A Qiskit Metal design object containing component geometry and
-                chip metadata.
-            **kwargs:
-                resolution (int, default=4):  
-                    Polygon resolution passed to ``get_net_coordinates``.
-                fuse_threshold (float, default=1e-10):  
-                    Distance threshold for fusing adjacent polygons in the
-                    subtractive layers.
-                ax (matplotlib.axes.Axes, optional):  
-                    Existing axes to draw on. If omitted, a new figure and axes
-                    are created.
+        Parameters
+        ----------
+        design : QDesign
+            A Qiskit Metal design object containing component geometry and
+            chip metadata.
+        kwargs : dict
+            Keyword arguments:
 
-        Notes:
-            - Metal geometries are plotted in blue; the ground plane is plotted
-            in the same color but rendered separately.
-            - The chip dimensions and center coordinates are taken from
-            ``design.chips['main']['size']`` and converted to consistent units.
+            *   ``'resolution'`` (`int`):
+                Polygon resolution passed to ``get_net_coordinates`` (default is 4).
+            *   ``'fuse_threshold'`` (`float`):
+                Distance threshold in metres when fusing adjacent polygons in the subtractive layers.
+                Default is 1e-10
+            *   ``'ax'`` (`matplotlib.axes.Axes`):
+                Existing axes to draw on. If omitted, a new figure and axes are created.
+
+        Note
+        ----
+            - Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.
+            - The chip dimensions and center coordinates are taken from ``design.chips['main']['size']`` and converted to consistent units.
         """
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
@@ -713,7 +719,7 @@ class QUtilities:
         ax.set_facecolor('#DDAA33')
 
     @staticmethod
-    def plot_highlight_component(component_name, design, **kwargs):
+    def plot_highlight_component(component_name:str, design, **kwargs):
         """
         Plot a single component of a Qiskit Metal design and visually highlight it.
 
@@ -722,39 +728,40 @@ class QUtilities:
         are annotated with arrows and labels. Useful for visually debugging
         component placement, orientation, and connectivity.
 
-        Args:
-            component_name (str):
-                The name of the QComponent in ``design.components`` to highlight.
-            design (QDesign):
-                A Qiskit Metal design object containing component geometry,
-                chip settings, and pin locations.
-            **kwargs:
-                resolution (int, default=4):  
-                    Polygon simplification resolution passed to
-                    ``QiskitShapelyRenderer.get_net_coordinates()``.
-                ax (matplotlib.axes.Axes, optional):  
-                    Existing axis to draw on. If not provided, a new figure and axis
-                    are created.
-                len_pin_arrow_frac_axis (float, default=0.2):  
-                    Fraction of the current axis extent used to set the arrow length
-                    for pin direction indicators.
-                arrow_width (float, default=0.001):  
-                    Width of arrows used to indicate pin normals.
-                push_to_back (bool, default=False):  
-                    If True, non-highlighted polygons are sorted so they are drawn
-                    behind the highlighted ones.
+        Parameters
+        ----------
+        component_name : str
+            The name of the QComponent in ``design.components`` to highlight.
+        design : QDesign
+            A Qiskit Metal design object containing component geometry,
+            chip settings, and pin locations.
+        kwargs : dict
+            Optional keyword arguments:
+            *   ``'resolution'`` (`int`):  
+                Polygon simplification resolution passed to
+                ``QiskitShapelyRenderer.get_net_coordinates()`` (defaults to 4).
+            *   ``'ax'`` (`matplotlib.axes.Axes`):  
+                Existing axis to draw on. If not provided, a new figure and axis
+                are created.
+            *   ``'len_pin_arrow_frac_axis'`` (`float`):  
+                Fraction of the current axis extent used to set the arrow length
+                for pin direction indicators. Defaults to 0.2.
+            *   ``'arrow_width'`` (`float`):  
+                Width of arrows used to indicate pin normals. Defaults to 0.001.
+            *   ``'push_to_back'`` (`bool`):  
+                If True, non-highlighted polygons are sorted so they are drawn
+                behind the highlighted ones. Default to False.
 
-        Notes:
-            - Metal polygons for the highlighted component are drawn in **#069AF3**
-            (blue). Other metals appear in light blue.
-            - Gap polygons for the highlighted component are drawn in **#808080**.
-            Other gaps appear in a light grey.
-            - Pin arrows are drawn in red with text labels centered along the arrow.
-
-        Returns:
+        Returns
+        -------
             None
                 The function produces a plot but does not return any data.
 
+        Note
+        ----
+            - Metal polygons for the highlighted component are drawn in **#069AF3** (blue). Other metals appear in light blue.
+            - Gap polygons for the highlighted component are drawn in **#808080** (grey). Other gaps appear in a light grey.
+            - Pin arrows are drawn in red with text labels centered along the arrow.
         """
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
