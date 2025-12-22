@@ -82,11 +82,11 @@ class PALACE_Model:
             *   ``'taper_dist_max'`` (`float`):
                     The default distance to which the size of the mesh elements begin to be set at mesh_max.
             *   ``'threshold'`` (`float`):
-                    The default threshold to which elements in a given layer are simplified. That is,
-                    adjacent vertices that are closer than this value are simplified into a single vertex.
+                    The default threshold (in metres) to which elements in a given layer are simplified. That
+                    is, adjacent vertices that are closer than this value are simplified into a single vertex.
             *   ``'fuse_threshold'`` (`float`):
-                    The default threshold to which cracks are bridged together. Gaps that are twice this
-                    value are effectively bridged together so that there are no seams etc.
+                    The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+                    this value are effectively bridged together so that there are no seams etc.
             *   ``'simplify_edge_min_angle_deg'`` (`float`):
                     The default simplification used to delete unnecessary vertices when they are adjacent
                     and collinear. It weights them based on the distance from the central vertex. For
@@ -218,33 +218,57 @@ class PALACE_Model:
         raise NotImplementedError()
 
     def prepare_simulation(self):
+        """
+        Creates the JSON and mesh files as relevant to the defined Palace simulation. The model will
+        have everything required to run the simulation either externally via command line or internally
+        using :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`.
+        """
         self._prepare_simulation(self._metallic_layers, self._ground_plane)
 
     def add_metallic(self, layer_id, **kwargs):
-        '''
-        Adds metallic conductors from the Qiskit-Metal design object onto the surface layer of the chip simulation. If the particular layer has
-        fancy PVD evaporation steps, the added metallic layer will account for said steps and merge the final result. In addition, all metallic
-        elements that are contiguous are merged into single blobs.
+        """
+        Adds metallic conductors from the design input onto the surface layer of the chip simulation.
+        If the particular layer has fancy PVD evaporation steps, the added metallic layer will account
+        for said steps and merge the final result. In addition, all metallic contiguous elements are
+        merged into single blobs.
 
-        Inputs:
-            - layer_id - The index of the layer from which to take the metallic polygons
-            - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
-                          combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
-                          argument is negative, the argument is ignored.
-            - fuse_threshold - (Optional) Defaults to 1e-12. This is the minimum distance between metallic elements, below which they are considered
-                               to be a single polygon and thus, the polygons are merged with the gap filled. This accounts for floating-point errors
-                               that make adjacent elements fail to merge as a single element, due to infinitesimal gaps between them.
-            - evap_mode - (Optional) Defaults to 'separate_delete_below'. These are the methods upon which to separate or merge overlapping elements
-                          across multiple evaporation steps. See documentation on PVD_Shadows for more details on the available options.
-            - group_by_evaporations - (Optional) Defaults to False. If set to True, if elements on a particular evaporation step are separated due
-                                      to the given evap_mode, they will still be selected as a part of the same conductor (useful for example, in
-                                      capacitance matrix simulations).
-            - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
-                          PVD_Shadows for more details on its definition.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
 
-            GDS-SPECIFIC
-            - cell_index - (Optional) Defaults to 0. Can specify the cell from which the layer is to be extracted
-        '''
+        Parameters
+        ----------
+        layer_id : int
+            The layer ID containing the metallic layer to add.
+        kwargs : dict
+            Optional arguments:
+
+            *   ``'threshold'`` (`float`):
+                    Defaults to -1 (i.e. no threshold). This is the threshold in metres, below which
+                    consecutive vertices along a given polygon are combined into a single vertex. This
+                    simplification helps with meshing as the engine will not overdo the meshing. If
+                    this argument is negative, the argument is ignored.
+            *   ``'fuse_threshold'`` (`float`):
+                    Defaults to 1e-12. This is the minimum distance between metallic elements, below
+                    which they are considered to be a single polygon and thus, the polygons are merged
+                    with the gap filled. This accounts for floating-point errors that make adjacent
+                    elements fail to merge as a single element, due to infinitesimal gaps between them.
+            *   ``'evap_mode'`` (`str`):
+                    Defaults to 'separate_delete_below'. These are the methods upon which to separate
+                    or merge overlapping elements across multiple evaporation steps. See documentation
+                    on PVD_Shadows for more details on the available options.
+            *   ``'group_by_evaporations'`` (`bool`):
+                    Defaults to False. If set to True, if elements on a particular evaporation step are
+                    separated due to the given evap_mode, they will still be selected as a part of the
+                    same conductor (useful for example, in capacitance matrix simulations).
+            *   ``'evap_trim'`` (`float`):
+                    Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles.
+                    See documentation on PVD_Shadows for more details on its definition.
+            
+            If using GDS inputs:
+            
+            *   ``'cell_index'`` (`int`):
+                    Defaults to 0. This specifies the cell from which the layer is to be extracted.
+        """
+        #TODO: Link PVD_Shadows to documentation in above docstring
         new_metallic_layer = {
                 'type': 'design_layer',
                 'layer_id': layer_id,
@@ -258,14 +282,25 @@ class PALACE_Model:
         self._metallic_layers.append(new_metallic_layer)
 
     def add_ground_plane(self, **kwargs):
-        '''
-        Adds metallic ground-plane from the Qiskit-Metal design object onto the surface layer of the chip simulation.
+        """
+        *Applies Qiskit-Metal designs only*
+        
+        Adds metallic ground-plane from the Qiskit-Metal design object onto the surface layer of the
+        chip simulation.
 
-        Inputs:
-            - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
-                          combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
-                          argument is negative, the argument is ignored.
-        '''
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        kwargs : dict
+            Optional argument:
+
+            *   ``'threshold'`` (`float`):
+                    Defaults to -1 (i.e. no threshold). This is the threshold in metres, below which
+                    consecutive vertices along a given polygon are combined into a single vertex. This
+                    simplification helps with meshing as the engine will not overdo the meshing. If
+                    this argument is negative, the argument is ignored.
+        """
         self._ground_plane = {'omit':False, 'threshold':kwargs.get('threshold', -1)}
 
 
@@ -281,7 +316,7 @@ class PALACE_Model:
             # print(f"Error checking native architecture: {e}")
             return False
 
-    def _run_local(self, **kwargs):
+    def _run_local(self):
         """
         Runs the PALACE simulation locally.
         """
@@ -322,7 +357,7 @@ class PALACE_Model:
             self.cur_process.kill()
         self.cur_process = None
 
-    def _run_local_wsl(self, **kwargs):
+    def _run_local_wsl(self):
         """
         Runs the PALACE simulation locally.
         """
@@ -478,14 +513,15 @@ class PALACE_Model:
 
     def run(self, **kwargs):
         """
-        Runs the PALACE simulation.
+        Runs the PALACE simulation locally either via a local installation, WSL or a container VM depending on the configuration.
         """
+        #TODO: Remove the kwargs - the Apptainer should be specified by the user options anyway...
         assert self._sim_config != "", "Must run prepare_simulation at least once."
 
         if self.palace_mode == 'local':
             self._run_local(**kwargs)
         elif self.palace_mode == 'wsl':
-            self._run_local_wsl(**kwargs)
+            self._run_local_wsl()
         elif self.palace_dir.endswith(".sif"):  # If palace is run using a container    #TODO: Need to test this properly...
             self._run_local_container(**kwargs)
 
@@ -493,8 +529,16 @@ class PALACE_Model:
         return self.retrieve_data()
 
     def retrieve_data(self):
-        pass
+        """
+        Retrieves relevant data after running the current simulation. Note that this is only relevant when using
+        :func:`~SQDMetal.PALACE.Model.PALACE_Model.run` to run the simulation locally. In addition, the daughter class
+        must override this function to actually retrieve and return data relevant to the simulation.
 
+        Returns
+        -------
+            Returns data relevant to the simulation; if this function is not overridden, nothing if returned.
+        """
+        pass
     
 
     def _check_simulation_mode(self):
@@ -572,7 +616,19 @@ class PALACE_Model:
         #TODO: Consider removing?
         return self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
 
-    def set_local_output_subdir(self, name, update_config_file=True):
+    def set_local_output_subdir(self, name):
+        """
+        Sets a subdirectory within the simulation directory so that when :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`
+        is called, the simulation output is placed within this subdirectory. For example, this is useful when running the
+        same model, but varying the frequency range through which it is swept (i.e. no changes to geometry, mesh etc.).
+        This function sets the subdirectory by modifying the simulation JSON file that is used by the Palace simulations
+        when calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`
+
+        Parameters
+        ----------
+        name : str
+            Name of the subdirectory.
+        """
         self._output_subdir = str(name)
         self._output_dir = self._get_folder_prefix()  + "outputFiles"
         if self._output_subdir != "":
@@ -588,7 +644,39 @@ class PALACE_Model:
     def _check_if_QiskitMetalDesign(self):
         assert isinstance(self._geom_processor, GeomQiskitMetal), "This function can only be used on QiskitMetal designs."
 
-    def fine_mesh_features(self, max_feature_size, **kwargs):
+    def fine_mesh_features(self, max_feature_size:float, **kwargs):
+        """
+        Automatically detect the finer features on the device and select them to be meshed finely. Fine features
+        are defined as fingers/slivers that have a particular feature width. For example, the feature size of a
+        CPW line would be its conductor width.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        max_feature_size : float
+            Maximum feature size in metres; any feature below this size will be selected automatically for fine
+            meshing.
+        kwargs : dict
+            There are additional options that may be supplied:
+
+            *   ``'mesh_min'`` (`float`):
+                    The default minimum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'mesh_max'`` (`float`):
+                    The default maximum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_min'`` (`float`):
+                    The default distance to which the size of the mesh elements remain at mesh_min. If it is
+                    not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_max'`` (`float`):
+                    The default distance to which the size of the mesh elements begin to be set at mesh_max. If
+                    it is not supplied, the default value from the user options will be taken.
+
+        Returns
+        -------
+            Returns nothing.
+        """
         polys = self._geom_processor.get_polys_of_fine_features(max_feature_size, self._metallic_layers, self._ground_plane)
         self._fine_meshes.append({
             'type': 'arb_polys',
@@ -599,7 +687,45 @@ class PALACE_Model:
             'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
         })
 
-    def fine_mesh_along_path(self, dist_resolution, qObjName, trace_name='', **kwargs):
+    def fine_mesh_along_path(self, dist_resolution:float, qObjName:str, trace_name:str='', **kwargs):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Mesh finely around the areas surrounding a Qiskit-Metal path object. This is useful with features like
+        a CPW.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        dist_resolution : float
+            Distance in metres to which the curve is numerically approximated before passing into Gmsh. That is,
+            the curves will be approximated by this segmentation distance.
+        qObjName : str
+            The name of the Qiskit-Metal QComponent object that contains said path.
+        trace_name : str
+            The trace name within the QComponent object. If left at the default blank string '', the path will
+            be automatically inferred.
+        kwargs : dict
+            There are additional options that may be supplied:
+
+            *   ``'mesh_min'`` (`float`):
+                    The default minimum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'mesh_max'`` (`float`):
+                    The default maximum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_min'`` (`float`):
+                    The default distance to which the size of the mesh elements remain at mesh_min. If it is
+                    not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_max'`` (`float`):
+                    The default distance to which the size of the mesh elements begin to be set at mesh_max. If
+                    it is not supplied, the default value from the user options will be taken.
+
+        Returns
+        -------
+            Returns nothing.
+        """
         #TODO: Look into whether dist_resolution should be inferred? Perhaps from the filletting? Make sure to check/test with GMSH GUI
         self._check_if_QiskitMetalDesign()
         leUnits = QUtilities.get_units(self._geom_processor.design)
@@ -613,7 +739,42 @@ class PALACE_Model:
             'taper_dist_max': kwargs.get('taper_dist_max', self.user_options['taper_dist_max'])
         })
 
-    def fine_mesh_in_rectangle(self, x1, y1, x2, y2, **kwargs):
+    def fine_mesh_in_rectangle(self, x1:float, y1:float, x2:float, y2:float, **kwargs):
+        """
+        Fine mesh a rectangular region.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        x1 : float
+            Minimum x-boundary of the rectangle (in metres).
+        x2 : float
+            Maximum x-boundary of the rectangle (in metres).
+        y1 : float
+            Minimum y-boundary of the rectangle (in metres).
+        y2 : float
+            Maximum y-boundary of the rectangle (in metres).
+        kwargs : dict
+            There are additional options that may be supplied:
+
+            *   ``'mesh_min'`` (`float`):
+                    The default minimum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'mesh_max'`` (`float`):
+                    The default maximum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_min'`` (`float`):
+                    The default distance to which the size of the mesh elements remain at mesh_min. If it is
+                    not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_max'`` (`float`):
+                    The default distance to which the size of the mesh elements begin to be set at mesh_max. If
+                    it is not supplied, the default value from the user options will be taken.
+
+        Returns
+        -------
+            Returns nothing.
+        """
         self._fine_meshes.append({
             'type': 'box',
             'x_bnds': (x1, x2),
@@ -629,7 +790,42 @@ class PALACE_Model:
         print("fine_mesh_around_comp_boundaries has been refactored! It's called fine_mesh_components now; please make changes before it gets deprecated")
         self.fine_mesh_components(list_comp_names, **kwargs)
 
-    def fine_mesh_components(self, list_comp_names, **kwargs):
+    def fine_mesh_components(self, list_comp_names:list[str], **kwargs):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Mesh finely within the boundaries of a given list of components.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        list_comp_names : list[str]
+            Names of the components (over which the regions are to be finely meshed) given as a list of strings.
+        kwargs : dict
+            There are additional options that may be supplied:
+
+            *   ``'metals_only'`` (`bool`):
+                    If set to True (defaults to False), only the metallic regions are selected for fine-meshing.
+                    Otherwise, the entire components (i.e. both dielectric gaps as well as the metallic regions)
+                    are selected.
+            *   ``'mesh_min'`` (`float`):
+                    The default minimum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'mesh_max'`` (`float`):
+                    The default maximum mesh element size to use when using the fine-meshing functions. If it
+                    is not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_min'`` (`float`):
+                    The default distance to which the size of the mesh elements remain at mesh_min. If it is
+                    not supplied, the default value from the user options will be taken.
+            *   ``'taper_dist_max'`` (`float`):
+                    The default distance to which the size of the mesh elements begin to be set at mesh_max. If
+                    it is not supplied, the default value from the user options will be taken.
+
+        Returns
+        -------
+            Returns nothing.
+        """
         self._check_if_QiskitMetalDesign()
         self._fine_meshes.append({
             'type': 'comp_bounds',
@@ -642,14 +838,65 @@ class PALACE_Model:
         })
 
     def retrieve_simulation_sizes(self):
+        """
+        Retrieves simulation sizes after running the current simulation. Note that this is only relevant when using
+        :func:`~SQDMetal.PALACE.Model.PALACE_Model.run` to run the simulation locally.
+
+        Returns
+        -------
+        sizes : dict
+            The simulation sizes are given via the following keys:
+
+            *   ``'DoF'`` (`int`):
+                    Degrees of Freedom used in this simulation run.
+            *   ``'MeshElements'`` (`int`):
+                    Number of mesh elements used in this simulation run.
+        """
         return self.retrieve_simulation_sizes_from_file(self._output_data_dir + '/palace.json')
 
-    def enforce_full_3D_simulation(self, metal_thickness, substrate_trenching=0):
+    def enforce_full_3D_simulation(self, metal_thickness:float, substrate_trenching:float=0.0):
+        """
+        Enable a full 3D simulation where the metals have a vertical thickness and dielectric gaps can be trenched.
+        If this function is not called, then the simulations will be quasi-3D in which the metals are deemed to
+        be infinitesimally thin and thus, approximated as planar sheets on the surface of the 3D substrate.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        metal_thickness : float
+            Thickness of the metals in metres. Can be zero.
+        substrate_trenching : float
+            Depth of the trenches (of the dielectric gaps relative to the bottom of the metals) in metres.
+            Default value is 0.0.
+
+        Returns
+        -------
+            Returns nothing.
+        """
         self._full_3D_params['metal_thickness'] = metal_thickness
         self._full_3D_params['substrate_trenching'] = substrate_trenching
 
     @staticmethod
-    def retrieve_simulation_sizes_from_file(path_palace_json):
+    def retrieve_simulation_sizes_from_file(path_palace_json:str):
+        """
+        Retrieves simulation sizes by scanning the stored output of a previou run simulation.
+
+        Parameters
+        ----------
+        path_palace_json : str
+            File path (either relative or absolute) to the *palace.json* file generated when completing a simulation.
+
+        Returns
+        -------
+        sizes : dict
+            The simulation sizes are given via the following keys:
+
+            *   ``'DoF'`` (`int`):
+                    Degrees of Freedom used in this simulation run.
+            *   ``'MeshElements'`` (`int`):
+                    Number of mesh elements used in this simulation run.
+        """
         #Returns dictionary of DoF and Mesh size...
         with open(path_palace_json, "r") as f:
             config_json = json.loads(f.read())
@@ -659,18 +906,57 @@ class PALACE_Model:
         }
 
     def set_xBoundary_as_proportion(self, x_prop:float):
+        """
+        Set the distance of the chip to the air-box on both its boundaries along the x-axis. The distance is
+        given as a proportion of the chip size along the x-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        x_prop : float
+            Proportion of the chip size along the x-axis to use when separating the chip from the air-box on both
+            sides along the x-axis.
+        """
         assert x_prop >= 0, "Boundary distance proportion along the x-axis must be a non-negative number."
         self._boundary_distances.pop('x_pos',None)
         self._boundary_distances.pop('x_neg',None)
         self._boundary_distances['x_prop'] = x_prop
 
     def set_yBoundary_as_proportion(self, y_prop:float):
+        """
+        Set the distance of the chip to the air-box on both its boundaries along the y-axis. The distance is
+        given as a proportion of the chip size along the y-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        y_prop : float
+            Proportion of the chip size along the y-axis to use when separating the chip from the air-box on both
+            sides along the y-axis.
+        """
         assert y_prop >= 0, "Boundary distance proportion along the y-axis must be a non-negative number."
         self._boundary_distances.pop('y_pos',None)
         self._boundary_distances.pop('y_neg',None)
         self._boundary_distances['y_prop'] = y_prop
 
     def set_zBoundary_as_proportion(self, z_prop_top:float, z_prop_bottom:float):
+        """
+        Set the distance of the chip to the air-box on both its boundaries along the z-axis. The distances are
+        given as a proportion of the chip size along the z-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        z_prop_top : float
+            Proportion of the chip thickness (i.e. along z-axis) to use when separating the top of the chip to the
+            top ceiling of the air-box.
+        z_prop_bottom : float
+            Proportion of the chip thickness (i.e. along z-axis) to use when separating the bottom of the chip to the
+            bottom floor of the air-box.
+        """
         assert z_prop_top >= 0, "Boundary distance proportion above the chip must be a non-negative number."
         assert z_prop_bottom >= 0, "Boundary distance proportion below the chip must be a non-negative number."
         self._boundary_distances.pop('z_pos',None)
@@ -679,6 +965,18 @@ class PALACE_Model:
         self._boundary_distances['z_prop_bottom'] = z_prop_bottom
 
     def set_xBoundary_as_absolute(self, x_neg, x_pos):
+        """
+        Set the distances of the chip to the air-box on both its boundaries along the x-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        x_neg : float
+            Distance of the chip to the air-box (in metres) on the negative x-axis side.
+        x_pos : float
+            Distance of the chip to the air-box (in metres) on the positive x-axis side.
+        """
         assert x_neg >= 0, "Boundary on the negative x-axis of the chip must be a non-negative number."
         assert x_pos >= 0, "Boundary on the positive x-axis of the chip must be a non-negative number."
         self._boundary_distances.pop('x_prop',None)
@@ -686,6 +984,18 @@ class PALACE_Model:
         self._boundary_distances['x_pos'] = x_pos
 
     def set_yBoundary_as_absolute(self, y_neg, y_pos):
+        """
+        Set the distances of the chip to the air-box on both its boundaries along the y-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        y_neg : float
+            Distance of the chip to the air-box (in metres) on the negative y-axis side.
+        y_pos : float
+            Distance of the chip to the air-box (in metres) on the positive y-axis side.
+        """
         assert y_neg >= 0, "Boundary on the negative y-axis of the chip must be a non-negative number."
         assert y_pos >= 0, "Boundary on the positive y-axis of the chip must be a non-negative number."
         self._boundary_distances.pop('y_prop',None)
@@ -693,6 +1003,18 @@ class PALACE_Model:
         self._boundary_distances['y_pos'] = y_pos
 
     def set_zBoundary_as_absolute(self, z_neg, z_pos):
+        """
+        Set the distances of the chip to the air-box on both its boundaries along the z-axis.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        z_neg : float
+            Distance of the chip to the air-box (in metres) on the negative z-axis side.
+        z_pos : float
+            Distance of the chip to the air-box (in metres) on the positive z-axis side.
+        """
         assert z_neg >= 0, "Boundary on the negative z-axis of the chip must be a non-negative number."
         assert z_pos >= 0, "Boundary on the positive z-axis of the chip must be a non-negative number."
         self._boundary_distances.pop('z_prop_top',None)
@@ -700,8 +1022,44 @@ class PALACE_Model:
         self._boundary_distances['z_neg'] = z_neg
         self._boundary_distances['z_pos'] = z_pos
 
-    def enable_mesh_refinement(self, num_iterations, max_DoFs=0, tolerance=1e-2, Dorfler_marking_fraction = 0.7, save_iterations_data=True, save_iterations_mesh=False, nonconformal=True):
-        #https://awslabs.github.io/palace/dev/config/model/
+    def enable_mesh_refinement(self, num_iterations:int, max_DoFs:int=0, tolerance:float=1e-2, Dorfler_marking_fraction:float = 0.7, save_iterations_data:bool=True, save_iterations_mesh:bool=False, nonconformal:bool=True):
+        """
+        Enable automatic mesh refinement (AMR) when simulating the model. See further details in the
+        `AWS Palace reference <https://awslabs.github.io/palace/dev/config/model/#model[%22Refinement%22]>`__.
+        Some of the parameter definitions have been copied from this reference.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+
+        Parameters
+        ----------
+        num_iterations : int
+            Number of AMR iterations to run. Each simulation is run and stored in a new sub-folder as the
+            mesh is refined during each iteration.
+        max_DoFs : int 
+            If set to a value above zero, the AMR iterations will cease to refine the mesh upon reaching
+            this value for DoF (degrees of freedom). If set to zero (default value), then there is no limit
+            to the maximum DoF (ultimately limited by RAM).
+        tolerance : float
+            Relative error convergence tolerance for adaptive mesh refinement (AMR). Defaults to 1e-2.
+        Dorfler_marking_fraction : float
+            Dörfler marking fraction used to specify which elements to refine. It defines smallest number
+            of elements that make up this fractional value to the total error in the mesh. A larger value
+            will refine more elements per iteration, at the cost of the final mesh being less efficient.
+            Default value is 0.7.
+        save_iterations_data : bool
+            If True, the simulation output is stored for every AMR iteration. Defaults to True.
+        save_iterations_mesh : bool
+            If True, the mesh is stored for every AMR iteration. Defaults to True.
+        nonconformal : bool
+            Selects whether AMR should use nonconformal refinement. Nonconformal refinement is required
+            for "non-simplex meshes". Somewhat required even if the seed mesh is conformal. Thus, the
+            default value is True.
+
+        Returns
+        -------
+            Returns nothing.
+        """
+        #TODO: look into how the mesh can be viewed/converted in Gmsh?!
         self._mesh_refinement['Tol'] = tolerance
         self._mesh_refinement['MaxIts'] = num_iterations
         self._mesh_refinement['MaxSize'] =  max_DoFs

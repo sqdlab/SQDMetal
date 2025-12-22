@@ -131,7 +131,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
-            self.set_local_output_subdir("", False)
+            self.set_local_output_subdir("")
         filePrefix = self._get_folder_prefix()
         self._mesh_name = filePrefix + self.name + file_ext
         config = {
