@@ -1,7 +1,7 @@
 # Copyright 2025 Prasanna Pakkiam
 # SPDX-License-Identifier: Apache-2.0
 
-from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
+from SQDMetal.PALACE.Model import PALACE_Model_Base_RF
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import re
 
-class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
+class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
     #Class Variables
     default_user_options = {

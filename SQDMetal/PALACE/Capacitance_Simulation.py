@@ -1,7 +1,7 @@
 # Copyright 2025 Prasanna Pakkiam
 # SPDX-License-Identifier: Apache-2.0
 
-from SQDMetal.PALACE.Model import PALACE_Model
+from SQDMetal.PALACE.Model import PALACE_Model_Base
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
@@ -18,7 +18,7 @@ from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builde
 from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 
-class PALACE_Capacitance_Simulation(PALACE_Model):
+class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
     #Class Variables
     default_user_options = {

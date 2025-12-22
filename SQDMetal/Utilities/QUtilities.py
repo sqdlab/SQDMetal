@@ -1085,32 +1085,48 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Launcher_inplane(
         design,
-        qObjName,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
-        unit_conv_extra=1,
+        qObjName:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
+        unit_conv_extra:float=1,
     ):
         """
         Computes the in-plane "U"-shaped ground polygon coordinates for a 
         coplanar waveguide (CPW) launcher component. Used to connect ground
         either side of a CPW.
 
-        Args:
-            design: Qiskit Metal design object containing the components.
-            qObjName (str): Name of the launcher component.
-            thickness_side (float, optional): Thickness of the side arms of the U. Default is 20e-6 meters.
-            thickness_back (float, optional): Thickness of the back section of the U. Default is 20e-6 meters.
-            separation_gap (float, optional): Extra gap between CPW and ground polygon. If 0, defaults to CPW gap. Default is 0 meters.
-            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
 
-        Returns:
-            list of np.ndarray: List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
+            Parameters used in the U-clip
 
-        Notes:
-            - Only supports components of type `LaunchpadWirebond`.
+        Note:
             - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
             - Coordinates are scaled by `unit_conv_extra`.
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        qObjName : str
+            Name of the launcher component.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
         """
         qObj = design.components[qObjName]
         if isinstance(qObj, LaunchpadWirebond):
@@ -1146,33 +1162,51 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Route_inplane(
         design,
-        route_name, 
-        pin_name,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
+        route_name:str,
+        pin_name:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
         unit_conv_extra=1,
     ):
         """
         Computes the in-plane "U"-shaped ground polygon coordinates for a 
         coplanar waveguide (CPW) route component.
 
-        Args:
-            design: Qiskit Metal design object containing the components.
-            route_name (str): Name of the routed component.
-            pin_name (str): Name of the pin used to determine the CPW start point.
-            thickness_side (float, optional): Thickness of the side arms of the U. Default is 20e-6 meters.
-            thickness_back (float, optional): Thickness of the back section of the U. Default is 20e-6 meters.
-            separation_gap (float, optional): Extra gap between CPW and ground polygon. If 0, defaults to CPW gap. Default is 0 meters.
-            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
-
-        Returns:
-            list of np.ndarray: List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
-
-        Notes:
+        Note:
             - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
             - Coordinates are scaled by `unit_conv_extra`.
             - Type-checking for the routed component is not enforced (TODO).
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        route_name : str
+            Name of the routed component.
+        pin_name : str
+            Name of the pin used to determine the CPW start point.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
         """
         # TODO: Do type-checking here?
         vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(

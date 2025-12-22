@@ -50,19 +50,19 @@ It is recommended that one installs the extension `reStructuredText` by `lextudi
 To link to other functions:
 
 ```rst
-Here is my link to a function :func:`SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`
+Here is my link to a function :func:`SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`
 ```
 
 To only show the function name, use a `~`:
 
 ```rst
-Here is my link to a function :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`
+Here is my link to a function :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`
 ```
 
 To have custom text:
 
 ```rst
-Here is my link to a function :func:`custom text <SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation>`
+Here is my link to a function :func:`custom text <SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation>`
 ```
 
 ### Links to websites

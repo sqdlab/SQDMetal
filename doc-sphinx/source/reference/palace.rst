@@ -3,7 +3,12 @@
 Palace Simulations
 ==================
 
-All the classes inherit :class:`SQDMetal.PALACE.Model.PALACE_Model` or its daughter :class:`.PALACE.Model.PALACE_Model_RF_Base` in the case of RF simulations. Thus, there refer to these classes for common interface functions.
+All the classes inherit:
+
+- :class:`~SQDMetal.PALACE.Model.PALACE_Model_Base`
+- :class:`~SQDMetal.PALACE.Model.PALACE_Model_Base_RF` (which inherits the above base class) in the case of RF simulations.
+
+Thus, there refer to these classes for common interface functions.
 
 To run capacitance simulations:
 

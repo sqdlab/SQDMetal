@@ -24,7 +24,7 @@ import platform
 import shapely
 import shutil
 
-class PALACE_Model:
+class PALACE_Model_Base:
     #TODO: Refactor with suffix "Base"
 
     default_user_options_parent = {
@@ -123,7 +123,7 @@ class PALACE_Model:
 
         Returns
         -------
-            The constructed PALACE_Model object.
+            The constructed PALACE_Model_Base object.
         """
 
         #TODO: Look to refactor/remove mode?
@@ -148,8 +148,8 @@ class PALACE_Model:
         self.set_yBoundary_as_proportion(0.1)
         self.set_zBoundary_as_proportion(1.0,0.0)
 
-        for key in PALACE_Model.default_user_options_parent:
-            self.user_options[key] = options.get(key, PALACE_Model.default_user_options_parent[key])
+        for key in PALACE_Model_Base.default_user_options_parent:
+            self.user_options[key] = options.get(key, PALACE_Model_Base.default_user_options_parent[key])
 
         if mode == 'HPC':
             with open(options["HPC_Parameters_JSON"], "r") as f:
@@ -221,7 +221,7 @@ class PALACE_Model:
         """
         Creates the JSON and mesh files as relevant to the defined Palace simulation. The model will
         have everything required to run the simulation either externally via command line or internally
-        using :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`.
+        using :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
         """
         self._prepare_simulation(self._metallic_layers, self._ground_plane)
 
@@ -232,7 +232,7 @@ class PALACE_Model:
         for said steps and merge the final result. In addition, all metallic contiguous elements are
         merged into single blobs.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -288,7 +288,7 @@ class PALACE_Model:
         Adds metallic ground-plane from the Qiskit-Metal design object onto the surface layer of the
         chip simulation.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -531,7 +531,7 @@ class PALACE_Model:
     def retrieve_data(self):
         """
         Retrieves relevant data after running the current simulation. Note that this is only relevant when using
-        :func:`~SQDMetal.PALACE.Model.PALACE_Model.run` to run the simulation locally. In addition, the daughter class
+        :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run` to run the simulation locally. In addition, the daughter class
         must override this function to actually retrieve and return data relevant to the simulation.
 
         Returns
@@ -618,11 +618,11 @@ class PALACE_Model:
 
     def set_local_output_subdir(self, name):
         """
-        Sets a subdirectory within the simulation directory so that when :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`
+        Sets a subdirectory within the simulation directory so that when :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`
         is called, the simulation output is placed within this subdirectory. For example, this is useful when running the
         same model, but varying the frequency range through which it is swept (i.e. no changes to geometry, mesh etc.).
         This function sets the subdirectory by modifying the simulation JSON file that is used by the Palace simulations
-        when calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.run`
+        when calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`
 
         Parameters
         ----------
@@ -650,7 +650,7 @@ class PALACE_Model:
         are defined as fingers/slivers that have a particular feature width. For example, the feature size of a
         CPW line would be its conductor width.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -694,7 +694,7 @@ class PALACE_Model:
         Mesh finely around the areas surrounding a Qiskit-Metal path object. This is useful with features like
         a CPW.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -743,7 +743,7 @@ class PALACE_Model:
         """
         Fine mesh a rectangular region.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -796,7 +796,7 @@ class PALACE_Model:
 
         Mesh finely within the boundaries of a given list of components.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -840,7 +840,7 @@ class PALACE_Model:
     def retrieve_simulation_sizes(self):
         """
         Retrieves simulation sizes after running the current simulation. Note that this is only relevant when using
-        :func:`~SQDMetal.PALACE.Model.PALACE_Model.run` to run the simulation locally.
+        :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run` to run the simulation locally.
 
         Returns
         -------
@@ -860,7 +860,7 @@ class PALACE_Model:
         If this function is not called, then the simulations will be quasi-3D in which the metals are deemed to
         be infinitesimally thin and thus, approximated as planar sheets on the surface of the 3D substrate.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -910,7 +910,7 @@ class PALACE_Model:
         Set the distance of the chip to the air-box on both its boundaries along the x-axis. The distance is
         given as a proportion of the chip size along the x-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -928,7 +928,7 @@ class PALACE_Model:
         Set the distance of the chip to the air-box on both its boundaries along the y-axis. The distance is
         given as a proportion of the chip size along the y-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -946,7 +946,7 @@ class PALACE_Model:
         Set the distance of the chip to the air-box on both its boundaries along the z-axis. The distances are
         given as a proportion of the chip size along the z-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -968,7 +968,7 @@ class PALACE_Model:
         """
         Set the distances of the chip to the air-box on both its boundaries along the x-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -987,7 +987,7 @@ class PALACE_Model:
         """
         Set the distances of the chip to the air-box on both its boundaries along the y-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -1006,7 +1006,7 @@ class PALACE_Model:
         """
         Set the distances of the chip to the air-box on both its boundaries along the z-axis.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -1028,7 +1028,7 @@ class PALACE_Model:
         `AWS Palace reference <https://awslabs.github.io/palace/dev/config/model/#model[%22Refinement%22]>`__.
         Some of the parameter definitions have been copied from this reference.
 
-        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model.prepare_simulation`.
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
         Parameters
         ----------
@@ -1069,7 +1069,7 @@ class PALACE_Model:
         self._mesh_refinement['SaveAdaptIterations'] = save_iterations_data
         self._mesh_refinement['SaveAdaptMesh'] = save_iterations_mesh
 
-class PALACE_Model_RF_Base(PALACE_Model):
+class PALACE_Model_Base_RF(PALACE_Model_Base):
     def _prepare_simulation(self, metallic_layers, ground_plane):
         '''set-up the simulation'''
         
@@ -1186,7 +1186,36 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 assert False, f"COMSOL threw an error (file has been saved): {error}"
 
 
-    def create_port_2_conds(self, qObjName1, pin1, qObjName2, pin2, rect_width=20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+    def create_port_2_conds(self, qObjName1:str, pin1:str, qObjName2:str, pin2:str, rect_width:float=20e-6, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Create a RF port feed across two metallic conductors by using pins as the referential starting and ending
+        points. Note that the first resistive port will automatically be the 50Ohm excitation port in the E-field
+        plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports
+        are defined.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        qObjName1 : str
+            Name of the Qiskit-Metal QComponent that contains the first pin.
+        pin1 : str
+            Name of the pin within the first Qiskit-Metal QComponent qObjName1.
+        qObjName2 : str
+            Name of the Qiskit-Metal QComponent that contains the second pin.
+        pin2 : str
+            Name of the pin within the second Qiskit-Metal QComponent qObjName2.
+        rect_width : float
+            Width of the port in metres. Defaults to 20e-6.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0.
+        """
         self._check_if_QiskitMetalDesign()
         
         port_name = "rf_port_" + str(len(self._ports))
@@ -1206,7 +1235,41 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portCoords': portCoords,
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
-    def create_port_JosephsonJunction(self, qObjName, **kwargs):
+    def create_port_JosephsonJunction(self, qObjName:str, **kwargs):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Creates a Josephson junction simulation construction in the form of a lumped inductance over a rectangular region
+        specified by a 'junction' type within the Qiskit-Metal (a region that would otherwise be ignored when rendering
+        metallic regions). There can be multiple such 'junction' constructs within the Qiskit-Metal objects that one may
+        choose to create the lumped inductance in the simulation.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        qObjName : str
+            Qiskit-Metal object that contains a 'junction' construct over which a Josephson junction is to be created
+        kwargs : dict
+            Keyword arguments:
+
+            *   ``'junction_index'`` (`int`):
+                    In the case of multiple 'junction' constructs contained within the Qiskit-Metal object (named
+                    qObjName), the index can be used to select different ones. Default value is 0 (i.e. first one
+                    in the list when enumerating said 'junction' constructs).
+            *   ``'E_J_Hertz'`` (`float`):
+                    Energy of the Josephson junction E_J given in Hertz (Hz).
+            *   ``'L_J'`` (`float`):
+                    Inductance of the Josephson junction given in Henry (H).
+            *   ``'C_J'`` (`float`):
+                    A parallel capacitance across the Josephson junction given in Farad (F). Defaults to 0.
+
+        Note
+        ----
+            - Either **one** of ``'E_J_Hertz'`` or ``'L_J'`` must be specified.
+            - The function only creates one Josephson junction per function call, use the ``'junction_index'`` parameter to create more.
+            - A parallel capacitance ``'C_J'`` can be used to simulate the small capacitance across the junction pads. Note that there is no resistive component.
+        """
         self._check_if_QiskitMetalDesign()
 
         junction_index = kwargs.get('junction_index', 0)
@@ -1252,16 +1315,30 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'portCoords': portCoords,
                          'impedance_R':0, 'impedance_L':L_ind, 'impedance_C':C_J}]
 
-    def create_port_CPW_on_Launcher(self, qObjName, len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
-        '''
-        Creates an RF port on a CPW inlet. The elements form fins to ground from the central CPW stripline. Note that the first port will automatically be
-        the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports
-        are defined.
-        Inputs:
-            - CPW_obj - A CPW object that has the attributes: start, end, width, gap
-            - is_start - If True, then the port is attached to the start of the CPW, while False attaches the port to the end of the CPW
-            - len_launch - (Default: 20e-6) Length of the inlet port fins along the the CPW. It is a good idea to keep it thin w.r.t. CPW gap 
-        '''
+    def create_port_CPW_on_Launcher(self, qObjName:str, len_launch:float = 20e-6, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Creates an RF port on a LauncherWB object. The elements form fins to ground from the central CPW stripline. Note that the first resistive port
+        will automatically be the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate
+        S11 and S21 if 2 such ports are defined.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        qObjName : str
+            Name of the Qiskit-Metal LauncherWB object that feeds the CPW.
+        len_launch : float
+            Length of the inlet port fins along the the CPW in metres. It is a good idea to keep it thin w.r.t.
+            CPW gap. Default value is 20e-6.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0.
+        """
         self._check_if_QiskitMetalDesign()
         port_name = "rf_port_" + str(len(self._ports))
         
@@ -1274,7 +1351,31 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
-    def create_port_CPW_on_Route(self, qObjName, pin_name='end', len_launch = 20e-6, impedance_R=50, impedance_L=0, impedance_C=0):
+    def create_port_CPW_on_Route(self, qObjName:str, pin_name:str='end', len_launch:float = 20e-6, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Creates an RF port on a CPW inlet based on a CPW routing object in Qiskit-Metal. The elements form fins to ground from the central CPW stripline.
+        Note that the first resistive port will automatically be the 50Ohm excitation port in the E-field plots while the second port is a 50Ohm ground.
+        The s-parameters will calculate S11 and S21 if 2 such ports are defined.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        qObjName : str
+            Name of the Qiskit-Metal CPW object that has the attributes: `start`, `end`, `width`, `gap`
+        pin_name : str
+            Name of the pin on which, the feed port is created. It defaults to 'end' in which case the port feed will be set on the ending pin.
+        len_launch : float
+            Length of the inlet port fins along the the CPW in metres. It is a good idea to keep it thin w.r.t. CPW gap. Default value is 20e-6.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0.
+        """
         self._check_if_QiskitMetalDesign()
         port_name = "rf_port_" + str(len(self._ports))
         
@@ -1287,7 +1388,38 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'vec_field': vec_perp.tolist(),
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
-    def create_port_CPW_via_edge_point(self, pt_near_centre_end, len_launch, impedance_R=50, impedance_L=0, impedance_C=0, **kwargs):
+    def create_port_CPW_via_edge_point(self, pt_near_centre_end:list|np.ndarray|tuple, len_launch:float, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0, **kwargs):
+        """
+        Creates an RF port on a CPW inlet. The edge of the CPW is found automatically by taking the edge closest to a reference point. The elements
+        form fins to ground from the central CPW stripline. Note that the first resistive port will automatically be the 50Ohm excitation port in
+        the E-field plots while the second port is a 50Ohm ground. The s-parameters will calculate S11 and S21 if 2 such ports are defined.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        pt_near_centre_end : list|np.ndarray|tuple
+            A coordinate (x,y) used as a reference. It should be as near as possible to the end of the central conductor of the CPW section.
+        len_launch : float
+            Length of the inlet port fins along the the CPW in metres. It is a good idea to keep it thin w.r.t. CPW gap. Default value is 20e-6.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0.
+        kwargs : dict
+            Optional arguments given as the design needs to be rendered/compiled in order to find the nearest edge for a CPW:
+
+            *   ``'threshold'`` (`float`):
+                    The default threshold (in metres) to which elements in a given layer are simplified. That
+                    is, adjacent vertices that are closer than this value are simplified into a single vertex.
+                    Defaults to that given in user options.
+            *   ``'fuse_threshold'`` (`float`):
+                    The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+                    this value are effectively bridged together so that there are no seams etc. Defaults to that
+                    given in user options.
+        """
         port_name = "rf_port_" + str(len(self._ports))
 
         kwargs["fuse_threshold"] = self.user_options["fuse_threshold"]
@@ -1302,7 +1434,24 @@ class PALACE_Model_RF_Base(PALACE_Model):
                          'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
 
-    def set_port_impedance(self, port_ind, impedance_R=50, impedance_L=0, impedance_C=0):
+    def set_port_impedance(self, port_ind:int, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
+        """
+        Sets the port impedances (i.e. R, L and C values) for a port that has already been defined. This function can
+        be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`, in which case it will
+        update the JSON file so that it is accounted when running the simulation.
+
+        Parameters
+        ----------
+        port_ind : int
+            Port index enumerated from 1. This port index must exist (i.e. at least port_ind-many RF port feeds must
+            be defined)
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0.
+        """
         assert self._ports[port_ind-1]['type'] != 'waveport', "Cannot set impedances to a waveport."
         #Enumerate port_ind from 1...
         #TODO: Override if different for Eigenmode...
@@ -1319,6 +1468,37 @@ class PALACE_Model_RF_Base(PALACE_Model):
                 json.dump(config_json, f, indent=2)
 
     def create_waveport_on_boundary(self, plane:str, **kwargs):
+        """
+        Creates a RF wave port feed on a plane on the surface of the airbox.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        plane : str
+            The plane on the air-box surface upon which the wave-port feed is to be placed. Can be 'x_pos' or 'x_neg'
+            for the positive and negative planes along the x-axis. Can also be 'y_pos' or 'y_neg' for the positive and
+            negative planes along the y-axis. Similarly it can be 'z_pos' or 'z_neg' for the positive and negative planes
+            along the z-axis.
+        kwargs : dict
+            Keyword arguments:
+
+            *   ``'x'`` (`float`):
+                    x-coordinate of the centre of the port
+            *   ``'y'`` (`float`):
+                    y-coordinate of the centre of the port
+            *   ``'z'`` (`float`):
+                    z-coordinate of the centre of the port
+            *   ``'shape'`` (`float`):
+                    Shape of the waveport. Currently only supports 'rectangle' (the default value).
+
+        Note
+        ----
+            - If ``'plane'`` is 'x_pos'/'x_neg', only ``'y'`` and ``'z'`` must be supplied (not ``'x'``)
+            - If ``'plane'`` is 'y_pos'/'y_neg', only ``'x'`` and ``'z'`` must be supplied (not ``'y'``)
+            - If ``'plane'`` is 'z_pos'/'z_neg', only ``'x'`` and ``'y'`` must be supplied (not ``'z'``)
+            - That is, the port will be coplanar with the ``'plane'`` on the air-box surface.
+        """
         port_name = "rf_wport_" + str(len(self._ports))
 
         shape = kwargs.get('shape', 'rectangle')
@@ -1346,7 +1526,35 @@ class PALACE_Model_RF_Base(PALACE_Model):
         new_wvprt['type'] = 'waveport'
         self._ports.append(new_wvprt)
 
-    def create_CPW_feed_Uclip_on_Launcher(self, qObjName, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+    def create_CPW_feed_Uclip_on_Launcher(self, qObjName:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=0e-6):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Create a U-Clip that adjoins the two ground planes on a CPW launcher feeding from the edge of the chip. That
+        is, a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
+        planes. It is a simple concave octogan with 90° corners.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Parameters
+        ----------
+        qObjName : float
+            Name of the LauncherWB Q-Component in the Qiskit-Metal design.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        """
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneLauncher',
@@ -1356,7 +1564,38 @@ class PALACE_Model_RF_Base(PALACE_Model):
             'separation_gap':separation_gap
         }]
 
-    def create_CPW_feed_Uclip_on_Route(self, route_name, pin_name, thickness_side=20e-6, thickness_back=20e-6, separation_gap=0e-6):
+    def create_CPW_feed_Uclip_on_Route(self, route_name:str, pin_name:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=0e-6):
+        """
+        *Applies Qiskit-Metal designs only*
+
+        Create a U-Clip that adjoins the two ground planes on a CPW route feeding from the edge of the chip. That is,
+        a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
+        planes. It is a simple concave octogan with 90° corners.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Parameters
+        ----------
+        route_name : str
+            Name of the routing component (e.g. a CPW) in the Qiskit-Metal design
+        pin_name : str
+            Name of the pin within the routing component in the Qiskit-Metal design. Typically a routing component has,
+            at least, two pins named something like 'start' and 'end'.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        """
         self._metallic_layers += [{
             'type': 'Uclip',
             'clip_type':'inplaneRoute',
@@ -1412,13 +1651,38 @@ class PALACE_Model_RF_Base(PALACE_Model):
         return config_ports, config_wports
 
     def setup_EPR_interfaces(self, substrate_air : MaterialInterface, substrate_metal : MaterialInterface, metal_air : MaterialInterface, **kwargs):
+        """
+        Set the interface materials to trigger EPR (energy participation ratio) loss calculations. See the
+        `AWS Palace documentation <https://awslabs.github.io/palace/stable/reference/#Bulk-and-interface-dielectric-loss>`__ for further details
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        substrate_air : MaterialInterface
+            The material for the substrate-air interface on the surface of the chip.
+        substrate_metal : MaterialInterface
+            The material for the substrate-metal interface on the surface of the chip.
+        metal_air : MaterialInterface
+            The material for the metal-air interface on the surface of the chip.
+        kwargs : dict
+            Keyword arguments:
+
+            *   ``'substrate_air_thickness'`` (`float`):
+                    Thickness to use in the EPR loss calculation for the substrate-air interface in metres. Defaults to 2e-9.
+            *   ``'substrate_metal_thickness'`` (`float`):
+                    Thickness to use in the EPR loss calculation for the substrate-metal interface in metres. Defaults to 2e-9.
+            *   ``'metal_air_thickness'`` (`float`):
+                    Thickness to use in the EPR loss calculation for the metal-air interface in metres. Defaults to 2e-9.
+        """
+        #TODO: Link the MaterialInterface to the appropriate class...
         self.substrate_air = substrate_air
         self.substrate_metal = substrate_metal
         self.metal_air = metal_air
         self._EPR_setup = True
         self.substrate_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
-        self.substrate_metal_thickness = kwargs.get('substrate_air_thickness', 2e-9)
-        self.metal_air_thickness = kwargs.get('substrate_air_thickness', 2e-9)
+        self.substrate_metal_thickness = kwargs.get('substrate_metal_thickness', 2e-9)
+        self.metal_air_thickness = kwargs.get('metal_air_thickness', 2e-9)
 
     def _setup_EPR_boundaries(self, dict_json, id_dielectric_gaps, id_metals, **kwargs):
         if not self._EPR_setup:
@@ -1454,11 +1718,20 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     ] 
                 }
         
-    def add_kinetic_inductance(self, kinetic_inductance):
-        '''Method for user to add kinetic inductance into simulations'''
+    def add_kinetic_inductance(self, kinetic_inductance:float):
+        """
+        Enables kinetic inductance in the metals used in the simulations. See the `AWS Palace documentation <https://awslabs.github.io/palace/stable/config/boundaries/#boundaries[%22Impedance%22]>`__
+        for further details.
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        kinetic_inductance : float
+            The value of the kinetic inductance (given as a surface inductance in units of H/□), to use on the metallic regions.
+        """
         self._use_KI = True
         self._KI = kinetic_inductance
-        
         
     def _setup_kinetic_inductance(self, dict_json, id_metals):
         '''Internal method to adjust Palace config file to change boundary condition from PEC to Surface Impedance to
@@ -1473,8 +1746,27 @@ class PALACE_Model_RF_Base(PALACE_Model):
                     "Attributes": [],
                 }
 
-    def set_farfield(self, ff_type='pec', ff_plane='', ff_material: MaterialConductor=None):
-        #ff_type can be: 'absorbing', 'pec' or 'conductor'
+    def set_farfield(self, ff_type:str='pec', ff_plane:str='', ff_material: MaterialConductor=None):
+        """
+        Sets the farfield type to use on the air-box. 
+
+        This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
+
+        Parameters
+        ----------
+        ff_type : str
+            Far-field type being either 'pec' (perfect electrical conductor), 'absorbing' (the EM-waves do not reflect
+            on these boundaries and continue onwards indefinitely) or 'conductor' (similar to PEC, but with a finite
+            conductivity)
+        ff_plane : str
+            Apply the parameters to one of the 6 planes forming the air-box. A given positive/negative plane along
+            a given axis is specified via any of: 'x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg'. The default
+            value is an empty string '', in which case, the attributes are applied to all surfaces of the air-box.
+        ff_material : MaterialConductor
+            If ff_type is 'conductor', then one must supply a MaterialConductor object to represent the material that
+            forms the conductor on the given plane(s). Otherwise, the default value is None and this field is ignored.
+        """
+        #TODO: Link the MaterialConductor to the appropriate class...
         ff_type = ff_type.lower()
         assert ff_type == 'pec' or ff_type == 'absorbing' or ff_type == 'conductor', "ff_type must be: 'absorbing', 'pec' or 'conductor'"
         ff_planes = ['x_pos', 'x_neg', 'y_pos', 'y_neg', 'z_pos', 'z_neg']

@@ -1,7 +1,7 @@
 # Copyright 2025 Prasanna Pakkiam
 # SPDX-License-Identifier: Apache-2.0
 
-from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
+from SQDMetal.PALACE.Model import PALACE_Model_Base_RF
 from SQDMetal.Utilities.Materials import Material
 from SQDMetal.PALACE.Utilities.GMSH_Navigator import GMSH_Navigator
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
@@ -16,7 +16,7 @@ import io
 import sys
 import pandas as pd
 
-class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
+class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
 
     #Class Variables
     default_user_options = {
