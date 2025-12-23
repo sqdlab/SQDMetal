@@ -16,10 +16,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Install Pandoc
+    - name: Install Pandoc and LibGLU
       run: |
         sudo apt-get update
         sudo apt-get install -y pandoc
+        sudo apt-get install -y libglu1-mesa libxi6 libxrender1
 
     - name: Set up Python
       uses: actions/setup-python@v2
