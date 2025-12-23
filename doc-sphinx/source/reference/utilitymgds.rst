@@ -3,7 +3,7 @@
 ManipulateGDS
 =============
 
-.. automodule:: SQDMetal.Utilities.ManipulateGDS
+.. autoclass:: SQDMetal.Utilities.ManipulateGDS.ManipulateGDS
    :members:
    :undoc-members:
    :show-inheritance:

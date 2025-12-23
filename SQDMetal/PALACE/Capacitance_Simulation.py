@@ -318,7 +318,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         
         Returns:
             Matplotlib fig of the conductor visualisation.
-
         '''
         assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
 
@@ -342,9 +341,12 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         return fig
 
     def retrieve_data(self):
-        '''Retrieves output data from the capacitance simulation.
+        '''
+        Retrieves output data from the capacitance simulation.
         
         Creates and saves plots of conductor indices (terminal_indices.png), field distribution results (cond1_V.png), and mesh (mesh.png)
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
 
         Returns:
             A NumPy array of the raw data.
@@ -380,8 +382,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         return raw_data
     
     def calc_params_floating_Transmon(self, **kwargs):
-        '''Class method mirroring calc_params_floating_Transmon_from_files.
-        '''
+        """
+        Class method mirroring :func:`~SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files` (without the ``directory`` parameter as it is inferred from the current simulation)
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+        """
         return PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files(
             self._output_data_dir,
             capacitance_matrix=self.cap_matrix,
@@ -389,7 +394,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         )
 
     @staticmethod
-    def calc_params_floating_Transmon_from_files(directory, qubit_freq=None, res=None, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, C_J=0, Z0_feedline=50):
+    def calc_params_floating_Transmon_from_files(directory:str, qubit_freq=None, res=None, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, C_J=0, Z0_feedline=50):
         '''Static method to calculate key circuit parameters (chi, kappa, g, etc.) for a floating 
         Transmon qubit using the simulated capacitance matrix.
 
@@ -407,62 +412,87 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
                 floating transmon coupled to resonator-feedline
                 (ground, pad 1, pad 2, resonator, feedline)
 
-        Args:
-            directory (str): Directory containing Palace output files.
-            qubit_freq (float, optional): (Defaults to None) Qubit freqeuncy in Hz, used to calculate parameters.
-            res (optional): (Defaults to None) A resonator object (SQDMetal.Utilities.QubitDesigner.ResonatorBase), 
-                used for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).
-            capacitance_matrix (optional): (Defaults to None) Simulated capacitance matrix. If None, 
-                fetches from the supplied directory.
-            conductor_indeces (dict, optional): (Defaults to None) Dictionary containing indeces for 
-                the conductors corresponding to each index in the capacitance_matrix. 
-                If None, the defaults are set to:
-                    {
-                    'ground': 0,
-                    'pad1': 1,
-                    'pad2': 2,
-                    'res': 3,
-                    'feed': 4
-                    }
-            print_all_capacitances (bool, optional): (Defaults to False) If True, prints all capacitances 
-                (i.e. pad1-to-ground, pad2-to-ground, etc.).
-            C_J (float, optional): (Defaults to 0) Optional capacitance of the Josephson junction. 
-            Z0_feedline (float, optional): (Defaults to 50) Impedence of the feedline.
+        Parameters
+        ----------
+        directory : str
+            Directory containing Palace output files.
+        qubit_freq : float
+            (Defaults to None) Qubit freqeuncy in Hertz (Hz), used to calculate parameters.
+        res : SQDMetal.Utilities.QubitDesigner.ResonatorBase
+            (Defaults to None) A resonator object (:class:`~SQDMetal.Utilities.QubitDesigner.ResonatorBase`) is used 
+            for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).
+        capacitance_matrix : np.ndarray
+            (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.
+        conductor_indeces : dict
+            (Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix. 
+                If None, the defaults are set to: ``{ 'ground': 0, 'pad1': 1, 'pad2': 2, 'res': 3, 'feed': 4 }``
+        print_all_capacitances : bool
+            (Defaults to False) If True, prints all capacitances (i.e. pad1-to-ground, pad2-to-ground, etc.).
+        C_J : float
+            (Defaults to 0) Optional capacitance of the Josephson junction.
+        Z0_feedline : float
+            (Defaults to 50) Impedence of the feedline.
 
-        Returns:
+        Returns
+        -------
+        params : dict
             Dictionary containing calculated parameters. Some entries may be "N/A" for the provided capacitance matrix.
             The dictionary is of the form:
-            {
-                # Energies and key circuit parameters
-                "E_C_GHz": E_C_GHz,
-                "C_sigma_fF": C_sigma * 1e15,
-                "g_MHz": g_MHz,
-                "chi_MHz": chi_MHz,
-                "Delta_GHz": Delta_GHz,
-                "anh_MHz": anh_MHz,
-                "f_q_GHz": qubit_freq * 1e-9,
-                "kappa_MHz": kappa_MHz,
-                "T1,p_ms": T1p_ms,
 
-                # Individual capacitances and inductances
-                "C1_ground_fF": C1_ground * 1e15,
-                "C2_ground_fF": C2_ground * 1e15,
-                "C1_readout_fF": C1_readout * 1e15,
-                "C2_readout_fF": C2_readout * 1e15,
-                "C1_feed_fF": C1_feed * 1e15,
-                "C2_feed_fF": C2_feed * 1e15,
-                "C12_fF": C12 * 1e15,
-                "Cres_fF": Cres * 1e15,
-                "Lres_pH": Lres * 1e12,
+            Energies and key circuit parameters:
 
-                # Junction parameters
-                'L_J_nH': L_J_nH,
-                'E_J_GHz': E_J_GHz,
-                'I_C_nA': E_J_GHz/0.495,
-                'E_J/E_C': E_J_GHz/E_C_GHz
-            }
-                
+            *   ``'E_C_GHz'`` (`float`):
+                Charging energy in gigahertz (GHz)
+            *   ``'C_sigma_fF'`` (`float`):
+                Total capacitance in femtofarad (fF)
+            *   ``'g_MHz'`` (`float`):
+                Resonator-Qubit g-coupling in megahertz (MHz)
+            *   ``'chi_MHz'`` (`float`):
+                Resonator-Qubit :math:`\chi` in megahertz (MHz)
+            *   ``'Delta_GHz'`` (`float`):
+                Resonator-Qubit detuning in gigahertz (GHz)
+            *   ``'anh_MHz'`` (`float`):
+                Qubit anharmonicity in megahertz (MHz)
+            *   ``'f_q_GHz'`` (`float`):
+                Qubit frequency in gigahertz (GHz)
+            *   ``'kappa_MHz'`` (`float`):
+                Resonator-Qubit kappa (decay rate) in megahertz (MHz)
+            *   ``'T1,p_ms'``" (`float`):
+                Purcell-limited T1 in milliseconds (ms)
+
+            Individual capacitances and inductances:
+
+            *   ``'C1_ground_fF'`` (`float`):
+                C1 to ground capacitance in femtofarad (fF)
+            *   ``'C2_ground_fF'`` (`float`):
+                C2_ground capacitance in femtofarad (fF)
+            *   ``'C1_readout_fF'`` (`float`):
+                C1_readout capacitance in femtofarad (fF)
+            *   ``'C2_readout_fF'`` (`float`):
+                C2_readout capacitance in femtofarad (fF)
+            *   ``'C1_feed_fF'`` (`float`):
+                C1_feed capacitance in femtofarad (fF)
+            *   ``'C2_feed_fF'`` (`float`):
+                C2_feed capacitance in femtofarad (fF)
+            *   ``'C12_fF'`` (`float`):
+                C12 capacitance in femtofarad (fF)
+            *   ``'Cres_fF'`` (`float`):
+                Cres capacitance in femtofarad (fF)
+            *   ``'Lres_pH'`` (`float`):
+                Resonator inductance in picohenries (pH)
+
+            Junction parameters:
+
+            *   ``'L_J_nH'`` (`float`):
+                Inductance of Josephson junction in nanohenries (nH)
+            *   ``'E_J_GHz'`` (`float`):
+                Josephson energy in gigahertz (GHz)
+            *   ``'I_C_nA'`` (`float`):
+                Critical current of Josephson junction in nanoamperes (nA)
+            *   ``'E_J/E_C'`` (`float`):
+                E_J/E_C ratio required to test if qubit is in transmon regime.                
         '''
+        #TODO: Have diagram of capacitances @6biscuits
         # Constants
         e = 1.602176634e-19  # Coulombs
         h = 6.62607015e-34   # J·s     

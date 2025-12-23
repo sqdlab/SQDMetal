@@ -303,21 +303,19 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
         respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.
 
-        Parameters
-        ----------
-        None :
-            This function has no input arguments.
-        
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
         Returns
         -------
-        list
-            Returns a list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.
+        epr_data : list[dict]
+            A list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.
             The dictionary for a found mode contains:
-                - Frequency (complex) : real and imaginary components of the mode frequency.
-                - Q (float) : quality factor of mode.
-                - SA (dict) : lossy surface-air interface with a dict containing the participation ratio and quality factor.
-                - MS (dict) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.
-                - MA (dict) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.
+
+            *   ``'Frequency'`` (`np.complex`) : real and imaginary components of the mode frequency.
+            *   ``'Q'`` (`float`) : quality factor of mode.
+            *   ``'SA'`` (`dict`) : lossy surface-air interface with a dict containing the participation ratio and quality factor.
+            *   ``'MS'`` (`dict`) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.
+            *   ``'MA'`` (`dict`) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.
         '''
         return PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(self._sim_config, self._output_data_dir)
 
@@ -326,6 +324,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
         The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
         respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
 
         Parameters
         ----------
@@ -346,8 +346,10 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method. 
         This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the 
         current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
-        npj Quantum Information (2021)7:131 https://doi.org/10.1038/s41534-021-00461-8. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
-        Hamiltonian should be performed.  
+        `npj Quantum Information (2021)7:131 <https://doi.org/10.1038/s41534-021-00461-8>`__. For stronlgy nonlinear systems (e.g. fluxonium) full numerical diagonlaization of the
+        Hamiltonian should be performed.
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
 
         Parameters
         ----------
@@ -358,13 +360,21 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
 
         Returns
         -------
-        Dictionary containing the following data for each mode included in the comparison.
-            - f_modes_GHz (pd.Dataframe): the linearized resonant frequency for each mode.
-            - f_norms_GHz (pd.Dataframe): the dressed/renormalized frequencies.
-            - EPR (pd.Dataframe): the energy participation ratios.
-            - Chi (pd.Dataframe): the dispersive shifts.
-            - Lamb (pd.Dataframe): the Lamb shifts.
-            - Detuning (pd.Dataframe): the differnce in frequency betweem the modes.
+        params : dict
+            Dictionary containing the following data for each mode included in the comparison.
+
+            *   ``'f_modes_GHz'`` (`pd.Dataframe`):
+                The linearized resonant frequency for each mode.
+            *   ``'f_norms_GHz'`` (`pd.Dataframe`):
+                The dressed/renormalized frequencies.
+            *   ``'EPR'`` (`pd.Dataframe`):
+                The energy participation ratios.
+            *   ``'Chi'`` (`pd.Dataframe`):
+                The dispersive shifts.
+            *   ``'Lamb'`` (`pd.Dataframe`):
+                The Lamb shifts.
+            *   ``'Detuning'`` (`pd.Dataframe`):
+                The differnce in frequency betweem the modes.
         '''
         return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare=modes_to_compare, print_output=print_output)
 
@@ -474,15 +484,15 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method. 
         This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the 
         current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
-        npj Quantum Information (2021)7:131 https://doi.org/10.1038/s41534-021-00461-8. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
+        `npj Quantum Information (2021)7:131 <https://doi.org/10.1038/s41534-021-00461-8>`__. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
         Hamiltonian should be performed.  
 
         Parameters
         ----------
         directory : str 
-            Directory where output files of the simulation are stored e.g. 'C:\Two_Transmon\outputFiles'.
+            Directory where output files of the simulation are stored e.g. ``'C:\Two_Transmon\outputFiles'``.
         config_json_path : str 
-            Path for the json configuration file e.g. 'C:\Two_Transmon\Two_Transmon.json'.
+            Path for the json configuration file e.g. ``'C:\Two_Transmon\Two_Transmon.json'``.
         modes_to_compare : list 
             Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].
         print_output : bool 
@@ -490,13 +500,21 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
 
         Returns
         -------
-        Dictionary containing the following data for each mode included in the comparison.
-            - f_modes_GHz (pd.Dataframe): the linearized resonant frequency for each mode.
-            - f_norms_GHz (pd.Dataframe): the dressed/renormalized frequencies.
-            - EPR (pd.Dataframe): the energy participation ratios.
-            - Chi (pd.Dataframe): the dispersive shifts.
-            - Lamb (pd.Dataframe): the Lamb shifts.
-            - Detuning (pd.Dataframe): the differnce in frequency betweem the modes.
+        params : dict
+            Dictionary containing the following data for each mode included in the comparison.
+
+            *   ``'f_modes_GHz'`` (`pd.Dataframe`):
+                The linearized resonant frequency for each mode.
+            *   ``'f_norms_GHz'`` (`pd.Dataframe`):
+                The dressed/renormalized frequencies.
+            *   ``'EPR'`` (`pd.Dataframe`):
+                The energy participation ratios.
+            *   ``'Chi'`` (`pd.Dataframe`):
+                The dispersive shifts.
+            *   ``'Lamb'`` (`pd.Dataframe`):
+                The Lamb shifts.
+            *   ``'Detuning'`` (`pd.Dataframe`):
+                The differnce in frequency betweem the modes.
         '''
         
         #retrieve data from the simulation files

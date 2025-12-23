@@ -17,7 +17,7 @@ To run capacitance simulations:
 
    from SQDMetal.PALACE.Capacitance_Simulation import PALACE_Capacitance_Simulation
 
-.. automodule:: SQDMetal.PALACE.Capacitance_Simulation
+.. autoclass:: SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +29,7 @@ To run RF eigenmode simulations:
 
    from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
 
-.. automodule:: SQDMetal.PALACE.Eigenmode_Simulation
+.. autoclass:: SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -41,7 +41,7 @@ To run RF frequency driven simulations:
 
    from SQDMetal.PALACE.Frequency_Driven_Simulation import PALACE_Driven_Simulation
 
-.. automodule:: SQDMetal.PALACE.Frequency_Driven_Simulation
+.. autoclass:: SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation
    :members:
    :undoc-members:
    :show-inheritance:

@@ -308,11 +308,15 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         
         Returns
         -------
-        Dict
+        data : dict
             A dictionary containing the following data:
-                - freqs (np.array): returns an array of the frequencies (GHz) used in the frequency sweep.
-                - S11 (np.array): returns the complex S11 values. 
-                - S21 (np.array): returns the complex S21 values.
+
+            *   ``'freqs'`` (`np.array`): 
+                Array of the frequencies (GHz) used in the frequency sweep.
+            *   ``'S11'`` (`np.array`): 
+                Array of complex S11 values for the corresponding frequencies. 
+            *   ``'S21'`` (`np.array`): 
+                Array of complex S21 values for the corresponding frequencies.
         '''
         raw_data = pd.read_csv(file_path_port_S_csv)
         headers = raw_data.columns
@@ -335,6 +339,8 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         '''
         Retrieves the S-parameters from a completed driven simulation.
 
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
         Parameters
         ----------
         None :
@@ -342,11 +348,15 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
         Returns
         -------
-        Dict
+        data : dict
             A dictionary containing the following data:
-                - freqs (np.array): returns an array of the frequencies (GHz) used in the frequency sweep.
-                - S11 (np.array): returns the complex S11 values for the corresponding frequencies. 
-                - S21 (np.array): returns the complex S21 values for the corresponding frequencies.
+
+            *   ``'freqs'`` (`np.array`): 
+                Array of the frequencies (GHz) used in the frequency sweep.
+            *   ``'S11'`` (`np.array`): 
+                Array of complex S11 values for the corresponding frequencies. 
+            *   ``'S21'`` (`np.array`): 
+                Array of complex S21 values for the corresponding frequencies.
         '''
         if not os.path.exists(self._output_data_dir + '/port-S.csv'):
             return None
@@ -394,6 +404,8 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
         waveport for this function to run. 
 
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
         Parameters
         ----------
         None :
@@ -401,10 +413,13 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
         Returns
         -------
-        list
-            A list containing the following data:
-                - frequency of the transmission line excitation.
-                - wave vector k used to excite the transmission line.
+        modes : list
+            A list with each element containing the following data as a ``tuple``:
+
+            *   ``'frequency'`` (`float`):
+                Frequency of the transmission line excitation.
+            *   ``'wave_vector'`` (`float`):
+                Wave vector k used to excite the transmission line.
         '''
         return PALACE_Driven_Simulation.get_waveport_modes_from_file(self.log_location, self._output_data_dir + '/port-S.csv')
 
@@ -423,10 +438,13 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
         Returns
         -------
-        list
-            A list containing the following data:
-                - frequency of the transmission line excitation.
-                - wave vector k used to excite the transmission line.
+        modes : list
+            A list with each element containing the following data as a ``tuple``:
+
+            *   ``'frequency'`` (`float`):
+                Frequency of the transmission line excitation.
+            *   ``'wave_vector'`` (`float`):
+                Wave vector k used to excite the transmission line.
         '''
 
         #The string is usually like:
