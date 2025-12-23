@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Palace Simulations &mdash; Project name not set  documentation</title>
+  <title>Palace Simulations &mdash; SQDMetal  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
 
@@ -22,7 +22,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Palace Visualisation" href="palacevis.html" />
+    <link rel="next" title="Palace Simulation Base classes" href="palacebase.html" />
     <link rel="prev" title="API Reference" href="index.html" /> 
 </head>
 
@@ -35,7 +35,7 @@
           
           
           <a href="../index.html" class="icon icon-home">
-            Project name not set
+            SQDMetal
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -69,6 +69,7 @@
 <li class="toctree-l2"><a class="reference internal" href="index.html#components-from-sqdmetal">Components from SQDMetal</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#simulations-using-aws-palace">Simulations using AWS Palace</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Palace Simulations</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="palacebase.html">Palace Simulation Base classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Capacitance_Simulation</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">HPC_parent_simulation_dir</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon"><code class="docutils literal notranslate"><span class="pre">calc_params_floating_Transmon()</span></code></a></li>
@@ -123,7 +124,7 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">Project name not set</a>
+          <a href="../index.html">SQDMetal</a>
       </nav>
 
       <div class="wy-nav-content">
@@ -144,10 +145,12 @@
              
   <section id="palace-simulations">
 <span id="palace-sims"></span><h1>Palace Simulations<a class="headerlink" href="#palace-simulations" title="Link to this heading"></a></h1>
-<p>All the classes inherit:</p>
+<div class="toctree-wrapper compound">
+</div>
+<p>All the Palace simulation classes <a class="reference internal" href="palacebase.html#palace-base"><span class="std std-ref">inherit</span></a>:</p>
 <ul class="simple">
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></p></li>
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code> (which inherits the above base class) in the case of RF simulations.</p></li>
+<li><p><a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base" title="SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a></p></li>
+<li><p><a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a> (which inherits the above base class) in the case of RF simulations.</p></li>
 </ul>
 <p>Thus, there refer to these classes for common interface functions.</p>
 <p>To run capacitance simulations:</p>
@@ -157,7 +160,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Capacitance_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base" title="SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a></p>
 <p>Base class for PALACE simulation classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -296,7 +299,7 @@ are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, �
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon">
 <span class="sig-name descname"><span class="pre">calc_params_floating_Transmon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon" title="Link to this definition"></a></dt>
 <dd><p>Class method mirroring <a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files" title="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files"><code class="xref py py-func docutils literal notranslate"><span class="pre">calc_params_floating_Transmon_from_files()</span></code></a> (without the <code class="docutils literal notranslate"><span class="pre">directory</span></code> parameter as it is inferred from the current simulation)</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -432,7 +435,7 @@ E_J/E_C ratio required to test if qubit is in transmon regime.</p></li>
 <span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.retrieve_data" title="Link to this definition"></a></dt>
 <dd><p>Retrieves output data from the capacitance simulation.</p>
 <p>Creates and saves plots of conductor indices (terminal_indices.png), field distribution results (cond1_V.png), and mesh (mesh.png)</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A NumPy array of the raw data.</p>
@@ -454,7 +457,7 @@ E_J/E_C ratio required to test if qubit is in transmon regime.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Eigenmode_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a></p>
 <p>Base class for PALACE simulation classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -592,7 +595,7 @@ This function uses the results from a completed eigenmode simulation to calculat
 current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
 <a class="reference external" href="https://doi.org/10.1038/s41534-021-00461-8">npj Quantum Information (2021)7:131</a>. For stronlgy nonlinear systems (e.g. fluxonium) full numerical diagonlaization of the
 Hamiltonian should be performed.</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -721,7 +724,7 @@ components of the eigenfrequency and the quality factor.</p>
 <dd><p>Retrieves the energy participation ratios for the lossy interfaces captured from a completed eigenmode simulation.
 The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
 respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p><p><strong>epr_data</strong> – A list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.
@@ -780,7 +783,7 @@ respecively, to employ the energy participation ratio method to calculate Hamilt
 <dd><p>Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
 The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
 respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>None</strong> – This function has no input arguments.</p>
@@ -863,7 +866,7 @@ will search for above the minimum/starting frequency is also set by the user.</p
 <dl class="py class">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Driven_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></p>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a></p>
 <p>Base class for PALACE simulation classes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1023,7 +1026,7 @@ are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, �
 <span class="sig-name descname"><span class="pre">get_waveport_modes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes" title="Link to this definition"></a></dt>
 <dd><p>Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
 waveport for this function to run.</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>None</strong> – This function takes no input arguments.</p>
@@ -1076,7 +1079,7 @@ Wave vector k used to excite the transmission line.</p></li>
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data">
 <span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data" title="Link to this definition"></a></dt>
 <dd><p>Retrieves the S-parameters from a completed driven simulation.</p>
-<p>This function must be run after calling <code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code>.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>None</strong> – This function takes no input arguments.</p>
@@ -1172,7 +1175,7 @@ Array of complex S21 values for the corresponding frequencies.</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="index.html" class="btn btn-neutral float-left" title="API Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="palacevis.html" class="btn btn-neutral float-right" title="Palace Visualisation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="palacebase.html" class="btn btn-neutral float-right" title="Palace Simulation Base classes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
