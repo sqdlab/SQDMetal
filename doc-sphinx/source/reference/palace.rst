@@ -3,7 +3,13 @@
 Palace Simulations
 ==================
 
-All the classes inherit:
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+
+   palacebase
+
+All the Palace simulation classes :ref:`inherit <palace-base>`:
 
 - :class:`~SQDMetal.PALACE.Model.PALACE_Model_Base`
 - :class:`~SQDMetal.PALACE.Model.PALACE_Model_Base_RF` (which inherits the above base class) in the case of RF simulations.
@@ -13,7 +19,6 @@ Thus, there refer to these classes for common interface functions.
 To run capacitance simulations:
 
 .. code-block:: python
-   :emphasize-lines: 2
 
    from SQDMetal.PALACE.Capacitance_Simulation import PALACE_Capacitance_Simulation
 
@@ -25,7 +30,6 @@ To run capacitance simulations:
 To run RF eigenmode simulations:
 
 .. code-block:: python
-   :emphasize-lines: 2
 
    from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
 
@@ -37,7 +41,6 @@ To run RF eigenmode simulations:
 To run RF frequency driven simulations:
 
 .. code-block:: python
-   :emphasize-lines: 2
 
    from SQDMetal.PALACE.Frequency_Driven_Simulation import PALACE_Driven_Simulation
 

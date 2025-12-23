@@ -2,6 +2,8 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../SQDMetal'))  # Path to your project
 
+project = 'SQDMetal'
+
 # -- General configuration ---------------------------------------------------
 extensions = [
     'sphinx.ext.autodoc',
@@ -36,3 +38,4 @@ html_theme_options = {
 }
 
 nbsphinx_execute = 'never'
+# nitpicky = True #This setting tells Sphinx to resolve all cross-references (like :class:) and fail the build if any are broken.
