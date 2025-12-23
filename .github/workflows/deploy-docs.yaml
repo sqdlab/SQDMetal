@@ -26,6 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e . 
         pip install sphinx sphinx_rtd_theme nbsphinx  # Add any other dependencies you need here
+        pip install pypandoc
 
     - name: Build the documentation
       run: |
