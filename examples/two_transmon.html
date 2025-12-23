@@ -1,0 +1,277 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eigenmode Simulation of Two Capacitively Coupled Transmons &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Eigenmode simulation: floating transmon" href="Palace_Eigenmode_FloatingTransmon.html" />
+    <link rel="prev" title="Basic Eigenmode Simulation of Transmon Coupled to a Resonator" href="Palace_Eigenmode_Transmon_Res.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Worked examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#palace-simulation-examples">Palace Simulation Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Palace_Capacitance_Xmon_Gmsh.html"> Capacitance simulation of X-mon (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Qubit_Gmsh.html"> Eigenmode simulation of an X-Mon Qubit (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Res_Gmsh.html"> Eigenmode simulation of side-coupled resonator (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Transmon_Res.html"> Eigenmode simulation of transmon coupled to a resonator with Hamiltonian parameter extraction using EPR (Gmsh)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"> Eigenmode simulation of two capacitively coupled transmons (Gmsh)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Qiskit-Metal-Design">Qiskit Metal Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Eigenmode-Simulation">Eigenmode Simulation</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_FloatingTransmon.html"> Capacitance and Eigenmode simulation of floating transmon coupled to resonator</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#comsol-simulation-examples">COMSOL Simulation Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#useful-utilities">Useful Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Worked Examples</a></li>
+      <li class="breadcrumb-item active">Eigenmode Simulation of Two Capacitively Coupled Transmons</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/two_transmon.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Eigenmode-Simulation-of-Two-Capacitively-Coupled-Transmons">
+<h1>Eigenmode Simulation of Two Capacitively Coupled Transmons<a class="headerlink" href="#Eigenmode-Simulation-of-Two-Capacitively-Coupled-Transmons" title="Link to this heading"></a></h1>
+<section id="Qiskit-Metal-Design">
+<h2>Qiskit Metal Design<a class="headerlink" href="#Qiskit-Metal-Design" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">metal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Headings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyEPR</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.qubits.transmon_pocket</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonPocket</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.straight_path</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteStraight</span>
+
+<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#Set up chip dimensions</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;2.2mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;1.8mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;-500um&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0.5mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
+
+<span class="c1">#Create gui to visualise design</span>
+<span class="n">gui</span> <span class="o">=</span> <span class="n">MetalGUI</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+<span class="c1">#Transmon 1</span>
+<span class="n">q1</span> <span class="o">=</span> <span class="n">TransmonPocket</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">pad_width</span> <span class="o">=</span> <span class="s1">&#39;425 um&#39;</span><span class="p">,</span>
+    <span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;650um&#39;</span><span class="p">,</span>
+    <span class="n">connection_pads</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">readout</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">loc_W</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span><span class="n">loc_H</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;200um&#39;</span><span class="p">)</span>
+    <span class="p">)))</span>
+
+<span class="c1">#Transmon 2</span>
+<span class="n">q2</span> <span class="o">=</span> <span class="n">TransmonPocket</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;1.0 mm&#39;</span><span class="p">,</span>
+    <span class="n">pad_width</span> <span class="o">=</span> <span class="s1">&#39;425 um&#39;</span><span class="p">,</span>
+    <span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;650um&#39;</span><span class="p">,</span>
+    <span class="n">connection_pads</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+        <span class="n">readout</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">loc_W</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">loc_H</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;200um&#39;</span><span class="p">)</span>
+    <span class="p">)))</span>
+
+<span class="c1">#Coupler for transmons</span>
+<span class="n">coupler</span> <span class="o">=</span> <span class="n">RouteStraight</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;coupler&#39;</span><span class="p">,</span> <span class="n">Dict</span><span class="p">(</span><span class="n">hfss_wire_bonds</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
+            <span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;readout&#39;</span><span class="p">),</span>
+            <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;readout&#39;</span><span class="p">)),</span> <span class="p">))</span>
+
+<span class="c1">#Rebuild circuit</span>
+<span class="n">gui</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+<span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Eigenmode-Simulation">
+<h2>Eigenmode Simulation<a class="headerlink" href="#Eigenmode-Simulation" title="Link to this heading"></a></h2>
+<p>Remember to use your path for the palace binary under “palace_dir”</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Eigenmode_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Eigenmode_Simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialInterface</span>
+
+<span class="c1">#Eigenmode Simulation Options</span>
+<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span>  <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
+                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
+                <span class="s2">&quot;starting_freq&quot;</span><span class="p">:</span> <span class="mf">5.0e9</span><span class="p">,</span>                            <span class="c1">#starting frequency in Hz</span>
+                <span class="s2">&quot;number_of_freqs&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                              <span class="c1">#number of eigenmodes to find</span>
+                <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                <span class="c1">#number of electromagnetic field visualizations to save</span>
+                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
+                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-10</span><span class="p">,</span>                             <span class="c1">#error residual tolerance foriterative solver</span>
+                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
+                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
+                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;</span><span class="p">,</span> <span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
+                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span>
+                <span class="p">}</span>
+
+<span class="c1">#Create the Palace Eigenmode simulation</span>
+<span class="n">eigen_sim</span> <span class="o">=</span> <span class="n">PALACE_Eigenmode_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span><span class="s1">&#39;two_transmon_test&#39;</span><span class="p">,</span>                                      <span class="c1">#name of simulation</span>
+                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                          <span class="c1">#feed in qiskit metal design</span>
+                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                      <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
+                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                                 <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
+                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                               <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
+                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                            <span class="c1">#provide options chosen above</span>
+                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                            <span class="c1">#create mesh, config and HPC batch files</span>
+<span class="c1">#add in metals from the first layer</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1">#add ground plane into simulation</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+
+<span class="c1">#Create lumped element ports for each JJ</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_JosephsonJunction</span><span class="p">(</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">L_J</span><span class="o">=</span><span class="mf">13e-9</span><span class="p">,</span> <span class="n">C_J</span> <span class="o">=</span> <span class="mf">0e-15</span><span class="p">)</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_JosephsonJunction</span><span class="p">(</span><span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">L_J</span><span class="o">=</span><span class="mf">9e-9</span><span class="p">,</span> <span class="n">C_J</span> <span class="o">=</span> <span class="mf">0e-15</span><span class="p">)</span>
+
+<span class="c1">#Fine mesh the qubits (only qubit metal regions i.e. metals_only = True) and coupler</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="s1">&#39;coupler&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">8e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">150e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#Run post-processing for participation ratios for lossy interfaces</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">setup_EPR_interfaces</span><span class="p">(</span><span class="n">metal_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Aluminium-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_metal</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Aluminium&#39;</span><span class="p">))</span>
+
+<span class="c1">#Prepares the mesh file and config file</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Inspect the mesh before running the simulation</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">open_mesh_gmsh</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#run the simulation</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Palace_Eigenmode_Transmon_Res.html" class="btn btn-neutral float-left" title="Basic Eigenmode Simulation of Transmon Coupled to a Resonator" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Palace_Eigenmode_FloatingTransmon.html" class="btn btn-neutral float-right" title="Eigenmode simulation: floating transmon" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

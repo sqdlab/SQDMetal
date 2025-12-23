@@ -1,0 +1,192 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Full chip maker &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="SQDMetal Component gallery" href="../comps/Comps_All.html" />
+    <link rel="prev" title="Qubit designer" href="qbd.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Full Chip Maker</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#circuit-types">Circuit types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#hanger-mode-4-resonator-chip">Hanger-mode λ/4 resonator chip</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Full chip maker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/general/fcm.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="full-chip-maker">
+<h1>Full chip maker<a class="headerlink" href="#full-chip-maker" title="Link to this heading"></a></h1>
+<p>Modules found under <cite>SQDMetal.Utilities.FullChipMaker</cite> used for semi-automated generation of circuits commonly used for research of superconducting quantum circuits, taking inputs for important wafer-scale parameters (wafer size, die size, die layout), and all relevant circuit parameters (frequencies, materials, width dimension, etc.).</p>
+<p>This module relies on <cite>SQDMetal</cite> modules such as <cite>SQDMetal.Utilities.QUtilities</cite>, <cite>SQDMetal.Utilities.MakeGDS</cite>, <cite>SQDMetal.Utilities.Material</cite>, and functions for the calculation of resonator parameters located in <cite>SQDMetal.Utilities.QubitDesigner</cite>.</p>
+<p>Currently, the supported circuits are:</p>
+<ul class="simple">
+<li><p><code class="xref py py-func docutils literal notranslate"><span class="pre">SQDMetal.Utilities.FullChipMaker.MultiDieChip.make_resonator_chip()</span></code> - creates a <cite>.gds</cite> full-wafer layout file for a simple coplanar waveguide λ/4 resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line</p></li>
+</ul>
+<section id="circuit-types">
+<h2>Circuit types<a class="headerlink" href="#circuit-types" title="Link to this heading"></a></h2>
+<p>The circuits listed within the section are called as functions within the <cite>MultiDieChip</cite> class.</p>
+<section id="hanger-mode-4-resonator-chip">
+<h3>Hanger-mode λ/4 resonator chip<a class="headerlink" href="#hanger-mode-4-resonator-chip" title="Link to this heading"></a></h3>
+<p>To import, use:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.FullChipMaker</span><span class="w"> </span><span class="kn">import</span> <span class="n">MultiDieChip</span>
+</pre></div>
+</div>
+<p>You can generate a <cite>.gds</cite> file for the full multi-die chip with the function <cite>make_resonator_chip</cite> as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">d</span> <span class="o">=</span> <span class="n">MultiDieChip</span><span class="o">.</span><span class="n">make_resonator_chip</span><span class="p">(</span><span class="n">export_filename</span><span class="o">=</span><span class="s2">&quot;FullChipMakerDemo&quot;</span><span class="p">,</span> <span class="n">export_path</span><span class="o">=</span><span class="s1">&#39;gds_designs&#39;</span><span class="p">,</span> <span class="n">cpw_width</span><span class="o">=</span><span class="s2">&quot;25um&quot;</span><span class="p">,</span><span class="n">export_type</span><span class="o">=</span><span class="s2">&quot;positive&quot;</span><span class="p">,</span> <span class="n">text_label</span><span class="o">=</span><span class="s2">&quot;Just a demo :)&quot;</span><span class="p">,</span> <span class="n">chip_dimension</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;8.4mm&quot;</span><span class="p">,</span> <span class="s2">&quot;10.6mm&quot;</span><span class="p">),</span> <span class="n">text_size</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">text_position</span><span class="o">=</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>The above call mostly uses the default function values (which can be found in the source code), and user-input arguments. This produces the <cite>.gds</cite> shown below.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/FullChipMaker.png"><img alt="Example output from the make_resonator_chip function in the MultiDieChip class." src="../_images/FullChipMaker.png" style="width: 2090.0px; height: 1594.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Example output from the make_resonator_chip function in the MultiDieChip class.</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The full list of inputs are as follows:
+- <cite>export_filename</cite> - Filename for gds export (e.g. “test”)
+- <cite>export_path</cite> - Path for export (e.g. ‘exports’); the file will then be output to <cite>/exports/test.gds</cite>
+- <cite>export_type</cite> - (Defaults to “all”) Export type for lithography as per <cite>MakeGDS</cite> (options: “all”, “positive”, “negative”)
+- <cite>frequency_range</cite> - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
+- <cite>num_resonators</cite> - (Defaults to 5) Number of resonators per die
+- <cite>cpw_width</cite> - (Defaults to “9um”) Width of the central trace on the feedline and resonators. The gap will be automatically calculated for 50 Ohm impedance based on the <cite>substrate_material</cite>
+- <cite>coupling_gap</cite> - (Defaults to “20um”) Amount of ground plane in the coupling gap between the feedline and the resonator
+- <cite>tl_y</cite> - (Defaults to “0um”) The die-relative y-value for the main straight of the feedline (NOTE: currently only “0um” is supported)
+- <cite>res_vertical</cite> - (Defaults to “1500um”) Vertical length of resonator meanders
+- <cite>lp_to_res</cite> - (Defaults to “300um”) Minimum distance between the launchpad taper and the coupling length of the left-most resonator
+- <cite>lp_inset</cite> - (Defaults to “0um”) Inset of the launchpads along the x-axis relative to the die boundaries
+- <cite>lp_dimension</cite> - (Defaults to “600um”) Width of the launchpads’ conductive centre pad (the launchpad gap scales accordingly)
+- <cite>lp_taper</cite> - (Defaults to “300um”) Length of the taper from launchpad to feedline
+- <cite>substrate_material</cite> - (Defaults to “silicon”) Substrate material (currently only “silicon” and “sapphire” are supported)
+- <cite>substrate_thickness</cite> - (Defaults to “0.5mm”) Substrate thickness
+- <cite>film_thickness</cite> - (Defaults to “100nm”) Film thickness
+- <cite>chip_dimension</cite> - (Defaults to (“20mm”, “20mm”)) Dimensions of the chip as an (x, y) Tuple
+- <cite>chip_border</cite> - (Defaults to “500um”) Chip border to leave un-patterned
+- <cite>die_dimension</cite> - (Defaults to (“7.1mm”, “4.4mm”)) Dimensions of the die as an (x, y) Tuple
+- <cite>die_num</cite> - (Defaults to [1, 1]) Die layout in [x, y] as a length-2 list
+- <cite>fill_chip</cite> - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides <cite>die_num</cite> if True)
+- <cite>markers_on</cite> - (Defaults to True) Print dicing markers on export
+- <cite>text_label</cite> - (Optional) Text label to print on chip
+- <cite>text_size</cite> - (Defaults to 600) Text size
+- <cite>text_position</cite> - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
+- <cite>print_all_infos</cite> - (Defaults to True) Choose whether to print info as the <cite>.gds</cite> is being generated
+- <cite>date_stamp_on_export</cite> - (Defaults to True) If True, will print date and time of export in exported .gds filename</p>
+<p>TODO: Need to put this into class docstring instead…</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="qbd.html" class="btn btn-neutral float-left" title="Qubit designer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../comps/Comps_All.html" class="btn btn-neutral float-right" title="SQDMetal Component gallery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

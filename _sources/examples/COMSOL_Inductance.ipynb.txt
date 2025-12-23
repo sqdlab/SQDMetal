@@ -1,0 +1,139 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "# Inductance simulation in COMSOL"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "%load_ext autoreload\n",
+    "%autoreload 2\n",
+    "import os\n",
+    "os.environ[\"KMP_DUPLICATE_LIB_OK\"]=\"TRUE\"\n",
+    "os.environ[\"PMIX_MCA_gds\"]=\"hash\"\n",
+    "\n",
+    "# Import useful packages\n",
+    "from qiskit_metal import designs, draw\n",
+    "from qiskit_metal import MetalGUI, Dict, open_docs\n",
+    "from SQDMetal.Comps.Xmon import Xmon\n",
+    "from SQDMetal.Comps.Polygons import PolyRectangle\n",
+    "from SQDMetal.Comps.Inductors import InductorMeander\n",
+    "from SQDMetal.Comps.Joints import JointExtend\n",
+    "from SQDMetal.Comps.Wires import WirePins\n",
+    "\n",
+    "# Set up chip design as planar\n",
+    "design = designs.DesignPlanar({}, overwrite_enabled=True)\n",
+    "\n",
+    "# Set up chip dimensions \n",
+    "design.chips.main.size.size_x = '250um'\n",
+    "design.chips.main.size.size_y = '250um'\n",
+    "design.chips.main.size.size_z = '250um'\n",
+    "design.chips.main.size.center_x = '0mm'\n",
+    "design.chips.main.size.center_y = '0mm'\n",
+    "\n",
+    "\n",
+    "InductorMeander(design, 'leInd', options=dict(pos_x='-50um', pos_y='0um', end_x='50um' , end_y='0um',\n",
+    "                                              track_width='2um', meander_spacing='4um', meander_width='30um', num_long_sections=10,\n",
+    "                                              init_gap='5um', mean_gap='5um'))\n",
+    "JointExtend(design, 'jntA', options=dict(jointObj='leInd', jointPin='a', dist_extend='20um', extend_off_pin_dir=True))\n",
+    "JointExtend(design, 'jntB', options=dict(jointObj='leInd', jointPin='b', dist_extend='20um', extend_off_pin_dir=True))\n",
+    "JointExtend(design, 'jntAa', options=dict(jointObj='jntA', jointPin='a', dist_extend='100um', orientation=90))\n",
+    "JointExtend(design, 'jntBa', options=dict(jointObj='jntB', jointPin='a', dist_extend='100um', orientation=90))\n",
+    "WirePins(design, 'wireFeed', options=Dict(pathObjPins=[('leInd', 'a'), 'jntA', 'jntAa', 'jntBa', 'jntB', ('leInd', 'b')], layer=7))\n",
+    "\n",
+    "# gui = MetalGUI(design)\n",
+    "# gui.rebuild()\n",
+    "design.rebuild()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "from SQDMetal.COMSOL.Model import COMSOL_Model\n",
+    "from SQDMetal.COMSOL.SimInductance import COMSOL_Simulation_Inductance\n",
+    "\n",
+    "COMSOL_Model.init_engine()\n",
+    "cmsl = COMSOL_Model('leModel')\n",
+    "sim_Inds = COMSOL_Simulation_Inductance(cmsl)\n",
+    "\n",
+    "cmsl.initialize_model(design, [sim_Inds], bottom_grounded=True)\n",
+    "\n",
+    "cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)\n",
+    "# cmsl.add_ground_plane()\n",
+    "cmsl.fuse_all_metals()\n",
+    "\n",
+    "sim_Inds.set_return_loop_on_route('wireFeed')\n",
+    "\n",
+    "# cmsl.set_current_feed_on_CPW_on_Route('wireFeed', pin_name='end', width_U = 20e-6, src_gnd_gap=10e-6)\n",
+    "\n",
+    "# #(F) - OPTIONAL: Set everything within a rectangle to be finely meshed\n",
+    "# cmsl.fine_mesh_in_rectangle(-3e-3, -140e-6, -2.9e-3, 167e-6, 2e-7, 5e-6)\n",
+    "# #(G) - OPTIONAL: Set conductors within a rectangle to be finely meshed\n",
+    "# cmsl.fine_mesh_conductors_in_rectangle(-2.86e-3, -145e-6, -2.53e-3, 167e-6, 2e-7, 5e-6)\n",
+    "\n",
+    "cmsl.build_geom_mater_elec_mesh(skip_meshing=True, mesh_structure='Fine')\n",
+    "\n",
+    "# cmsl.save('Test')\n",
+    "inductance, resistance = sim_Inds.run()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 56,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "3.659237343548751e-10"
+      ]
+     },
+     "execution_count": 56,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "inductance"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "sqdmetal_env",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.11.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}

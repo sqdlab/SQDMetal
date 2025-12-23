@@ -1,0 +1,234 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GDS operations &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Qubit designer" href="qbd.html" />
+    <link rel="prev" title="Accounting for shadow evaporation" href="pvd.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">GDS Exporter and Manipulator</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#gds-exporter">GDS Exporter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-text-to-the-export">Adding text to the export</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#gds-manipulator">GDS Manipulator</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">GDS operations</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/general/gds.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="gds-operations">
+<h1>GDS operations<a class="headerlink" href="#gds-operations" title="Link to this heading"></a></h1>
+<p>This documentation covers the basic functionality of GDS-related operations in <code class="docutils literal notranslate"><span class="pre">SQDMetal</span></code>, namely <a class="reference internal" href="#gds-exporter"><span class="std std-ref">exporting</span></a>, <a class="reference internal" href="#adding-text-to-the-export"><span class="std std-ref">adding text to a design</span></a>, and <a class="reference internal" href="#gds-manipulator"><span class="std std-ref">manipulating an existing GDS file</span></a>.</p>
+<section id="gds-exporter">
+<h2>GDS Exporter<a class="headerlink" href="#gds-exporter" title="Link to this heading"></a></h2>
+<p>The GDSII format is used in lithography. <code class="xref py py-class docutils literal notranslate"><span class="pre">SQDMetal.Utilities.MakeGDS</span></code> is a better implementation of the Qiskit-Metal GDS renderer as:</p>
+<ul class="simple">
+<li><p>It eliminates potential creases or cracks forming due to floating-point errors</p></li>
+<li><p>Provides additional functionality such as boolean operations to add/combine layers</p></li>
+<li><p>Adds export options for certain lithographic processes (i.e. positive or negative)</p></li>
+<li><p>Allows export of certain layers</p></li>
+<li><p>Add rendered text as a seperate layer on the exported GDS</p></li>
+</ul>
+<p>The basic usage is:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.MakeGDS</span><span class="w"> </span><span class="kn">import</span> <span class="n">MakeGDS</span>
+
+<span class="n">leGDS</span> <span class="o">=</span> <span class="n">MakeGDS</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+<span class="c1">#Optional boolean layer via a logical OR operation on layers 0 and 1</span>
+<span class="n">new_layer_ind</span> <span class="o">=</span> <span class="n">leGDS</span><span class="o">.</span><span class="n">add_boolean_layer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;or&quot;</span><span class="p">)</span>
+
+<span class="c1">#Export all layers</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s1">&#39;first.gds&#39;</span><span class="p">,</span> <span class="n">export_type</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">)</span>
+
+<span class="c1">#Flatten all layers and export the positive pattern</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s1">&#39;first_positive.gds&#39;</span><span class="p">,</span> <span class="n">export_type</span><span class="o">=</span><span class="s2">&quot;positive&quot;</span><span class="p">)</span>
+
+<span class="c1">#Export only layer 0</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s1">&#39;first_layer0.gds&#39;</span><span class="p">,</span> <span class="n">export_layers</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Note that the returned layer index can be used for further boolean operations. The geometry can also be rounded in post-processing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.MakeGDS</span><span class="w"> </span><span class="kn">import</span> <span class="n">MakeGDS</span>
+
+<span class="c1">#Set the initial components to be with no rounding - can set it to have some rounding if desired (in units of metres)</span>
+<span class="n">leGDS</span> <span class="o">=</span> <span class="n">MakeGDS</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="n">curve_resolution</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">,</span> <span class="n">smooth_radius</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>    <span class="c1">#Use 60pts per quarter rotation and ensure enough precision to have nice rounded corners</span>
+
+<span class="c1">#Set the rounding radius to be non-zero now... Now all subsequent layers will have a rounding of 200nm</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">smooth_radius</span> <span class="o">=</span> <span class="mf">200e-9</span>
+<span class="n">bottom_layer</span> <span class="o">=</span> <span class="n">leGDS</span><span class="o">.</span><span class="n">add_boolean_layer</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;or&#39;</span><span class="p">,</span><span class="n">output_layer</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">top_layer</span> <span class="o">=</span> <span class="n">leGDS</span><span class="o">.</span><span class="n">add_boolean_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;or&#39;</span><span class="p">,</span> <span class="n">output_layer</span><span class="o">=</span><span class="mi">21</span><span class="p">)</span>
+
+<span class="c1">#Export with boolean layers on 20 and 21</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s1">&#39;rounded.gds&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="adding-text-to-the-export">
+<h2>Adding text to the export<a class="headerlink" href="#adding-text-to-the-export" title="Link to this heading"></a></h2>
+<p>You can also add text with the <code class="xref py py-func docutils literal notranslate"><span class="pre">add_text()</span></code> function as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.MakeGDS</span><span class="w"> </span><span class="kn">import</span> <span class="n">MakeGDS</span>
+
+<span class="n">leGDS</span> <span class="o">=</span> <span class="n">MakeGDS</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+<span class="c1">#Add a text label in the top left of the design</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">add_text</span><span class="p">(</span><span class="n">text_label</span><span class="o">=</span><span class="s2">&quot;Add your label here&quot;</span><span class="p">,</span> <span class="n">layer</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">))</span>
+
+<span class="c1">#Export design with text label on layer 10</span>
+<span class="n">leGDS</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s1">&#39;design_with_text.gds&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="gds-manipulator">
+<h2>GDS Manipulator<a class="headerlink" href="#gds-manipulator" title="Link to this heading"></a></h2>
+<p>You can import and array an existing GDS design using the <code class="xref py py-class docutils literal notranslate"><span class="pre">SQDMetal.Utilities.ManipulateGDS</span></code> class as shown in the following example (be sure to replace the relevant path arguments – <code class="docutils literal notranslate"><span class="pre">import_path_gds</span></code> and <code class="docutils literal notranslate"><span class="pre">export_path_gds</span></code> – with your own paths):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.ManipulateGDS</span><span class="w"> </span><span class="kn">import</span> <span class="n">ManipulateGDS</span>
+
+<span class="c1">#Import the existing GDS `import_design.gds`, choose the export file, and shift the origin of the imported file.</span>
+<span class="n">f</span> <span class="o">=</span> <span class="n">ManipulateGDS</span><span class="p">(</span>
+                <span class="n">import_path_gds</span><span class="o">=</span><span class="s2">&quot;/path_to_design/import_design.gds&quot;</span><span class="p">,</span>
+                <span class="n">export_path_gds</span><span class="o">=</span><span class="s2">&quot;/path_to_design/export_design.gds&quot;</span><span class="p">,</span>
+                <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4000</span><span class="p">)</span>
+                <span class="p">)</span>
+
+<span class="c1"># make a 16 x 16 array of the design from `import_design.gds` with 500 um spacing in the array. Here we only import the cell &#39;TOP&#39; from `import_design.gds`. The array will export a single flattened cell &#39;Array&#39; to the path given in the ManipulateGDS() initialisation above.</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">make_array_onChip</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                        <span class="n">rows</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                        <span class="n">export</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">spacing</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;500um&quot;</span><span class="p">,</span> <span class="s2">&quot;500um&quot;</span><span class="p">),</span>
+                        <span class="n">use_cells</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;TOP&#39;</span><span class="p">]</span>
+                        <span class="p">)</span>
+
+<span class="c1">#TODO: Remove text below once ManipulateGDS has been documented.</span>
+</pre></div>
+</div>
+<p>The arguments for initialisation of a <code class="docutils literal notranslate"><span class="pre">ManipulateGDS()</span></code> object are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">import_path_gds</span></code> - Path to GDS file for import</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">export_path_gds</span></code> - Path to export GDS</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">import_cells</span></code> - (Optional) Cells to import (must be cells present in the passed GDS), defaults to all</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">origin</span></code> - (Defaults to (0,0)) Tuple containing relative origin to import the design</p></li>
+</ul>
+<p>The arguments for <code class="docutils literal notranslate"><span class="pre">make_array_onChip()</span></code> are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">columns</span></code> - number of columns in the array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rows</span></code> - number of rows in the array</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spacing</span></code> - (Defaults to (“50um”, “50um”)) Tuple containing x- and y-spacing of the array as strings with units</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chip_dimension</span></code> - (Defaults to (“20mm”, “20mm”)) Dimension of the chip on which to array the structure (WIP)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">export</span></code> - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">export_path</span></code> - (Optional) Export path (if different from self)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_cells</span></code> - (Optional) List of cells from the input GDS to include in the arrayed structure</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="pvd.html" class="btn btn-neutral float-left" title="Accounting for shadow evaporation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="qbd.html" class="btn btn-neutral float-right" title="Qubit designer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

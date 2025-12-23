@@ -1,0 +1,230 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accounting for shadow evaporation &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="GDS operations" href="gds.html" />
+    <link rel="prev" title="Simulations using COMSOL" href="../simulations/simcomsol.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Accounting for shadow evaporation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#defining-pvd-parameters-in-the-qiskit-metal-design-object">Defining PVD parameters in the <em>Qiskit-Metal</em> design object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-the-pvd-shadows-class">Using the PVD_Shadows class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Accounting for shadow evaporation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/general/pvd.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="accounting-for-shadow-evaporation">
+<h1>Accounting for shadow evaporation<a class="headerlink" href="#accounting-for-shadow-evaporation" title="Link to this heading"></a></h1>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See the <a class="reference internal" href="../examples/PVD_simulation.html"><span class="doc">worked example</span></a> for a full demonstration.</p>
+</div>
+<p>Shadow evaporation techniques in PVD (physical vapour deposition) are used to fabricate Josephson junctions. In angled evaporation, the substrate mask has an undercut. If the evaporation angle that is perpendicular to the substrate, the patterned metal will match the shape of the mask. However, if the evaporation is angled, then the top-layer mask will produce shadowed areas upon which no metal deposits. <em>SQDMetal</em> has a <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code> utility class to visualise the effect of the shadowed evaporation steps.</p>
+<p>The geometry of shadow evaporation is illustrated below. The substrate has two layers of masks. Upon developing the top layer, there exists an undercut in the bottom layer where the mask has been cleared. When evaporating at an angle <em>θ</em>, the evaporated metal (in orange) is offset from the template defined by the top layer mask (that is, here it is offset to the right as opposed to being directly below the top layer). The extent of the evaporated metal is defined by the thickness of the two mask layers.</p>
+<figure class="align-center" id="id3">
+<a class="reference internal image-reference" href="../_images/PVD_idea.drawio.svg"><img alt="Parameters used in the U-clip" src="../_images/PVD_idea.drawio.svg" style="width: 421.0px; height: 221.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Geometry of shadow evaporation</span><a class="headerlink" href="#id3" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<p>The <cite>PVD_Shadows</cite> class outputs the patterned metal in the presence of two-layer evaporations. Specifically, it can output the patterns over multiple angled evaporations defined not only by the angle <em>θ</em>, but also the azimuthal angle <em>ɸ</em>.</p>
+<p>Note that the <cite>PVD_Shadows</cite> class currently assumes the following:</p>
+<ul class="simple">
+<li><p>There are two mask layers of which there is undercut on the bottom layer.</p></li>
+<li><p>The geometry within the <em>Qiskit-Metal</em> design object defines the openings in the top layer while the bottom layer has a uniform undercut following this template.</p></li>
+<li><p>The simulation does not account for the thickness of previously evaporated metallic layers.</p></li>
+<li><p>The simulation does not account for the reducing gap sizes in the top layer due to evaporations. For example, in the above example, the right wall of the top layer will have evaporated metal that will reduce the gap seen by evaporations that follow.</p></li>
+</ul>
+<p>The last two points may get addressed in future releases.</p>
+<section id="defining-pvd-parameters-in-the-qiskit-metal-design-object">
+<h2>Defining PVD parameters in the <em>Qiskit-Metal</em> design object<a class="headerlink" href="#defining-pvd-parameters-in-the-qiskit-metal-design-object" title="Link to this heading"></a></h2>
+<p>Before using the <cite>PVD_Shadows</cite> class, the <em>Qiskit-Metal</em> design object must have evaporation options defined as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;evaporations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+    <span class="n">layer2</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
+        <span class="n">bottom_layer</span><span class="o">=</span><span class="s1">&#39;414nm&#39;</span><span class="p">,</span>
+        <span class="n">top_layer</span><span class="o">=</span><span class="s1">&#39;500nm&#39;</span><span class="p">,</span>
+        <span class="n">undercut</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
+        <span class="n">pvd1</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;-90&#39;</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span><span class="p">,</span>
+        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;10nm&#39;</span>
+        <span class="p">),</span>
+        <span class="n">pvd2</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span><span class="p">,</span>
+        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;100nm&#39;</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Note the following:</p>
+<ul class="simple">
+<li><p>The options for a given chip (in this case <code class="docutils literal notranslate"><span class="pre">'main'</span></code>) are given in a <code class="docutils literal notranslate"><span class="pre">Dict</span></code> key <code class="docutils literal notranslate"><span class="pre">'evaporations'</span></code>.</p></li>
+<li><p>The chip geometries are divided into layers (via the <code class="docutils literal notranslate"><span class="pre">layer</span></code> option) where every layer is taken as a different lithography+PVD step. In the above example, the key <code class="docutils literal notranslate"><span class="pre">'layer2'</span></code> denotes an angled evaporation step used when patterning layer 2. If no options are given for a particular layer, it is assumed that the evaporation is done vertically at <a href="#id1"><span class="problematic" id="id2">*</span></a>θ*=0.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Dict</span></code> object given for a particular layer must specify the mask layer thicknesses (via the keys <code class="docutils literal notranslate"><span class="pre">'top_layer'</span></code> and <code class="docutils literal notranslate"><span class="pre">'bottom_layer'</span></code>) and the <code class="docutils literal notranslate"><span class="pre">'undercut'</span></code> distance.</p></li>
+<li><p>PVD step may consist of multiple angled evaporations, each of which is given under the keys enumerating from 1 onwards (two evaporations in the above example <code class="docutils literal notranslate"><span class="pre">'pvd1'</span></code> and <code class="docutils literal notranslate"><span class="pre">'pvd2'</span></code>).</p></li>
+<li><p>The evaporation angles for angled evaporation is given by the azimuthal and polar angles <em>ɸ</em> and <em>θ</em> respectively.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">metal_thickness</span></code> is optional. If given, it will account for the metal’s thickness in the subsequent evaporation step.</p></li>
+</ul>
+<p>The angles constitute the spherical polar angle from which the evaporated ray arrives:</p>
+<figure class="align-center" id="id4">
+<a class="reference internal image-reference" href="../_images/PVD_angle.drawio.svg"><img alt="Angles when specifying shadow evaporation profiles." src="../_images/PVD_angle.drawio.svg" style="width: 164.0px; height: 102.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Angles when specifying shadow evaporation profiles in <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code>.</span><a class="headerlink" href="#id4" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="using-the-pvd-shadows-class">
+<h2>Using the PVD_Shadows class<a class="headerlink" href="#using-the-pvd-shadows-class" title="Link to this heading"></a></h2>
+<p>Once the PVD options have been defined for the layers using angled evaporation, the net result can be viewed via helper functions in the <cite>PVD_Shadows</cite> class.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.PVD_Shadows</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVD_Shadows</span>
+
+<span class="c1">#Instantiate a PVD_Shadows object for the Qiskit-Metal design object: design</span>
+<span class="n">pvdSh</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+
+<span class="c1">#Plot Layer 2 showing each angled evaporation step separately and do not plot mask</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate&#39;</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1">#Plot all layers showing each angled evaporation step separately, but show the mask</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_all_layers</span><span class="p">(</span><span class="s1">&#39;separate&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that when plotting all layers, the mask is the union of all layers’ mask shapes.</p>
+<p>Typically there is an oxidation step in between angled evaporation steps. Thus, when simulating multiple angled evaporations, the regions that overlap need to be separated. The <cite>PVD_Shadows</cite> class facilitates this via different options to help separate the metals from different angled evaporations.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#Merge all angled evaporation steps in a given layer via a union:</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;merge&#39;</span><span class="p">)</span>
+
+<span class="c1">#Plot all angled evaporations separately in a given layer while deleting all intersections (along with a trimming boundary)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate_delete_intersections&#39;</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
+
+<span class="c1">#Plot all angled evaporations separately in a given layer while deleting all intersections in the first angled evaporations (along with a trimming boundary)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate_delete_below&#39;</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Note that the function <cite>plot_all_layers</cite> accepts the same options outlined above. The option <cite>layer_trim_length</cite> is given in metres. The resulting patterns from the given options are shown below:</p>
+<figure class="align-center" id="id5">
+<a class="reference internal image-reference" href="../_images/PVD_options.drawio.svg"><img alt="PVD modes when using PVD_Shadows" src="../_images/PVD_options.drawio.svg" style="width: 662.0px; height: 172.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Modes when specifying shadow evaporation profiles in <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code></span><a class="headerlink" href="#id5" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../simulations/simcomsol.html" class="btn btn-neutral float-left" title="Simulations using COMSOL" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gds.html" class="btn btn-neutral float-right" title="GDS operations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

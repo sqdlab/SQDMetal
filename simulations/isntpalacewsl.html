@@ -1,0 +1,239 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing AWS Palace on Windows via WSL &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Installing AWS Palace in Singularity/Apptainer container" href="instpalaceapp.html" />
+    <link rel="prev" title="Installing AWS Palace on Ubuntu and Mac" href="instpalaceunix.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="simpalace.html">Simulations using Palace</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="simpalace.html#installation">Installation</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="instpalaceunix.html">Ubuntu/Mac</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Windows via WSL</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#install-wsl">Install WSL</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-spack-basic-on-a-new-wsl-system">Install spack basic on a new WSL system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#install-palace">Install Palace</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#when-running-the-simulations">When running the simulations</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="instpalaceapp.html">Apptainer container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#usage-local-pc">Usage (local PC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#usage-hpc">Usage (HPC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="simpalace.html">Simulations using PALACE</a></li>
+      <li class="breadcrumb-item active">Installing AWS Palace on Windows via WSL</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/simulations/isntpalacewsl.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-aws-palace-on-windows-via-wsl">
+<h1>Installing AWS Palace on Windows via WSL<a class="headerlink" href="#installing-aws-palace-on-windows-via-wsl" title="Link to this heading"></a></h1>
+<section id="install-wsl">
+<h2>Install WSL<a class="headerlink" href="#install-wsl" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>You must be on Windows 10 version 2004 or Windows 11</strong>. Check your windows version in settings, then system section, scroll down to  <em>about</em>.</p>
+</div>
+<p>Using the instructins from [here](<a class="reference external" href="https://learn.microsoft.com/en-us/windows/wsl/install">https://learn.microsoft.com/en-us/windows/wsl/install</a>), first <strong>Open powershell in admin mode</strong> (i.e. press start, type <cite>powershell</cite>, right click on it and select “Run as administrator”) and type:</p>
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="n">wsl</span> <span class="p">-</span><span class="n">-set-default-version</span> <span class="n">2</span>
+<span class="n">wsl</span> <span class="p">-</span><span class="n">-install</span> <span class="n">Ubuntu</span><span class="p">-</span><span class="n">22</span><span class="p">.</span><span class="n">04</span>
+</pre></div>
+</div>
+<p>If this fails (e.g. <code class="docutils literal notranslate"><span class="pre">WslRegisterDistribution</span> <span class="pre">failed</span></code>), then run <code class="docutils literal notranslate"><span class="pre">wsl</span> <span class="pre">--update</span> <span class="pre">--web-download</span></code> first. Restart windows if it has pending updates. Note the username/password supplied during installation.</p>
+<p>Note that you may also have to enable <code class="docutils literal notranslate"><span class="pre">Windows</span> <span class="pre">Subsystem</span> <span class="pre">for</span> <span class="pre">Linux</span></code> by checking the corresponding box in <em>Control Panel</em>’s <em>Windows Features</em>. It may also be required to enable Virtualization in the BIOS Setup, which can generally be accessed by using a manufacturer-specific shortcut key during boot.</p>
+<p>From now onwards, when we state <em>enter WSL</em>, we mean:
+- Enter powershell (administrative mode)
+- Type <code class="docutils literal notranslate"><span class="pre">wsl</span></code> and hit <code class="docutils literal notranslate"><span class="pre">ENTER</span></code></p>
+</section>
+<section id="install-spack-basic-on-a-new-wsl-system">
+<h2>Install spack basic on a new WSL system<a class="headerlink" href="#install-spack-basic-on-a-new-wsl-system" title="Link to this heading"></a></h2>
+<p>Enter WSL and verify that the nameservers are correct by first running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>nano<span class="w"> </span>/etc/resolv.conf
+</pre></div>
+</div>
+<p>Ensure it says <code class="docutils literal notranslate"><span class="pre">nameserver</span> <span class="pre">8.8.8.8</span></code> (if not, edit it, hit <code class="docutils literal notranslate"><span class="pre">CTRL-X</span></code> and <code class="docutils literal notranslate"><span class="pre">Y</span></code>).</p>
+<p>Now install spack (see <a class="reference external" href="https://spack.readthedocs.io/en/latest/installing_prerequisites.html#verify-spack-prerequisites">here</a> for reference) by typing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>file<span class="w"> </span>bzip2<span class="w"> </span>ca-certificates<span class="w"> </span>g++<span class="w"> </span>gcc<span class="w"> </span>gfortran<span class="w"> </span>git<span class="w"> </span>gzip<span class="w"> </span>lsb-release<span class="w"> </span>patch<span class="w"> </span>python3<span class="w"> </span>tar<span class="w"> </span>unzip<span class="w"> </span>xz-utils<span class="w"> </span>zstd
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>libxft-dev<span class="w"> </span>libglu1-mesa<span class="w"> </span>libxi-dev<span class="w"> </span>libxmu-dev<span class="w"> </span>libglu1-mesa-dev<span class="w"> </span>build-essential
+</pre></div>
+</div>
+<p><strong>CLOSE THE POWERSHELL NOW AND REOPEN</strong>.</p>
+<p>Make a new directory where we clone all repositories:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wsl
+<span class="nb">cd</span><span class="w"> </span>~
+mkdir<span class="w"> </span>repo
+<span class="nb">cd</span><span class="w"> </span>repo
+</pre></div>
+</div>
+<p>Note that we use <cite>~/repo</cite> as the default palace repository directory. Since we will be using virtual environments if it is in a different directory, then make sure to set <cite>‘palace_wsl_spack_repo_directory’</cite> in the <cite>user_options</cite> dictionary in the palace simulation object later.</p>
+<p>Now clone the spack source and enter its environment here:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--depth<span class="o">=</span><span class="m">2</span><span class="w"> </span>https://github.com/spack/spack.git
+.<span class="w"> </span>spack/share/spack/setup-env.sh
+</pre></div>
+</div>
+<p>Update spack compilers:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>compiler<span class="w"> </span>find
+</pre></div>
+</div>
+</section>
+<section id="install-palace">
+<h2>Install Palace<a class="headerlink" href="#install-palace" title="Link to this heading"></a></h2>
+<p>Clone palace and <a class="reference external" href="https://github.com/awslabs/palace/issues/360#issuecomment-2874057931">install using spack</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/awslabs/palace.git
+</pre></div>
+</div>
+<p>#Checkout cameron’s branch, which has fixes that lets spack correctly install palace0.13.
+#But these changes are now in master but need to be tested again.
+#git checkout cameronrutherford/0.13.0-spack-cmake-constraints
+<a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a></p>
+<p>Now the idea is that we create a local virtual environment in spack called <cite>spack-env</cite>, add local palace install as a repo in it and concretize+install. This is done via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>./spack/share/spack/setup-env.sh
+spack<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-d<span class="w"> </span>./spack-env
+spack<span class="w"> </span>env<span class="w"> </span>activate<span class="w"> </span>./spack-env
+spack<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>./palace/spack_repo/local
+spack<span class="w"> </span>add<span class="w"> </span>local.palace@develop
+</pre></div>
+</div>
+<p>Now concretize+install via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>concretize<span class="w"> </span>-f
+spack<span class="w"> </span>install<span class="w"> </span>--only-concrete
+</pre></div>
+</div>
+<p>There is no need for EXTERNAL MFEM, libCEED or sundial as palace ships with its own versions. Now run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>find<span class="w"> </span>-name<span class="w"> </span>palace*
+</pre></div>
+</div>
+<p>The command will find the path of the Palace binary. Basically it’s somewhere like:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
+</pre></div>
+</div>
+<p>Executing the above block should show the command-line switches required for Palace.</p>
+</section>
+<section id="when-running-the-simulations">
+<h2>When running the simulations<a class="headerlink" href="#when-running-the-simulations" title="Link to this heading"></a></h2>
+<p>When running Palace simulations, the simulation object receives a dictionary via the argument <code class="docutils literal notranslate"><span class="pre">user_options</span></code>. Make sure to set:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'palace_mode':</span> <span class="pre">'wsl'</span></code>,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_repo_directory':</span> <span class="pre">'~/repo'</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'palace_dir':&quot;~/repo/spack/opt/spack/linux-zen2/palace-develop-3ofp7n4fjqj5i6slvei3w6nptzdiwdma/bin/palace&quot;</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_env_name':</span> <span class="pre">'spack-env'</span></code></p></li>
+</ul>
+<p>where the second key points to a different directory if the repository directory was chosen to be different during the installation procedure. Note that the final key must be the absolute path. Thus, one adds <cite>~/repo</cite> to the path found using <cite>find -name palace*</cite> earlier. If for some reason the spack venv was under a different name, specify <cite>palace_wsl_spack_env_name</cite>.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="instpalaceunix.html" class="btn btn-neutral float-left" title="Installing AWS Palace on Ubuntu and Mac" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="instpalaceapp.html" class="btn btn-neutral float-right" title="Installing AWS Palace in Singularity/Apptainer container" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,238 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qubit designer &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Full chip maker" href="fcm.html" />
+    <link rel="prev" title="GDS operations" href="gds.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Qubit Designer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#resonator-types">Resonator types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#resonatorhalfwave">ResonatorHalfWave</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#resonatorquarterwave">ResonatorQuarterWave</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#resonatorlc">ResonatorLC</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#qubit-types">Qubit types</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#xmondesigner">XmonDesigner</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#floatingtransmondesigner">FloatingTransmonDesigner</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Qubit designer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/general/qbd.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="qubit-designer">
+<h1>Qubit designer<a class="headerlink" href="#qubit-designer" title="Link to this heading"></a></h1>
+<p>The final qubit and resonator system has a bunch of parameters following a set of design equations. The modules found under <cite>SQDMetal.Utilities.QubitDesigner</cite> facilitate in optimising said parameters. Currently, the supported resonator types are:</p>
+<ul class="simple">
+<li><p>λ/2 stripline resonator: <a class="reference internal" href="#resonatorhalfwave"><span class="std std-ref">ResonatorHalfWave</span></a></p></li>
+<li><p>λ/4 stripline resonator: <a class="reference internal" href="#resonatorquarterwave"><span class="std std-ref">ResonatorQuarterWave</span></a></p></li>
+<li><p>Lumped element LC resonator: <a class="reference internal" href="#resonatorlc"><span class="std std-ref">ResonatorLC</span></a></p></li>
+</ul>
+<p>The idea is that the qubit designer classes gobble up the resonator object to create the transmon-resonator system. Supported qubit types are:</p>
+<ul class="simple">
+<li><p>General transmon capacitively coupled to resonator: <a class="reference internal" href="#xmondesigner"><span class="std std-ref">XmonDesigner</span></a></p></li>
+<li><p>Floating transmon coupled to resonator: <a class="reference internal" href="#floatingtransmondesigner"><span class="std std-ref">FloatingTransmonDesigner</span></a></p></li>
+</ul>
+<section id="resonator-types">
+<h2>Resonator types<a class="headerlink" href="#resonator-types" title="Link to this heading"></a></h2>
+<p>The resonator classes listed in this section all implement certain functions that can be useful:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="../reference/qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_capacitance" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_capacitance"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_res_capacitance()</span></code></a> - returns the equivalent capacitance of the resonator (in Farad)</p></li>
+<li><p><a class="reference internal" href="../reference/qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_inductance" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_inductance"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_res_inductance()</span></code></a> - returns the equivalent inductance of the resonator (in Henry)</p></li>
+<li><p><a class="reference internal" href="../reference/qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_impedance" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_impedance"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_res_impedance()</span></code></a> - returns the equivalent impedance of the resonator (in Ω)</p></li>
+<li><p><a class="reference internal" href="../reference/qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_frequency" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_frequency"><code class="xref py py-func docutils literal notranslate"><span class="pre">get_res_frequency()</span></code></a> - returns the resonant frequency (in Hertz)</p></li>
+<li><p><a class="reference internal" href="../reference/qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase.is_res_parallelLC" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase.is_res_parallelLC"><code class="xref py py-func docutils literal notranslate"><span class="pre">is_res_parallelLC()</span></code></a> - returns whether the resonator is specified as a series or parallel LC circuit.</p></li>
+</ul>
+<section id="resonatorhalfwave">
+<h3>ResonatorHalfWave<a class="headerlink" href="#resonatorhalfwave" title="Link to this heading"></a></h3>
+<p>This represents a λ/2 stripline resonator. The class calculates the equivalent capacitance and inductance depending on whether it is a open or short circuit termination:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span>
+
+<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="mf">7.25e9</span><span class="p">,</span> <span class="n">shorted</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">impedance</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first argument is the resonant frequency (in Hertz). The last two arguments are optional with the default values shown above; that is, a 50Ω λ/2 resonator with an open-ended termination (thus, equivalent to a parallel LC circuit).</p>
+</section>
+<section id="resonatorquarterwave">
+<h3>ResonatorQuarterWave<a class="headerlink" href="#resonatorquarterwave" title="Link to this heading"></a></h3>
+<p>This represents a λ/4 stripline resonator. The class calculates the equivalent capacitance and inductance depending on whether it is a open or short circuit termination:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorQuarterWave</span>
+
+<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorQuarterWave</span><span class="p">(</span><span class="mf">7.25e9</span><span class="p">,</span> <span class="n">shorted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">impedance</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first argument is the resonant frequency (in Hertz). The last two arguments are optional with the default values shown above; that is, a 50Ω λ/4 resonator with a shorted termination (thus, equivalent to a parallel LC circuit).</p>
+</section>
+<section id="resonatorlc">
+<h3>ResonatorLC<a class="headerlink" href="#resonatorlc" title="Link to this heading"></a></h3>
+<p>This represents a simple parallel LC circuit. The class can be instantiated by providing any two of: inductance <span class="math notranslate nohighlight">\(L\)</span>, capacitance <span class="math notranslate nohighlight">\(C\)</span> and resonant-frequency <span class="math notranslate nohighlight">\(f_0\)</span>. For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorLC</span>
+
+<span class="n">resonator1</span> <span class="o">=</span> <span class="n">ResonatorLC</span><span class="p">(</span><span class="n">f0</span><span class="o">=</span><span class="mf">7.25e9</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">)</span>
+<span class="n">resonator2</span> <span class="o">=</span> <span class="n">ResonatorLC</span><span class="p">(</span><span class="n">f0</span><span class="o">=</span><span class="mf">7.25e9</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+<span class="n">resonator3</span> <span class="o">=</span> <span class="n">ResonatorLC</span><span class="p">(</span><span class="n">L</span><span class="o">=</span><span class="mf">1e-9</span><span class="p">,</span> <span class="n">C</span><span class="o">=</span><span class="mf">1e-12</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="qubit-types">
+<h2>Qubit types<a class="headerlink" href="#qubit-types" title="Link to this heading"></a></h2>
+<p>The qubit designer classes all implement an <code class="docutils literal notranslate"><span class="pre">optimise</span></code> function:</p>
+<ul class="simple">
+<li><p>The function takes up a dictionary of parameters pertaining to that qubit type</p></li>
+<li><p>Each parameter in the dictionary can be either given as a single floating-point value (that is, a fixed constraint) or a 2-tuple (that is, a bounded interval).</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">optimise</span></code> command will try to satisfy all the fixed and interval constraints. Note that if any of the parameters are not provided, a wide interval constraint is taken as a default value.</p></li>
+</ul>
+<p>The function prints a list of the qubit parameters (e.g. <span class="math notranslate nohighlight">\(g\)</span>, <span class="math notranslate nohighlight">\(\chi\)</span>, anharmonicity etc.).</p>
+<section id="xmondesigner">
+<h3>XmonDesigner<a class="headerlink" href="#xmondesigner" title="Link to this heading"></a></h3>
+<p>This class is for a simple transmon capacitively coupled to a resonator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span><span class="p">,</span> <span class="n">XmonDesigner</span>
+
+<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="mf">10.5e9</span><span class="p">)</span>
+<span class="n">XmonDesigner</span><span class="p">(</span><span class="n">resonator</span><span class="p">)</span><span class="o">.</span><span class="n">optimise</span><span class="p">({</span>
+    <span class="s1">&#39;fQubit&#39;</span><span class="p">:</span><span class="mf">9.5e9</span><span class="p">,</span>
+    <span class="s1">&#39;C_g&#39;</span><span class="p">:(</span><span class="mf">0.1e-15</span><span class="p">,</span><span class="mf">10e-15</span><span class="p">),</span>
+    <span class="s1">&#39;C_J&#39;</span><span class="p">:(</span><span class="mf">10e-15</span><span class="p">,</span><span class="mf">150e-15</span><span class="p">),</span>
+    <span class="s1">&#39;chi&#39;</span><span class="p">:(</span><span class="o">-</span><span class="mf">10e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.1e6</span><span class="p">),</span>
+    <span class="s1">&#39;Ej/Ec&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">)})</span>
+</pre></div>
+</div>
+</section>
+<section id="floatingtransmondesigner">
+<h3>FloatingTransmonDesigner<a class="headerlink" href="#floatingtransmondesigner" title="Link to this heading"></a></h3>
+<p>This class is for a floating transmon capacitively coupled to a resonator:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span><span class="p">,</span> <span class="n">FloatingTransmonDesigner</span>
+
+<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="mf">10.5e9</span><span class="p">)</span>
+<span class="n">FloatingTransmonDesigner</span><span class="p">(</span><span class="n">resonator</span><span class="p">)</span><span class="o">.</span><span class="n">optimise</span><span class="p">({</span><span class="s1">&#39;fQubit&#39;</span><span class="p">:(</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">),</span>
+                                            <span class="s1">&#39;C_q1&#39;</span><span class="p">:(</span><span class="mf">30.862e-15</span><span class="p">),</span>
+                                            <span class="s1">&#39;C_q2&#39;</span><span class="p">:(</span><span class="mf">31.974e-15</span><span class="p">),</span>
+                                            <span class="s1">&#39;C_g1&#39;</span><span class="p">:(</span><span class="mf">10.910e-15</span><span class="p">),</span>
+                                            <span class="s1">&#39;C_g2&#39;</span><span class="p">:(</span><span class="mf">0.916e-15</span><span class="p">),</span>
+                                            <span class="s1">&#39;C_J&#39;</span><span class="p">:(</span><span class="mf">42.461e-15</span><span class="p">,</span> <span class="mf">55e-15</span><span class="p">),</span>
+                                            <span class="s1">&#39;chi&#39;</span><span class="p">:(</span><span class="o">-</span><span class="mf">0.9e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.2e6</span><span class="p">),</span>
+                                            <span class="s1">&#39;Ej/Ec&#39;</span><span class="p">:</span><span class="mi">20</span><span class="p">})</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="gds.html" class="btn btn-neutral float-left" title="GDS operations" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="fcm.html" class="btn btn-neutral float-right" title="Full chip maker" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

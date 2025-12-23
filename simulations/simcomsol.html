@@ -1,0 +1,414 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulations using COMSOL &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Accounting for shadow evaporation" href="../general/pvd.html" />
+    <link rel="prev" title="Installing AWS Palace in Singularity/Apptainer container" href="instpalaceapp.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Simulations using COMSOL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-the-comsol-simulation">Preparing the COMSOL simulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#capacitance-matrix-simulations">Capacitance matrix simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rf-s-parameter-simulations">RF s-parameter simulations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#magnetic-field-simulations">Magnetic field simulations</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Simulations using COMSOL</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/simulations/simcomsol.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simulations-using-comsol">
+<h1>Simulations using COMSOL<a class="headerlink" href="#simulations-using-comsol" title="Link to this heading"></a></h1>
+<p>Once the design has been completed using <em>Qiskit-Metal</em>, the design object can be used to run simulations in COMSOL. Currently, <em>SQDMetal</em> supports:</p>
+<ul class="simple">
+<li><p>Capacitance matrix simulations</p></li>
+<li><p>RF s-parameter simulations</p></li>
+</ul>
+<p>The appropriate simulation parameters are generated by <em>SQDMetal</em>. The resulting simulation can either be run by opening COMSOL via the generated mph file or directly from the Python environment.</p>
+<section id="preparing-the-comsol-simulation">
+<h2>Preparing the COMSOL simulation<a class="headerlink" href="#preparing-the-comsol-simulation" title="Link to this heading"></a></h2>
+<p>The API utilises the <code class="docutils literal notranslate"><span class="pre">mph</span></code> Python package. In order to run the commands below, <strong>COMSOL must be installed</strong>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.COMSOL.Model</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMSOL_Model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.COMSOL.SimCapacitance</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMSOL_Simulation_CapMats</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.COMSOL.SimRFsParameter</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMSOL_Simulation_RFsParameters</span>
+
+<span class="c1">#Initialise the COMSOL engine (needs to only be run once)</span>
+<span class="n">COMSOL_Model</span><span class="o">.</span><span class="n">init_engine</span><span class="p">()</span>
+
+<span class="c1">#Instantiate a COMSOL model</span>
+<span class="n">cmsl</span> <span class="o">=</span> <span class="n">COMSOL_Model</span><span class="p">(</span><span class="s1">&#39;leModel&#39;</span><span class="p">)</span>
+
+<span class="c1">#Create simulations to setup - in this case capacitance matrix and RF s-parameter</span>
+<span class="n">sim_capMats</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_CapMats</span><span class="p">(</span><span class="n">cmsl</span><span class="p">)</span>
+<span class="n">sim_sParams</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_RFsParameters</span><span class="p">(</span><span class="n">cmsl</span><span class="p">,</span> <span class="n">adaptive</span><span class="o">=</span><span class="s1">&#39;Multiple&#39;</span><span class="p">,</span> <span class="n">modal_min_freq_num_eigs</span><span class="o">=</span><span class="p">(</span><span class="mf">5.2e9</span><span class="p">,</span><span class="mi">25</span><span class="p">))</span>
+
+<span class="c1">#(A) - Initialise model from Qiskit-Metal design object: design</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">initialize_model</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="p">[</span><span class="n">sim_capMats</span><span class="p">,</span> <span class="n">sim_sParams</span><span class="p">],</span> <span class="n">bottom_grounded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#(B) - Add metallic layers (use 0 if selecting ground plane)</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">fuse_threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">evap_mode</span><span class="o">=</span><span class="s1">&#39;separate_delete_intersections&#39;</span><span class="p">,</span> <span class="n">group_by_evaporations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1">#Alternative syntax to combine multiple layers (via a list) in one go. In doing so, smooth_radius can be used to round off the corners</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">2e-9</span><span class="p">,</span> <span class="n">fuse_threshold</span><span class="o">=</span><span class="mf">2e-9</span><span class="p">,</span> <span class="n">smooth_radius</span><span class="o">=</span><span class="mf">0.5e-6</span><span class="p">,</span> <span class="n">multilayer_fuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1">#(C) - OPTIONAL: add ground plane</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+
+<span class="c1">#(D) - Combine all contiguous metals into a single metallic electrodes</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">fuse_all_metals</span><span class="p">()</span>
+
+<span class="c1">#(E) - OPTIONAL: Fix the indices of the different electrodes via components on those electrodes</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">reorder_conds_by_comps</span><span class="p">([</span><span class="s1">&#39;block0&#39;</span><span class="p">,</span> <span class="s1">&#39;launch0&#39;</span><span class="p">,</span> <span class="s1">&#39;launch1&#39;</span><span class="p">,</span> <span class="s1">&#39;launch2&#39;</span><span class="p">])</span>
+
+<span class="c1">#(F) - OPTIONAL: Set everything within a rectangle to be finely meshed</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">fine_mesh_in_rectangle</span><span class="p">(</span><span class="o">-</span><span class="mf">3e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">140e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.9e-3</span><span class="p">,</span> <span class="mf">167e-6</span><span class="p">,</span> <span class="mf">2e-7</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">)</span>
+<span class="c1">#(G) - OPTIONAL: Set conductors within a rectangle to be finely meshed</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">fine_mesh_conductors_in_rectangle</span><span class="p">(</span><span class="o">-</span><span class="mf">2.86e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">145e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.53e-3</span><span class="p">,</span> <span class="mf">167e-6</span><span class="p">,</span> <span class="mf">2e-7</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">)</span>
+
+<span class="c1">#(H) - Build model</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">build_geom_mater_elec_mesh</span><span class="p">(</span><span class="n">skip_meshing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mesh_structure</span><span class="o">=</span><span class="s1">&#39;Fine&#39;</span><span class="p">)</span>
+
+<span class="c1">#(I) - Plot model</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+
+<span class="c1">#(J) - Save model to file</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The simulation treats the electrodes as 2D planar objects that live on top of a 3D block representing the dielectric subtrate chip. The chip is enclosed by a rectangular prism that represents the exterior boundaries of the simulation. The simulation automatically accounts for changes in the device geometry due to [shadow evaporations](PVD.md).</p>
+<p>Note the following features:
+- (A) - To initialise the model, one must provide:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>Qiskit-Metal</em> design object</p></li>
+<li><p>List of COMSOL simulation objects (they all implement <cite>COMSOL_Simulation_Base</cite>).</p></li>
+<li><p>Optional <cite>pad_x</cite>, <cite>pad_y</cite> and <cite>pad_z</cite> (defaults to 0.5mm) that provide the padding from the chip to the exterior boundaries along the x, y and z axes respectively.</p></li>
+<li><p>Optional <cite>bottom_grounded</cite> parameter sets the z-padding below the chip to be zero. That is, the chip will sit flush on the exterior boundary on the bottom; which, for all intents and purposes grounds the bottom of the chip.</p></li>
+</ul>
+</div></blockquote>
+<ul>
+<li><ol class="upperalpha simple" start="2">
+<li><ul class="simple">
+<li><p>The metallic polygons are added to the top of the chip as planar objects. They are added per layer in the <em>Qiskit-Metal</em> design object. Note that contiguous metallic objects are fused as single electrodes. One must provide:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Layer index corresponding to the <em>Qiskit-Metal</em> design object</p></li>
+<li><dl class="simple">
+<dt>Optional <cite>threshold</cite> (defaults to <cite>-1</cite> where it is disabled) given as a positive length in metres. Idea is that:</dt><dd><ul>
+<li><p>After fusing all contiguous metallic objects, the resulting polygons may have adjacent points that are too close; this causes unnecessarily fine meshing in COMSOL.</p></li>
+<li><p><strong>If adjacent points in a given polygon electrode are within the given `threshold`, they are combined on the spot.</strong></p></li>
+<li><p>Use this to clean up a polygon by setting a size that is smaller than the smallest actual feature size.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Optional <cite>fuse_threshold</cite> (defaults to <cite>1e-12</cite>) given as a positive length in metres. Idea is that:</dt><dd><ul>
+<li><p>The <cite>shapely</cite> package does not properly combine polygons in certain cases due to floating-point rounding errors.</p></li>
+<li><p><strong>If adjacent polygon electrodes are within the given `fuse_threshold` of each other, they are combined into a single polygon.</strong></p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Optional <cite>evap_mode</cite> (defaults <cite>‘separate_delete_below’</cite>) and <cite>evap_trim</cite> (defaults <cite>20e-9</cite>) on how different electrodes across different are to be combined or separated. The options are the same as discussed in the usage of <cite>plot_layer</cite> in the [<cite>PVD_Shadows</cite> class](PVD.md).</p></li>
+<li><p>Optional <cite>group_by_evaporations</cite> (defaults <cite>False</cite>) is relevant when using <cite>‘separate_delete_intersections’</cite> or <cite>‘separate_delete_below’</cite> for <cite>evap_mode</cite>. If <cite>True</cite>, all angled evaporation steps that are separated due to some deletion, are grouped together as a single metallic electrode - as discussed later in capacitance matrix simulations.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperalpha simple" start="3">
+<li><ul class="simple">
+<li><p>The ground plane is a metallic layer corresponding to the ground cut-outs/subtractions in <em>Qiskit-Metal</em>. Note that it currently does not account for any shadow evaporations for it is assumed that the fills are evaporated using single vertical evaporations.</p></li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="4">
+<li><ul class="simple">
+<li><p>Metallic electrods are added layer-by-layer. In cases of overlap between layers, it is important to treat them as single electrodes contiguous electrodes. Note that:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>The function <cite>fuse_all_metals</cite> does not modify the underlying geometry - i.e. overlapping polygons across multiple layers are NOT combined into single polygons.</p></li>
+<li><p>Instead <cite>fuse_all_metals</cite> combines the polygonal selections used to define the electrodes in the COMSOL simulations.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperalpha simple" start="5">
+<li><ul class="simple">
+<li><p>In cases where the simulation is swept, it is useful to fix the indices of different electrodes. This can be done deterministically via the <cite>reorder_conds_by_comps</cite> function. Note the following:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>This function just requires a list of the names of Qiskit-Metal components that are attached to different electrodes. The electrodes are indexed according to the order given in this list. If the number of electrodes exceeds the number of supplied names, the remaining electrodes are automatically indexed.</p></li>
+<li><p>The given component must be completely contiguous and <strong>must exist entirely within a given electrode</strong>. For example, a capacitor is not a good choice as it will split across two COMSOL electrodes (unless the two electrodes are electrically connected via other metallic polygons).</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperalpha simple" start="6">
+<li><ul class="simple">
+<li><p>Everything on top of the chip within a given rectangular region is meshed via custom fine-meshing parameters. The arguments are:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>First four parameters are <cite>x1</cite>, <cite>y1</cite>, <cite>x2</cite> and <cite>y2</cite> where <cite>(x1,y1)</cite> is the bottom-left corner while <cite>(x2,y2)</cite> is the top-right corner of the rectangular region.</p></li>
+<li><p>Optional <cite>minElementSize</cite> (defaults <cite>1e-7</cite>) sets the minimum mesh-element size of the triangular mesh in metres.</p></li>
+<li><p>Optional <cite>maxElementSize</cite> (defaults <cite>5e-6</cite>) sets the maximum mesh-element size of the triangular mesh in metres.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperalpha simple" start="7">
+<li><ul class="simple">
+<li><p>Instead of meshing everything finely, <cite>fine_mesh_conductors_in_rectangle</cite> is a counterpart to <cite>fine_mesh_in_rectangle</cite> (with the same arguments) in which only conductive regions falling within the rectangle are finely meshed with the given meshing parameters.</p></li>
+</ul>
+</li>
+</ol>
+</li>
+<li><ol class="upperalpha simple" start="8">
+<li><ul class="simple">
+<li><p>Build the geometry, setup the materials (i.e. the substrate dielectric and the metals), setup the individual simulation studies and build the resulting mesh in COMSOL. One may provide:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Optional <cite>skip_meshing</cite> (defaults <cite>False</cite>). If <cite>True</cite>, the mesh is setup but not explicitly built.</p></li>
+<li><p>Optional <cite>mesh_structure</cite> (defults <cite>‘Normal’</cite>) to define the general size of the meshing in COMSOL. Can be: <cite>‘Extremely fine’</cite>, <cite>‘Extra fine’</cite>, <cite>‘Finer’</cite>, <cite>‘Fine’</cite>, <cite>‘Normal’</cite>, <cite>‘Coarse’</cite>, <cite>‘Coarser’</cite>, <cite>‘Extra coarse’</cite> or <cite>‘Extremely coarse’</cite>.</p></li>
+<li><p>Optional <cite>substrate_permittivity</cite> (defaults <cite>11.7</cite> for silicon) to set for the dielectric substrate chip.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperroman simple">
+<li><ul class="simple">
+<li><p>The 2D model plot shows the different electrodes (and their selection indices) that have been setup for simulation. It should be used to ensure that the electrodes are properly mapped (e.g. when tuning the different threshold parameters in <cite>add_metallic</cite>). The plot function may take the following arguments:</p></li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<div><ul class="simple">
+<li><p>Optional <cite>plot_chip_boundaries</cite> (defaults <cite>True</cite>) to include the chip boundaries if <cite>True</cite>. Useful to check if the different metallic elements fit within the chip in the simulation.</p></li>
+<li><p>Optional <cite>plot_fine_mesh_bounds</cite> (defaults <cite>True</cite>) to include the fine mesh boundaries if <cite>True</cite>.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><ol class="upperalpha simple" start="10">
+<li><ul class="simple">
+<li><p>This command saves the current COMSOL model into an mph file; in this example, the file will be called <cite>‘Test.mph’</cite>. Can include a valid folder path; do not include the mph extension as it will be automatically added.</p></li>
+</ul>
+</li>
+</ol>
+</li>
+</ul>
+<p>Note that the order of operations given above must be generally satisfied. For example:
+- <cite>fuse_all_metals</cite> should be called after adding all metallic regions
+- <cite>reorder_conds_by_comps</cite> should be called after <cite>fuse_all_metals</cite>
+- Almost everything (including the fine-meshing) should be called before <cite>build_geom_mater_elec_mesh</cite>.
+- However, <cite>save</cite> may be called any time and the model in its current state will be saved.</p>
+<p>The following sections will outline the different simulations, where one may directly run a given simulation from the Python environment.</p>
+</section>
+<section id="capacitance-matrix-simulations">
+<h2>Capacitance matrix simulations<a class="headerlink" href="#capacitance-matrix-simulations" title="Link to this heading"></a></h2>
+<p>Given a COMSOL model, the DC capacitances between different electrodes can be calculated via the <cite>COMSOL_Simulation_CapMats</cite> class. The indices of the different electrodes are assigned automatically or manually via the <cite>reorder_conds_by_comps</cite> command as outlined in the earlier section. The capacitance matrix can be extracted directly from the <cite>COMSOL_Simulation_CapMats</cite> as follows:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#Must call build_geom_mater_elec_mesh first and have sim_capMats registered when calling initialize_model</span>
+<span class="n">capMat</span> <span class="o">=</span> <span class="n">sim_capMats</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Note that the exterior boundaries are considered to be ground and held as a zero potential reference. Thus, no electrode should intersect with the exterior boundaries as setting the unit potential will fail if the conductor touches a region of zero potential.</p>
+</section>
+<section id="rf-s-parameter-simulations">
+<h2>RF s-parameter simulations<a class="headerlink" href="#rf-s-parameter-simulations" title="Link to this heading"></a></h2>
+<p>Given a COMSOL model, the s-parameters can be calculated between different ports. The <cite>COMSOL_Simulation_RFsParameters</cite> class is instantiated via the COMSOL model and some optional parameters:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><cite>adaptive</cite> (defaults <cite>‘None’</cite>) specifies the kind of simulation to setup:</dt><dd><ul>
+<li><p><cite>‘None’</cite> - the simulation is a frequency domain sweep where the solutions for every frequency sequentially. This gives the most accurate global phase, but it is the slowest simulation type.</p></li>
+<li><p><cite>‘Single’</cite> - the simulation finds the resonant frequency and width and interpolates the frequency scan given this resonant peak. This is fast and accurate if it is guaranteed that there is only a single resonant peak of interest in the s-parameters.</p></li>
+<li><p><cite>‘Multiple’</cite> - the simulation performs an eigenfrequency scan to find the resonant peaks and then interpolates the frequency scan given these peaks. This is fast and accurate if <strong>all</strong> resonant peaks within the given frequency range of interest are correctly found.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p><cite>relative_tolerance</cite> (defaults <cite>0.01</cite>) is only relevant when using <cite>adaptive=’Single’</cite> and gives the relative simulation tolerance in the converged values regarding the resonant peak.</p></li>
+<li><dl class="simple">
+<dt><cite>modal_min_freq_num_eigs</cite> (defaults <cite>(1e9,7)</cite>) is only relevant when using <cite>adaptive=’Multiple’</cite>:</dt><dd><ul>
+<li><p>Given as a tuple of the the minimum frequency (in Hertz) and number of expected eigenfrequency peaks.</p></li>
+<li><p>Note that the minimum frequency should be less than or equal to the frequency range that is set for the simulation. All searched eigenfrequencies are assumed to be larger than this frequency.</p></li>
+<li><p>The number of eigenfrequencies should be at least larger than the expected number of resonant peaks.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p><strong>Before running `build_geom_mater_elec_mesh`</strong>, one must define the ports via any of the <cite>create_port_</cite> commands:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#(A) - Create ports on LaunchpadWirebond objects</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;launch1&#39;</span><span class="p">)</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;launch2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The supported <cite>create_port_</cite> commands work as follows:
+- (A) - <cite>create_port_CPW_on_Launcher</cite>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Creates a CPW-fed port on a <em>Qiskit-Metal</em> <cite>LaunchpadWirebond</cite> component at the start of the launcher. The CPW feed extends onto the ground plane.</p></li>
+<li><p>The function requires the name of said <cite>LaunchpadWirebond</cite> component in the <em>Qiskit-Metal</em> design object.</p></li>
+<li><p>Optionally provide <cite>len_launch</cite> (defaults <cite>20e-6</cite>) to define the length of the CPW port inlet along the length of the launcher.</p></li>
+</ul>
+</div></blockquote>
+<p>The order of the s-parameter ports are given in the order of calling the <cite>create_port_</cite> commands.</p>
+<p>Once the ports are defined and the simulation has been built via <cite>build_geom_mater_elec_mesh</cite>, one may set the frequency range upon which to calculate the s-parameters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#Set frequency scan via an linspace-like construct (1000 points between 2GHz and 5GHz in this case):</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">set_freq_range</span><span class="p">(</span><span class="mf">2e9</span><span class="p">,</span> <span class="mf">5e9</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="c1">#Set frequency scan via absolute frequency values (given as a list or numpy array):</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">set_freq_values</span><span class="p">([</span><span class="mf">2e9</span><span class="p">,</span><span class="mf">2.5e9</span><span class="p">,</span><span class="mf">3e9</span><span class="p">,</span><span class="mf">5e9</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>To run the simulation from the Python environment:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">freq_s_params</span> <span class="o">=</span> <span class="n">sim_sParams</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The result is a numpy array where the rows are: frequencies, S11 values, S21 values, S31 values, …, SN1 values (for N defined ports). That is the excitation currently is set to the first port.</p>
+<p>Finally, note that on running the simulation (as shown below), all field solutions are stored for all frequencies except for the individual frequency solutions (i.e. Multi-Modal) when using <cite>adaptive=’Multiple’</cite>, where only the fields on the ports (i.e. required for s-parameter calculations) are stored.</p>
+</section>
+<section id="magnetic-field-simulations">
+<h2>Magnetic field simulations<a class="headerlink" href="#magnetic-field-simulations" title="Link to this heading"></a></h2>
+<p>Given a COMSOL model, a magnetic field simulation can be done via the <cite>COMSOL_Simulation_MagneticField</cite> class. This simulation is specifically designed to send in a DC current, observe the resulting magnetic field and subsequently calculate the net flux through some unit area (e.g. a SQUID loop).</p>
+<p><strong>Before running `build_geom_mater_elec_mesh`</strong>, one must define the following:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sim_BField</span><span class="o">.</span><span class="n">set_current_feed_on_CPW_on_Route</span><span class="p">(</span><span class="s1">&#39;flux_line&#39;</span><span class="p">)</span>
+<span class="n">sim_BField</span><span class="o">.</span><span class="n">set_Bfield_integration_area</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The first command attaches a CPW-friendly current feeder (i.e. feeds the centre line while grounding both adjacent ground-planes simultaneously). The second command defines an area to which the $B_z$ component of the field is integrated. Note that a handy function in the <cite>PVD_Shadows</cite> class can be used to find the coordinates of the largest interior (i.e. hole) in a SQUID loop after shadow evaporation calculations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pvd</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+<span class="c1"># pvd.plot_layer(2)</span>
+<span class="n">coords</span><span class="p">,</span> <span class="n">poly</span> <span class="o">=</span> <span class="n">pvd</span><span class="o">.</span><span class="n">get_shadow_largest_interior_for_component</span><span class="p">(</span><span class="s1">&#39;jj_qubit&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To get the flux, simply run:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">net_flux</span> <span class="o">=</span> <span class="n">sim_BField</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The units are in <strong>Webers</strong> (i.e. flux is the surface integral of $mathbf{B}$).</p>
+<p>TODO: Update this upon documenting COMSOL classes</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="instpalaceapp.html" class="btn btn-neutral float-left" title="Installing AWS Palace in Singularity/Apptainer container" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../general/pvd.html" class="btn btn-neutral float-right" title="Accounting for shadow evaporation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,311 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulations using PALACE &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Installing AWS Palace on Ubuntu and Mac" href="instpalaceunix.html" />
+    <link rel="prev" title="PVD simulation example" href="../examples/PVD_simulation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Simulations using Palace</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="instpalaceunix.html">Ubuntu/Mac</a></li>
+<li class="toctree-l3"><a class="reference internal" href="isntpalacewsl.html">Windows via WSL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="instpalaceapp.html">Apptainer container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-local-pc">Usage (local PC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#usage-hpc">Usage (HPC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#general-functions">General functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rf-eigenmode-and-frequency-driven">RF (Eigenmode and Frequency-Driven)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#eigenmode">Eigenmode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#frequency-driven">Frequency-Driven</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#capacitance-matrix">Capacitance Matrix</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Simulations using PALACE</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/simulations/simpalace.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="simulations-using-palace">
+<h1>Simulations using PALACE<a class="headerlink" href="#simulations-using-palace" title="Link to this heading"></a></h1>
+<p>Once the design has been completed using <em>Qiskit-Metal</em>, the design object can be used to run simulations in <a class="reference external" href="https://awslabs.github.io/palace/stable/">AWS Palace</a>. Currently, <em>SQDMetal</em> supports:</p>
+<ul class="simple">
+<li><p>Capacitance matrix simulations</p></li>
+<li><p>RF s-parameter simulations</p></li>
+<li><p>Eigenmode simulations</p></li>
+</ul>
+<p>The raw data can be viewed via <em>ParaView</em> or our <a class="reference internal" href="simpalacedv.html"><span class="doc">in-built visualisation class</span></a>.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>Make sure to install the <cite>gmsh</cite> in the Python environment. Now to run simulations in Palace, the distribution must be installed either on a local computer or a cluster. We offer several implementations for a local PC:</p>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="instpalaceunix.html">Ubuntu/Mac</a></li>
+<li class="toctree-l1"><a class="reference internal" href="isntpalacewsl.html">Windows via WSL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="instpalaceapp.html">Apptainer container</a></li>
+</ul>
+</div>
+</section>
+<section id="usage-local-pc">
+<h2>Usage (local PC)<a class="headerlink" href="#usage-local-pc" title="Link to this heading"></a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>We recommend browsing our <a class="reference internal" href="../examples/index.html"><span class="doc">worked examples</span></a> for further details beyond the example usage shown below.</p>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Eigenmode_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Eigenmode_Simulation</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialInterface</span>
+
+<span class="c1">#Eigenmode Simulation Options</span>
+<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span>  <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
+                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
+                <span class="s2">&quot;starting_freq&quot;</span><span class="p">:</span> <span class="mf">5e9</span><span class="p">,</span>                              <span class="c1">#starting frequency in Hz</span>
+                <span class="s2">&quot;number_of_freqs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                              <span class="c1">#number of eigenmodes to find</span>
+                <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                                <span class="c1">#number of electromagnetic field visualizations to save</span>
+                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
+                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>                              <span class="c1">#error residual tolerance foriterative solver</span>
+                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
+                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
+                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;</span><span class="p">,</span><span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
+                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span>                                     <span class="c1">#number of cpus used in simulation</span>
+                <span class="p">}</span>
+
+<span class="c1">#Create the Palace Eigenmode simulation</span>
+<span class="n">eigen_sim</span> <span class="o">=</span> <span class="n">PALACE_Eigenmode_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span><span class="s1">&#39;x-mon_test&#39;</span><span class="p">,</span>                                         <span class="c1">#name of simulation</span>
+                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                      <span class="c1">#feed in qiskit metal design</span>
+                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                  <span class="c1">#choose directory where mesh file and config file are saved</span>
+                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                             <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
+                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                           <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
+                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                        <span class="c1">#provide options chosen above</span>
+                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                        <span class="c1">#create mesh, config and HPC batch files</span>
+
+<span class="c1">#Add in metals from layer 1 of the design file</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1">#Add in ground plane for simulation</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+
+<span class="c1">#Add in the Josephson junction as a lumped port</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_JosephsonJunction</span><span class="p">(</span><span class="s1">&#39;junction&#39;</span><span class="p">,</span> <span class="n">L_J</span><span class="o">=</span><span class="mf">4.3e-9</span><span class="p">,</span> <span class="n">C_J</span><span class="o">=</span><span class="mf">10e-15</span><span class="p">)</span>
+
+<span class="c1">#Fine-mesh x-mon</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;x-mon&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">8e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1">#Sets up the lossy interfaces for MA, SA and MS interfaces</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">setup_EPR_interfaces</span><span class="p">(</span><span class="n">metal_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Aluminium-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_metal</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Aluminium&#39;</span><span class="p">))</span>
+
+<span class="c1">#Prepares the mesh file and config file</span>
+<span class="n">eigen_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Details on viewing the data in the end are shown <a class="reference internal" href="simpalacedv.html"><span class="doc">here</span></a>.</p>
+</section>
+<section id="usage-hpc">
+<h2>Usage (HPC)<a class="headerlink" href="#usage-hpc" title="Link to this heading"></a></h2>
+<p>Here, some extra parameters need to be supplied. Specifically the path to a JSON file (supplied in the user option: <cite>“HPC_Parameters_JSON”</cite>) containing the parameters. Here is a template:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;HPC_nodes&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sim_memory&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;300G&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sim_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;20:00:00&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;account_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sam&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;palace_location&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/scratch/project/palace-sqdlab/Palace-Project/palace/build/bin/palace-x86_64.bin&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;input_dir&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;/scratch/project/palace-sqdlab/inputFiles/&quot;</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<section id="general-functions">
+<h3>General functions<a class="headerlink" href="#general-functions" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><cite>add_metallic</cite></p></li>
+<li><p><cite>add_ground_plane</cite></p></li>
+<li><p><cite>enforce_full_3D_simulation</cite></p></li>
+<li><p><cite>set_xBoundary_as_proportion</cite> (note it uses that percentage on both sides. So 0.1 on a 1mm chip means 100um on negative side and 100um on positive side)</p></li>
+<li><p><cite>set_yBoundary_as_proportion</cite></p></li>
+<li><p><cite>set_zBoundary_as_proportion</cite></p></li>
+<li><p><cite>set_xBoundary_as_absolute</cite></p></li>
+<li><p><cite>set_yBoundary_as_absolute</cite></p></li>
+<li><p><cite>set_zBoundary_as_absolute</cite></p></li>
+<li><p><cite>fine_mesh_features</cite></p></li>
+<li><p><cite>fine_mesh_along_path</cite> (QM)</p></li>
+<li><p><cite>fine_mesh_in_rectangle</cite></p></li>
+<li><p><cite>fine_mesh_components</cite> (QM)</p></li>
+<li><p><cite>enable_mesh_refinement</cite></p></li>
+<li><p><cite>prepare_simulation</cite></p></li>
+<li><p><cite>set_local_output_subdir</cite></p></li>
+<li><p><cite>run</cite></p></li>
+<li><p><cite>retrieve_data</cite></p></li>
+<li><p><cite>retrieve_simulation_sizes</cite></p></li>
+<li><p><cite>retrieve_simulation_sizes_from_file</cite> (Static)</p></li>
+<li><p><cite>open_mesh_gmsh</cite></p></li>
+</ul>
+</section>
+<section id="rf-eigenmode-and-frequency-driven">
+<h3>RF (Eigenmode and Frequency-Driven)<a class="headerlink" href="#rf-eigenmode-and-frequency-driven" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><cite>create_port_2_conds</cite> (QM)</p></li>
+<li><p><cite>create_port_JosephsonJunction</cite> (QM)</p></li>
+<li><p><cite>create_port_CPW_on_Launcher</cite> (QM)</p></li>
+<li><p><cite>create_port_CPW_on_Route</cite> (QM)</p></li>
+<li><p><cite>create_port_CPW_via_edge_point</cite></p></li>
+<li><p><cite>create_CPW_feed_Uclip_on_Launcher</cite> (QM)</p></li>
+<li><p><cite>create_CPW_feed_Uclip_on_Route</cite> (QM)</p></li>
+<li><p><cite>set_port_impedance</cite></p></li>
+<li><p><cite>create_waveport_on_boundary</cite></p></li>
+<li><p><cite>setup_EPR_interfaces</cite></p></li>
+<li><p><cite>add_kinetic_inductance</cite></p></li>
+<li><p><cite>set_farfield</cite></p></li>
+</ul>
+</section>
+<section id="eigenmode">
+<h3>Eigenmode<a class="headerlink" href="#eigenmode" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><cite>set_freq_search</cite></p></li>
+<li><p><cite>retrieve_field_plots</cite></p></li>
+<li><p><cite>retrieve_EPR_data</cite></p></li>
+<li><p><cite>retrieve_EPR_data_from_file</cite></p></li>
+<li><p><cite>retrieve_mode_port_EPR</cite></p></li>
+<li><p><cite>retrieve_mode_port_EPR_from_file</cite></p></li>
+<li><p><cite>calculate_hamiltonian_parameters_EPR</cite></p></li>
+<li><p><cite>calculate_hamiltonian_parameters_EPR_from_files</cite></p></li>
+</ul>
+</section>
+<section id="frequency-driven">
+<h3>Frequency-Driven<a class="headerlink" href="#frequency-driven" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><cite>set_port_excitation</cite></p></li>
+<li><p><cite>set_freq_values</cite></p></li>
+<li><p><cite>add_surface_current_source_region</cite></p></li>
+<li><p><cite>retrieve_data_from_file</cite></p></li>
+<li><p><cite>get_waveport_modes</cite></p></li>
+<li><p><cite>get_waveport_modes_from_file</cite></p></li>
+</ul>
+</section>
+<section id="capacitance-matrix">
+<h3>Capacitance Matrix<a class="headerlink" href="#capacitance-matrix" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><cite>display_conductor_indices</cite></p></li>
+<li><p><cite>calc_params_floating_Transmon</cite></p></li>
+<li><p><cite>calc_params_floating_Transmon_from_files</cite></p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../examples/PVD_simulation.html" class="btn btn-neutral float-left" title="PVD simulation example" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="instpalaceunix.html" class="btn btn-neutral float-right" title="Installing AWS Palace on Ubuntu and Mac" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

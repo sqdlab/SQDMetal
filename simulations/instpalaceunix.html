@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installing AWS Palace on Ubuntu and Mac &mdash; Project name not set  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Installing AWS Palace on Windows via WSL" href="isntpalacewsl.html" />
+    <link rel="prev" title="Simulations using PALACE" href="simpalace.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Project name not set
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="simpalace.html">Simulations using Palace</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="simpalace.html#installation">Installation</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Ubuntu/Mac</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#ubuntu">Ubuntu</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#mac">Mac</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#recommended-add-ons">Recommended add-ons</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#old-notes-left-in-case-of-issues-to-be-removed-in-future">OLD NOTES LEFT IN CASE OF ISSUES - TO BE REMOVED IN FUTURE</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="isntpalacewsl.html">Windows via WSL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="instpalaceapp.html">Apptainer container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#usage-local-pc">Usage (local PC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#usage-hpc">Usage (HPC)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simpalace.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Project name not set</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="simpalace.html">Simulations using PALACE</a></li>
+      <li class="breadcrumb-item active">Installing AWS Palace on Ubuntu and Mac</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/simulations/instpalaceunix.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installing-aws-palace-on-ubuntu-and-mac">
+<h1>Installing AWS Palace on Ubuntu and Mac<a class="headerlink" href="#installing-aws-palace-on-ubuntu-and-mac" title="Link to this heading"></a></h1>
+<p>In terminal, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>update
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>file<span class="w"> </span>bzip2<span class="w"> </span>ca-certificates<span class="w"> </span>g++<span class="w"> </span>gcc<span class="w"> </span>gfortran<span class="w"> </span>git<span class="w"> </span>gzip<span class="w"> </span>lsb-release<span class="w"> </span>patch<span class="w"> </span>python3<span class="w"> </span>tar<span class="w"> </span>unzip<span class="w"> </span>xz-utils<span class="w"> </span>zstd
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>libxft-dev<span class="w"> </span>libglu1-mesa<span class="w"> </span>libxi-dev<span class="w"> </span>libxmu-dev<span class="w"> </span>libglu1-mesa-dev<span class="w"> </span>build-essential
+</pre></div>
+</div>
+<p>Make a new directory where we clone all repositories:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~
+mkdir<span class="w"> </span>repo
+<span class="nb">cd</span><span class="w"> </span>repo
+</pre></div>
+</div>
+<p>Now clone the spack source and enter its environment here:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>--depth<span class="o">=</span><span class="m">2</span><span class="w"> </span>https://github.com/spack/spack.git
+.<span class="w"> </span>spack/share/spack/setup-env.sh
+</pre></div>
+</div>
+<p>Update spack compilers:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>compiler<span class="w"> </span>find
+</pre></div>
+</div>
+<p>Ensure that it says gcc is at least above version 11.</p>
+<p>Clone palace and <a class="reference external" href="https://github.com/awslabs/palace/issues/360#issuecomment-2874057931">install using spack</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/awslabs/palace.git
+</pre></div>
+</div>
+<p>From here, we go through the Palace installation process for <a class="reference internal" href="#ubuntu"><span class="std std-ref">Ubuntu</span></a> and <a class="reference internal" href="#mac"><span class="std std-ref">Mac</span></a> separately, before covering the <a class="reference internal" href="#recommended-add-ons"><span class="std std-ref">installation of Paraview and Pyvista</span></a>.</p>
+<section id="ubuntu">
+<h2>Ubuntu<a class="headerlink" href="#ubuntu" title="Link to this heading"></a></h2>
+<p>Now the idea is that we create a local virtual environment in spack called <cite>spack-env</cite>, add local palace install as a repo in it and concretize+install. Note that you can skip the creation and activation of the environment, but you may run into issues due to dependecies if you have used spack previously. This is done via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>./spack/share/spack/setup-env.sh
+spack<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>./palace/spack_repo/local
+spack<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>spack-env
+spack<span class="w"> </span>env<span class="w"> </span>activate<span class="w"> </span>spack-env
+spack<span class="w"> </span>add<span class="w"> </span>local.palace@develop
+</pre></div>
+</div>
+<p>Now concretize+install via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>concretize<span class="w"> </span>-f
+spack<span class="w"> </span>install<span class="w"> </span>--only-concrete
+find<span class="w"> </span>-name<span class="w"> </span>palace*
+</pre></div>
+</div>
+<p>The second command will find the path of the Palace binary. Basically it’s somewhere like (remember to add the <cite>~/</cite> for the full absolute path):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
+</pre></div>
+</div>
+<p>Executing the above block should show the command-line switches required for Palace.</p>
+</section>
+<section id="mac">
+<h2>Mac<a class="headerlink" href="#mac" title="Link to this heading"></a></h2>
+<p>Note that the exact process for Mac installation changes depending on your chip and operating system. The method documented here has been tested on a M5 MacBook with Tahoe 26.1 installed.</p>
+<p>To install Palace, ope the terminal from the directory containing <code class="docutils literal notranslate"><span class="pre">/spack</span></code>, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>./spack/share/spack/setup-env.sh
+spack<span class="w"> </span>install<span class="w"> </span>veclibfort
+spack<span class="w"> </span>install<span class="w"> </span>palace<span class="w"> </span>+mumps<span class="w"> </span>+slepc<span class="w"> </span>^blas<span class="o">=</span>veclibfort<span class="w"> </span>^lapack<span class="o">=</span>veclibfort
+</pre></div>
+</div>
+<p>The first line activates <code class="docutils literal notranslate"><span class="pre">spack</span></code> in your shell. The second line installs a wrapper for the builtin MacOS Accelerator (which can replace BLAS and LAPACK). The third line initiates a full Palace installation that is suitable for arm64 MacBooks.</p>
+<p>After the installation is complete (roughly 30 mins) the Palace binary can be found in <code class="docutils literal notranslate"><span class="pre">spack/opt/spack/darwin-m1/palace-0.14.0-aijcrhkhxpjki7lbvx336dbzvwh52enp/bin/palace</span></code>.</p>
+</section>
+<section id="recommended-add-ons">
+<h2>Recommended add-ons<a class="headerlink" href="#recommended-add-ons" title="Link to this heading"></a></h2>
+<p>Optionally, install <a class="reference external" href="https://www.paraview.org/">Paraview</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>paraview
+</pre></div>
+</div>
+<p>If this fails (e.g. some dependency clash), use its <cite>flatpak</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>flatpak
+flatpak<span class="w"> </span>remote-add<span class="w"> </span>--if-not-exists<span class="w"> </span>flathub<span class="w"> </span>https://dl.flathub.org/repo/flathub.flatpakrepo
+sudo<span class="w"> </span>flatpak<span class="w"> </span>install<span class="w"> </span>flathub<span class="w"> </span>org.paraview.ParaView
+</pre></div>
+</div>
+<p>Finally, in the Python virtual environment, if it has not been already installed, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pyvista
+</pre></div>
+</div>
+<p>This is required to open the simulation field data via the API functions.</p>
+</section>
+<section id="old-notes-left-in-case-of-issues-to-be-removed-in-future">
+<h2>OLD NOTES LEFT IN CASE OF ISSUES - TO BE REMOVED IN FUTURE<a class="headerlink" href="#old-notes-left-in-case-of-issues-to-be-removed-in-future" title="Link to this heading"></a></h2>
+<p>This method has been tested to work on Kubuntu. Ensure GIT has been installed via:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`bash</span>
+<span class="pre">sudo</span> <span class="pre">apt-get</span> <span class="pre">install</span> <span class="pre">git</span>
+<span class="pre">`</span></code></p>
+<p>Now install the <a class="reference external" href="https://spack-tutorial.readthedocs.io/en/latest/tutorial_basics.html">Spack Package Manager</a> by running in console (in some directory of preference - e.g. somewhere in the home directory):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>~/
+git<span class="w"> </span>clone<span class="w"> </span>-c<span class="w"> </span>feature.manyFiles<span class="o">=</span><span class="nb">true</span><span class="w"> </span>--depth<span class="o">=</span><span class="m">2</span><span class="w"> </span>https://github.com/spack/spack.git
+<span class="nb">cd</span><span class="w"> </span>~/spack
+.<span class="w"> </span>share/spack/setup-env.sh
+</pre></div>
+</div>
+<p>On MacOS, you will have to install and setup <a class="reference external" href="https://github.com/LLNL/sundials">Sundials</a> before installing Palace. This is done by running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>install<span class="w"> </span>sundials
+<span class="nb">export</span><span class="w"> </span><span class="nv">SUNDIALS_DIR</span><span class="o">=</span><span class="k">$(</span>spack<span class="w"> </span>location<span class="w"> </span>-i<span class="w"> </span>sundials<span class="k">)</span>
+</pre></div>
+</div>
+<p>Now run (<cite>&#64;develop</cite> tag is required to get the latest version, i.e, 0.13 or newer):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>install<span class="w"> </span>palace@develop
+find<span class="w"> </span>-name<span class="w"> </span>palace*
+</pre></div>
+</div>
+<p>The second command will find the path of the Palace binary. Basically it’s somewhere like (remember to add the <cite>~/</cite> for the full absolute path):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>./spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace
+</pre></div>
+</div>
+<p>Executing the above block should show the command-line switches required for Palace.</p>
+<p>Optionally, install <a class="reference external" href="https://www.paraview.org/">Paraview</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>paraview
+</pre></div>
+</div>
+<p>If this fails (e.g. some dependency clash), use its <cite>flatpak</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>flatpak
+flatpak<span class="w"> </span>remote-add<span class="w"> </span>--if-not-exists<span class="w"> </span>flathub<span class="w"> </span>https://dl.flathub.org/repo/flathub.flatpakrepo
+sudo<span class="w"> </span>flatpak<span class="w"> </span>install<span class="w"> </span>flathub<span class="w"> </span>org.paraview.ParaView
+</pre></div>
+</div>
+<p>Finally, in the Python virtual environment, if it has not been already installed, run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pyvista
+</pre></div>
+</div>
+<p>This is required to open the simulation field data via the API functions.</p>
+<p><strong>Troubleshooting</strong></p>
+<p>Errors can appear after updating the Linux system. Simply reinstall palace as above (starting from the <code class="docutils literal notranslate"><span class="pre">setup-env.sh</span></code> command). However, first run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>rm<span class="w"> </span>-r<span class="w"> </span>.spack/
+</pre></div>
+</div>
+<p>Alternatively, <a class="reference external" href="https://stackoverflow.com/questions/67899951/change-version-of-gcc-which-does-not-support-compiling-c-programs-using-the-co">edit the compilers.yaml file</a> to the latest GCC version.</p>
+<p>If OpenMPI processes fail to spawn (i.e. Palace does not start and/or throws the error <code class="docutils literal notranslate"><span class="pre">local</span> <span class="pre">rank</span> <span class="pre">failed</span>&#160;&#160; <span class="pre">--&gt;</span> <span class="pre">Returned</span> <span class="pre">value</span> <span class="pre">Not</span> <span class="pre">found</span> <span class="pre">(-13)</span> <span class="pre">instead</span> <span class="pre">of</span> <span class="pre">ORTE_SUCCESS</span></code>), try running the following <cite>command in terminal &lt;https://askubuntu.com/questions/730/how-do-i-set-environment-variables&gt;`__</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PMIX_MCA_gds</span><span class="o">=</span><span class="nb">hash</span>
+</pre></div>
+</div>
+<p>In the case of a Jupyter Notebook (i.e. running the commands in <em>SQDMetal</em>), add this to the initialisation cell:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+</pre></div>
+</div>
+<p>If it throws an error for <cite>libCEED</cite> (see <a class="reference external" href="https://github.com/awslabs/palace/issues/257">here</a> for details) or an error like <cite>SUNDIALS: Core: *** NOT FOUND ***</cite>, first open the file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nano<span class="w"> </span>~/spack/var/spack/repos/builtin/packages/palace/package.py
+</pre></div>
+</div>
+<p>Edit the line which says <cite>depends_on(“libxsmm&#64;main”)</cite> to <cite>depends_on(“libxsmm&#64;=main”)</cite> (note the <cite>=</cite> sign). Then add <cite>depends_on(“sundials”)</cite> after the line <cite>depends_on(“eigen”)</cite>. Now proceed with the installation by running the palace installation command once more.</p>
+<p><strong>Upgrading</strong></p>
+<p>Delete all traces of <cite>spack</cite> via:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>rm<span class="w"> </span>-r<span class="w"> </span>.spack/
+sudo<span class="w"> </span>rm<span class="w"> </span>-r<span class="w"> </span>spack/
+</pre></div>
+</div>
+<p>Then start from the beginning to reinstall to the latest version of <cite>spack</cite> and subsequently the latest version of <cite>palace</cite>.</p>
+<p><strong>Installing Palace v0.13</strong>
+As of 18 Feb, 2024, Palace v0.13 is not available by default to install in <cite>spack</cite>. To install Palace v0.13.0, you need to edit the <cite>spack</cite> palace installation information contained in <cite>package.py</cite>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>edit<span class="w"> </span>palace
+</pre></div>
+</div>
+<p>Add the following line (where the Palace versions are listed) to add v0.13.0 to available installs:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>version<span class="o">(</span><span class="s2">&quot;0.13.0&quot;</span>,<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="s2">&quot;v0.13.0&quot;</span>,<span class="w"> </span><span class="nv">commit</span><span class="o">=</span><span class="s2">&quot;a61c8cbe0cacf496cde3c62e93085fae0d6299ac&quot;</span><span class="o">)</span>
+</pre></div>
+</div>
+<p>Save the package.py file for the Palace install, and then run</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>install<span class="w"> </span>palace@0.13
+</pre></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="simpalace.html" class="btn btn-neutral float-left" title="Simulations using PALACE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="isntpalacewsl.html" class="btn btn-neutral float-right" title="Installing AWS Palace on Windows via WSL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
