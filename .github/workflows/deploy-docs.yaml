@@ -16,6 +16,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Install Pandoc
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pandoc
+
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
@@ -25,8 +30,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e . 
-        pip install sphinx sphinx_rtd_theme nbsphinx  # Add any other dependencies you need here
-        pip install pypandoc
+        pip install sphinx sphinx_rtd_theme nbsphinx
 
     - name: Build the documentation
       run: |
