@@ -45,6 +45,46 @@ Note the line-spacing required before the first outlined dictionary argument.
 
 It is recommended that one installs the extension `reStructuredText` by `lextudio` if using *VSCode*. To write in *reStructured Text* (RST), see the primer [here](https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html) and the tips below:
 
+### Sectioning
+
+Use the underlining to create sections, but don't nest too much:
+
+```rst
+Main Title
+==========
+
+Some text
+
+Subsection
+----------
+
+More text
+
+Subsection
+~~~~~~~~~~
+
+Even more text
+
+```
+
+### Linking within document
+
+Because the `sphinx.ext.autosectionlabel` is enabled, the link can be done via the title alone:
+
+```rst
+See :ref:`A Plain Title`.
+
+With :ref:`custom text <Another title>`
+```
+
+### Linking to other documents
+
+Use the path (can be relative or from source):
+
+```rst
+Look :doc:`here <simpalacedv>`
+```
+
 ### Links to functions
 
 To link to other functions:
@@ -75,4 +115,28 @@ Here is a link `Link text <https://www.example.com/>`__
 
 Note that it must have a space before the `<` and there must be two trailing underscores `__`
 
+
+### Code blocks
+
+Code blocks look like (**note the mandatory line-space**):
+
+```rst
+.. code-block:: python
+
+    np.array([3,1])
+```
+
+while inline code requires double ticks:
+
+```rst
+Here is some ``parameter`` written down.
+```
+
+### LaTeX
+
+Use math blocks:
+
+```rst
+:math:`\lambda/2*e^x`
+```
 

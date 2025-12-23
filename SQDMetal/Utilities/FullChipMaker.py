@@ -410,7 +410,7 @@ class MultiDieChip:
             design,
             export_type=export_type,
             print_statements=print_all_infos,
-            threshold=export_threshold,
+            fuse_threshold=export_threshold,
             precision=export_threshold,
         )
 
