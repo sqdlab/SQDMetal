@@ -1,5 +1,6 @@
 # SQDMetal
 
+[![Documentation](https://img.shields.io/badge/Documentation-blue)](https://sqdlab.github.io/SQDMetal/)
 [![UnitTests](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml/badge.svg)](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml)
 
 Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [Qiskit-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
@@ -12,7 +13,7 @@ Tools to aid in simulating and fabricating superconducting quantum devices. The 
 
 There are two classes of documentation provided for this stack:
 
-- [User documentation](docs/User/Readme.md)
+- [User documentation](https://sqdlab.github.io/SQDMetal/)
 - [Developer documentation](docs/Developer/Readme.md)
 
 ## Installation instructions
