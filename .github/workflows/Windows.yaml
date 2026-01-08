@@ -39,8 +39,7 @@ jobs:
         run: |
           # conda activate base      # Activate base environment
           conda init powershell
-          conda env create -n sqdmetal_env -f env_windows.yml  # Create environment
-          # conda create -n sqdmetal_env python=3.11  # Force Python 3.10
+          conda create -n sqdmetal_env python=3.12  # Force Python 3.12
           conda info --envs
           # conda env update -n sqdmetal_env --file env_windows.yml
           # conda activate sqdmetal_env  # Activate the environment
