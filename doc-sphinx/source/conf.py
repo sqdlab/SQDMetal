@@ -27,6 +27,11 @@ autodoc_default_options = {
     'show-inheritance': True,  # Show inheritance for classes
 }
 
+autodoc_mock_imports = [
+    "PyQt5",
+    "PySide6"
+]
+
 # Autosummary settings
 # autosummary_imported_members = True  # Include members of imported modules
 
