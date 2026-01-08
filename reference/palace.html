@@ -17,6 +17,8 @@
       <script src="../_static/doctools.js?v=9bcbadda"></script>
       <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -68,6 +70,44 @@
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#simulations-using-aws-palace">Simulations using AWS Palace</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Palace Simulations</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="palacebase.html">Palace Simulation Base classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Capacitance_Simulation</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">HPC_parent_simulation_dir</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon"><code class="docutils literal notranslate"><span class="pre">calc_params_floating_Transmon()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files"><code class="docutils literal notranslate"><span class="pre">calc_params_floating_Transmon_from_files()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.display_conductor_indices"><code class="docutils literal notranslate"><span class="pre">display_conductor_indices()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.prepare_simulation"><code class="docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.simPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">simPC_parent_simulation_dir</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Eigenmode_Simulation</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR"><code class="docutils literal notranslate"><span class="pre">calculate_hamiltonian_parameters_EPR()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files"><code class="docutils literal notranslate"><span class="pre">calculate_hamiltonian_parameters_EPR_from_files()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data"><code class="docutils literal notranslate"><span class="pre">plot_fields_with_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files"><code class="docutils literal notranslate"><span class="pre">plot_fields_with_data_from_files()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_field_plots"><code class="docutils literal notranslate"><span class="pre">retrieve_field_plots()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data"><code class="docutils literal notranslate"><span class="pre">retrieve_interface_EPR_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_interface_EPR_data_from_file()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR"><code class="docutils literal notranslate"><span class="pre">retrieve_mode_port_EPR()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_mode_port_EPR_from_file()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.set_freq_search"><code class="docutils literal notranslate"><span class="pre">set_freq_search()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.simPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">simPC_parent_simulation_dir</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Driven_Simulation</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.add_surface_current_source_region"><code class="docutils literal notranslate"><span class="pre">add_surface_current_source_region()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes"><code class="docutils literal notranslate"><span class="pre">get_waveport_modes()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes_from_file"><code class="docutils literal notranslate"><span class="pre">get_waveport_modes_from_file()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_data_from_file()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_freq_values"><code class="docutils literal notranslate"><span class="pre">set_freq_values()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_port_excitation"><code class="docutils literal notranslate"><span class="pre">set_port_excitation()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="palacevis.html">Palace Visualisation</a></li>
@@ -109,22 +149,1025 @@
 </div>
 <p>All the Palace simulation classes <a class="reference internal" href="palacebase.html#palace-base"><span class="std std-ref">inherit</span></a>:</p>
 <ul class="simple">
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></p></li>
-<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code> (which inherits the above base class) in the case of RF simulations.</p></li>
+<li><p><a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base" title="SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a></p></li>
+<li><p><a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a> (which inherits the above base class) in the case of RF simulations.</p></li>
 </ul>
 <p>Thus, there refer to these classes for common interface functions.</p>
 <p>To run capacitance simulations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Capacitance_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Capacitance_Simulation</span>
 </pre></div>
 </div>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Capacitance_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base" title="SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a></p>
+<p>Base class for PALACE simulation classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshing</strong> (<em>str</em>) – The meshing engine to use. It can be either ‘GMSH’ or ‘COMSOL’ with the latter
+requiring a local COMSOL installation.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – Either ‘PC’ to run locally or ‘HPC’ to just generate the scripts to be run on
+a cluster/computer later.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – <p>One must supply <strong>one</strong> of these keyword arguments depending on the input format of
+the design to simulate:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'metal_design'</span></code> (QDesign):</dt><dd><p>The Qiskit-Metal design object to simulate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gds_design'</span></code> (<cite>str</cite>):</dt><dd><p>Path to the GDS file with the design to simulate</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Additional options which include those of the daughter classes and:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'dielectric_material'</span></code> (<cite>str</cite>):</dt><dd><p>Name of the dielectric to use on the substrate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fillet_resolution'</span></code> (<cite>float</cite>):</dt><dd><p>All curved sections of paths (e.g. a CPW line) will be discretised into line
+segments. This value is the number of such segments observed over a 90° arc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default minimum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default maximum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements remain at mesh_min.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements begin to be set at mesh_max.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which elements in a given layer are simplified. That
+is, adjacent vertices that are closer than this value are simplified into a single vertex.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fuse_threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+this value are effectively bridged together so that there are no seams etc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'simplify_edge_min_angle_deg'</span></code> (<cite>float</cite>):</dt><dd><p>The default simplification used to delete unnecessary vertices when they are adjacent
+and collinear. It weights them based on the distance from the central vertex. For
+example, consider three vertices ABC. If AB and BC are equidistant and the angle ABC
+is less than the supplied value, then B is removed as it is considered collinear. If
+the length of AB is greater than BC, then the ratio of the lengths R is multiplied by
+the angle ABC before checking for this threshold. That is, if there is a genuine sharp
+feature, it is not simplified. This is mostly designed for curved edges that may have
+an unnecessary number of vertices.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_verbosity'</span></code> (<cite>int</cite>):</dt><dd><p>The default level of messages to print from GMSH. The levels symbolised by the integers
+are: Nothing (0), Errors (1), Warnings (2), Direct (3), Information (4), Status (5),
+Debug (99). The verbosity of the messages increase with the listed levels.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_dist_func_discretisation'</span></code> (<cite>int</cite>):</dt><dd><p>When a path or polygon is given for a fine-mesh field, GMSH needs to compute distances
+from these 1D or 2D regions in order to compute the mesh element size at a given location.
+Thus, it must be able to numerically approximate these lines/polygons. It does so by chopping
+every line-segment or polygon into smaller portions given by this supplied value. Note
+that making this too large will make the generation of the mesh slower as it will take
+longer to compute all the mesh field distances.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_mode'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, one may run it via a ‘local’ installation (e.g. Mac-OS,
+Linux etc.) or ‘wsl’ (e.g. Windows).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_dir'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, the location of the Palace binary must be supplied so that
+SQDMetal can call it directly.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_repo_directory'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace in WSL (i.e. Windows), the location of the cloned repository (inside
+the WSL VM) needs to be supplied unless it is in the default ‘~/repo’ folder.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'comsol_meshing'</span></code> (<cite>str</cite>):</dt><dd><p>The default meshing size to use if using COMSOL to mesh the simulation. Acceptable values
+are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, ‘Normal’, ‘Coarse’, ‘Coarser’,
+‘Extra coarse’ or ‘Extremely coarse’.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed PALACE_Model_Base object.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir">
+<span class="sig-name descname"><span class="pre">HPC_parent_simulation_dir</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'C:/PALACE_Simulations/'</span></em><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon">
+<span class="sig-name descname"><span class="pre">calc_params_floating_Transmon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon" title="Link to this definition"></a></dt>
+<dd><p>Class method mirroring <a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files" title="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files"><code class="xref py py-func docutils literal notranslate"><span class="pre">calc_params_floating_Transmon_from_files()</span></code></a> (without the <code class="docutils literal notranslate"><span class="pre">directory</span></code> parameter as it is inferred from the current simulation)</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_params_floating_Transmon_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacitance_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conductor_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_all_capacitances</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_J</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0_feedline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files" title="Link to this definition"></a></dt>
+<dd><p>Static method to calculate key circuit parameters (chi, kappa, g, etc.) for a floating
+Transmon qubit using the simulated capacitance matrix.</p>
+<p>The design can be either an isolated floating transmon or a floating transmon coupled to a
+resonator, depending on the number of conductors in the capacitance matrix.</p>
+<dl class="simple">
+<dt>There are three supported cases:</dt><dd><dl class="simple">
+<dt>3 conductors:</dt><dd><p>isolated floating transmon
+(pad 1, pad 2, ground)</p>
+</dd>
+<dt>4 conductors:</dt><dd><p>floating transmon coupled to resonator
+(ground, pad 1, pad 2, resonator)</p>
+</dd>
+<dt>5 conductors:</dt><dd><p>floating transmon coupled to resonator-feedline
+(ground, pad 1, pad 2, resonator, feedline)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<em>str</em>) – Directory containing Palace output files.</p></li>
+<li><p><strong>qubit_freq</strong> (<em>float</em>) – (Defaults to None) Qubit freqeuncy in Hertz (Hz), used to calculate parameters.</p></li>
+<li><p><strong>res</strong> (<a class="reference internal" href="qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><em>SQDMetal.Utilities.QubitDesigner.ResonatorBase</em></a>) – (Defaults to None) A resonator object (<a class="reference internal" href="qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a>) is used
+for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).</p></li>
+<li><p><strong>capacitance_matrix</strong> (<em>np.ndarray</em>) – (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.</p></li>
+<li><p><strong>conductor_indeces</strong> (<em>dict</em>) – <dl class="simple">
+<dt>(Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix.</dt><dd><p>If None, the defaults are set to: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">'ground':</span> <span class="pre">0,</span> <span class="pre">'pad1':</span> <span class="pre">1,</span> <span class="pre">'pad2':</span> <span class="pre">2,</span> <span class="pre">'res':</span> <span class="pre">3,</span> <span class="pre">'feed':</span> <span class="pre">4</span> <span class="pre">}</span></code></p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>print_all_capacitances</strong> (<em>bool</em>) – (Defaults to False) If True, prints all capacitances (i.e. pad1-to-ground, pad2-to-ground, etc.).</p></li>
+<li><p><strong>C_J</strong> (<em>float</em>) – (Defaults to 0) Optional capacitance of the Josephson junction.</p></li>
+<li><p><strong>Z0_feedline</strong> (<em>float</em>) – (Defaults to 50) Impedence of the feedline.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>params</strong> – Dictionary containing calculated parameters. Some entries may be “N/A” for the provided capacitance matrix.
+The dictionary is of the form:</p>
+<p>Energies and key circuit parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_C_GHz'</span></code> (<cite>float</cite>):
+Charging energy in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C_sigma_fF'</span></code> (<cite>float</cite>):
+Total capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'g_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit g-coupling in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'chi_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit <span class="math notranslate nohighlight">\(\chi\)</span> in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Delta_GHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit detuning in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'anh_MHz'</span></code> (<cite>float</cite>):
+Qubit anharmonicity in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_q_GHz'</span></code> (<cite>float</cite>):
+Qubit frequency in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'kappa_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit kappa (decay rate) in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'T1,p_ms'</span></code>” (<cite>float</cite>):
+Purcell-limited T1 in milliseconds (ms)</p></li>
+</ul>
+<p>Individual capacitances and inductances:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_ground_fF'</span></code> (<cite>float</cite>):
+C1 to ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_ground_fF'</span></code> (<cite>float</cite>):
+C2_ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_readout_fF'</span></code> (<cite>float</cite>):
+C1_readout capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_readout_fF'</span></code> (<cite>float</cite>):
+C2_readout capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_feed_fF'</span></code> (<cite>float</cite>):
+C1_feed capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_feed_fF'</span></code> (<cite>float</cite>):
+C2_feed capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C12_fF'</span></code> (<cite>float</cite>):
+C12 capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Cres_fF'</span></code> (<cite>float</cite>):
+Cres capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Lres_pH'</span></code> (<cite>float</cite>):
+Resonator inductance in picohenries (pH)</p></li>
+</ul>
+<p>Junction parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'L_J_nH'</span></code> (<cite>float</cite>):
+Inductance of Josephson junction in nanohenries (nH)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_J_GHz'</span></code> (<cite>float</cite>):
+Josephson energy in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'I_C_nA'</span></code> (<cite>float</cite>):
+Critical current of Josephson junction in nanoamperes (nA)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_J/E_C'</span></code> (<cite>float</cite>):
+E_J/E_C ratio required to test if qubit is in transmon regime.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.default_user_options">
+<span class="sig-name descname"><span class="pre">default_user_options</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'HPC_Parameters_JSON':</span> <span class="pre">'',</span> <span class="pre">'solns_to_save':</span> <span class="pre">-1,</span> <span class="pre">'solver_maxits':</span> <span class="pre">100,</span> <span class="pre">'solver_order':</span> <span class="pre">2,</span> <span class="pre">'solver_tol':</span> <span class="pre">1e-08}</span></em><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.default_user_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.display_conductor_indices">
+<span class="sig-name descname"><span class="pre">display_conductor_indices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.display_conductor_indices" title="Link to this definition"></a></dt>
+<dd><p>Plots a coloured visualisation of the metallic conductors and their corresponding row/column indices of the capacitance matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>save</strong> (<em>bool</em><em>, </em><em>optional</em>) – (Defaults to False) Choose whether or not to save the generated plot.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Matplotlib fig of the conductor visualisation.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.prepare_simulation">
+<span class="sig-name descname"><span class="pre">prepare_simulation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.prepare_simulation" title="Link to this definition"></a></dt>
+<dd><p>Creates and saves the GMSH (.msh) and Palace configuration file (.json).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.retrieve_data">
+<span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.retrieve_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieves output data from the capacitance simulation.</p>
+<p>Creates and saves plots of conductor indices (terminal_indices.png), field distribution results (cond1_V.png), and mesh (mesh.png)</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A NumPy array of the raw data.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.simPC_parent_simulation_dir">
+<span class="sig-name descname"><span class="pre">simPC_parent_simulation_dir</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/experiment/PALACE/Simulations/input'</span></em><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.simPC_parent_simulation_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <p>To run RF eigenmode simulations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Eigenmode_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Eigenmode_Simulation</span>
 </pre></div>
 </div>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Eigenmode_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a></p>
+<p>Base class for PALACE simulation classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshing</strong> (<em>str</em>) – The meshing engine to use. It can be either ‘GMSH’ or ‘COMSOL’ with the latter
+requiring a local COMSOL installation.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – Either ‘PC’ to run locally or ‘HPC’ to just generate the scripts to be run on
+a cluster/computer later.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – <p>One must supply <strong>one</strong> of these keyword arguments depending on the input format of
+the design to simulate:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'metal_design'</span></code> (QDesign):</dt><dd><p>The Qiskit-Metal design object to simulate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gds_design'</span></code> (<cite>str</cite>):</dt><dd><p>Path to the GDS file with the design to simulate</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Additional options which include those of the daughter classes and:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'dielectric_material'</span></code> (<cite>str</cite>):</dt><dd><p>Name of the dielectric to use on the substrate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fillet_resolution'</span></code> (<cite>float</cite>):</dt><dd><p>All curved sections of paths (e.g. a CPW line) will be discretised into line
+segments. This value is the number of such segments observed over a 90° arc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default minimum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default maximum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements remain at mesh_min.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements begin to be set at mesh_max.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which elements in a given layer are simplified. That
+is, adjacent vertices that are closer than this value are simplified into a single vertex.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fuse_threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+this value are effectively bridged together so that there are no seams etc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'simplify_edge_min_angle_deg'</span></code> (<cite>float</cite>):</dt><dd><p>The default simplification used to delete unnecessary vertices when they are adjacent
+and collinear. It weights them based on the distance from the central vertex. For
+example, consider three vertices ABC. If AB and BC are equidistant and the angle ABC
+is less than the supplied value, then B is removed as it is considered collinear. If
+the length of AB is greater than BC, then the ratio of the lengths R is multiplied by
+the angle ABC before checking for this threshold. That is, if there is a genuine sharp
+feature, it is not simplified. This is mostly designed for curved edges that may have
+an unnecessary number of vertices.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_verbosity'</span></code> (<cite>int</cite>):</dt><dd><p>The default level of messages to print from GMSH. The levels symbolised by the integers
+are: Nothing (0), Errors (1), Warnings (2), Direct (3), Information (4), Status (5),
+Debug (99). The verbosity of the messages increase with the listed levels.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_dist_func_discretisation'</span></code> (<cite>int</cite>):</dt><dd><p>When a path or polygon is given for a fine-mesh field, GMSH needs to compute distances
+from these 1D or 2D regions in order to compute the mesh element size at a given location.
+Thus, it must be able to numerically approximate these lines/polygons. It does so by chopping
+every line-segment or polygon into smaller portions given by this supplied value. Note
+that making this too large will make the generation of the mesh slower as it will take
+longer to compute all the mesh field distances.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_mode'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, one may run it via a ‘local’ installation (e.g. Mac-OS,
+Linux etc.) or ‘wsl’ (e.g. Windows).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_dir'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, the location of the Palace binary must be supplied so that
+SQDMetal can call it directly.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_repo_directory'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace in WSL (i.e. Windows), the location of the cloned repository (inside
+the WSL VM) needs to be supplied unless it is in the default ‘~/repo’ folder.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'comsol_meshing'</span></code> (<cite>str</cite>):</dt><dd><p>The default meshing size to use if using COMSOL to mesh the simulation. Acceptable values
+are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, ‘Normal’, ‘Coarse’, ‘Coarser’,
+‘Extra coarse’ or ‘Extremely coarse’.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed PALACE_Model_Base object.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR">
+<span class="sig-name descname"><span class="pre">calculate_hamiltonian_parameters_EPR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">modes_to_compare</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR" title="Link to this definition"></a></dt>
+<dd><p>Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method.
+This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the
+current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
+<a class="reference external" href="https://doi.org/10.1038/s41534-021-00461-8">npj Quantum Information (2021)7:131</a>. For stronlgy nonlinear systems (e.g. fluxonium) full numerical diagonlaization of the
+Hamiltonian should be performed.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>modes_to_compare</strong> (<em>list</em>) – Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].</p></li>
+<li><p><strong>print_output</strong> (<em>bool</em>) – (defaults to True) print out the results of the EPR calculations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>params</strong> – Dictionary containing the following data for each mode included in the comparison.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_modes_GHz'</span></code> (<cite>pd.Dataframe</cite>):
+The linearized resonant frequency for each mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_norms_GHz'</span></code> (<cite>pd.Dataframe</cite>):
+The dressed/renormalized frequencies.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'EPR'</span></code> (<cite>pd.Dataframe</cite>):
+The energy participation ratios.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Chi'</span></code> (<cite>pd.Dataframe</cite>):
+The dispersive shifts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Lamb'</span></code> (<cite>pd.Dataframe</cite>):
+The Lamb shifts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Detuning'</span></code> (<cite>pd.Dataframe</cite>):
+The differnce in frequency betweem the modes.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calculate_hamiltonian_parameters_EPR_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">modes_to_compare</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files" title="Link to this definition"></a></dt>
+<dd><p>Extracts Hamiltonian parameters from an eigenmode simulation using the EPR method.
+This function uses the results from a completed eigenmode simulation to calculate the Hamiltonian parameters using the energy participation ratio method. Note that the
+current implementation uses the formulas for the perturbative treatment (PT) of a weakly non-linear system (Transmon) as discussed in
+<a class="reference external" href="https://doi.org/10.1038/s41534-021-00461-8">npj Quantum Information (2021)7:131</a>. For stronlgy non-linear systems (e.g. fluxonium) full numerical diagonlaization of the
+Hamiltonian should be performed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<em>str</em>) – Directory where output files of the simulation are stored e.g. <code class="docutils literal notranslate"><span class="pre">'C:\Two_Transmon\outputFiles'</span></code>.</p></li>
+<li><p><strong>config_json_path</strong> (<em>str</em>) – Path for the json configuration file e.g. <code class="docutils literal notranslate"><span class="pre">'C:\Two_Transmon\Two_Transmon.json'</span></code>.</p></li>
+<li><p><strong>modes_to_compare</strong> (<em>list</em>) – Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].</p></li>
+<li><p><strong>print_output</strong> (<em>bool</em>) – (defaults to True) print out the results of the EPR calculations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>params</strong> – Dictionary containing the following data for each mode included in the comparison.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_modes_GHz'</span></code> (<cite>pd.Dataframe</cite>):
+The linearized resonant frequency for each mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_norms_GHz'</span></code> (<cite>pd.Dataframe</cite>):
+The dressed/renormalized frequencies.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'EPR'</span></code> (<cite>pd.Dataframe</cite>):
+The energy participation ratios.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Chi'</span></code> (<cite>pd.Dataframe</cite>):
+The dispersive shifts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Lamb'</span></code> (<cite>pd.Dataframe</cite>):
+The Lamb shifts.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Detuning'</span></code> (<cite>pd.Dataframe</cite>):
+The differnce in frequency betweem the modes.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.default_user_options">
+<span class="sig-name descname"><span class="pre">default_user_options</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'HPC_Parameters_JSON':</span> <span class="pre">'',</span> <span class="pre">'number_of_freqs':</span> <span class="pre">5,</span> <span class="pre">'solns_to_save':</span> <span class="pre">5,</span> <span class="pre">'solver_maxits':</span> <span class="pre">100,</span> <span class="pre">'solver_order':</span> <span class="pre">2,</span> <span class="pre">'solver_tol':</span> <span class="pre">1e-08,</span> <span class="pre">'starting_freq':</span> <span class="pre">5500000000.0}</span></em><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.default_user_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data">
+<span class="sig-name descname"><span class="pre">plot_fields_with_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_fields_with_data_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_postprocessing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data">
+<span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – This function does not take any arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pandas dataframe containing the data from the output of the eigenmode simulation inlcuding the real and imaginary
+components of the eigenfrequency and the quality factor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_field_plots">
+<span class="sig-name descname"><span class="pre">retrieve_field_plots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_field_plots" title="Link to this definition"></a></dt>
+<dd><p>Produces plots of the electric field distribution for the eigenmodes found in the simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – This function does not take any arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Matplotlib plot of the electric field for each eigenmode found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Plot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data">
+<span class="sig-name descname"><span class="pre">retrieve_interface_EPR_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the energy participation ratios for the lossy interfaces captured from a completed eigenmode simulation.
+The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
+respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><p><strong>epr_data</strong> – A list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.
+The dictionary for a found mode contains:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'Frequency'</span></code> (<cite>np.complex</cite>) : real and imaginary components of the mode frequency.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Q'</span></code> (<cite>float</cite>) : quality factor of mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'SA'</span></code> (<cite>dict</cite>) : lossy surface-air interface with a dict containing the participation ratio and quality factor.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'MS'</span></code> (<cite>dict</cite>) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'MA'</span></code> (<cite>dict</cite>) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">retrieve_interface_EPR_data_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">json_sim_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_directory</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the energy participation ratios for the lossy interfaces captured from a completed eigenmode simulation.
+The lossy interface energy participation ratios are extracted from the simulation output file, surface-Q.csv,
+respecively, to employ the energy participation ratio method to calculate Hamiltonian parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>json_sim_config</strong> (<em>str</em>) – The directory where the json config file is stored.</p></li>
+<li><p><strong>output_directory</strong> (<em>str</em>) – The directory where the simulations files are stored.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>Returns a list of dictionaries with each dictionary corresponding to a mode found in the eigenmode simulation.</p>
+<dl class="simple">
+<dt>The dictionary for a found mode contains:</dt><dd><ul class="simple">
+<li><p>Frequency (complex) : real and imaginary components of the mode frequency.</p></li>
+<li><p>Q (float) : quality factor of mode.</p></li>
+<li><p>SA (dict) : lossy surface-air interface with a dict containing the participation ratio and quality factor.</p></li>
+<li><p>MS (dict) : lossy metal-surface interface with a dict containing the participation ratio and quality factor.</p></li>
+<li><p>MA (dict) : lossy metal-air interface interface with a dict containing the participation ratio and quality factor.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR">
+<span class="sig-name descname"><span class="pre">retrieve_mode_port_EPR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
+The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
+respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – This function has no input arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dictionary containing the following data for each mode included in the comparison:</dt><dd><ul class="simple">
+<li><p>mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.</p></li>
+<li><p>eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">retrieve_mode_port_EPR_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the energy participation ratios and eigenmode frequencies from a completed eigenmode simulation.
+The energy participation ratios (EPRs) and eigenmode frequencies are extracted from the simulation output files port-EPR.csv and eig.csv,
+respectively, in order to use the energy participation ratio method to calculate Hamiltonian parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>output_directory</strong> (<em>str</em>) – The directory where the simulation files are stored.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A dictionary containing the following data for each mode included in the comparison:</dt><dd><ul class="simple">
+<li><p>mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.</p></li>
+<li><p>eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.set_freq_search">
+<span class="sig-name descname"><span class="pre">set_freq_search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_freq_Hz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_freq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.set_freq_search" title="Link to this definition"></a></dt>
+<dd><p>Sets the starting frequency and number of modes to search for for an eigenmode simulation.
+The eigenmode solver will look to find eigenmodes above this frequency. The number of eigenmodes the solver
+will search for above the minimum/starting frequency is also set by the user.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_freq_Hz</strong> (<em>float</em>) – Starting frequency from which the eigenmode solver will start searching for eigenmodes.</p></li>
+<li><p><strong>num_freq</strong> (<em>float</em>) – Number of eigenmodes which eigenmode solver will search for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>this function does not return any value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.simPC_parent_simulation_dir">
+<span class="sig-name descname"><span class="pre">simPC_parent_simulation_dir</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/experiment/PALACE/Simulations/input'</span></em><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.simPC_parent_simulation_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <p>To run RF frequency driven simulations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Frequency_Driven_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Driven_Simulation</span>
 </pre></div>
 </div>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PALACE_Driven_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base_RF" title="SQDMetal.PALACE.Model.PALACE_Model_Base_RF"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base_RF</span></code></a></p>
+<p>Base class for PALACE simulation classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshing</strong> (<em>str</em>) – The meshing engine to use. It can be either ‘GMSH’ or ‘COMSOL’ with the latter
+requiring a local COMSOL installation.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – Either ‘PC’ to run locally or ‘HPC’ to just generate the scripts to be run on
+a cluster/computer later.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – <p>One must supply <strong>one</strong> of these keyword arguments depending on the input format of
+the design to simulate:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'metal_design'</span></code> (QDesign):</dt><dd><p>The Qiskit-Metal design object to simulate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gds_design'</span></code> (<cite>str</cite>):</dt><dd><p>Path to the GDS file with the design to simulate</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Additional options which include those of the daughter classes and:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'dielectric_material'</span></code> (<cite>str</cite>):</dt><dd><p>Name of the dielectric to use on the substrate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fillet_resolution'</span></code> (<cite>float</cite>):</dt><dd><p>All curved sections of paths (e.g. a CPW line) will be discretised into line
+segments. This value is the number of such segments observed over a 90° arc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default minimum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default maximum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements remain at mesh_min.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements begin to be set at mesh_max.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which elements in a given layer are simplified. That
+is, adjacent vertices that are closer than this value are simplified into a single vertex.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fuse_threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+this value are effectively bridged together so that there are no seams etc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'simplify_edge_min_angle_deg'</span></code> (<cite>float</cite>):</dt><dd><p>The default simplification used to delete unnecessary vertices when they are adjacent
+and collinear. It weights them based on the distance from the central vertex. For
+example, consider three vertices ABC. If AB and BC are equidistant and the angle ABC
+is less than the supplied value, then B is removed as it is considered collinear. If
+the length of AB is greater than BC, then the ratio of the lengths R is multiplied by
+the angle ABC before checking for this threshold. That is, if there is a genuine sharp
+feature, it is not simplified. This is mostly designed for curved edges that may have
+an unnecessary number of vertices.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_verbosity'</span></code> (<cite>int</cite>):</dt><dd><p>The default level of messages to print from GMSH. The levels symbolised by the integers
+are: Nothing (0), Errors (1), Warnings (2), Direct (3), Information (4), Status (5),
+Debug (99). The verbosity of the messages increase with the listed levels.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_dist_func_discretisation'</span></code> (<cite>int</cite>):</dt><dd><p>When a path or polygon is given for a fine-mesh field, GMSH needs to compute distances
+from these 1D or 2D regions in order to compute the mesh element size at a given location.
+Thus, it must be able to numerically approximate these lines/polygons. It does so by chopping
+every line-segment or polygon into smaller portions given by this supplied value. Note
+that making this too large will make the generation of the mesh slower as it will take
+longer to compute all the mesh field distances.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_mode'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, one may run it via a ‘local’ installation (e.g. Mac-OS,
+Linux etc.) or ‘wsl’ (e.g. Windows).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_dir'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, the location of the Palace binary must be supplied so that
+SQDMetal can call it directly.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_repo_directory'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace in WSL (i.e. Windows), the location of the cloned repository (inside
+the WSL VM) needs to be supplied unless it is in the default ‘~/repo’ folder.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'comsol_meshing'</span></code> (<cite>str</cite>):</dt><dd><p>The default meshing size to use if using COMSOL to mesh the simulation. Acceptable values
+are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, ‘Normal’, ‘Coarse’, ‘Coarser’,
+‘Extra coarse’ or ‘Extremely coarse’.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed PALACE_Model_Base object.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.add_surface_current_source_region">
+<span class="sig-name descname"><span class="pre">add_surface_current_source_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">region</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.add_surface_current_source_region" title="Link to this definition"></a></dt>
+<dd><p>Adds a surface current excitation to a region in the simulations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>region</strong> (<em>str</em>) – The region which will be excited by a surface current constrained to either ‘metals’ or ‘dielectric’.</p></li>
+<li><p><strong>direction</strong> (<em>int</em>) – Direction of excitation constrained to either 1 or -1 for +z or -z.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>this function does not return any value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.default_user_options">
+<span class="sig-name descname"><span class="pre">default_user_options</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'HPC_Parameters_JSON':</span> <span class="pre">'',</span> <span class="pre">'solns_to_save':</span> <span class="pre">4,</span> <span class="pre">'solver_maxits':</span> <span class="pre">300,</span> <span class="pre">'solver_order':</span> <span class="pre">2,</span> <span class="pre">'solver_tol':</span> <span class="pre">1e-08}</span></em><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.default_user_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes">
+<span class="sig-name descname"><span class="pre">get_waveport_modes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes" title="Link to this definition"></a></dt>
+<dd><p>Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
+waveport for this function to run.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – This function takes no input arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>modes</strong> – A list with each element containing the following data as a <code class="docutils literal notranslate"><span class="pre">tuple</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'frequency'</span></code> (<cite>float</cite>):
+Frequency of the transmission line excitation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'wave_vector'</span></code> (<cite>float</cite>):
+Wave vector k used to excite the transmission line.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes_from_file">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_waveport_modes_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename_outLog</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename_PortScsv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.get_waveport_modes_from_file" title="Link to this definition"></a></dt>
+<dd><p>Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
+waveport for this function to run.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename_outLog</strong> (<em>str</em>) – The path of the .out simulation file.</p></li>
+<li><p><strong>filename_PortScsv</strong> (<em>str</em>) – The path of the port-S.csv simulation file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>modes</strong> – A list with each element containing the following data as a <code class="docutils literal notranslate"><span class="pre">tuple</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'frequency'</span></code> (<cite>float</cite>):
+Frequency of the transmission line excitation.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'wave_vector'</span></code> (<cite>float</cite>):
+Wave vector k used to excite the transmission line.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data">
+<span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the S-parameters from a completed driven simulation.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – This function takes no input arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>data</strong> – A dictionary containing the following data:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'freqs'</span></code> (<cite>np.array</cite>):
+Array of the frequencies (GHz) used in the frequency sweep.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'S11'</span></code> (<cite>np.array</cite>):
+Array of complex S11 values for the corresponding frequencies.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'S21'</span></code> (<cite>np.array</cite>):
+Array of complex S21 values for the corresponding frequencies.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data_from_file">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">retrieve_data_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path_port_S_csv</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.retrieve_data_from_file" title="Link to this definition"></a></dt>
+<dd><p>Retrieves the S-parameters from a completed driven simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path_port_S_csv</strong> (<em>str</em>) – The path of the port-S.csv simulation file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>data</strong> – A dictionary containing the following data:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'freqs'</span></code> (<cite>np.array</cite>):
+Array of the frequencies (GHz) used in the frequency sweep.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'S11'</span></code> (<cite>np.array</cite>):
+Array of complex S11 values for the corresponding frequencies.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'S21'</span></code> (<cite>np.array</cite>):
+Array of complex S21 values for the corresponding frequencies.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_freq_values">
+<span class="sig-name descname"><span class="pre">set_freq_values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">freq_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_end</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_freq_values" title="Link to this definition"></a></dt>
+<dd><p>Sets the starting frequency (GHz), the end frequency (GHz) and the frequency step size (GHz) for a driven simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>freq_start</strong> (<em>float</em>) – Starting frequency in GHz for the driven simulation.</p></li>
+<li><p><strong>freq_end</strong> (<em>float</em>) – End frequency in GHz for the driven simulation.</p></li>
+<li><p><strong>freq_step</strong> (<em>float</em>) – Frequency step size in GHz for the driven simulation.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>this function does not return any value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_port_excitation">
+<span class="sig-name descname"><span class="pre">set_port_excitation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">port_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_port_excitation" title="Link to this definition"></a></dt>
+<dd><p>Sets the port that will be excited in the driven simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>port_index</strong> (<em>int</em>) – The index for the port that the user wishes to excite.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>this function does not return any value.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 

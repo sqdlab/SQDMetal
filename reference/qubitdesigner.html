@@ -69,7 +69,59 @@
 <li class="toctree-l3"><a class="reference internal" href="qutilities.html">QUtilities</a></li>
 <li class="toctree-l3"><a class="reference internal" href="utilitygds.html">MakeGDS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="utilitymgds.html">ManipulateGDS</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Qubit Designer</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Qubit Designer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner"><code class="docutils literal notranslate"><span class="pre">FloatingTransmonDesigner</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.get_free_params"><code class="docutils literal notranslate"><span class="pre">get_free_params()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.optimise"><code class="docutils literal notranslate"><span class="pre">optimise()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_capacitance"><code class="docutils literal notranslate"><span class="pre">get_res_capacitance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_frequency"><code class="docutils literal notranslate"><span class="pre">get_res_frequency()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_impedance"><code class="docutils literal notranslate"><span class="pre">get_res_impedance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_inductance"><code class="docutils literal notranslate"><span class="pre">get_res_inductance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.is_res_parallelLC"><code class="docutils literal notranslate"><span class="pre">is_res_parallelLC()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.print"><code class="docutils literal notranslate"><span class="pre">print()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave"><code class="docutils literal notranslate"><span class="pre">ResonatorHalfWave</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_capacitance"><code class="docutils literal notranslate"><span class="pre">get_res_capacitance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_frequency"><code class="docutils literal notranslate"><span class="pre">get_res_frequency()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_impedance"><code class="docutils literal notranslate"><span class="pre">get_res_impedance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_inductance"><code class="docutils literal notranslate"><span class="pre">get_res_inductance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.is_res_parallelLC"><code class="docutils literal notranslate"><span class="pre">is_res_parallelLC()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC"><code class="docutils literal notranslate"><span class="pre">ResonatorLC</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_capacitance"><code class="docutils literal notranslate"><span class="pre">get_res_capacitance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_frequency"><code class="docutils literal notranslate"><span class="pre">get_res_frequency()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_impedance"><code class="docutils literal notranslate"><span class="pre">get_res_impedance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_inductance"><code class="docutils literal notranslate"><span class="pre">get_res_inductance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.is_res_parallelLC"><code class="docutils literal notranslate"><span class="pre">is_res_parallelLC()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave"><code class="docutils literal notranslate"><span class="pre">ResonatorQuarterWave</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_capacitance"><code class="docutils literal notranslate"><span class="pre">get_res_capacitance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_frequency"><code class="docutils literal notranslate"><span class="pre">get_res_frequency()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_impedance"><code class="docutils literal notranslate"><span class="pre">get_res_impedance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_inductance"><code class="docutils literal notranslate"><span class="pre">get_res_inductance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.is_res_parallelLC"><code class="docutils literal notranslate"><span class="pre">is_res_parallelLC()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase"><code class="docutils literal notranslate"><span class="pre">TransmonBase</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.EJonEC"><code class="docutils literal notranslate"><span class="pre">EJonEC()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.chk_constr_resp"><code class="docutils literal notranslate"><span class="pre">chk_constr_resp()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.get_free_params"><code class="docutils literal notranslate"><span class="pre">get_free_params()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.parse_params"><code class="docutils literal notranslate"><span class="pre">parse_params()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner"><code class="docutils literal notranslate"><span class="pre">XmonDesigner</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner.get_free_params"><code class="docutils literal notranslate"><span class="pre">get_free_params()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner.optimise"><code class="docutils literal notranslate"><span class="pre">optimise()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -101,8 +153,195 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="qubit-designer">
-<span id="utilities-qbder"></span><h1>Qubit Designer<a class="headerlink" href="#qubit-designer" title="Link to this heading"></a></h1>
+  <section id="module-SQDMetal.Utilities.QubitDesigner">
+<span id="qubit-designer"></span><span id="utilities-qbder"></span><h1>Qubit Designer<a class="headerlink" href="#module-SQDMetal.Utilities.QubitDesigner" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FloatingTransmonDesigner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase" title="SQDMetal.Utilities.QubitDesigner.TransmonBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransmonBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.get_free_params">
+<span class="sig-name descname"><span class="pre">get_free_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.get_free_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.optimise">
+<span class="sig-name descname"><span class="pre">optimise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_constraints</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.FloatingTransmonDesigner.optimise" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResonatorBase</span></span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_capacitance">
+<span class="sig-name descname"><span class="pre">get_res_capacitance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_capacitance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_frequency">
+<span class="sig-name descname"><span class="pre">get_res_frequency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_impedance">
+<span class="sig-name descname"><span class="pre">get_res_impedance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_impedance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_inductance">
+<span class="sig-name descname"><span class="pre">get_res_inductance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.get_res_inductance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.is_res_parallelLC">
+<span class="sig-name descname"><span class="pre">is_res_parallelLC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.is_res_parallelLC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorBase.print">
+<span class="sig-name descname"><span class="pre">print</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase.print" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResonatorHalfWave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shorted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">impedance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_capacitance">
+<span class="sig-name descname"><span class="pre">get_res_capacitance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_capacitance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_frequency">
+<span class="sig-name descname"><span class="pre">get_res_frequency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_impedance">
+<span class="sig-name descname"><span class="pre">get_res_impedance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_impedance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_inductance">
+<span class="sig-name descname"><span class="pre">get_res_inductance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.get_res_inductance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.is_res_parallelLC">
+<span class="sig-name descname"><span class="pre">is_res_parallelLC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorHalfWave.is_res_parallelLC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResonatorLC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_capacitance">
+<span class="sig-name descname"><span class="pre">get_res_capacitance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_capacitance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_frequency">
+<span class="sig-name descname"><span class="pre">get_res_frequency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_impedance">
+<span class="sig-name descname"><span class="pre">get_res_impedance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_impedance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_inductance">
+<span class="sig-name descname"><span class="pre">get_res_inductance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_inductance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.is_res_parallelLC">
+<span class="sig-name descname"><span class="pre">is_res_parallelLC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.is_res_parallelLC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResonatorQuarterWave</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shorted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">impedance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_capacitance">
+<span class="sig-name descname"><span class="pre">get_res_capacitance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_capacitance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_frequency">
+<span class="sig-name descname"><span class="pre">get_res_frequency</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_frequency" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_impedance">
+<span class="sig-name descname"><span class="pre">get_res_impedance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_impedance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_inductance">
+<span class="sig-name descname"><span class="pre">get_res_inductance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.get_res_inductance" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.is_res_parallelLC">
+<span class="sig-name descname"><span class="pre">is_res_parallelLC</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorQuarterWave.is_res_parallelLC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TransmonBase</span></span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.EJonEC">
+<span class="sig-name descname"><span class="pre">EJonEC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">CJeff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fQubitHertz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.EJonEC" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.chk_constr_resp">
+<span class="sig-name descname"><span class="pre">chk_constr_resp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constr_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constrs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mps</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.chk_constr_resp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.get_free_params">
+<span class="sig-name descname"><span class="pre">get_free_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.get_free_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.parse_params">
+<span class="sig-name descname"><span class="pre">parse_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_constraints</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.parse_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.XmonDesigner">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">XmonDesigner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resonator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase" title="SQDMetal.Utilities.QubitDesigner.TransmonBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">TransmonBase</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.XmonDesigner.get_free_params">
+<span class="sig-name descname"><span class="pre">get_free_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner.get_free_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.XmonDesigner.optimise">
+<span class="sig-name descname"><span class="pre">optimise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_constraints</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.XmonDesigner.optimise" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 
 

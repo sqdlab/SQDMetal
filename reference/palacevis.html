@@ -67,7 +67,20 @@
 <li class="toctree-l2"><a class="reference internal" href="index.html#components-from-sqdmetal">Components from SQDMetal</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#simulations-using-aws-palace">Simulations using AWS Palace</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="palace.html">Palace Simulations</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">Palace Visualisation</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Palace Visualisation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice"><code class="docutils literal notranslate"><span class="pre">PVDVTU_Slice</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_data"><code class="docutils literal notranslate"><span class="pre">get_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_params"><code class="docutils literal notranslate"><span class="pre">get_params()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot"><code class="docutils literal notranslate"><span class="pre">plot()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot_mesh"><code class="docutils literal notranslate"><span class="pre">plot_mesh()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer"><code class="docutils literal notranslate"><span class="pre">PVDVTU_Viewer</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer.get_data_slice"><code class="docutils literal notranslate"><span class="pre">get_data_slice()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="index.html#useful-utilities">Useful Utilities</a></li>
@@ -100,8 +113,45 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="palace-visualisation">
-<span id="palace-vis"></span><h1>Palace Visualisation<a class="headerlink" href="#palace-visualisation" title="Link to this heading"></a></h1>
+  <section id="module-SQDMetal.PALACE.PVDVTU_Viewer">
+<span id="palace-visualisation"></span><span id="palace-vis"></span><h1>Palace Visualisation<a class="headerlink" href="#module-SQDMetal.PALACE.PVDVTU_Viewer" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PVDVTU_Slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pv_slice</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_data">
+<span class="sig-name descname"><span class="pre">get_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_params">
+<span class="sig-name descname"><span class="pre">get_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.get_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equalise_histogram</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot_mesh">
+<span class="sig-name descname"><span class="pre">plot_mesh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot_mesh" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PVDVTU_Viewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pvd_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer.get_data_slice">
+<span class="sig-name descname"><span class="pre">get_data_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_set_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_plane_normal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([0,</span> <span class="pre">0,</span> <span class="pre">1])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slice_plane_origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([0,</span> <span class="pre">0,</span> <span class="pre">0])</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Viewer.get_data_slice" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
 
 

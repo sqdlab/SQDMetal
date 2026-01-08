@@ -67,7 +67,35 @@
 <li class="toctree-l2"><a class="reference internal" href="index.html#components-from-sqdmetal">Components from SQDMetal</a></li>
 <li class="toctree-l2"><a class="reference internal" href="index.html#simulations-using-aws-palace">Simulations using AWS Palace</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="index.html#useful-utilities">Useful Utilities</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">QUtilities</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">QUtilities</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities"><code class="docutils literal notranslate"><span class="pre">QUtilities</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_die_coords"><code class="docutils literal notranslate"><span class="pre">calc_die_coords()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path"><code class="docutils literal notranslate"><span class="pre">calc_filleted_path()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_length_of_path"><code class="docutils literal notranslate"><span class="pre">calc_length_of_path()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path"><code class="docutils literal notranslate"><span class="pre">calc_lines_and_fillets_on_path()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_points_on_path"><code class="docutils literal notranslate"><span class="pre">calc_points_on_path()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.create_even_spacing_along_line_1d"><code class="docutils literal notranslate"><span class="pre">create_even_spacing_along_line_1d()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Launcher"><code class="docutils literal notranslate"><span class="pre">get_RFport_CPW_coords_Launcher()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Route"><code class="docutils literal notranslate"><span class="pre">get_RFport_CPW_coords_Route()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Launcher_inplane"><code class="docutils literal notranslate"><span class="pre">get_RFport_CPW_groundU_Launcher_inplane()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Route_inplane"><code class="docutils literal notranslate"><span class="pre">get_RFport_CPW_groundU_Route_inplane()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_comp_bounds"><code class="docutils literal notranslate"><span class="pre">get_comp_bounds()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_cpw_resonator_length"><code class="docutils literal notranslate"><span class="pre">get_cpw_resonator_length()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_metals_in_layer"><code class="docutils literal notranslate"><span class="pre">get_metals_in_layer()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_perimetric_polygons"><code class="docutils literal notranslate"><span class="pre">get_perimetric_polygons()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_units"><code class="docutils literal notranslate"><span class="pre">get_units()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.is_string_or_list_of_strings"><code class="docutils literal notranslate"><span class="pre">is_string_or_list_of_strings()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.parse_value_length"><code class="docutils literal notranslate"><span class="pre">parse_value_length()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_launchpads"><code class="docutils literal notranslate"><span class="pre">place_launchpads()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_markers"><code class="docutils literal notranslate"><span class="pre">place_markers()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger"><code class="docutils literal notranslate"><span class="pre">place_resonators_hanger()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_transmission_line_from_launchpads"><code class="docutils literal notranslate"><span class="pre">place_transmission_line_from_launchpads()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_all_components"><code class="docutils literal notranslate"><span class="pre">plot_all_components()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_highlight_component"><code class="docutils literal notranslate"><span class="pre">plot_highlight_component()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="utilitygds.html">MakeGDS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="utilitymgds.html">ManipulateGDS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="qubitdesigner.html">Qubit Designer</a></li>
@@ -105,6 +133,794 @@
   <section id="qutilities">
 <span id="utilities-qutilities"></span><h1>QUtilities<a class="headerlink" href="#qutilities" title="Link to this heading"></a></h1>
 <p>A useful set of helper utilities specifically involving Qiskit-Metal entities.</p>
+<dl class="py class" id="module-SQDMetal.Utilities.QUtilities">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QUtilities</span></span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_die_coords">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_die_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">chip_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_die</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_die_coords" title="Link to this definition"></a></dt>
+<dd><p>Calculates centre coordinates (x, y) of multiple die on a chip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>chip_dim</strong> – Tuple containing chip dimensions (x, y) Qiskit Metal style - e.g. “20mm”</p></li>
+<li><p><strong>die_dim</strong> – Tuple containing die dimensions (x, y) Qiskit Metal style - e.g. “4.0mm”</p></li>
+<li><p><strong>num_die</strong> – Tuple containing the number of die (num_x, num_y) in x and y</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of tuples of floats containing all die centre positions
+(relative to (0,0) in the chip centre) in units of meters.
+Sorted, ascending up each column from bottom left to top right.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_filleted_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path" title="Link to this definition"></a></dt>
+<dd><p>Returns the coordinates of a given path after filleting (like in Qiskit-Metal).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> – Numpy array of points given as (x,y) on every row.</p></li>
+<li><p><strong>rFillet</strong> – Radius of fillets on every corner.</p></li>
+<li><p><strong>precision</strong> – The numeric precision in which to calculate bad fillets
+taken usually as design.template_options.PRECISION</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of points (x,y) for the points defining the filleted path.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_length_of_path">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_length_of_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_length_of_path" title="Link to this definition"></a></dt>
+<dd><p>VGives the total length of a path in Qiskit metal units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>qiskit_metal.designs.DesignPlanar</em>) – Qiskit metal design.</p></li>
+<li><p><strong>component_name</strong> (<em>str</em>) – Name of the QComponent in the design.</p></li>
+<li><p><strong>trace_name</strong> (<em>str</em><em>, </em><em>optional</em>) – If provided, then the path given by the
+trace_name is selected. Otherwise, the default path (typically
+called ‘trace’ in normal wiring/routing objects) is selected.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Total length of path as a float in Qiskit metal design units.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_lines_and_fillets_on_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path" title="Link to this definition"></a></dt>
+<dd><p>Returns the line segments and curved fillets on a given path of points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>points</strong> – Numpy array of points given as (x,y) on every row.</p></li>
+<li><p><strong>rFillet</strong> – Radius of fillets on every corner.</p></li>
+<li><p><strong>precision</strong> – The numeric precision in which to calculate bad fillets taken
+usually as design.template_options.PRECISION.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>The function returns list of segments each represented as dictionaries.</p>
+<dl class="simple">
+<dt>Straight segments have the keys:</dt><dd><ul class="simple">
+<li><p>’start’ - Starting point of line segment</p></li>
+<li><p>’end’   - Ending point of line segment</p></li>
+<li><p>’dir’   - Unit-vector of the direction of the line segment</p></li>
+<li><p>’dist’  - Length of the line segment</p></li>
+</ul>
+</dd>
+<dt>Curved segments (i.e. ones with fillets) have the keys:</dt><dd><ul class="simple">
+<li><p>’start’  - Starting point of line segment</p></li>
+<li><p>’end’    - Ending point of line segment</p></li>
+<li><p>’centre’ - Centre of the circle drawing the fillet arc</p></li>
+<li><dl class="simple">
+<dt>’angleStart’ - Starting angle (on Cartesian plane) of the fillet arc</dt><dd><p>(in radians) on the corner (not from the centre)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>’angleDelta’ - Angle traversed by the fillet arc (in radians)</dt><dd><p>using the typical polar angle direction convention in R2</p>
+</dd>
+</dl>
+</li>
+<li><p>’dist’   - Arclength of the fillet</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_points_on_path">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">calc_points_on_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trace_name_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dists_are_fractional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_points_on_path" title="Link to this definition"></a></dt>
+<dd><p>Returns the points along a path taking into account the curved edges (i.e. fillets).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dists</strong> – List of raw distances (or fractional distances from 0 to 1 if
+dists_are_fractional is made True) along the path. If dists
+is given as a single value, then dists_are_fractional is ignored,
+and the returned path will be a bunch of points spaced by the value
+given by dists. Units are in Qiskit-Metal design units (when not fractional).</p></li>
+<li><p><strong>component_name</strong> – Name of the QComponent in the design</p></li>
+<li><p><strong>trace_name</strong> (<em>optional</em>) – If provided, then the path given by the trace_name is selected.
+Otherwise, the default path (typically called ‘trace’ in normal
+wiring/routing objects) is selected.</p></li>
+<li><p><strong>trace_name_gap</strong> (<em>optional</em>) – If provided, then the returned gap width is given
+by the trace_name_gap entity. Otherwise, the default path (typically called
+‘cut’ in normal wiring/routing objects) is taken for the gap width.</p></li>
+<li><p><strong>dists_are_fractional</strong> (<em>bool</em><em>, </em><em>optional</em>) – (Defaults to True) If True, then the argument
+dists is taken as a list of  fractional distances from 0 to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>final_pts - Numpy array of coordinates along the path given as (x,y) on every row.</p></li>
+<li><p>normals   - Numpy array of unit-vectors for the right-hand normal vector for every point in final_pts given as (nx, ny) on every row.</p></li>
+<li><p>width - CPW trace width.</p></li>
+<li><p>gap   - CPW trace gap.</p></li>
+<li><p>total_dist - Total length of path.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple (final_pts, normals, width, gap, total_dist) where</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>the units in the returned values are in Qiskit-Metal design units…</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.create_even_spacing_along_line_1d">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">create_even_spacing_along_line_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inset_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.create_even_spacing_along_line_1d" title="Link to this definition"></a></dt>
+<dd><p>Generate <cite>n</cite> evenly spaced points along a 1D line segment with optional insets at both ends.</p>
+<p>If <cite>n</cite> is 1, the single point returned is the midpoint of the line segment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<em>float</em>) – Start coordinate of the line segment.</p></li>
+<li><p><strong>end</strong> (<em>float</em>) – End coordinate of the line segment.</p></li>
+<li><p><strong>n</strong> (<em>int</em>) – Number of points to generate along the line.</p></li>
+<li><p><strong>inset_factor</strong> (<em>float</em><em>, </em><em>optional</em>) – Fraction of spacing to inset from each end. Default is 0.2.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of <cite>n</cite> coordinates evenly spaced along the line segment.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Launcher">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_RFport_CPW_coords_Launcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qObjName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">len_launch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_conv_extra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Launcher" title="Link to this definition"></a></dt>
+<dd><p>Computes the coordinates for the coplanar waveguide (CPW) pads of a launcher
+associated with an RF port.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – Qiskit Metal design object containing the components.</p></li>
+<li><p><strong>qObjName</strong> (<em>str</em>) – Name of the RF port component (must be a LaunchpadWirebond).</p></li>
+<li><p><strong>len_launch</strong> (<em>float</em><em>, </em><em>optional</em>) – Length of the CPW launch section. Default is 20e-6 meters.</p></li>
+<li><p><strong>unit_conv_extra</strong> (<em>float</em><em>, </em><em>optional</em>) – Additional unit scaling factor. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>launchesA (list of list of float): List of four 2D coordinates for the first CPW pad polygon.</p></li>
+<li><p>launchesB (list of list of float): List of four 2D coordinates for the second CPW pad polygon.</p></li>
+<li><p>vec_perp (np.ndarray): 2D vector perpendicular to the CPW propagation direction.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple containing</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If the specified component is not a <cite>LaunchpadWirebond</cite>.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Uses <cite>_get_LauncherWB_params</cite> to obtain the origin, direction, width, and gap of the CPW.</p></li>
+<li><p>Coordinates are returned in the design’s unit system, optionally scaled by <cite>unit_conv_extra</cite>.</p></li>
+<li><p>The CPW polygons are defined relative to the origin and oriented along the launch direction.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Route">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_RFport_CPW_coords_Route</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qObjName</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">len_launch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_conv_extra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_coords_Route" title="Link to this definition"></a></dt>
+<dd><p>Computes the coordinates for the a coplanar waveguide (CPW) port at the start
+of a CPW for a given component pin.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – Qiskit Metal design object containing the components.</p></li>
+<li><p><strong>qObjName</strong> (<em>str</em>) – Name of the component containing the RF port pin.</p></li>
+<li><p><strong>pin_name</strong> (<em>str</em>) – Name of the pin on the component for which to compute CPW coordinates.</p></li>
+<li><p><strong>len_launch</strong> (<em>float</em><em>, </em><em>optional</em>) – Length of the CPW launch section. Default is 20e-6 meters.</p></li>
+<li><p><strong>unit_conv_extra</strong> (<em>float</em><em>, </em><em>optional</em>) – Additional unit scaling factor. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>launchesA (list of list of float): List of four 2D coordinates for the first CPW pad polygon.</p></li>
+<li><p>launchesB (list of list of float): List of four 2D coordinates for the second CPW pad polygon.</p></li>
+<li><p>vec_perp (np.ndarray): 2D vector perpendicular to the CPW propagation direction.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple containing</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Uses <cite>_get_Route_params</cite> to obtain the origin, launch direction, width, and gap of the CPW.</p></li>
+<li><p>Coordinates are returned in the design’s unit system, optionally scaled by <cite>unit_conv_extra</cite>.</p></li>
+<li><p>The CPW polygons are defined relative to the origin and oriented along the launch direction.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Launcher_inplane">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_RFport_CPW_groundU_Launcher_inplane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qObjName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separation_gap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_conv_extra</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Launcher_inplane" title="Link to this definition"></a></dt>
+<dd><p>Computes the in-plane “U”-shaped ground polygon coordinates for a
+coplanar waveguide (CPW) launcher component. Used to connect ground
+either side of a CPW.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" src="../_images/palace_sim_Uclip_dims.drawio.svg" style="width: 401.0px; height: 231.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Parameters used in the U-clip</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>The polygon is oriented relative to the CPW launch direction and perpendicular vector.</p></li>
+<li><p>Coordinates are scaled by <cite>unit_conv_extra</cite>.</p></li>
+</ul>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>QDesign</em>) – Qiskit Metal <cite>LaunchpadWirebond</cite> object containing the components.</p></li>
+<li><p><strong>qObjName</strong> (<em>str</em>) – Name of the launcher component.</p></li>
+<li><p><strong>thickness_side</strong> (<em>float</em>) – Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.</p></li>
+<li><p><strong>thickness_back</strong> (<em>float</em>) – Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6</p></li>
+<li><p><strong>separation_gap</strong> (<em>float</em>) – Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+to zero whereupon, it will use the gap distance of the CPW.</p></li>
+<li><p><strong>unit_conv_extra</strong> (<em>float</em>) – Additional unit scaling factor. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>coords</strong> – List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Route_inplane">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_RFport_CPW_groundU_Route_inplane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">route_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separation_gap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit_conv_extra</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_RFport_CPW_groundU_Route_inplane" title="Link to this definition"></a></dt>
+<dd><p>Computes the in-plane “U”-shaped ground polygon coordinates for a
+coplanar waveguide (CPW) route component.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>The polygon is oriented relative to the CPW launch direction and perpendicular vector.</p></li>
+<li><p>Coordinates are scaled by <cite>unit_conv_extra</cite>.</p></li>
+<li><p>Type-checking for the routed component is not enforced (TODO).</p></li>
+</ul>
+</div>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" src="../_images/palace_sim_Uclip_dims.drawio.svg" style="width: 401.0px; height: 231.0px;" />
+</a>
+<figcaption>
+<p><span class="caption-text">Parameters used in the U-clip</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>QDesign</em>) – Qiskit Metal <cite>LaunchpadWirebond</cite> object containing the components.</p></li>
+<li><p><strong>route_name</strong> (<em>str</em>) – Name of the routed component.</p></li>
+<li><p><strong>pin_name</strong> (<em>str</em>) – Name of the pin used to determine the CPW start point.</p></li>
+<li><p><strong>thickness_side</strong> (<em>float</em>) – Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.</p></li>
+<li><p><strong>thickness_back</strong> (<em>float</em>) – Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6</p></li>
+<li><p><strong>separation_gap</strong> (<em>float</em>) – Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+to zero whereupon, it will use the gap distance of the CPW.</p></li>
+<li><p><strong>unit_conv_extra</strong> (<em>float</em>) – Additional unit scaling factor. Default is 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>coords</strong> – List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_comp_bounds">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_comp_bounds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units_metres</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_comp_bounds" title="Link to this definition"></a></dt>
+<dd><p>Compute the axis-aligned bounding box for one or more Qiskit Metal components.</p>
+<p>This function inspects the <cite>path</cite> and <cite>poly</cite> geometries of each component and
+returns the minimum and maximum x/y extents. For path geometries, the bounds
+are expanded by half the path width. If a component has no geometry (e.g.,
+abstract components such as junctions), its <cite>pos_x</cite> and <cite>pos_y</cite> options are used
+as a fallback.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>qiskit_metal.designs.DesignPlanar</em>) – The Qiskit Metal design containing
+the components and geometry tables.</p></li>
+<li><p><strong>objs</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – One or more component names whose bounding region
+will be computed. A single component may be given as a string.</p></li>
+<li><p><strong>units_metres</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, the returned bounds are converted to
+metres using the design’s unit scale. If False (default), the bounds are
+returned in design units.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(min_x,</span> <span class="pre">min_y,</span> <span class="pre">max_x,</span> <span class="pre">max_y)</span></code>
+representing the bounding extents of the component(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple in the form</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If none of the components contain geometry or valid positional data,
+    so that no bounding box can be computed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_cpw_resonator_length">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_cpw_resonator_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0_Hz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'quarter'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpw_width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpw_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">substrate_thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0005</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">film_thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2e-07</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_cpw_resonator_length" title="Link to this definition"></a></dt>
+<dd><p>Calculate the physical length of a CPW resonator for a given target frequency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f0_Hz</strong> (<em>float</em>) – Target resonant frequency in Hz.</p></li>
+<li><p><strong>resonator_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of resonator: “quarter”, “half”, or “full”. Defaults to “quarter”.</p></li>
+<li><p><strong>cpw_width</strong> (<em>float</em><em>, </em><em>optional</em>) – Width of the CPW center conductor in meters. Defaults to 10e-6.</p></li>
+<li><p><strong>cpw_gap</strong> (<em>float</em><em>, </em><em>optional</em>) – Gap between CPW center and ground in meters. Defaults to 6e-6.</p></li>
+<li><p><strong>substrate_thickness</strong> (<em>float</em><em>, </em><em>optional</em>) – Thickness of the substrate in meters. Defaults to 500e-6.</p></li>
+<li><p><strong>film_thickness</strong> (<em>float</em><em>, </em><em>optional</em>) – Thickness of the superconducting film in meters. Defaults to 200e-9.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Physical length of the resonator in meters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_metals_in_layer">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_metals_in_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_metals_in_layer" title="Link to this definition"></a></dt>
+<dd><p>Partitions unique conductors from a layer in a Qiskit-Metal design object.</p>
+<p>If the particular layer has fancy PVD evaporation steps, the added
+metallic layer will account for said steps and merge the final result.
+In addition, all metallic elements that are contiguous are merged into
+single blobs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – Qiskit-Metal design object</p></li>
+<li><p><strong>layer_id</strong> – The index of the layer from which to take the metallic polygons.
+If this is given as a LIST, then the metals in the specified
+layer (0 being ground plane) will be fused and then added into COMSOL.</p></li>
+<li><p><strong>**kwargs</strong> – <dl class="simple">
+<dt>restrict_rect (optional):</dt><dd><p>List highlighting the clipping rectangle [xmin,ymin,xmax,ymax]</p>
+</dd>
+<dt>resolution (optional):</dt><dd><p>Defaults to 4. This is the number of points along a
+curved section of a path object in Qiskit-Metal.</p>
+</dd>
+<dt>threshold (optional):</dt><dd><p>Defaults to -1. This is the threshold in metres, below which
+consecutive vertices along a given polygon are combined into a single vertex.
+This simplification helps with meshing as COMSOL will not overdo the meshing. If this
+argument is negative, the argument is ignored.</p>
+</dd>
+<dt>fuse_threshold (optional):</dt><dd><p>Defaults to 1e-12. This is the minimum distance between metallic
+elements, below which they are considered to be a single polygon and thus, the polygons
+are merged with the gap filled. This accounts for floating-point errors that make adjacent
+elements fail to merge as a single element, due to infinitesimal gaps between them.</p>
+</dd>
+<dt>evap_mode (optional):</dt><dd><p>Defaults to ‘separate_delete_below’. These are the methods upon which
+to separate or merge overlapping elements across multiple evaporation steps.
+See documentation on PVD_Shadows for more details on the available options.</p>
+</dd>
+<dt>group_by_evaporations (optional):</dt><dd><p>Defaults to False. If set to True, if elements on a
+particular evaporation step are separated due to the given evap_mode, they will still
+be selected as a part of the same conductor (useful for example, in
+capacitance matrix simulations).</p>
+</dd>
+<dt>evap_trim (optional):</dt><dd><p>Defaults to 20e-9. This is the trimming distance used in certain evap_mode
+profiles. See documentation on PVD_Shadows for more details on its definition.</p>
+</dd>
+<dt>multilayer_fuse (optional):</dt><dd><p>Defaults to False. Flattens everything into a single layer
+(careful when using this with evap_mode).</p>
+</dd>
+<dt>smooth_radius (optional):</dt><dd><p>Defaults to 0. If above 0, then the corners of the metallic surface
+will be smoothed via this radius. Only works if multilayer_fuse is set to True.</p>
+</dd>
+<dt>ground_cutout (optional):</dt><dd><p>MUST BE SPECIFIED if layer_id is 0.
+It is a tuple (x1, x2, y1, y2) for the x and y bounds</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>metal_polys_all All separate metallic islands</p></li>
+<li><p>metal_sel_ids   Selection indices for each of the metallic islands (mostly relevant when using group_by_evaporations)</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A tuple containing</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>everything is in METRES</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_perimetric_polygons">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_perimetric_polygons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_names</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_perimetric_polygons" title="Link to this definition"></a></dt>
+<dd><p>Returns the perimetric polygons of specified components in a design.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – Qiskit Metal design object containing components.</p></li>
+<li><p><strong>comp_names</strong> (<em>list</em><em> of </em><em>str</em>) – Names of components to extract polygons for.</p></li>
+<li><p><strong>**kwargs</strong> – Optional keyword arguments.
+threshold (float): Currently unused. Default is -1.
+resolution (int): Resolution for getting net coordinates. Default is 4.
+metals_only (bool): If True, only include metal (non-subtract) geometries.
+unit_conv (float): Multiplier to convert units (default from <cite>QUtilities.get_units(design)</cite>).
+fuse_threshold (float): Tolerance for fusing nearby polygons. Default is 1e-12.
+restrict_rect (list or None): Rectangular bounding box [xmin, ymin, xmax, ymax] to restrict polygons.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>List of polygons representing the perimetric geometry of the requested components,
+in design units scaled by <cite>unit_conv</cite>. Returns None if no geometries are found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list of shapely.geometry.Polygon</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If a name in <cite>comp_names</cite> does not exist in <cite>design.components</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.get_units">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.get_units" title="Link to this definition"></a></dt>
+<dd><p>Convert the Qiskit Metal design unit string into a numeric scale factor.</p>
+<p>This utility reads the spatial unit specification from the provided
+Qiskit Metal <cite>design</cite> object (e.g., “mm”, “um”, “nm”) and returns the
+corresponding multiplier for converting values expressed in that unit into
+meters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>qiskit_metal.designs.DesignPlanar</em>) – Qiskit Metal design object</p></li>
+<li><p><strong>specification.</strong> (<em>from which to retrieve the unit</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Multiplicative scale factor that converts the design’s spatial
+units into meters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If the design reports an unrecognized unit string.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.is_string_or_list_of_strings">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">is_string_or_list_of_strings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.is_string_or_list_of_strings" title="Link to this definition"></a></dt>
+<dd><p>Check if the input is a string or a list of strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>var</strong> – The variable to check.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if <cite>var</cite> is a string or a list of strings, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.parse_value_length">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">parse_value_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strVal</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.parse_value_length" title="Link to this definition"></a></dt>
+<dd><p>Parse a length value with units and convert it to meters.</p>
+<p>This function interprets strings representing lengths (e.g., “5mm”,
+“12 um”) by parsing the numeric portion and applying the correct scale
+factor. It returns the length expressed in meters.</p>
+<dl class="simple">
+<dt>Supported units:</dt><dd><ul class="simple">
+<li><p>mm → 1e-3 m</p></li>
+<li><p>um → 1e-6 m</p></li>
+<li><p>nm → 1e-9 m</p></li>
+<li><p>pm → 1e-12 m</p></li>
+<li><p>fm → 1e-15 m</p></li>
+<li><p>m  → 1 m (base unit)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strVal</strong> (<em>str</em><em> | </em><em>float</em><em> | </em><em>int</em>) – Length value to parse. May be a string with units or a raw numeric value.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>value</strong> (<em>float</em>) – The value converted to meters - returned if successful.</p></li>
+<li><p><strong>error</strong> (<em>str</em>) – Returns string unchanged if the format is invalid and no unit can
+be parsed (fallback case).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If the string is too short to contain meaningful units: or appears malformed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.place_launchpads">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">place_launchpads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpw_gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpw_width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_number</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'600um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'300um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lead_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'25um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_checks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_launchpads" title="Link to this definition"></a></dt>
+<dd><p>Function for calculating launchpad parameters, placing launchpads on the design,
+and returning launchpad objects as a tuple containing the left and right launchpads
+of each die as (lp_L, lp_R).</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><p>design: Qiskit Metal design object
+cpw_gap: transmission line gap as string with units (e.g. “5um”)
+cpw_width: transmission line central conductor width as string with units (e.g. “5um”)
+die_origin: centre coordinates of die as tuple (float(x), float(y)) in units of meters
+die dimension: tuple containing die dimensions (x, y) in units of meters
+die_number: die number (int) for launchpad object naming (defaults to None)
+dimension: horizontal length of launchpad as string with units (defaults to “600um”)
+inset: distance from edge of die to start of launchpad gap in x as a string with units (defaults to “0um”)
+taper: length of taper from launchpad to transmission line as a string with units (defaults to “300um”)
+print_checks: flag if user wants to print statements after launchpads are written to design (defaults to True)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple containing the LaunchpadWirebond objects (lp_L, lp_R)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>launchpad_objects</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.place_markers">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">place_markers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marker_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cross'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_markers" title="Link to this definition"></a></dt>
+<dd><p>Function to place dicing markers on a multi-die chip.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – qiskit metal design</p></li>
+<li><p><strong>die_origin</strong> – tuple containing die origin (x, y) as float in meters</p></li>
+<li><p><strong>die_dim</strong> – die dimensionsion as a yuple (x, y) containing strings with units</p></li>
+<li><p><strong>die_index</strong> – die number for currently placing markers</p></li>
+<li><p><strong>marker_type</strong> (<em>optional</em>) – marker type, currently only supports cross markers (defaults to “cross”)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">place_resonators_hanger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_resonators</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feedline_upscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">film_thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100nm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'20um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_line_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_to_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'300um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_shift_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'225um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_res_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'150um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_vertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1500um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LC_calculations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_statements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'85um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meander_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qiskit_metal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger" title="Link to this definition"></a></dt>
+<dd><p>Place multiple hanger-mode quarter-wavelength resonators on a multi-die chip.</p>
+<p>Resonators are capacitively coupled to a shared transmission line with a 10 µm ground pocket.
+Lengths, start and end positions are automatically calculated based on frequencies, number of dies,
+number of resonators, and launchpad properties. Optional capacitance and inductance calculations can be performed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>Qiskit Metal Design</em>) – Qiskit Metal design object.</p></li>
+<li><p><strong>gap</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – Transmission line gap (e.g., “5um”).</p></li>
+<li><p><strong>width</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em>) – Transmission line central conductor width (e.g., “5um”).</p></li>
+<li><p><strong>num_resonators</strong> (<em>int</em>) – Number of resonators per die.</p></li>
+<li><p><strong>frequencies</strong> (<em>list</em><em> of </em><em>float</em>) – Resonator frequencies in Hz; length must match <cite>num_resonators</cite>.</p></li>
+<li><p><strong>die_origin</strong> (<em>tuple</em><em> of </em><em>float</em>) – Die center coordinates in meters (x, y).</p></li>
+<li><p><strong>die_dimension</strong> (<em>tuple</em><em> of </em><em>float</em>) – Die dimensions in meters (x, y).</p></li>
+<li><p><strong>die_index</strong> (<em>int</em>) – Die number used for naming resonators.</p></li>
+<li><p><strong>launchpad_extent</strong> (<em>float</em>) – Total width of launchpad including inset from die edge, in meters.</p></li>
+<li><p><strong>feedline_upscale</strong> (<em>float</em><em>, </em><em>optional</em>) – Scaling factor for feedline gap/width. Defaults to 1.0.</p></li>
+<li><p><strong>film_thickness</strong> (<em>str</em><em>, </em><em>optional</em>) – Film thickness (e.g., “100nm”). Defaults to “100nm”.</p></li>
+<li><p><strong>coupling_gap</strong> (<em>str</em><em>, </em><em>optional</em>) – Ground gap between transmission line and resonator coupling. Defaults to “20um”.</p></li>
+<li><p><strong>transmission_line_y</strong> (<em>str</em><em>, </em><em>optional</em>) – Y-position relative to die center. Defaults to “0um”.</p></li>
+<li><p><strong>launchpad_to_res</strong> (<em>str</em><em>, </em><em>optional</em>) – Min gap between resonator start pin and launchpad. Defaults to “200um”.</p></li>
+<li><p><strong>res_shift_x</strong> (<em>str</em><em>, </em><em>optional</em>) – Manual horizontal shift along feedline. Defaults to “225um”.</p></li>
+<li><p><strong>min_res_gap</strong> (<em>str</em><em>, </em><em>optional</em>) – Minimum gap between resonators. Defaults to “150um”.</p></li>
+<li><p><strong>res_vertical</strong> (<em>str</em><em>, </em><em>optional</em>) – Vertical extent of resonator meanders. Defaults to “1500um”.</p></li>
+<li><p><strong>chip_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Chip name. Defaults to “main”.</p></li>
+<li><p><strong>LC_calculation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Calculate capacitance/inductance. Defaults to True.</p></li>
+<li><p><strong>print_statements</strong> (<em>bool</em><em>, </em><em>optional</em>) – Print resonator info. Defaults to True.</p></li>
+<li><p><strong>fillet</strong> (<em>str</em><em>, </em><em>optional</em>) – Fillet size (e.g., “100um”). Defaults to “100um”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>resonators (list of QComponents): Generated resonator components.</p></li>
+<li><p>resonator_vals (list of tuple): Tuples (length, effective permittivity, filling factor).</p></li>
+<li><p>resonator_names (list of str): Names of resonators.</p></li>
+<li><p>capacitances (list of float, optional): Calculated capacitances (if <cite>LC_calculation</cite> is True).</p></li>
+<li><p>inductances (list of float, optional): Calculated inductances (if <cite>LC_calculation</cite> is True).</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.place_transmission_line_from_launchpads">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">place_transmission_line_from_launchpads</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tl_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpads</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_straight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'85um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">anchor_inset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'250um'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_transmission_line_from_launchpads" title="Link to this definition"></a></dt>
+<dd><p>Function to place transmission lines between launchpad pins on a multi-die chip.
+Each transmission line is named as “tl_die{die_index}”.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> – qiskit metal design</p></li>
+<li><p><strong>tl_y</strong> – y coordinate for the primary routing of the transmission line, relative to the die centre as a string with units</p></li>
+<li><p><strong>gap</strong> – transmission line gap as a string with units</p></li>
+<li><p><strong>width</strong> – transmission line width as a string with units</p></li>
+<li><p><strong>launchpads</strong> – QComponents for launchpads</p></li>
+<li><p><strong>die_index</strong> – index of the current die for QComponent naming</p></li>
+<li><p><strong>die_origin</strong> – (Default to [“0um”, “0um”]) origin coordinates of current die as a list of strings with units</p></li>
+<li><p><strong>start_straight</strong> – (Defaults to “80um”) Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to “50um”</p></li>
+<li><p><strong>fillet</strong> – (Defaults to “50um”) Fillet size on transmission line</p></li>
+<li><p><strong>anchor_inset</strong> – (Defaults to “250um”) Distance in x between launchpad connection and anchor</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Transmission line QComponent</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.plot_all_components">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_all_components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_all_components" title="Link to this definition"></a></dt>
+<dd><p>Plot all metal and ground-plane geometries in a Qiskit Metal design.</p>
+<p>This function extracts all component geometries from the provided
+Qiskit Metal <code class="docutils literal notranslate"><span class="pre">design</span></code> via the Shapely renderer, reconstructs the
+ground plane by subtracting etched metal regions, and plots both the
+metal features and the ground plane using GeoPandas/Matplotlib.</p>
+<p>The plot can optionally be drawn on an existing axes object and supports
+several keyword arguments for tweaking visual appearance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>QDesign</em>) – A Qiskit Metal design object containing component geometry and
+chip metadata.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – <p>Keyword arguments:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'resolution'</span></code> (<cite>int</cite>):
+Polygon resolution passed to <code class="docutils literal notranslate"><span class="pre">get_net_coordinates</span></code> (default is 4).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'fuse_threshold'</span></code> (<cite>float</cite>):
+Distance threshold in metres when fusing adjacent polygons in the subtractive layers.
+Default is 1e-10</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'ax'</span></code> (<cite>matplotlib.axes.Axes</cite>):
+Existing axes to draw on. If omitted, a new figure and axes are created.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.</p></li>
+<li><p>The chip dimensions and center coordinates are taken from <code class="docutils literal notranslate"><span class="pre">design.chips['main']['size']</span></code> and converted to consistent units.</p></li>
+</ul>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.plot_highlight_component">
+<em class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_highlight_component</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_highlight_component" title="Link to this definition"></a></dt>
+<dd><p>Plot a single component of a Qiskit Metal design and visually highlight it.</p>
+<p>This function renders all metal and gap geometries from the design, but
+highlights the specified component using distinct colors. Component pins
+are annotated with arrows and labels. Useful for visually debugging
+component placement, orientation, and connectivity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_name</strong> (<em>str</em>) – The name of the QComponent in <code class="docutils literal notranslate"><span class="pre">design.components</span></code> to highlight.</p></li>
+<li><p><strong>design</strong> (<em>QDesign</em>) – A Qiskit Metal design object containing component geometry,
+chip settings, and pin locations.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – <p>Optional keyword arguments:
+*   <code class="docutils literal notranslate"><span class="pre">'resolution'</span></code> (<cite>int</cite>):</p>
+<blockquote>
+<div><p>Polygon simplification resolution passed to
+<code class="docutils literal notranslate"><span class="pre">QiskitShapelyRenderer.get_net_coordinates()</span></code> (defaults to 4).</p>
+</div></blockquote>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">'ax'</span></code> (<cite>matplotlib.axes.Axes</cite>):
+Existing axis to draw on. If not provided, a new figure and axis
+are created.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'len_pin_arrow_frac_axis'</span></code> (<cite>float</cite>):
+Fraction of the current axis extent used to set the arrow length
+for pin direction indicators. Defaults to 0.2.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'arrow_width'</span></code> (<cite>float</cite>):
+Width of arrows used to indicate pin normals. Defaults to 0.001.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'push_to_back'</span></code> (<cite>bool</cite>):
+If True, non-highlighted polygons are sorted so they are drawn
+behind the highlighted ones. Default to False.</p></li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The function produces a plot but does not return any data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul class="simple">
+<li><p>Metal polygons for the highlighted component are drawn in <strong>#069AF3</strong> (blue). Other metals appear in light blue.</p></li>
+<li><p>Gap polygons for the highlighted component are drawn in <strong>#808080</strong> (grey). Other gaps appear in a light grey.</p></li>
+<li><p>Pin arrows are drawn in red with text labels centered along the arrow.</p></li>
+</ul>
+</div>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
