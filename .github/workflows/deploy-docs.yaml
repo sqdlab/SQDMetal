@@ -21,6 +21,25 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y pandoc
         sudo apt-get install -y libglu1-mesa libxi6 libxrender1
+        sudo apt-get install -y python3-pyqt5
+
+    - name: Install Qt dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libegl1 \
+          libgl1 \
+          libxkbcommon-x11-0 \
+          libxcb-cursor0 \
+          libxcb-xinerama0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-shape0 \
+          libxcb-sync1 \
+          libxcb-xfixes0
 
     - name: Set up Python
       uses: actions/setup-python@v2
