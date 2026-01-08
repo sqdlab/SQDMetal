@@ -15,14 +15,9 @@ classifiers = [
 ]
 urls = { repository = "https://github.com/sqdlab/SQDMetal" }
 dependencies = [
- "gdstk>=0.9.60",
- "geopandas>=1.1.1",
- "gmsh>=4.11.1",
  "mph>=1.2.4",
  "pyvista>=0.45.2",
- "mapclassify==2.8.1",
- "scipy==1.10.1",
- "qiskit-metal==0.1.2",
+ "quantum-metal",
  "nbsphinx"
 ]  
 

@@ -3,7 +3,7 @@
 [![Documentation](https://img.shields.io/badge/Documentation-blue)](https://sqdlab.github.io/SQDMetal/)
 [![UnitTests](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml/badge.svg)](https://github.com/sqdlab/SQDMetal/actions/workflows/Windows.yaml)
 
-Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [Qiskit-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
+Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [~~Qiskit~~Quantum-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
 
 - Extra components with more flexible user-friendly options (see [gallery](https://nbviewer.org/github/sqdlab/SQDMetal/blob/main/docs/User/Comps_All.ipynb))
 - Visualising and simulating effects of shadow evaporation techniques used to fabricate qubits
@@ -18,23 +18,17 @@ There are two classes of documentation provided for this stack:
 
 ## Installation instructions
 
-The following installation instructions automatically installs Qiskit-Metal along with SQDMetal. First choose a folder to house SQDMetal (idea is to create an editable folder such that the code can be modified and pushed without upsetting the pip package manager). Once navigating to this folder, run Anaconda prompt and run the following command:
+The following installation instructions automatically installs Qiskit-Metal along with SQDMetal. First choose a folder to house SQDMetal (idea is to create an editable folder such that the code can be modified and pushed without upsetting the pip package manager). Once navigating to this folder, run *Anaconda prompt* and run the following command:
 
 ```bash
 cd C:/Users/....../myFolder/
 git clone https://github.com/sqdlab/SQDMetal.git
 ```
 
-To run the installation faster, first install `mamba`:
-
-```bash
-conda install -n base conda-forge::mamba
-```
-
 Now run (changing `sqdmetal_env` to any other desired name for the virtual environment):
 
 ```bash
-mamba env create -n sqdmetal_env -f SQDMetal/env_windows.yml
+conda create -n sqdmetal_env python==3.12
 ```
 
 Now activate the environment and install Qiskit-Metal:
