@@ -13,7 +13,7 @@
 #
 # Author: Divita Gautam
 # Creation Date: 21/05/2024
-# Description: Collection of classes to draw transmon qubits.
+# Description: Collection of classes to draw qubits.
 
 import numpy as np
 from qiskit_metal import draw, Dict
@@ -1715,7 +1715,14 @@ class FluxoniumPocket(_FluxoniumPocket):
     """The connectors to the inductor were shaped like the dorsal fin of a shark/dolphin.
     made them rectangular.
 
-    Adding these things to Default Options to accomadate a connecting piece on the capacitor to the JJ
+    Adding these things to Default Options to accomadate a connecting piece on the capacitor to the JJ.
+    Has the option to make the pads purely rectangular with rounded sides
+
+    Can accomadate a second flux line on the left side. Currently the two flux lines are mirror images of 
+    each other but that can be changed in the future.
+
+    This class inherits _FluxoniumPocket by Figen Yilmaz and Christian Kragland Andersen.
+    This class was created by Alexander Nguyen and David Sommers.
     """
     default_options = Dict(_FluxoniumPocket.default_options,
                            top_wire_connector=False,#by default, the connector won't exist
@@ -1766,7 +1773,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         pad_width = p.pad_width
         pad_radius = p.pad_radius
         pad_gap = p.pad_gap
-        l_arm_length = p.l_arm_length
+        l_arm_length = p.l_arm_length#length of the horizontal arms on the right hand side where JJ array connects
         l_arm_width = p.l_arm_width
         l_width = p.l_width
         nanowire_inductor = p.nanowire
@@ -1776,14 +1783,14 @@ class FluxoniumPocket(_FluxoniumPocket):
             inductor = draw.LineString([(l_arm_length, l_length/2), (l_arm_length, -l_length/2)])#MY COMMENT: I don't know how l_length is defined here since it is only defined
             #in the else below. regardless, this just defines the inductor as a straight simple line.
             if p.round_edge:#note that the inductor is backwards when using the default value of inductor_orientation of -1
-                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), (l_length/2)-(l_arm_width/2)), (((pad_width+pad_height)/2)+(l_arm_length/4), -((l_length/2)-(l_arm_width/2)))])#((pad_gap+pad_height)/2)-l_arm_width
+                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), (pad_gap+pad_height-l_arm_width)/2), (((pad_width+pad_height)/2)+(l_arm_length/4), -((pad_gap+pad_height-l_arm_width)/2))])#((pad_gap+pad_height)/2)-l_arm_width
         else:
             l_length = p.array_length
             # This one is for JJ array
             io = float(p.inductor_orientation)#MY COMMENT: This just makes the inductor longer/shorter, inductor_orientation is just a scaling factor
             inductor = draw.LineString([(l_arm_length-l_arm_width, io*l_length/2), (l_arm_length-l_arm_width, -io*l_length/2)])
             if p.round_edge:
-                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), io*((l_length/2)-(l_arm_width/2))), (((pad_width+pad_height)/2)+(l_arm_length/4), -io*((l_length/2)-(l_arm_width/2)))])
+                inductor=draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), io*(pad_gap+pad_height-l_arm_width)/2), (((pad_width+pad_height)/2)+(l_arm_length/4), -io*((pad_gap+pad_height-l_arm_width)/2))])
 
         # Draw 'the arms' and make them curvy, first top arm and then same goes for the bottom
         l_arm_up = draw.Polygon([
@@ -1794,7 +1801,7 @@ class FluxoniumPocket(_FluxoniumPocket):
             ])
         if p.round_edge:
             #l_arm_up=draw.translate(l_arm_up, (pad_height/2)+(l_arm_length/4), pad_height/2)
-            l_arm_up=draw.rectangle(l_arm_length, l_arm_width, (pad_width+pad_height)/2, (pad_gap+pad_height)/2)
+            l_arm_up=draw.rectangle(l_arm_length, l_arm_width, pad_width, (pad_gap+pad_height)/2)
             #self.add_qgeometry('poly', dict(l_arm_up=l_arm_up))
 
         """l_arm_up_fillet = draw.Point(l_arm_length, l_length/2).buffer(l_arm_width) # Having semicircle with subtracting the geometries
@@ -1816,7 +1823,7 @@ class FluxoniumPocket(_FluxoniumPocket):
             (pad_width/2, -(l_length/2+l_arm_width)), # point h
             ])
         if p.round_edge:
-            l_arm_bot=draw.rectangle(l_arm_length, l_arm_width, (pad_width+pad_height)/2, -(pad_gap+pad_height)/2)
+            l_arm_bot=draw.rectangle(l_arm_length, l_arm_width, pad_width, -(pad_gap+pad_height)/2)
         """l_arm_bot_fillet = draw.Point(l_arm_length, -l_length/2).buffer(l_arm_width)
         cut_ply_bot = draw.Polygon([
              ((l_arm_length-l_arm_width*2), -(l_length/2+l_arm_width*2)),   # point o
@@ -1833,7 +1840,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         pad_circle_top = draw.Point(0, (pad_radius+pad_height)).buffer(pad_radius)
         pad_top = draw.union(pad_rect_top, pad_circle_top, l_arm_up)#, l_arm_up_fillet)
         if p.round_edge:
-            pad_right_circle_top=draw.Point(pad_width/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_right_circle_top=draw.Point(pad_width/2, (pad_gap+pad_height)/2).buffer(pad_height/2)#origin is middle of gap so go up half gap and half height
             pad_left_circle_top=draw.Point(-(pad_width)/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
             pad_top=draw.union(pad_top, pad_right_circle_top, pad_left_circle_top)
         pad_rect_bot = draw.rectangle(pad_width, pad_height, 0, -(pad_gap+pad_height)/2)
