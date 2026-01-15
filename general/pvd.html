@@ -8,14 +8,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Accounting for shadow evaporation &mdash; SQDMetal  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
-      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
 
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
       <script src="../_static/documentation_options.js?v=5929fcd5"></script>
-      <script src="../_static/doctools.js?v=9bcbadda"></script>
-      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -103,7 +103,7 @@
 <p>Shadow evaporation techniques in PVD (physical vapour deposition) are used to fabricate Josephson junctions. In angled evaporation, the substrate mask has an undercut. If the evaporation angle that is perpendicular to the substrate, the patterned metal will match the shape of the mask. However, if the evaporation is angled, then the top-layer mask will produce shadowed areas upon which no metal deposits. <em>SQDMetal</em> has a <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code> utility class to visualise the effect of the shadowed evaporation steps.</p>
 <p>The geometry of shadow evaporation is illustrated below. The substrate has two layers of masks. Upon developing the top layer, there exists an undercut in the bottom layer where the mask has been cleared. When evaporating at an angle <em>θ</em>, the evaporated metal (in orange) is offset from the template defined by the top layer mask (that is, here it is offset to the right as opposed to being directly below the top layer). The extent of the evaporated metal is defined by the thickness of the two mask layers.</p>
 <figure class="align-center" id="id3">
-<a class="reference internal image-reference" href="../_images/PVD_idea.drawio.svg"><img alt="Parameters used in the U-clip" src="../_images/PVD_idea.drawio.svg" style="width: 421.0px; height: 221.0px;" />
+<a class="reference internal image-reference" href="../_images/PVD_idea.drawio.svg"><img alt="Parameters used in the U-clip" height="221" src="../_images/PVD_idea.drawio.svg" width="421" />
 </a>
 <figcaption>
 <p><span class="caption-text">Geometry of shadow evaporation</span><a class="headerlink" href="#id3" title="Link to this image"></a></p>
@@ -151,7 +151,7 @@
 </ul>
 <p>The angles constitute the spherical polar angle from which the evaporated ray arrives:</p>
 <figure class="align-center" id="id4">
-<a class="reference internal image-reference" href="../_images/PVD_angle.drawio.svg"><img alt="Angles when specifying shadow evaporation profiles." src="../_images/PVD_angle.drawio.svg" style="width: 164.0px; height: 102.0px;" />
+<a class="reference internal image-reference" href="../_images/PVD_angle.drawio.svg"><img alt="Angles when specifying shadow evaporation profiles." height="102" src="../_images/PVD_angle.drawio.svg" width="164" />
 </a>
 <figcaption>
 <p><span class="caption-text">Angles when specifying shadow evaporation profiles in <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code>.</span><a class="headerlink" href="#id4" title="Link to this image"></a></p>
@@ -187,7 +187,7 @@
 </div>
 <p>Note that the function <cite>plot_all_layers</cite> accepts the same options outlined above. The option <cite>layer_trim_length</cite> is given in metres. The resulting patterns from the given options are shown below:</p>
 <figure class="align-center" id="id5">
-<a class="reference internal image-reference" href="../_images/PVD_options.drawio.svg"><img alt="PVD modes when using PVD_Shadows" src="../_images/PVD_options.drawio.svg" style="width: 662.0px; height: 172.0px;" />
+<a class="reference internal image-reference" href="../_images/PVD_options.drawio.svg"><img alt="PVD modes when using PVD_Shadows" height="172" src="../_images/PVD_options.drawio.svg" width="662" />
 </a>
 <figcaption>
 <p><span class="caption-text">Modes when specifying shadow evaporation profiles in <code class="docutils literal notranslate"><span class="pre">PVD_Shadows</span></code></span><a class="headerlink" href="#id5" title="Link to this image"></a></p>
