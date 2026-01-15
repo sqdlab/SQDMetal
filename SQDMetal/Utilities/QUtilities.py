@@ -56,7 +56,7 @@ class QUtilities:
         return unit_conv
 
     @staticmethod
-    def parse_value_length(strVal):
+    def parse_value_length(strVal:str|float|int):
         '''
         Parse a length value with units and convert it to meters.
 
@@ -72,16 +72,21 @@ class QUtilities:
             - fm → 1e-15 m
             - m  → 1 m (base unit)
 
-        Args:
-            strVal (str | float | int): Length value to parse. May be a string with
-                units or a raw numeric value.
+        Parameters
+        ----------
+            strVal : str | float | int
+                Length value to parse. May be a string with units or a raw numeric value.
 
-        Returns:
-            float: The value converted to meters.
-            str: Returned unchanged only if the format is invalid and no unit can
+        Returns
+        -------
+            value : float
+                The value converted to meters - returned if successful.
+            error : str
+                Returns string unchanged if the format is invalid and no unit can
                 be parsed (fallback case).
 
-        Raises:
+        Raises
+        ------
             AssertionError: If the string is too short to contain meaningful units
                 or appears malformed.
         '''
@@ -660,25 +665,26 @@ class QUtilities:
         The plot can optionally be drawn on an existing axes object and supports
         several keyword arguments for tweaking visual appearance.
 
-        Args:
-            design (QDesign):
-                A Qiskit Metal design object containing component geometry and
-                chip metadata.
-            **kwargs:
-                resolution (int, default=4):  
-                    Polygon resolution passed to ``get_net_coordinates``.
-                fuse_threshold (float, default=1e-10):  
-                    Distance threshold for fusing adjacent polygons in the
-                    subtractive layers.
-                ax (matplotlib.axes.Axes, optional):  
-                    Existing axes to draw on. If omitted, a new figure and axes
-                    are created.
+        Parameters
+        ----------
+        design : QDesign
+            A Qiskit Metal design object containing component geometry and
+            chip metadata.
+        kwargs : dict
+            Keyword arguments:
 
-        Notes:
-            - Metal geometries are plotted in blue; the ground plane is plotted
-            in the same color but rendered separately.
-            - The chip dimensions and center coordinates are taken from
-            ``design.chips['main']['size']`` and converted to consistent units.
+            *   ``'resolution'`` (`int`):
+                Polygon resolution passed to ``get_net_coordinates`` (default is 4).
+            *   ``'fuse_threshold'`` (`float`):
+                Distance threshold in metres when fusing adjacent polygons in the subtractive layers.
+                Default is 1e-10
+            *   ``'ax'`` (`matplotlib.axes.Axes`):
+                Existing axes to draw on. If omitted, a new figure and axes are created.
+
+        Note
+        ----
+            - Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.
+            - The chip dimensions and center coordinates are taken from ``design.chips['main']['size']`` and converted to consistent units.
         """
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
@@ -713,7 +719,7 @@ class QUtilities:
         ax.set_facecolor('#DDAA33')
 
     @staticmethod
-    def plot_highlight_component(component_name, design, **kwargs):
+    def plot_highlight_component(component_name:str, design, **kwargs):
         """
         Plot a single component of a Qiskit Metal design and visually highlight it.
 
@@ -722,39 +728,40 @@ class QUtilities:
         are annotated with arrows and labels. Useful for visually debugging
         component placement, orientation, and connectivity.
 
-        Args:
-            component_name (str):
-                The name of the QComponent in ``design.components`` to highlight.
-            design (QDesign):
-                A Qiskit Metal design object containing component geometry,
-                chip settings, and pin locations.
-            **kwargs:
-                resolution (int, default=4):  
-                    Polygon simplification resolution passed to
-                    ``QiskitShapelyRenderer.get_net_coordinates()``.
-                ax (matplotlib.axes.Axes, optional):  
-                    Existing axis to draw on. If not provided, a new figure and axis
-                    are created.
-                len_pin_arrow_frac_axis (float, default=0.2):  
-                    Fraction of the current axis extent used to set the arrow length
-                    for pin direction indicators.
-                arrow_width (float, default=0.001):  
-                    Width of arrows used to indicate pin normals.
-                push_to_back (bool, default=False):  
-                    If True, non-highlighted polygons are sorted so they are drawn
-                    behind the highlighted ones.
+        Parameters
+        ----------
+        component_name : str
+            The name of the QComponent in ``design.components`` to highlight.
+        design : QDesign
+            A Qiskit Metal design object containing component geometry,
+            chip settings, and pin locations.
+        kwargs : dict
+            Optional keyword arguments:
+            *   ``'resolution'`` (`int`):  
+                Polygon simplification resolution passed to
+                ``QiskitShapelyRenderer.get_net_coordinates()`` (defaults to 4).
+            *   ``'ax'`` (`matplotlib.axes.Axes`):  
+                Existing axis to draw on. If not provided, a new figure and axis
+                are created.
+            *   ``'len_pin_arrow_frac_axis'`` (`float`):  
+                Fraction of the current axis extent used to set the arrow length
+                for pin direction indicators. Defaults to 0.2.
+            *   ``'arrow_width'`` (`float`):  
+                Width of arrows used to indicate pin normals. Defaults to 0.001.
+            *   ``'push_to_back'`` (`bool`):  
+                If True, non-highlighted polygons are sorted so they are drawn
+                behind the highlighted ones. Default to False.
 
-        Notes:
-            - Metal polygons for the highlighted component are drawn in **#069AF3**
-            (blue). Other metals appear in light blue.
-            - Gap polygons for the highlighted component are drawn in **#808080**.
-            Other gaps appear in a light grey.
-            - Pin arrows are drawn in red with text labels centered along the arrow.
-
-        Returns:
+        Returns
+        -------
             None
                 The function produces a plot but does not return any data.
 
+        Note
+        ----
+            - Metal polygons for the highlighted component are drawn in **#069AF3** (blue). Other metals appear in light blue.
+            - Gap polygons for the highlighted component are drawn in **#808080** (grey). Other gaps appear in a light grey.
+            - Pin arrows are drawn in red with text labels centered along the arrow.
         """
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
@@ -1085,32 +1092,48 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Launcher_inplane(
         design,
-        qObjName,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
-        unit_conv_extra=1,
+        qObjName:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
+        unit_conv_extra:float=1,
     ):
         """
         Computes the in-plane "U"-shaped ground polygon coordinates for a 
         coplanar waveguide (CPW) launcher component. Used to connect ground
         either side of a CPW.
 
-        Args:
-            design: Qiskit Metal design object containing the components.
-            qObjName (str): Name of the launcher component.
-            thickness_side (float, optional): Thickness of the side arms of the U. Default is 20e-6 meters.
-            thickness_back (float, optional): Thickness of the back section of the U. Default is 20e-6 meters.
-            separation_gap (float, optional): Extra gap between CPW and ground polygon. If 0, defaults to CPW gap. Default is 0 meters.
-            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
 
-        Returns:
-            list of np.ndarray: List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
+            Parameters used in the U-clip
 
-        Notes:
-            - Only supports components of type `LaunchpadWirebond`.
+        Note:
             - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
             - Coordinates are scaled by `unit_conv_extra`.
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        qObjName : str
+            Name of the launcher component.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
         """
         qObj = design.components[qObjName]
         if isinstance(qObj, LaunchpadWirebond):
@@ -1146,33 +1169,51 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Route_inplane(
         design,
-        route_name, 
-        pin_name,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
+        route_name:str,
+        pin_name:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
         unit_conv_extra=1,
     ):
         """
         Computes the in-plane "U"-shaped ground polygon coordinates for a 
         coplanar waveguide (CPW) route component.
 
-        Args:
-            design: Qiskit Metal design object containing the components.
-            route_name (str): Name of the routed component.
-            pin_name (str): Name of the pin used to determine the CPW start point.
-            thickness_side (float, optional): Thickness of the side arms of the U. Default is 20e-6 meters.
-            thickness_back (float, optional): Thickness of the back section of the U. Default is 20e-6 meters.
-            separation_gap (float, optional): Extra gap between CPW and ground polygon. If 0, defaults to CPW gap. Default is 0 meters.
-            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
-
-        Returns:
-            list of np.ndarray: List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
-
-        Notes:
+        Note:
             - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
             - Coordinates are scaled by `unit_conv_extra`.
             - Type-checking for the routed component is not enforced (TODO).
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        route_name : str
+            Name of the routed component.
+        pin_name : str
+            Name of the pin used to determine the CPW start point.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
         """
         # TODO: Do type-checking here?
         vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(

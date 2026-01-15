@@ -32,6 +32,8 @@ Useful Utilities
 
 - :ref:`QUtilities <utilities-qutilities>` - a general set of helper utility functions involving Qiskit-Metal entities.
 - :ref:`MakeGDS <utilities-gds>` - a GDS exporter with useful manipulation/postprocessing functionality.
+- :ref:`ManipulateGDS <utilities-mgds>`
+- :ref:`Qubit Designer <utilities-qbder>`
 
 .. toctree::
    :maxdepth: 2
@@ -39,3 +41,5 @@ Useful Utilities
 
    qutilities
    utilitygds
+   utilitymgds
+   qubitdesigner
