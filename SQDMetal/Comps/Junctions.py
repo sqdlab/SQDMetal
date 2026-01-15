@@ -213,6 +213,317 @@ class JunctionDolan(QComponent):
         [pad_T, pad_Fork, pin1, pin2, sim_JJ] = polys
         return pad_T, pad_Fork, pin1, pin2, sim_JJ
 
+class JunctionSingleDolan(QComponent):
+    """Create a single Dolan Bridge Josephson Junction
+
+    Inherits QComponent class.
+
+    Consists of a vertical prong with a finger, and a horizontal half-T.
+
+    Dolan Bridge Josephson Junction Metal Geometry (no Ground Cutout):
+        * bridge_gap - Gap between the half-T and the prong Section
+        * finger_length - Length of the thin section on the end of the prong Section
+        * finger_width  - Width of the thin section on the end of the prong Section
+        * prong_width  - Length of the thicker section on the end of the prong Section
+        * prong_length  - Width of the thicker section on the end of the prong Section
+        * t_pad_width  - Thickness of the half-T pad connecting to the leads
+        * t_pad_length  - Length of the half-T pad connecting to the leads
+        * t_finger_width - Thickness of the finger of the half-T pad connecting to the leads
+        * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
+        * reverse    - Default False. If True, the direction of the prongs is flipped by 180 degrees (that is, the prongs will
+                       be near the first pin)
+
+    As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
+        
+    Pins:
+        There are pins given on either side to help position the bandage. They are called 't' and 'f' for the T-pad and
+        fork respectively. Pin width is stem_width.
+
+    The junction area is given by F x TFW (finger_width x t_finger_width)
+
+    Sketch:
+        Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
+        ::
+                    'f' pin
+                    |     |
+             _______|<-SW>|                 
+            |             |     SW   
+            |      _______|     SW            
+            |<PW->|             PL     PL  = prong_length
+            |_   _|             PL     PW  = prong_width
+              | |               FW  
+              |F|               FW     F  = finger_width
+              |_|               FW     FW = finger_length
+                                BG     BG = bridge_gap
+             TFL  <--TPL-->     BG
+            <----> ________     BG
+         _________|    ^  |     BG     TFL = t_finger_length                
+        |_________    TPW |     TFW    TFW = t_finger_width  
+                  |__  |  |            TPL = t_pad_length
+        <-->        |     |            TPW = t_pad_width
+         TPE        |<SW->|            TPE = t_pad_extra
+                    |     |            SW  = stem_width
+                    't' pin
+                    
+    .. image::
+
+    .. meta::
+        Fixed Frequency Dolan Bridge Josephson Junction
+
+    Default Options:
+        * pos_x='0um', pos_y='0um'
+        * end_x='20um', end_y='0um'
+        * dist_extend='40um'
+        * bridge_gap='0.2um'
+        * finger_length='1.75um'
+        * finger_width='0.23um'
+        * prong_width='0.5um'
+        * prong_length='1.75um'
+        * t_pad_width='0.6um'
+        * t_finger_width='0.23um'
+        * t_finger_length='1um'
+        * t_pad_length= '1um'
+        * t_pad_extra='0.1um'
+        * stem_width=`1um`
+    """
+    default_options = Dict(pos_x='0um', pos_y='0um',
+                           end_x='20um', end_y='0um', 
+                           dist_extend='40um',
+                           bridge_gap='0.2um',
+                           finger_length='1.75um',
+                           finger_width='0.230um',
+                           prong_width='0.5um',
+                           prong_length='1.75um',
+                           t_pad_width='0.6um',
+                           t_finger_width='0.230um',
+                           t_finger_length='1um',
+                           t_pad_length='3um',
+                           t_pad_extra='0.1um',
+                           stem_width='1um',
+                           reverse=False)
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionSingleDolan.draw_junction(p)
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad1=pad_T, pad_Fork=pad_Fork),
+                           layer=p.layer)
+        
+        self.add_qgeometry('junction',
+                           {'design': sim_JJ},
+                           layer=p.layer,
+                           subtract=False,
+                           width=p.t_pad_length+p.t_pad_extra+p.prong_width)
+
+        # Generates its own pins
+        self.add_pin('t', pin1.coords[::-1], width=p.t_pad_length)
+        self.add_pin('f', pin2.coords[::-1], width=p.prong_width)
+    
+    @staticmethod
+    def draw_junction(p):
+        struct_width = p.t_pad_width/2 + p.t_finger_width/2 + \
+            p.bridge_gap + p.finger_length + p.prong_length
+        len_comp = np.sqrt((p.end_x-p.pos_x)**2+(p.end_y-p.pos_y)**2)
+        len_stem = (len_comp - struct_width)/2 # extension from start/end to start of junction structure
+
+        # The T-Section and Stem
+        pad_T = [
+            (-p.t_pad_width*0.5, p.stem_width*0.5),  # 1
+            (-len_stem-p.t_pad_width*0.5, p.stem_width*0.5),  # 2
+            (-len_stem-p.t_pad_width*0.5, -p.stem_width*0.5),  # 3
+            (-p.t_pad_width*0.5, -p.stem_width*0.5),  # 4
+            (-p.t_pad_width*0.5, -p.t_pad_length*0.5),  # 4'
+            (-p.t_finger_width*0.5, -p.t_pad_length*0.5),  # 5
+            (-p.t_finger_width*0.5, -p.t_pad_length *
+             0.5-p.t_finger_length-p.t_pad_extra),  # 6
+            (p.t_finger_width*0.5, -p.t_pad_length *
+             0.5-p.t_finger_length-p.t_pad_extra),  # 7
+            (p.t_finger_width*0.5, -p.t_pad_length*0.5),  # 8
+            (p.t_pad_width*0.5, -p.t_pad_length*0.5),  # 9
+            (p.t_pad_width*0.5, p.stem_width*0.5),  # 10
+        ]
+
+        # The Fork Section and Stem
+        p.squid_width = (p.t_finger_length + (p.t_pad_length/2))*2
+        p.fork_pad_size = p.stem_width
+        pad_Fork = [
+            (p.finger_length+p.prong_length +
+             p.fork_pad_size+len_stem, p.stem_width*0.5),
+            (p.finger_length+p.prong_length, p.stem_width*0.5),
+            (p.finger_length+p.prong_length, -
+             p.squid_width*0.5+p.prong_width),
+            (p.finger_length, -p.squid_width*0.5+p.prong_width),
+            (p.finger_length, (-p.squid_width+p.prong_width+p.finger_width)*0.5),
+            (0, (-p.squid_width+p.prong_width+p.finger_width)*0.5),
+            (0, (-p.squid_width+p.prong_width-p.finger_width)*0.5),
+            (p.finger_length, (-p.squid_width+p.prong_width-p.finger_width)*0.5),
+            (p.finger_length, -p.squid_width*0.5),
+            (p.finger_length+p.prong_length, -p.squid_width*0.5),
+            (p.finger_length+p.prong_length +
+             p.fork_pad_size, -p.squid_width*0.5),
+            (p.finger_length+p.prong_length +
+             p.fork_pad_size, -p.stem_width*0.5),
+            (p.finger_length+p.prong_length+p.fork_pad_size+len_stem, -p.stem_width*0.5)]
+
+        pad_T = np.array(pad_T)
+        pad_T[:, 0] += len_stem + p.t_pad_width/2 # adjust in x
+        pad_Fork = np.array(pad_Fork)
+        pad_Fork[:, 0] += p.t_finger_width*0.5 + \
+            p.bridge_gap + len_stem + p.t_pad_width/2
+
+        sim_JJ = shapely.LineString([
+            np.mean(pad_T[1:3], axis=0),
+            np.mean([pad_Fork[-1], pad_Fork[0]], axis=0)
+        ])
+
+        # draw pins and shapes
+        pin1 = shapely.LineString(pad_T[1:3])
+        pin2 = shapely.LineString([pad_Fork[-1], pad_Fork[0]])
+        pad_T = shapely.Polygon(pad_T)
+        pad_Fork = shapely.Polygon(pad_Fork)
+
+        # move into position relative to given coords pos_x, pos_y
+        polys = [pad_T, pad_Fork, pin1, pin2, sim_JJ]
+        if p.reverse:
+            polys = draw.translate(polys, -len_comp, 0)
+            polys = draw.rotate(polys, np.pi, origin=(0, 0), use_radians=True)
+        polys = draw.rotate(polys, np.arctan2(
+            p.end_y-p.pos_y, p.end_x-p.pos_x), origin=(0, 0), use_radians=True)
+        polys = draw.translate(polys, p.pos_x, p.pos_y)
+        [pad_T, pad_Fork, pin1, pin2, sim_JJ] = polys
+        return pad_T, pad_Fork, pin1, pin2, sim_JJ
+
+class JunctionSingleDolanPinStretch(QComponent):
+    """
+    Create a single Dolan Bridge Josephson Junction
+
+    Inherits QComponent class.
+
+    Consists of a vertical prong with a finger, and a horizontal half-T.
+
+    Dolan Bridge Josephson Junction Metal Geometry(no Ground Cutout):
+        * bridge_gap - Gap between the half-T and the prong Section
+        * dist_extend = distance to extend from start pin
+        * finger_length - Length of the thin section on the end of the prong Section
+        * finger_width - Width of the thin section on the end of the prong Section
+        * prong_width - Length of the thicker section on the end of the prong Section
+        * prong_length - Width of the thicker section on the end of the prong Section
+        * t_pad_width - Thickness of the half-T pad connecting to the leads
+        * t_pad_length - Length of the half-T pad connecting to the leads
+        * t_finger_width - Thickness of the finger of the half-T pad connecting to the leads
+        * t_pad_extra - Extra length added to the sides of the T-Section to ensure proper overlap with fingers
+        * reverse    - Default False. If True, the direction of the prongs is flipped by 180 degrees (that is , the prongs will
+                       be near the first pin)
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
+        * dist_extend - Distance upon to stretch away from the start pin.
+    The resulting Josephson junction is right in the centre. This class ignores pos_x, pos_y and orientation...
+        
+    Pins:
+        There are pins given on either side to help position the bandage. They are called 't' and 'f' for the T-pad and
+        fork respectively. Pin width is stem_width.
+
+    The junction area is given by F x TFW(finger_width x t_finger_width)
+
+    Sketch:
+        Below is a sketch of the Josephson Junction Shadow Evaporation masking template (there is no ground cut-out)
+        : :
+                    'f' pin
+                    |     |                                     ^
+             _______|<-SW>|                                     |
+            |             |     SW                         dist_extend
+            |      _______|     SW                              |
+            |<PW->|             PL     PL  = prong_length       |
+            |_   _|             PL     PW  = prong_width        |
+              | |               FW                              |
+              |F|               FW     F  = finger_width        |
+              |_|               FW     FW = finger_length       |
+                                BG     BG = bridge_gap          |
+             TFL  <--TPL-->     BG                              |
+            <----> ________     BG                              |
+         _________|    ^  |     BG     TFL = t_finger_length    |            
+        |_________    TPW |     TFW    TFW = t_finger_width     |
+                  |__  |  |            TPL = t_pad_length       |
+        <-->        |     |            TPW = t_pad_width        |
+         TPE        |<SW->|            TPE = t_pad_extra        |
+                    |     |            SW  = stem_width         |
+                    't' pin
+                    
+    .. image::
+
+    .. meta::
+        Fixed Frequency Dolan Bridge Josephson Junction
+
+    Default Options:
+        * dist_extend='40um'
+        * bridge_gap='0.2um'
+        * finger_length='1.75um'
+        * finger_width='0.23um'
+        * prong_width='0.5um'
+        * prong_length='1.75um'
+        * t_pad_width='0.6um'
+        * t_finger_width='0.23um'
+        * t_finger_length='1um'
+        * t_pad_length= '1um'
+        * t_pad_extra='0.1um'
+        * stem_width=`1um`
+    """
+
+    default_options = Dict(dist_extend='40um',
+                           bridge_gap='0.2um',
+                           finger_length='1.75um',
+                           finger_width='0.230um',
+                           prong_width='0.5um',
+                           prong_length='1.75um',
+                           t_pad_width='0.6um',
+                           t_finger_width='0.230um',
+                           t_finger_length='1um',
+                           t_pad_length='3um',
+                           t_pad_extra='0.1um',
+                           stem_width='1um',
+                           reverse=False)
+    
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        norm = start_point['normal']
+        p.pos_x = startPt[0]
+        p.pos_y = startPt[1]
+        print(startPt)
+        endPt = startPt + norm*p.dist_extend
+        print(endPt)
+        p.end_x = endPt[0]
+        p.end_y = endPt[1]
+
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionSingleDolan.draw_junction(p)
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad1=pad_T, pad_Fork=pad_Fork),
+                           layer=p.layer)
+
+        self.add_qgeometry('junction',
+                           {'design': sim_JJ},
+                           layer=p.layer,
+                           subtract=False,
+                           width=p.squid_width+2*p.t_pad_extra)
+
+        # Generates its own pins
+        self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
+        self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
+
 class JunctionDolanPinStretch(QComponent):
     """Create a Dolan Bridge Josephson Junction
 
@@ -266,10 +577,10 @@ class JunctionDolanPinStretch(QComponent):
                   |<--TPL-->|           BG     BG = bridge_gap
                    _________            BG
          _________|    ^    |_________  BG                 
-        |_________   TPW   __________| TFW    TFW = t_finger_width  
+        |_________   TPW   __________|  TFW    TFW = t_finger_width  
                   |___ | ___|                  TPL = t_pad_length
-        <-->          | |         <-->          TPW = t_pad_width
-         TPE          |S|          TPE           TPE = t_pad_extra
+        <-->          | |         <-->         TPW = t_pad_width
+         TPE          |S|          TPE         TPE = t_pad_extra
                       | |
 
     .. image::

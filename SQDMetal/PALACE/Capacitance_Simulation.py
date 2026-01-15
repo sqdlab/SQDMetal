@@ -567,14 +567,14 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 T1p_ms = None
         else:
             print("Could not calculate g, chi, kappa, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
-            g_MHz = 'N/A'
-            chi_MHz = 'N/A'
-            Delta_GHz = 'N/A'
-            anh_MHz = 'N/A'
-            Cres = 'N/A'
-            Lres = 'N/A'
-            kappa_MHz = 'N/A'
-            T1p_ms = 'N/A'
+            g_MHz = 0
+            chi_MHz = 0
+            Delta_GHz = 0
+            anh_MHz = 0
+            Cres = 0
+            Lres = 0
+            kappa_MHz = 0
+            T1p_ms = 0
         
         # Calculate junction parameters for target frequency (if applicable)
         if qubit_freq:
@@ -582,8 +582,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             E_J_GHz = (h * qubit_freq + E_C_J)**2 / (8 * E_C_J) / h / 1e9
             L_J_nH = phi_0**2 / (4 * np.pi**2 * h * E_J_GHz)
         else:
-            E_J_GHz = 'N/A'
-            L_J_nH = 'N/A'
+            E_J_GHz = 0
+            L_J_nH = 0
 
         if print_all_capacitances:
             print("Capacitance Results")
@@ -598,7 +598,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF\n")
 
         # Print Readout resonator parameters
-        if res is not None:
+        if (res is not None) and num_conductors >= 4:
             print("Readout Resonator")
             print("-------------------")
             print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.3f} GHz")

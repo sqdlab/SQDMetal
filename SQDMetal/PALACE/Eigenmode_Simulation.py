@@ -483,6 +483,10 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_RF_Base):
         n_modes = len(png_files)
         # plotting
         fig = plt.figure(figsize=(8, 3 * n_modes))
+        path = os.path.normpath(directory)
+        parts = path.split(os.sep)
+        last_two = os.path.join(parts[-2], parts[-1])
+        fig.suptitle(str(last_two))
         gs = GridSpec(n_modes, 2, width_ratios=[2, 1], figure=fig)
         for i, filename in enumerate(png_files):
             eig_num = int(r.match(filename).group(1))
