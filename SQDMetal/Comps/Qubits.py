@@ -1736,8 +1736,14 @@ class FluxoniumPocket(_FluxoniumPocket):
                            bot_wire_height='0.015mm',
                            bot_wire_width='0.0039mm',
                            make_rol_left=False,#make the mirror image of the flux line on the other side
-                           round_edge=False#make the edges of the rectangular part round.
-                           )
+                           round_edge=False,#make the edges of the rectangular part round. pad_width should be greater than pad_height or you could lose the pegs for the JJ array
+                           teeth_options=Dict(
+                               make_teeth=False,#make teeth in readout resonator pad. Will be FUNKY unless pad_radius=0
+                               coupled_pad_width='10um',#using same defaults and variable names as transmon_pocket_teeth whenever possible
+                               coupled_pad_height='40um',#changed this default to be a lot shorter
+                               coupled_pad_gap='100um',#distance between centers of the teeth. edge to edge distance depends on coupled_pad_width
+                               pad_gap='15um'#this is the gap between the CPW and the capacitor. NotE: because of rounded end the top of the rounded end is half a cpw_width closer than stated gap
+                           ))
     
     def make(self):
         """Define the way the options are turned into QGeometry.
@@ -1777,6 +1783,12 @@ class FluxoniumPocket(_FluxoniumPocket):
         l_arm_width = p.l_arm_width
         l_width = p.l_width
         nanowire_inductor = p.nanowire
+        teeth_options=p.teeth_options
+
+        if p.round_edge and (pad_height>pad_width):
+            self.logger.info(
+                'Warning: pad_height>pad_width. The pegs for the JJ array might be gone.'
+            )
 
         # Drawing the kinectic inductor
         if nanowire_inductor == True:
@@ -1851,6 +1863,17 @@ class FluxoniumPocket(_FluxoniumPocket):
             pad_left_circle_bot=draw.Point(-(pad_width)/2, -(pad_gap+pad_height)/2).buffer(pad_height/2)
             pad_bot=draw.union(pad_bot, pad_right_circle_bot, pad_left_circle_bot)
 
+        if teeth_options.make_teeth:#makes teeth to insert readout resonator. best if pad_radius=0
+            tooth_left=draw.rectangle(teeth_options.coupled_pad_width,
+                                     teeth_options.coupled_pad_height, -teeth_options.coupled_pad_gap/2, -(pad_height+((pad_gap+teeth_options.coupled_pad_height)/2)))
+            coupler_pad_round_left = draw.Point(-teeth_options.coupled_pad_gap/2, -(teeth_options.coupled_pad_height + pad_height+(pad_gap/2))).buffer(
+                teeth_options.coupled_pad_width / 2,
+                resolution=16,
+                cap_style=CAP_STYLE.round)
+            tooth_right=draw.translate(tooth_left, teeth_options.coupled_pad_gap , 0)
+            coupler_pad_round_right=draw.translate(coupler_pad_round_left, teeth_options.coupled_pad_gap , 0)
+            pad_bot=draw.union(pad_bot, tooth_left, coupler_pad_round_left, tooth_right, coupler_pad_round_right)
+
         if p.top_wire_connector:
             connector_top = draw.rectangle(
                   p.top_wire_width,
@@ -1913,6 +1936,7 @@ class FluxoniumPocket(_FluxoniumPocket):
                            width=p.jj_width,
                            hfss_inductance = p.L_j,
                            hfss_capacitance = p.C_j)
+        
     
     def make_flux_bias_line2(self):
         """ Adds flux bias line to fluxonium pocket."""
@@ -2007,3 +2031,106 @@ class FluxoniumPocket(_FluxoniumPocket):
         fake_port_line_cords = list(draw.shapely.geometry.shape(fake_port_line).coords)
         self.add_pin('fake_flux_bias_line2', 
                     fake_port_line_cords, cpw_width)
+        
+    def make_readout_line(self):
+        """ Adds readout line to fluxonium pocket."""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+        p = self.p
+        pr = self.p.readout_line_options # parser on readout line options
+        teeth_options=p.teeth_options # to make resonator go inside qubit pocket
+        pocket_height = p.pocket_height
+        pad_height_qubit = p.pad_height
+        pad_gap = p.pad_gap#height of the gap between two capacitor pads in qubit
+        
+        
+
+        # define commonly used variables once
+        pad_sep = pr.pad_sep
+        pad_width = pr.pad_width
+        pad_height = pr.pad_height
+        cpw_width = pr.cpw_width
+        cpw_gap = pr.cpw_gap
+
+
+        # For this design the loc_W has to be in 0 but loc_H can be -1 or +1, 
+        # For all other directions One can change the orientation of the qubit.
+        loc_W = float(pr.loc_W)
+        loc_W, loc_H = float(pr.loc_W), float(pr.loc_H)
+        if float(loc_W) not in [0] or float(loc_H) not in [-1., +1.]:
+            self.logger.info(
+                'Warning: Did you mean to define a fluxonium qubit with loc_W is not 0 and'
+                ' loc_H is not +1 or -1 ? Are you sure you want to do this?'
+            )
+
+        # Define the geometry
+        # Readout pad
+        readout_pad = draw.rectangle(pad_width, pad_height, 0, 0)
+        readout_pad_circle_left = draw.Point(-pad_width/2, 0).buffer(pad_height/2) # making the pad circle for left side
+        readout_pad_circle_right = draw.Point(pad_width/2, 0).buffer(pad_height/2) # making the pad circle for right side
+
+        # Readout pad's gap
+        readout_pad_gap = draw.rectangle(pad_width+2*cpw_gap, pad_height+2*cpw_gap, 0, 0)
+        readout_pad_gap_circle_left = draw.Point(-(pad_width+2*cpw_gap)/2, 0).buffer((pad_height+2*cpw_gap)/2) # making the pad's gap circle for left side
+        readout_pad_gap_circle_right = draw.Point((pad_width+2*cpw_gap)/2, 0).buffer((pad_height+2*cpw_gap)/2) # making the pad's gap circle for right side
+
+
+        # Defining the geometry for the readout pad line and it's gap
+        readout_line = draw.rectangle(cpw_width, pad_height, 0, pad_height)
+        readout_line_gap = draw.rectangle(cpw_width+2*cpw_gap, pad_height, 0, pad_height)
+
+        # Here, we union the readout pad and readout line and second line exactly the same for the gap
+        readout_padNline = draw.union(readout_pad, readout_pad_circle_left, readout_pad_circle_right, readout_line)
+        readout_padNline_gap = draw.union(readout_pad_gap, readout_pad_gap_circle_left, readout_pad_gap_circle_right, readout_line_gap)
+    
+        # Readout Line CPW wire
+        port_line = draw.LineString([(cpw_width/2, pad_height*1.5),
+                                     (-cpw_width/2, pad_height*1.5)])
+        
+        
+        
+       
+        # Position the readout, rotate and translate
+        objects = [readout_padNline, readout_padNline_gap, port_line]
+        objects = draw.scale(objects, 1, loc_H, origin=(0, 0))
+        objects = draw.translate(
+            objects,
+            0,
+            loc_H * (p.pocket_height/2 + pad_sep))
+        objects = draw.rotate_position(objects, p.orientation,
+                                       [p.pos_x, p.pos_y])
+        [readout_padNline, readout_padNline_gap, port_line] = objects
+        
+        # if we are using teeth and putting the resonator inside the qubit pocket get rid of readout pad
+        if not teeth_options.make_teeth:
+            self.add_qgeometry('poly', {'readout_padNline': readout_padNline})
+            self.add_qgeometry('poly', {'readout_padNline_gap': readout_padNline_gap}, subtract=True)
+        else:#the readout line has to be in the middle i.e. colinear with y axis when rotation=0
+            readout_line = draw.rectangle(cpw_width,
+                                          ((pocket_height-pad_gap)/2)-pad_height_qubit-teeth_options.pad_gap, 
+                                          0,
+                                          ((pocket_height+pad_gap)/4)+((pad_height_qubit+teeth_options.pad_gap)/2))#the center of the rectangle moves up half a pocket_height-half height of rectangle
+            #readout_line_gap = draw.rectangle(cpw_width+2*cpw_gap, pad_height, 0, pad_height)
+            port_line = draw.LineString([(cpw_width/2, pocket_height/2),
+                                     (-cpw_width/2, pocket_height/2)])
+            readout_line_circle=draw.Point(0, (pad_gap/2)+pad_height_qubit+teeth_options.pad_gap).buffer(cpw_width/2)
+            readout_line=draw.union(readout_line, readout_line_circle)
+        
+            objects = [readout_line, port_line]
+            objects = draw.scale(objects, 1, loc_H, origin=(0, 0))#reflects the shape across the x-axis if loc_H is negative
+            """objects = draw.translate(
+                objects,
+                0,
+                loc_H * (p.pocket_height/2 + pad_sep))"""
+            objects = draw.rotate_position(objects, p.orientation,
+                                       [p.pos_x, p.pos_y])
+            [readout_line, port_line] = objects
+            self.add_qgeometry('poly', {'readout_line': readout_line})
+
+        ############################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        port_line_cords = port_line_cords if loc_H==-1 else port_line_cords[::-1]
+        points = list(port_line_cords)
+        self.add_pin('readout_line', 
+                    points, cpw_width)
