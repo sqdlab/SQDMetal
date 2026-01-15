@@ -548,6 +548,8 @@ class TransmonTaperedInsets(BaseQubit):
         * pocket_extent  - How deep into the pocket should we penetrate with the cpw connector
         * fillet_radius - The radius of the curved edges of the connector pad
           (into the ground plane)
+        * fillet_radius_inner - The radius of curvature on inner corners
+        * fillet_radius_outer - The radius of curvature on outer corners
         * pocket_rise    - How far up or down relative to the center of the transmon should we
           elevate the cpw connection point on the ground plane
         * loc_W / H      - which 'quadrant' of the pocket the connector is set to, +/- 1 (check
