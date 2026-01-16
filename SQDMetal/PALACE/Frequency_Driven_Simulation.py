@@ -1,7 +1,7 @@
 # Copyright 2025 Prasanna Pakkiam
 # SPDX-License-Identifier: Apache-2.0
 
-from SQDMetal.PALACE.Model import PALACE_Model_RF_Base
+from SQDMetal.PALACE.Model import PALACE_Model_Base_RF
 from SQDMetal.Utilities.Materials import Material
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import re
 
-class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
+class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
     #Class Variables
     default_user_options = {
@@ -42,7 +42,20 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         self._rf_port_excitation = -1
 
     def _create_config_file(self, **kwargs):
-        '''create the configuration file which specifies the simulation type and the parameters'''    
+        '''
+        Creates the configuration file for the simulation. This function creates the json file which contains all the details of the simulation including simulation type,
+        boundary conditions, postprocessing and solver conditions. The json file is written to the specified output directory.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            gmsh_render_attrs is a dictionary containing the boundary conditions for the simulation.
+            
+        Returns
+        -------
+            None : 
+                This function does not return any value.
+        '''    
 
         if self.meshing == 'GMSH':
 
@@ -118,7 +131,7 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
-            self.set_local_output_subdir("", False)
+            self.set_local_output_subdir("")
         filePrefix = self._get_folder_prefix()
         self._mesh_name = filePrefix + self.name + file_ext
         config = {
@@ -218,17 +231,61 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
         self.set_local_output_subdir(self._output_subdir)
     
     def add_surface_current_source_region(self, region="", direction=1):
+        '''
+        Adds a surface current excitation to a region in the simulations.
+
+        Parameters
+        ----------
+        region : str 
+            The region which will be excited by a surface current constrained to either 'metals' or 'dielectric'.
+        direction : int
+            Direction of excitation constrained to either 1 or -1 for +z or -z.
+
+        Returns
+        -------
+            None : 
+                this function does not return any value.
+        '''
         assert region in ['metals', 'dielectric'], "Must set region to either 'metals' or 'dielectric'"
         assert direction == -1 or direction == 1, "Direction must be either 1 or -1 for +z or -z"
         self._current_sources.append(('region', region, direction))
 
-    def set_port_excitation(self, port_index):
+    def set_port_excitation(self, port_index: int):
+        '''
+        Sets the port that will be excited in the driven simulation.
+
+        Parameters
+        ----------
+        port_index : int 
+            The index for the port that the user wishes to excite.
+
+        Returns
+        -------
+            None : 
+                this function does not return any value.
+        '''
         assert port_index > 0 and port_index <= len(self._ports), "Invalid index of port for excitation. Check if ports with R>0 have been correctly defined."
         assert self._ports[port_index-1]['type'] == 'waveport' or self._ports[port_index-1]['impedance_R'] > 0, f"Port {port_index} does not have a non-zero resistive part in its impedance."
         self._rf_port_excitation = port_index
 
-    def set_freq_values(self, freq_start, freq_end, freq_step):
-        #Frequencies in Hertz
+    def set_freq_values(self, freq_start: float, freq_end: float, freq_step: float):
+        '''
+        Sets the starting frequency (GHz), the end frequency (GHz) and the frequency step size (GHz) for a driven simulation.
+
+        Parameters
+        ----------
+        freq_start : float 
+            Starting frequency in GHz for the driven simulation.
+        freq_end : float 
+            End frequency in GHz for the driven simulation.
+        freq_step : float
+            Frequency step size in GHz for the driven simulation.
+
+        Returns
+        -------
+            None : 
+                this function does not return any value.
+        '''
         self.freqs = (freq_start, freq_end, freq_step)
         if self._sim_config != "":
             with open(self._sim_config, "r") as f:
@@ -240,13 +297,31 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
                 json.dump(config_json, f, indent=2)
 
     @staticmethod
-    def retrieve_data_from_file(file_path_port_S_csv):
+    def retrieve_data_from_file(file_path_port_S_csv: str) -> dict:
+        '''
+        Retrieves the S-parameters from a completed driven simulation.
+
+        Parameters
+        ----------
+        file_path_port_S_csv : str 
+            The path of the port-S.csv simulation file.
+        
+        Returns
+        -------
+        data : dict
+            A dictionary containing the following data:
+
+            *   ``'freqs'`` (`np.array`): 
+                Array of the frequencies (GHz) used in the frequency sweep.
+            *   ``'S11'`` (`np.array`): 
+                Array of complex S11 values for the corresponding frequencies. 
+            *   ``'S21'`` (`np.array`): 
+                Array of complex S21 values for the corresponding frequencies.
+        '''
         raw_data = pd.read_csv(file_path_port_S_csv)
         headers = raw_data.columns
         raw_data = raw_data.to_numpy().T
-
         num_s_params = int((raw_data.shape[0]-1)/2)
-
         freq_vals = raw_data[0]*1e9
 
         ret_data = {'freqs' : freq_vals}
@@ -260,19 +335,39 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         return ret_data
 
-    def retrieve_data(self):
+    def retrieve_data(self) -> dict:
+        '''
+        Retrieves the S-parameters from a completed driven simulation.
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
+        Parameters
+        ----------
+        None :
+            This function takes no input arguments.
+
+        Returns
+        -------
+        data : dict
+            A dictionary containing the following data:
+
+            *   ``'freqs'`` (`np.array`): 
+                Array of the frequencies (GHz) used in the frequency sweep.
+            *   ``'S11'`` (`np.array`): 
+                Array of complex S11 values for the corresponding frequencies. 
+            *   ``'S21'`` (`np.array`): 
+                Array of complex S21 values for the corresponding frequencies.
+        '''
         if not os.path.exists(self._output_data_dir + '/port-S.csv'):
             return None
 
         raw_data = pd.read_csv(self._output_data_dir + '/port-S.csv')
         headers = raw_data.columns
         raw_data = raw_data.to_numpy().T
-
         num_s_params = int((raw_data.shape[0]-1)/2)
 
         fig, axs = plt.subplots(ncols=num_s_params)
         fig.set_figwidth(8*num_s_params)
-
         freq_vals = raw_data[0]*1e9
 
         ret_data = {'freqs' : freq_vals}
@@ -283,7 +378,8 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
             phs = np.array(raw_data[2*m+2], dtype=np.float64)
             sParam = 10**(amp/20)*np.exp(1j*phs/180*np.pi)
             ret_data[key] = sParam
-            #
+            
+            #plot data
             axs[m].grid()
             axs[m].set_title(f'|{key}| (dB)')
             axs[m].plot(freq_vals, amp, 'r-')
@@ -303,14 +399,54 @@ class PALACE_Driven_Simulation(PALACE_Model_RF_Base):
 
         return ret_data
 
-    def get_waveport_modes(self):
+    def get_waveport_modes(self) -> list:
+        '''
+        Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
+        waveport for this function to run. 
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
+        Parameters
+        ----------
+        None :
+            This function takes no input arguments.
+
+        Returns
+        -------
+        modes : list
+            A list with each element containing the following data as a ``tuple``:
+
+            *   ``'frequency'`` (`float`):
+                Frequency of the transmission line excitation.
+            *   ``'wave_vector'`` (`float`):
+                Wave vector k used to excite the transmission line.
+        '''
         return PALACE_Driven_Simulation.get_waveport_modes_from_file(self.log_location, self._output_data_dir + '/port-S.csv')
 
     @staticmethod
-    def get_waveport_modes_from_file(filename_outLog, filename_PortScsv):
+    def get_waveport_modes_from_file(filename_outLog: str, filename_PortScsv: str) -> list:
         '''
-        Returns the waveport modes by reading the out.log file and its associated port-S.csv file. 
+        Returns the waveport modes by reading the out.log file and its associated port-S.csv file. The excitation source must be a
+        waveport for this function to run. 
+
+        Parameters
+        ----------
+        filename_outLog : str 
+            The path of the .out simulation file.
+        filename_PortScsv : str
+            The path of the port-S.csv simulation file.
+
+        Returns
+        -------
+        modes : list
+            A list with each element containing the following data as a ``tuple``:
+
+            *   ``'frequency'`` (`float`):
+                Frequency of the transmission line excitation.
+            *   ``'wave_vector'`` (`float`):
+                Wave vector k used to excite the transmission line.
         '''
+
         #The string is usually like:
         #   Port 1, mode 1: kₙ = 1.737e+02-5.076e-04i m⁻¹
         lines_with_k = []

@@ -2,11 +2,15 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../../SQDMetal'))  # Path to your project
 
+project = 'SQDMetal'
+
 # -- General configuration ---------------------------------------------------
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.napoleon',
+    'sphinx.ext.autosectionlabel',
+    'nbsphinx'
 ]
 
 # Automatically generate summary pages (tables) for classes, functions, and methods
@@ -32,3 +36,6 @@ html_static_path = ['_static']
 html_theme_options = {
     'navigation_depth': 10
 }
+
+nbsphinx_execute = 'never'
+# nitpicky = True #This setting tells Sphinx to resolve all cross-references (like :class:) and fail the build if any are broken.
