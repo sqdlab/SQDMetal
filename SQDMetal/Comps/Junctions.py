@@ -343,7 +343,7 @@ class JunctionSingleDolan(QComponent):
         * t_finger_width='0.23um'
         * t_finger_length='1um'
         * t_pad_length= '1um'
-        * t_pad_extra='0.1um'
+        * t_pad_extra='0.0um'
         * stem_width=`1um`
     """
     default_options = Dict(pos_x='0um', pos_y='0um',
@@ -358,7 +358,7 @@ class JunctionSingleDolan(QComponent):
                            t_finger_width='0.230um',
                            t_finger_length='1um',
                            t_pad_length='3um',
-                           t_pad_extra='0.1um',
+                           t_pad_extra='0.0um',
                            stem_width='1um',
                            reverse=False)
 
@@ -505,8 +505,8 @@ class JunctionSingleDolanPinStretch(QComponent):
               | |               FW                              |
               |F|               FW     F  = finger_width        |
               |_|               FW     FW = finger_length       |
-                                BG     BG = bridge_gap          |
-             TFL  <--TPL-->     BG                              |
+                  TPL           BG     BG = bridge_gap          |
+             TFL  <>            BG                              |
             <----> ________     BG                              |
          _________|    ^  |     BG     TFL = t_finger_length    |            
         |_________    TPW |     TFW    TFW = t_finger_width     |
@@ -561,9 +561,7 @@ class JunctionSingleDolanPinStretch(QComponent):
         norm = start_point['normal']
         p.pos_x = startPt[0]
         p.pos_y = startPt[1]
-        print(startPt)
         endPt = startPt + norm*p.dist_extend
-        print(endPt)
         p.end_x = endPt[0]
         p.end_y = endPt[1]
 
