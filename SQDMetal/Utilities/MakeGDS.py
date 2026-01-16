@@ -93,7 +93,7 @@ class MakeGDS:
         # Validate export_type and export_layers before rebuilding
         assert self.export_type in ["all", "negative", "positive"], "Export type must be: \"all\", \"negative\", or \"positive\""
 
-        if len(self.export_layers) > 0:
+        if self.export_layers is not None and len(self.export_layers) > 0:
             self.export_type = "all"
             print(f"Exporting layers {self.export_layers}") if self.print_statements else 0
 
@@ -191,7 +191,7 @@ class MakeGDS:
             "Positive or negative export for multi-layer designs is not supported."
 
         # layer exports (works best when export_type=="all")
-        if len(self.export_layers) > 0:
+        if self.export_layers is not None and len(self.export_layers) > 0:
             assert isinstance(self.export_layers, list), "Please pass a list of integers as 'export_layers'."
             layer_list = self.get_cell_layers()
             assert set(self.export_layers).issubset(layer_list), "Chosen export layers are not present in the design."
