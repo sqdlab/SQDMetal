@@ -598,6 +598,7 @@ class TransmonTaperedInsets(BaseQubit):
         # Pins
         chrgln_pin_x_offset="30um",  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset="50um",  # User-defined vertical distance from the pocket edge
+        junction_pin_inset="0um",    # amount junction pins are inset from pad edge (where patches are placed)
         # Pads
         pad_gap="100um",
         pad_width="800um",
@@ -641,7 +642,7 @@ class TransmonTaperedInsets(BaseQubit):
             fillet_radius_inner="15um",
             fillet_radius_outer="75um",
             fillet_resolution=16,
-            pin_y_distance="50um",
+            pin_y_distance="0um",
             loc_W="0",  # width location  only +-1 or 0,
             loc_H="1",  # height location  only +-1 or 0
         ),
@@ -732,25 +733,28 @@ class TransmonTaperedInsets(BaseQubit):
         ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
         pad_top_tmp1 = draw.union([circ_left_top, pad_top, circ_right_top])
         # TAPER - Add trapezoid to the top pad
-        trapezoid_top = self.create_trapezoid(
-            0,
-            p.taper_width_top,
-            p.taper_width_base,
-            p.taper_height,
-            (pad_gap / 2) - float(p.taper_height),
-            p.taper_fillet_radius,
-            p.pad_width / 2,
-        )
-        # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
-        trapezoid_top_rotated = draw.rotate(
-            trapezoid_top,
-            180,
-            origin=(0, pad_gap / 4 + (pad_gap / 2 - float(p.taper_height)) / 2),
-        )  # Rotate trapezoid by 180 degrees
-        # create union
-        pad_top_tmp = draw.union(
-            pad_top_tmp1.buffer(0), trapezoid_top_rotated.buffer(0)
-        )
+        if p.taper_height > 0:
+            trapezoid_top = self.create_trapezoid(
+                0,
+                p.taper_width_top,
+                p.taper_width_base,
+                p.taper_height,
+                (pad_gap / 2) - float(p.taper_height),
+                p.taper_fillet_radius,
+                p.pad_width / 2,
+            )
+            # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
+            trapezoid_top_rotated = draw.rotate(
+                trapezoid_top,
+                180,
+                origin=(0, pad_gap / 4 + (pad_gap / 2 - float(p.taper_height)) / 2),
+            )  # Rotate trapezoid by 180 degrees
+            # create union
+            pad_top_tmp = draw.union(
+                pad_top_tmp1.buffer(0), trapezoid_top_rotated.buffer(0)
+            )
+        else:
+            pad_top_tmp = pad_top_tmp1
 
         # COUPLER REGION - TOP PAD
         # In here you create the teeth part and then you union them as one with the pad. Teeth only belong to top pad.
@@ -814,18 +818,18 @@ class TransmonTaperedInsets(BaseQubit):
         ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
         pad_bot = draw.union([pad_bot, circ_left_bot, circ_right_bot])
         # TAPER - Add trapezoid to the bottom pad
-        trapezoid_bot = self.create_trapezoid(
-            center_x=0,
-            top_width=p.taper_width_top,
-            base_width=p.taper_width_base,
-            height=p.taper_height,
-            y_offset=-(pad_gap / 2),
-            rfillet=p.taper_fillet_radius,
-            startx=p.pad_width / 2,
-        )
-        # trapezoid_top = self.create_trapezoid(0, p.taper_width_top, p.taper_width_base, p.taper_height, (pad_gap / 2 )- float(p.taper_height), p.taper_fillet_radius, p.pad_width/2)
+        if p.taper_height > 0:
+            trapezoid_bot = self.create_trapezoid(
+                center_x=0,
+                top_width=p.taper_width_top,
+                base_width=p.taper_width_base,
+                height=p.taper_height,
+                y_offset=-(pad_gap / 2),
+                rfillet=p.taper_fillet_radius,
+                startx=p.pad_width / 2,
+            )
+            pad_bot = draw.union(pad_bot, trapezoid_bot)
 
-        pad_bot = draw.union(pad_bot, trapezoid_bot)
         # outer corners
         pad_bot = pad_bot.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(
             -p.fillet_radius,
@@ -908,17 +912,21 @@ class TransmonTaperedInsets(BaseQubit):
         # Pins from the center of the qubit pads
         # Coordinates for the center of the pin
         taper_width_top = p.taper_width_top
+        if p.taper_height == 0:
+            pin_route_l = 1e-6
+        else:
+            pin_route_l = p.taper_height
         top_pin = LineString(
             [
-                [0, pad_gap / 2],
-                [0, pad_gap / 2 - p.taper_height / 2],
+                [0, pad_gap / 2 + p.junction_pin_inset],
+                [0, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
                 # Extend outward
             ]
         )
         bottom_pin = LineString(
             [
-                [0, -pad_gap / 2],
-                [0, -pad_gap / 2 + p.taper_height / 2],  # Start from pad bottom edge
+                [0, -pad_gap / 2 - p.junction_pin_inset],
+                [0, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
                 # Extend outward
             ]
         )
