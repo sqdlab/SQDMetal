@@ -8,6 +8,9 @@ on:
     branches:
       - main  # Optional: deploy when a PR is made to main
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
