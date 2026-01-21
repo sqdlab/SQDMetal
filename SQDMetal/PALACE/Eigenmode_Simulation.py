@@ -700,14 +700,14 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             if skip_postprocessing:
                 ax_txt.text(
                     0, 0.8,
-                    f"Mode {eig_num}\n\n"
+                    f"Mode {eig_num+1}\n\n"
                     f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
                     f"Q = {mode_dict['loaded_Q'][eig_num]}"
                 )
             else:
                 ax_txt.text(
                     0, 0.8,
-                    f"Mode {eig_num}\n\n"
+                    f"Mode {eig_num+1}\n\n"
                     f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
                     f"Q = {participations[eig_num]['Q']:.0f}\n"
                     # f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
