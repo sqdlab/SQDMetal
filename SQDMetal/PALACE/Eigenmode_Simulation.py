@@ -514,7 +514,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             *   ``'Lamb'`` (`pd.Dataframe`):
                 The Lamb shifts.
             *   ``'Detuning'`` (`pd.Dataframe`):
-                The differnce in frequency betweem the modes.
+                The differnce in frequency between the modes.
         '''
         
         #retrieve data from the simulation files
@@ -650,7 +650,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             directory)
         if not skip_postprocessing:
             try:
-                participations = PALACE_Eigenmode_Simulation.retrieve_EPR_data_from_file(
+                participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(
                     json_sim_config=directory+r"/config.json", output_directory=directory)
             except:
                 skip_postprocessing = True
@@ -658,8 +658,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         r = re.compile(r"eig(\d+)_ErealMag\.png")
         png_files = []
         for filename in sorted(os.listdir(directory)):
-            if r.match(filename):
-                png_files.append(filename)
+            m = r.match(filename)
+            if m:
+                png_files.append((int(m.group(1)), filename))
+        # sort by eigenmode index
+        png_files.sort(key=lambda x: x[0])
         n_modes = len(png_files)
         # plotting
         fig = plt.figure(figsize=(8, 3 * n_modes))
@@ -668,8 +671,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         last_two = os.path.join(parts[-2], parts[-1])
         fig.suptitle(str(last_two))
         gs = GridSpec(n_modes, 2, width_ratios=[2, 1], figure=fig)
-        for i, filename in enumerate(png_files):
-            eig_num = int(r.match(filename).group(1))
+        for i, (eig_num, filename) in enumerate(png_files):
             img = mpimg.imread(os.path.join(directory, filename))
             # add image
             ax_img = fig.add_subplot(gs[i, 0])
