@@ -464,6 +464,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             A dictionary containing the following data for each mode included in the comparison:
                 - mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.
                 - eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.
+                - loaded_Q (np.array): returns the loaded Q factors of the resonant modes.
+                - kappa (np.array): returns the linewidths due to port couplings in Hz.
         '''
    
         raw_data = pd.read_csv(output_directory + '/port-EPR.csv')
@@ -476,7 +478,22 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         col_Ref = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Re{f}')][0]
         col_Ref_Q = [x for x in range(len(headers)) if headers[x].strip().startswith(r'Q')][0]
 
-        return {'mat_mode_port': raw_data[:, 1:], 'eigenfrequencies': raw_dataE[:, col_Ref]*1e9, 'loaded_Q': raw_dataE[:, col_Ref_Q]}
+        try:
+            raw_dataPort = pd.read_csv(output_directory + '/port-Q.csv')
+            headers = raw_dataPort.columns
+            col_kappa = [
+                i for i, h in enumerate(headers)
+                if h.strip().startswith('κ') or h.strip().lower().startswith('kappa')
+            ]
+            if len(col_kappa) < 2: 
+                raise ValueError("Fewer than two kappa columns found.")
+            raw_dataPort = raw_dataPort.to_numpy()
+            kappa_vals = raw_dataPort[:, col_kappa]
+            kappa_sum = np.sum(np.abs(kappa_vals), axis=1)
+        except Exception as e:
+            kappa_sum = np.full(len(raw_dataE), np.nan)
+
+        return {'mat_mode_port': raw_data[:, 1:], 'eigenfrequencies': raw_dataE[:, col_Ref]*1e9, 'loaded_Q': raw_dataE[:, col_Ref_Q], 'kappa': kappa_sum}
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR_from_files(directory: str, config_json_path: str, modes_to_compare = [], print_output=True) -> dict:
@@ -693,7 +710,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
                     f"Mode {eig_num}\n\n"
                     f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
                     f"Q = {participations[eig_num]['Q']:.0f}\n"
-                    f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
+                    # f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
+                    f"kappa = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz\n"
                     f"p_MS = {participations[eig_num]['MS']['p']:.2e}\n"
                     f"p_MA = {participations[eig_num]['MA']['p']:.2e}\n"
                     f"p_SA = {participations[eig_num]['SA']['p']:.2e}\n",
