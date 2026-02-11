@@ -658,7 +658,7 @@ The dispersive shifts.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">'Lamb'</span></code> (<cite>pd.Dataframe</cite>):
 The Lamb shifts.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">'Detuning'</span></code> (<cite>pd.Dataframe</cite>):
-The differnce in frequency betweem the modes.</p></li>
+The differnce in frequency between the modes.</p></li>
 </ul>
 </p>
 </dd>
@@ -819,6 +819,8 @@ respectively, in order to use the energy participation ratio method to calculate
 <dt>A dictionary containing the following data for each mode included in the comparison:</dt><dd><ul class="simple">
 <li><p>mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.</p></li>
 <li><p>eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.</p></li>
+<li><p>loaded_Q (np.array): returns the loaded Q factors of the resonant modes.</p></li>
+<li><p>kappa (np.array): returns the linewidths due to port couplings in Hz.</p></li>
 </ul>
 </dd>
 </dl>
