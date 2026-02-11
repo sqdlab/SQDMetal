@@ -13,7 +13,7 @@
 #
 # Author: Divita Gautam
 # Creation Date: 21/05/2024
-# Description: Collection of classes to draw transmon qubits.
+# Description: Collection of classes to draw qubits.
 
 import numpy as np
 from qiskit_metal import draw, Dict
@@ -1937,6 +1937,17 @@ class FluxoniumPocket(_FluxoniumPocket):
                 coupler_pad_round_left, teeth_options.coupled_pad_gap, 0)
             pad_bot = draw.union(
                 pad_bot, tooth_left, coupler_pad_round_left, tooth_right, coupler_pad_round_right)
+
+        if teeth_options.make_teeth:#makes teeth to insert readout resonator. best if pad_radius=0
+            tooth_left=draw.rectangle(teeth_options.coupled_pad_width,
+                                     teeth_options.coupled_pad_height, -teeth_options.coupled_pad_gap/2, -(pad_height+((pad_gap+teeth_options.coupled_pad_height)/2)))
+            coupler_pad_round_left = draw.Point(-teeth_options.coupled_pad_gap/2, -(teeth_options.coupled_pad_height + pad_height+(pad_gap/2))).buffer(
+                teeth_options.coupled_pad_width / 2,
+                resolution=16,
+                cap_style=CAP_STYLE.round)
+            tooth_right=draw.translate(tooth_left, teeth_options.coupled_pad_gap , 0)
+            coupler_pad_round_right=draw.translate(coupler_pad_round_left, teeth_options.coupled_pad_gap , 0)
+            pad_bot=draw.union(pad_bot, tooth_left, coupler_pad_round_left, tooth_right, coupler_pad_round_right)
 
         if p.top_wire_connector:
             connector_top = draw.rectangle(
