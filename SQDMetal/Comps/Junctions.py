@@ -333,7 +333,6 @@ class JunctionSingleDolan(QComponent):
     Default Options:
         * pos_x='0um', pos_y='0um'
         * end_x='20um', end_y='0um'
-        * dist_extend='40um'
         * bridge_gap='0.2um'
         * finger_length='1.75um'
         * finger_width='0.23um'
@@ -348,7 +347,6 @@ class JunctionSingleDolan(QComponent):
     """
     default_options = Dict(pos_x='0um', pos_y='0um',
                            end_x='20um', end_y='0um', 
-                           dist_extend='40um',
                            bridge_gap='0.2um',
                            finger_length='1.75um',
                            finger_width='0.230um',
