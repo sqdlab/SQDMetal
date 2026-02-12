@@ -505,7 +505,7 @@ class TransmonTapered(BaseQubit):
 
 class TransmonTaperedInsets(BaseQubit):
     """Transmon pocket with tapered connection pads, with insets for improved coupling. 
-    The qubit-resonator coupling has also been modified.
+    The qubit-resonator coupling has also been modified. 
 
     Inherits `BaseQubit` class
 
