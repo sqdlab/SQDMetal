@@ -9,6 +9,7 @@ from shapely.geometry.base import CAP_STYLE
 from shapely.geometry import Polygon
 from SQDMetal.Utilities.QUtilities import QUtilities 
 from shapely.geometry import LineString
+from shapely.geometry import Point
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from qiskit_metal.qlibrary.core import QComponent
 import shapely
@@ -394,6 +395,188 @@ class Smooth_CapacitorProngPin(QComponent):
         gap = shapely.Polygon(gap)
         pin = shapely.LineString([(p.pin_gap+p.pad_thickness, wid*0.5+p.pin_gap_side+p.prong_width),
                                   (p.pin_gap+p.pad_thickness, -wid*0.5-p.pin_gap_side-p.prong_width)])
+        
+        def smooth_polygon(gap_poly, fillet_radius):
+         # Apply create_trapezoid-style filleting to ANY polygon 
+         raw_data = np.array(gap_poly.exterior.coords)  # Get raw coordinates of the polygon exterior (including duplicate last point)
+    
+         # Add start/end points like trapezoid (fixes first/last corner!)
+         end_x, end_y = raw_data[1]        # Use polygon end as 2nd coordinate to overlap the first corner
+         end = [[end_x, end_y]]
+    
+         # Stack: polygon + end (to ensure fillet is applied to first and last corner)
+         raw_data_2 = np.vstack((raw_data,end))
+    
+         # Fillet ALL corners perfectly
+         data = QUtilities.calc_filleted_path(raw_data_2, fillet_radius, p.fillet_resolution)
+         data = data[2:-1]  # Remove the artificially added start/end points after filleting
+         return Polygon(data)
+
+        #  =========Filleting and smoothing operations=========
+
+
+        if (p.fillet_radius == 0 and  # If no fillet radius is specified, skip all fillet operations to save time
+           p.gap_fillet_radius == 0):
+           # No smoothing requested - skip all fillet ops and proceed directly
+           pass  # Polygons already ready
+        else:
+             if p.fillet_radius > 0:
+                 pad = smooth_polygon(pad, p.fillet_radius)
+                 
+             if p.gap_fillet_radius > 0:
+                 gap = smooth_polygon(gap, p.gap_fillet_radius)
+
+        polys = [pad, gap, pin]
+        user_angle_deg = float(p.orientation) # Get user-specified orientation angle in degrees
+        polys = draw.rotate(polys, user_angle_deg, origin=(0, 0))
+        polys = draw.rotate(polys, np.arctan2(startPtNorm[1], startPtNorm[0]), origin=(0, 0), use_radians=True)
+        polys = draw.translate(polys, *startPt)
+        [pad, gap, pin] = polys
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad=pad),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer it's on
+        self.add_qgeometry('poly',
+                           dict(padGap=gap),
+                           subtract=True,
+                           layer=p.layer)
+
+        # Generates its own pin
+        self.add_pin('a', pin.coords, width=p.trace_width)
+
+class Smooth_Capacitor_Semicircle(QComponent):
+    """Creates a capacitor design with a semicircular pad and a prong that wraps around the target lead.
+
+    Inherits QComponent class.
+
+    Original rectangle capacitor design:
+        * Rect_width  - Width of the rectangular pad
+        * Rect_length - Length of the rectangular pad
+        * orientation - Angle of the capacitor in degrees
+
+    Spacing around the structure (i.e. cuts into the ground plane) can be controlled via:
+        * gap_side  - Spacing to ground plane on the outer sides 
+        * gap_front - Spacing to ground plane in the direction of the target pin
+        * gap_back - Spacing to ground plane away from the direction of the target pin
+
+    Semicircle geometry:
+        * semi_radius - Radius of the semicircular pad
+        * circle_offset - Offset of the center of the semicircle from the end of the prong in the direction of the target pin.
+
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying the target component pin
+
+    Pins:
+        There is one pin 'a' to link to the fork (there is no trace drawn in this structure intrinsically). Only needs a width defined
+        * trace_width - center trace width of the trace that attaches to this capacitor.
+
+    Sketch:
+        Below is a sketch of the capacitor
+        ::
+
+            @@@@@@@@@@@@@@@@@@@     @  = Ground Plane
+            @  W W W W W W GB @     #  = Target pin
+            @   _____x_____GB @     x = pin location with width trace_width
+            @ L|           |  @     W = rect_width
+            @ L|     _     |  @     L = rect_length
+            @ L|   /   \   |GS@     r = semi_radius
+            @ L| /       \ |  @    
+            @ L|/     rrrr\|  @     
+            @       ###   GF  @     BG = gap_back
+            @       ###   GF  @     GF = gap_front
+            @@@@@@  ###  @@@@@@     GS = gap_side
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Cap 3 Interdigital
+
+    Default Options:
+        * rect_width='50um'
+        * rect_length='50um'
+        * gap_side='5um'
+        * gap_front='5um'
+        * gap_back='5um'
+        * semi_radius='25um'
+        * circle_offset='0um'
+        * orientation = 0
+
+        ## Fillet options for the prongs and ground plane cutouts:
+        * fillet_radius = '5um' - Radius of edge fillets. If 0, no fillets are created.
+        * fillet_resolution = 16 - Resolution of the fillets in number of points. Higher number means smoother fillets but longer simulation time.
+        * gap_fillet_radius = '5um' - Fillet radius for the cuts in the ground plane around the capacitor. If 0, no fillets are created.
+    """
+
+    #  Define structure functions
+
+    default_options = Dict(rect_width='50um',
+                           rect_length='50um',
+                           semi_radius='25um',
+                           circle_offset='0um',
+                           gap_side='5um',
+                           gap_front='5um',
+                           gap_back='10um',
+                           trace_width='10um',
+                            orientation = 0,
+                            fillet_radius = '5um',
+                            fillet_resolution = 16,
+                            gap_fillet_radius = '5um')
+    """Default drawing options"""
+
+    TOOLTIP = """Create a rectangular capacitor pad with a ground pocket cutout."""
+
+    def __init__(self, design,
+                    name: str = None,
+                    options: Dict = None,
+                    type: str = "CPW",
+                    **kwargs):
+        #QRoute forces an end-pin to exist... So make it artificial...
+        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
+        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
+        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
+        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+        super().__init__(design, name, options, **kwargs)
+        #TODO: Perhaps a pull request to add poppable options?
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        startPtNorm = start_point['normal']
+
+        #wid = start_point['width']
+            #define the polygons for the basic capacitor structure (before filleting and rotation)
+            # Rectangular pad 
+        pad = [(0,p.rect_width*0.5),
+                (0,-p.rect_width*0.5),
+                (p.rect_length, -p.rect_width*0.5),
+                (p.rect_length, p.rect_width*0.5)
+              ]
+
+        gap = [(-p.gap_back,p.rect_width*0.5+p.gap_side),
+                (-p.gap_back,-p.rect_width*0.5-p.gap_side),
+                (p.rect_length+p.gap_front, -p.rect_width*0.5-p.gap_side),
+                (p.rect_length+p.gap_front, p.rect_width*0.5+p.gap_side)
+              ]
+        
+        circle_center_x = p.rect_length + p.circle_offset
+        circle_center_y = 0
+        circle = Point(circle_center_x, circle_center_y).buffer(p.semi_radius)
+
+        pad = shapely.Polygon(pad[::-1])
+        pad = draw.subtract(pad, circle)
+        gap = shapely.Polygon(gap)
+        pin = shapely.LineString([(p.gap_front, p.rect_width*0.5),
+                                  (p.gap_front, -p.rect_width*0.5)])
         
         def smooth_polygon(gap_poly, fillet_radius):
          # Apply create_trapezoid-style filleting to ANY polygon 
