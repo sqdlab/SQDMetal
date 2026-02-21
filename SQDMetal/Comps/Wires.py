@@ -796,6 +796,76 @@ class Lollipop(QComponent):
     """
 
     default_options=Dict(pos_x='0um', pos_y='0um', orientation=0,
+                         length = '100um', cpw_width='cpw_width', cpw_gap='cpw_gap', radius='cpw_width')
+    
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+
+        pos_x=p.pos_x
+        pos_y=p.pos_y
+        length=p.length
+        cpw_width=p.cpw_width
+        cpw_gap=p.cpw_gap
+        radius=p.radius
+
+
+    # Define the geometry
+        # Charge Line
+        charge_line = draw.rectangle(cpw_width, length, 0, 0)
+        charge_line_gap = draw.rectangle(cpw_width+2*cpw_gap, length+cpw_gap/2, 0, -cpw_gap/4)
+
+        # Making the charge_line and charge_line_gap circle and union them to charge_line and it's gap
+        charge_line_round = draw.Point(0., (-length)/2).buffer(radius)
+        charge_line_gap_round = draw.Point(0., -(length+radius)/2.2).buffer((radius+2*cpw_gap))
+        charge_line = draw.union(charge_line, charge_line_round)
+        charge_line_gap = draw.union(charge_line_gap, charge_line_gap_round)
+
+        # Charge Line CPW wire
+        port_line = draw.LineString([(-cpw_width/2, length/2),
+                                     (cpw_width/2, length/2)])
+        
+        # Position the charge_line, rotate and translate
+        objects = [charge_line, charge_line_gap, port_line]
+        objects = draw.scale(objects, 1, -1, origin=(0, 0))#Figen Yilmaz made an upside lollipop
+        objects = draw.rotate(objects, p.orientation)
+        objects = draw.translate(
+            objects,
+            pos_x,
+            pos_y)
+        [charge_line, charge_line_gap, port_line] = objects
+
+        self.add_qgeometry('poly', {'charge_line': charge_line})
+        self.add_qgeometry('poly', {'charge_line_gap': charge_line_gap}, subtract=True)
+
+        ############################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        port_line_cords = port_line_cords[::-1]# if loc_H==1 else port_line_cords[::-1]
+        points = list(port_line_cords)
+        self.add_pin('pin', 
+                    points, cpw_width)
+        
+class Wire(QComponent):
+    """
+    A straight CPW with pins on both ends. 
+
+    Created by Alex Nguyen
+                               P1
+                               _
+               |              | |   L          |           |----->  X
+               |              | |   L          |    
+               |              | |   L          |           x = (pox_x, pos_y)
+               |              | |   L          |           L = length
+               |              |_|   L          |           P1 = Pin1
+               |               P2              |           P2 = Pin2
+    
+    
+    """
+
+    default_options=Dict(pos_x='0um', pos_y='0um', orientation=0,
                          length = '100um', cpw_width='cpw_width', cpw_gap='cpw_gap')
     
     def make(self):
@@ -813,27 +883,25 @@ class Lollipop(QComponent):
     # Define the geometry
         # Charge Line
         charge_line = draw.rectangle(cpw_width, length, 0, 0)
-        charge_line_gap = draw.rectangle(cpw_width+2*cpw_gap, length+cpw_gap/2, 0, -cpw_gap/4)
+        charge_line_gap = draw.rectangle(cpw_width+2*cpw_gap, length, 0, 0)
 
-        # Making the charge_line and charge_line_gap circle and union them to charge_line and it's gap
-        charge_line_round = draw.Point(0., (-length)/2).buffer(cpw_width)
-        charge_line_gap_round = draw.Point(0., -(length+cpw_gap)/2.2).buffer((cpw_width+2*cpw_gap))
-        charge_line = draw.union(charge_line, charge_line_round)
-        charge_line_gap = draw.union(charge_line_gap, charge_line_gap_round)
+        
 
         # Charge Line CPW wire
-        port_line = draw.LineString([(-cpw_width/2, length/2),
+        port_line1 = draw.LineString([(-cpw_width/2, length/2),
                                      (cpw_width/2, length/2)])
         
+        port_line2 = draw.LineString([(-cpw_width/2, -length/2),
+                                     (cpw_width/2, -length/2)])
+        
         # Position the charge_line, rotate and translate
-        objects = [charge_line, charge_line_gap, port_line]
-        objects = draw.scale(objects, 1, -1, origin=(0, 0))#Figen Yilmax made an upside lollipop
+        objects = [charge_line, charge_line_gap, port_line1, port_line2]
+        objects = draw.rotate(objects, p.orientation, origin=(0, 0))
         objects = draw.translate(
             objects,
             pos_x,
             pos_y)
-        objects = draw.rotate(objects, p.orientation)
-        [charge_line, charge_line_gap, port_line] = objects
+        [charge_line, charge_line_gap, port_line1, port_line2] = objects
 
         self.add_qgeometry('poly', {'charge_line': charge_line})
         self.add_qgeometry('poly', {'charge_line_gap': charge_line_gap}, subtract=True)
@@ -841,8 +909,14 @@ class Lollipop(QComponent):
         ############################################################
 
         # add pins
-        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
-        port_line_cords = port_line_cords# if loc_H==1 else port_line_cords[::-1]
-        points = list(port_line_cords)
-        self.add_pin('pin', 
-                    points, cpw_width)
+        port_line_cords1 = list(draw.shapely.geometry.shape(port_line1).coords)
+        port_line_cords1 = port_line_cords1# if loc_H==1 else port_line_cords[::-1]
+        points1 = list(port_line_cords1)
+        self.add_pin('pin1', 
+                    points1, cpw_width)
+        
+        port_line_cords2 = list(draw.shapely.geometry.shape(port_line2).coords)
+        port_line_cords2 = port_line_cords2[::-1]# if loc_H==1 else port_line_cords[::-1]
+        points2 = list(port_line_cords2)
+        self.add_pin('pin2', 
+                    points2, cpw_width)
