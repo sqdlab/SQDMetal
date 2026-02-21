@@ -1,0 +1,50 @@
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="401px" height="231px" viewBox="-0.5 -0.5 401 231" content="&lt;mxfile&gt;&lt;diagram id=&quot;hiGQjTIf7Zam6Zm1MoM6&quot; name=&quot;Page-1&quot;&gt;3Zjfb5swEMf/Gh4XYRyS8NjQpn3ZFKma2j1VHlzBioMj4/zaXz8DJvwwWTMtrCh5iHJf24fvc4Y7YmF/fXgUZBN/5SEwy7HDg4XvLceZukh9Z8KxEDCaFUIkaFhIqBKe6S/Qoq3VLQ0hbUyUnDNJN00x4EkCgWxoRAi+b05756x51Q2JwBCeA8JM9YWGMi7UmTOt9CegUVxeGU28YmRNysk6kjQmId/XJPxgYV9wLotf64MPLGNXcinWLc6MnjYmIJGXLHCKBTvCtjo2vS95LIMVfJuEkM23LTx/p4z5nHGRD2LP8/2Fcj43L6z3sgMh4VCT9EYega9BiqOaokfHJRR9KhxX2/uK8VhLcR0v1iLRaY1OrqvI1Q8dfDcIPCAQpyj/AAK5fZEYD4jE2PtMEu4/kvB9z+uLBPJMErgDxOQKHCYD4oAnn8dhOiQOF5wHZHeAuMaNMfsYBCThXVZplRUwkqY0UHGnkghpynCg8jVDNrLtmbZ/5DZyp9q+P2imuXGsGUsQVEUAotQSFc1r3Sh8uaVZucqt0tfZpEDY6AbMlNSQdz2LSk0AI5Lumj1EVxr0FZacqp3UT/6ofDiXSZ+h0Rh51WfSdJryrQhA+6l3AW3X7cM0c5qOVN4ikIaj/JycQFx0dBC67tkZetZcfOY+/dsctR2dWsgecnRBV3hLOcLuB2gvvo/ajtz+cmS2aSkoxIoDT94isjEypgqLzHMk+ArKqpTwBFqFSkuE0SjJ0qiSlj1b51ltouod6E4PrGkYZr7nrZrHE7kga8oyBr4CR9Vqx/4G+56aY6ej8KGeCh8yW0IZ02CVQJq+peql9Fap49a7GepqxHujbjagFfWfJFjdKvWzxeO/UDfbXX/5MgjUT8B2kK260rsVamLGtol50hdls5f+/sVndBjP755Bd53nK4FWZvUvWlFfq78i8cNv&lt;/diagram&gt;&lt;/mxfile&gt;">
+    <defs/>
+    <g>
+        <rect x="180" y="100" width="40" height="130" fill="#99ccff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="0" y="100" width="150" height="130" fill="#99ccff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="250" y="100" width="150" height="130" fill="#99ccff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="250" y="40" width="30" height="60" fill="#cc99ff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="120" y="40" width="30" height="60" fill="#cc99ff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <rect x="150" y="40" width="100" height="30" fill="#cc99ff" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <path d="M 126.61 31.54 L 143.63 31.88" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 121.36 31.44 L 128.42 28.08 L 126.61 31.54 L 128.29 35.08 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 148.88 31.98 L 141.82 35.34 L 143.63 31.88 L 141.95 28.34 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 290 46.37 L 290 63.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 290 41.12 L 293.5 48.12 L 290 46.37 L 286.5 48.12 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 290 68.88 L 286.5 61.88 L 290 63.63 L 293.5 61.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 110 76.37 L 110 93.63" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 110 71.12 L 113.5 78.12 L 110 76.37 L 106.5 78.12 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 110 98.88 L 106.5 91.88 L 110 93.63 L 113.5 91.88 Z" fill="rgb(0, 0, 0)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <rect x="0" y="70" width="110" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g fill="rgb(0, 0, 0)" font-family="Courier New" text-anchor="middle" font-size="12px">
+            <text x="54.5" y="89.5">
+                separation_gap
+            </text>
+        </g>
+        <rect x="80" y="0" width="110" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g fill="rgb(0, 0, 0)" font-family="Courier New" text-anchor="middle" font-size="12px">
+            <text x="134.5" y="19.5">
+                thickness_side
+            </text>
+        </g>
+        <rect x="290" y="40" width="110" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g fill="rgb(0, 0, 0)" font-family="Courier New" text-anchor="middle" font-size="12px">
+            <text x="344.5" y="59.5">
+                thickness_back
+            </text>
+        </g>
+        <rect x="170" y="150" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g fill="rgb(0, 0, 0)" font-family="Helvetica" text-anchor="middle" font-size="12px">
+            <text x="199.5" y="169.5">
+                CPW
+            </text>
+        </g>
+        <rect x="170" y="40" width="60" height="30" fill="none" stroke="none" pointer-events="all"/>
+        <g fill="rgb(0, 0, 0)" font-family="Helvetica" text-anchor="middle" font-size="12px">
+            <text x="199.5" y="59.5">
+                U-Clip
+            </text>
+        </g>
+    </g>
+</svg>

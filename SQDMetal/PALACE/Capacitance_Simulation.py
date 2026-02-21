@@ -1,7 +1,7 @@
 # Copyright 2025 Prasanna Pakkiam
 # SPDX-License-Identifier: Apache-2.0
 
-from SQDMetal.PALACE.Model import PALACE_Model
+from SQDMetal.PALACE.Model import PALACE_Model_Base
 from SQDMetal.COMSOL.Model import COMSOL_Model
 from SQDMetal.COMSOL.SimCapacitance import COMSOL_Simulation_CapMats
 from SQDMetal.Utilities.Materials import Material
@@ -18,7 +18,7 @@ from SQDMetal.PALACE.Utilities.GMSH_Geometry_Builder import GMSH_Geometry_Builde
 from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 
-class PALACE_Capacitance_Simulation(PALACE_Model):
+class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
     #Class Variables
     default_user_options = {
@@ -49,80 +49,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self.cap_matrix = None
         super().__init__(meshing, mode, user_options, **kwargs)
 
-
-    def prepare_simulation(self):
-        '''set-up the simulation'''
-
-        if self.meshing == 'GMSH':
-            ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
-            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [],
-                                                               self._fine_meshes, self.user_options["fuse_threshold"],
-                                                               threshold=self.user_options["threshold"],
-                                                               simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"],
-                                                               full_3D_params = self._full_3D_params,
-                                                               boundary_distances = self._boundary_distances)
-            #
-            gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
-            gmb.build_mesh()
-
-            if self.create_files:
-                #create directory to store simulation files
-                self._create_directory(self.name)
-
-                #create config file
-                self._create_config_file(gmsh_render_attrs = gmsh_render_attrs)
-
-                #create batch file
-                # if self.mode == 'HPC':
-                #     self.create_batch_file()
-
-                self._save_mesh_gmsh()
-
-
-            # abhishekchak52: commented out for now since pgr is not defined
-            # if self.view_design_gmsh_gui:
-            #     #plot design in gmsh gui
-            #     pgr.view_design_components()
-            
-                   
-        if self.meshing == 'COMSOL':
-
-            #initialise the COMSOL engine
-            COMSOL_Model.init_engine()
-            cmsl = COMSOL_Model('res')
-
-            #Create COMSOL capacitance sim object
-            simCapMats = COMSOL_Simulation_CapMats(cmsl)
-            cmsl.initialize_model(self._geom_processor.design, [simCapMats], bottom_grounded = True, resolution = 10)     #TODO: Make COMSOL actually compatible rather than assuming Qiskit-Metal designs?
-
-            #Add metallic layers
-            cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
-            cmsl.add_ground_plane(threshold=1e-10)
-            #cmsl.fuse_all_metals()
-
-            #build model
-            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
-
-            #plot model
-            cmsl.plot()
-
-            #save comsol file
-            #cmsl.save(self.name)
-
-            if self.create_files:
-                #create directory to store simulation files
-                self._create_directory(self.name)
-
-                #create config file
-                self._create_config_file(comsol_obj = cmsl, simCap_object = simCapMats)
-
-                #create batch file
-                if self.mode == 'HPC':
-                    self.create_batch_file()
-
-            #save mesh
-            self._save_mesh_comsol(comsol_obj = cmsl)
-
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
 
@@ -140,10 +66,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 os.mkdir(path)
                 # print("Directory '% s' created" % directory)
 
-
-
     def _save_mesh_gmsh(self):
-
         parent_simulation_dir = self._check_simulation_mode()
 
         # file_name
@@ -153,8 +76,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         path = os.path.join(parent_simulation_dir, file_name)
         gmsh.write(path)
         
-
-
     def _save_mesh_comsol(self, comsol_obj):
         '''function used to save the comsol mesh file'''
         if self.create_files:
@@ -169,32 +90,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             #COMSOL export commands
             comsol_obj._model.java.component("comp1").mesh("mesh1").export().set("filename", path)
             comsol_obj._model.java.component("comp1").mesh("mesh1").export(path)
-
-    def display_conductor_indices(self, save=False):
-        '''
-        Plots a coloured visualisation of the metallic conductors and their corresponding row/column indices of the capacitance matrix.
-        '''
-        assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
-
-        minX = (self._geom_processor.chip_centre[0] - self._geom_processor.chip_size_x*0.5)
-        maxX = (self._geom_processor.chip_centre[0] + self._geom_processor.chip_size_x*0.5)
-        minY = (self._geom_processor.chip_centre[1] - self._geom_processor.chip_size_y*0.5)
-        maxY = (self._geom_processor.chip_centre[1] + self._geom_processor.chip_size_y*0.5)
-        chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
-        
-        leGeoms = [chip_bounding_poly] + self._cur_cap_terminals
-        leNames = ["Chip"] + [f"Cond{x+1}" for x in range(len(self._cur_cap_terminals))]
-        gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
-        fig, ax = plt.subplots(1)
-        gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
-        ax.set_xlabel('Position (mm)')
-        ax.set_ylabel('Position (mm)')
-
-        if save==True:
-            fig.savefig("ConductorIndicides.png")
-
-
-        return fig
 
     def _create_config_file(self, **kwargs):
         '''create the configuration file which specifies the simulation type and the parameters'''    
@@ -257,7 +152,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         
         #Define python dictionary to convert to json file
         if self._output_subdir == "":
-            self.set_local_output_subdir("", False)
+            self.set_local_output_subdir("")
         filePrefix = self.hpc_options["input_dir"]  + self.name + "/" if self.hpc_options["input_dir"] != "" else ""
         self._mesh_name = filePrefix + self.name + file_ext
         post_procs = []
@@ -343,7 +238,120 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         self._sim_config = file
         self.set_local_output_subdir(self._output_subdir)
 
+    def prepare_simulation(self):
+        '''Creates and saves the GMSH (.msh) and Palace configuration file (.json). 
+        '''
+
+        if self.meshing == 'GMSH':
+            ggb = GMSH_Geometry_Builder(self._geom_processor, self.user_options['fillet_resolution'], self.user_options['gmsh_verbosity'])
+            gmsh_render_attrs = ggb.construct_geometry_in_GMSH(self._metallic_layers, self._ground_plane, [],
+                                                               self._fine_meshes, self.user_options["fuse_threshold"],
+                                                               threshold=self.user_options["threshold"],
+                                                               simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"],
+                                                               full_3D_params = self._full_3D_params,
+                                                               boundary_distances = self._boundary_distances)
+            #
+            gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
+            gmb.build_mesh()
+
+            if self.create_files:
+                #create directory to store simulation files
+                self._create_directory(self.name)
+
+                #create config file
+                self._create_config_file(gmsh_render_attrs = gmsh_render_attrs)
+
+                #create batch file
+                # if self.mode == 'HPC':
+                #     self.create_batch_file()
+
+                self._save_mesh_gmsh()
+
+            # abhishekchak52: commented out for now since pgr is not defined
+            # if self.view_design_gmsh_gui:
+            #     #plot design in gmsh gui
+            #     pgr.view_design_components()
+            
+        if self.meshing == 'COMSOL':
+
+            #initialise the COMSOL engine
+            COMSOL_Model.init_engine()
+            cmsl = COMSOL_Model('res')
+
+            #Create COMSOL capacitance sim object
+            simCapMats = COMSOL_Simulation_CapMats(cmsl)
+            cmsl.initialize_model(self._geom_processor.design, [simCapMats], bottom_grounded = True, resolution = 10)     #TODO: Make COMSOL actually compatible rather than assuming Qiskit-Metal designs?
+
+            #Add metallic layers
+            cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
+            cmsl.add_ground_plane(threshold=1e-10)
+            #cmsl.fuse_all_metals()
+
+            #build model
+            cmsl.build_geom_mater_elec_mesh(mesh_structure = self.user_options["comsol_meshing"])
+
+            #plot model
+            cmsl.plot()
+
+            #save comsol file
+            #cmsl.save(self.name)
+
+            if self.create_files:
+                #create directory to store simulation files
+                self._create_directory(self.name)
+
+                #create config file
+                self._create_config_file(comsol_obj = cmsl, simCap_object = simCapMats)
+
+                #create batch file
+                if self.mode == 'HPC':
+                    self.create_batch_file()
+
+            #save mesh
+            self._save_mesh_comsol(comsol_obj = cmsl)
+
+    def display_conductor_indices(self, save=False):
+        '''Plots a coloured visualisation of the metallic conductors and their corresponding row/column indices of the capacitance matrix.
+        
+        Args:
+            save (bool, optional): (Defaults to False) Choose whether or not to save the generated plot. 
+        
+        Returns:
+            Matplotlib fig of the conductor visualisation.
+        '''
+        assert len(self._cur_cap_terminals) > 0, "There are no terminals. Ensure prepare_simulation() has been called."
+
+        minX = (self._geom_processor.chip_centre[0] - self._geom_processor.chip_size_x*0.5)
+        maxX = (self._geom_processor.chip_centre[0] + self._geom_processor.chip_size_x*0.5)
+        minY = (self._geom_processor.chip_centre[1] - self._geom_processor.chip_size_y*0.5)
+        maxY = (self._geom_processor.chip_centre[1] + self._geom_processor.chip_size_y*0.5)
+        chip_bounding_poly = shapely.LineString([(minX,minY),(maxX,minY),(maxX,maxY),(minX,maxY),(minX,minY)])
+        
+        leGeoms = [chip_bounding_poly] + self._cur_cap_terminals
+        leNames = ["Chip"] + [f"Cond{x+1}" for x in range(len(self._cur_cap_terminals))]
+        gdf = gpd.GeoDataFrame({'names':leNames}, geometry=leGeoms)
+        fig, ax = plt.subplots(1)
+        gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.5, categorical=True, legend=True)
+        ax.set_xlabel('Position (mm)')
+        ax.set_ylabel('Position (mm)')
+
+        if save==True:
+            fig.savefig("ConductorIndicides.png")
+
+        return fig
+
     def retrieve_data(self):
+        '''
+        Retrieves output data from the capacitance simulation.
+        
+        Creates and saves plots of conductor indices (terminal_indices.png), field distribution results (cond1_V.png), and mesh (mesh.png)
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
+        Returns:
+            A NumPy array of the raw data.
+
+        '''
         raw_data = pd.read_csv(self._output_data_dir + '/terminal-C.csv')
         self.cap_matrix = raw_data
         headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
@@ -374,6 +382,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         return raw_data
     
     def calc_params_floating_Transmon(self, **kwargs):
+        """
+        Class method mirroring :func:`~SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files` (without the ``directory`` parameter as it is inferred from the current simulation)
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+        """
         return PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files(
             self._output_data_dir,
             capacitance_matrix=self.cap_matrix,
@@ -381,20 +394,105 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
         )
 
     @staticmethod
-    def calc_params_floating_Transmon_from_files(directory, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, res=None, qubit_freq=None, C_J=0, Z0_feedline=50):
-        '''
-        Calculate the charging energy E_C from the capacitance matrix
-        for a floating transmon qubit. Can be either an isolated
-        floating transmon or a floating transmon coupled to a resonator,
-        depending on the number of conductors in the capacitance matrix.
+    def calc_params_floating_Transmon_from_files(directory:str, qubit_freq=None, res=None, capacitance_matrix=None, conductor_indices=None, print_all_capacitances=False, C_J=0, Z0_feedline=50):
+        '''Static method to calculate key circuit parameters (chi, kappa, g, etc.) for a floating 
+        Transmon qubit using the simulated capacitance matrix.
 
-        3 conductors: isolated floating transmon 
-            (pad 1, pad 2, ground)
-        4 conductors: floating transmon coupled to resonator
-            (ground, pad 1, pad 2, resonator)
-        5 conductors: floating transmon coupled to resonator-feedline
-            (ground, pad 1, pad 2, resonator, feedline)
+        The design can be either an isolated floating transmon or a floating transmon coupled to a 
+        resonator, depending on the number of conductors in the capacitance matrix.
+
+        There are three supported cases:
+            3 conductors: 
+                isolated floating transmon 
+                (pad 1, pad 2, ground)
+            4 conductors: 
+                floating transmon coupled to resonator
+                (ground, pad 1, pad 2, resonator)
+            5 conductors: 
+                floating transmon coupled to resonator-feedline
+                (ground, pad 1, pad 2, resonator, feedline)
+
+        Parameters
+        ----------
+        directory : str
+            Directory containing Palace output files.
+        qubit_freq : float
+            (Defaults to None) Qubit freqeuncy in Hertz (Hz), used to calculate parameters.
+        res : SQDMetal.Utilities.QubitDesigner.ResonatorBase
+            (Defaults to None) A resonator object (:class:`~SQDMetal.Utilities.QubitDesigner.ResonatorBase`) is used 
+            for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).
+        capacitance_matrix : np.ndarray
+            (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.
+        conductor_indeces : dict
+            (Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix. 
+                If None, the defaults are set to: ``{ 'ground': 0, 'pad1': 1, 'pad2': 2, 'res': 3, 'feed': 4 }``
+        print_all_capacitances : bool
+            (Defaults to False) If True, prints all capacitances (i.e. pad1-to-ground, pad2-to-ground, etc.).
+        C_J : float
+            (Defaults to 0) Optional capacitance of the Josephson junction.
+        Z0_feedline : float
+            (Defaults to 50) Impedence of the feedline.
+
+        Returns
+        -------
+        params : dict
+            Dictionary containing calculated parameters. Some entries may be "N/A" for the provided capacitance matrix.
+            The dictionary is of the form:
+
+            Energies and key circuit parameters:
+
+            *   ``'E_C_GHz'`` (`float`):
+                Charging energy in gigahertz (GHz)
+            *   ``'C_sigma_fF'`` (`float`):
+                Total capacitance in femtofarad (fF)
+            *   ``'g_MHz'`` (`float`):
+                Resonator-Qubit g-coupling in megahertz (MHz)
+            *   ``'chi_MHz'`` (`float`):
+                Resonator-Qubit :math:`\chi` in megahertz (MHz)
+            *   ``'Delta_GHz'`` (`float`):
+                Resonator-Qubit detuning in gigahertz (GHz)
+            *   ``'anh_MHz'`` (`float`):
+                Qubit anharmonicity in megahertz (MHz)
+            *   ``'f_q_GHz'`` (`float`):
+                Qubit frequency in gigahertz (GHz)
+            *   ``'kappa_MHz'`` (`float`):
+                Resonator-Qubit kappa (decay rate) in megahertz (MHz)
+            *   ``'T1,p_ms'``" (`float`):
+                Purcell-limited T1 in milliseconds (ms)
+
+            Individual capacitances and inductances:
+
+            *   ``'C1_ground_fF'`` (`float`):
+                C1 to ground capacitance in femtofarad (fF)
+            *   ``'C2_ground_fF'`` (`float`):
+                C2_ground capacitance in femtofarad (fF)
+            *   ``'C1_readout_fF'`` (`float`):
+                C1_readout capacitance in femtofarad (fF)
+            *   ``'C2_readout_fF'`` (`float`):
+                C2_readout capacitance in femtofarad (fF)
+            *   ``'C1_feed_fF'`` (`float`):
+                C1_feed capacitance in femtofarad (fF)
+            *   ``'C2_feed_fF'`` (`float`):
+                C2_feed capacitance in femtofarad (fF)
+            *   ``'C12_fF'`` (`float`):
+                C12 capacitance in femtofarad (fF)
+            *   ``'Cres_fF'`` (`float`):
+                Cres capacitance in femtofarad (fF)
+            *   ``'Lres_pH'`` (`float`):
+                Resonator inductance in picohenries (pH)
+
+            Junction parameters:
+
+            *   ``'L_J_nH'`` (`float`):
+                Inductance of Josephson junction in nanohenries (nH)
+            *   ``'E_J_GHz'`` (`float`):
+                Josephson energy in gigahertz (GHz)
+            *   ``'I_C_nA'`` (`float`):
+                Critical current of Josephson junction in nanoamperes (nA)
+            *   ``'E_J/E_C'`` (`float`):
+                E_J/E_C ratio required to test if qubit is in transmon regime.                
         '''
+        #TODO: Have diagram of capacitances @6biscuits
         # Constants
         e = 1.602176634e-19  # Coulombs
         h = 6.62607015e-34   # J·s     
@@ -499,14 +597,14 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
                 T1p_ms = None
         else:
             print("Could not calculate g, chi, kappa, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
-            g_MHz = 'N/A'
-            chi_MHz = 'N/A'
-            Delta_GHz = 'N/A'
-            anh_MHz = 'N/A'
-            Cres = 'N/A'
-            Lres = 'N/A'
-            kappa_MHz = 'N/A'
-            T1p_ms = 'N/A'
+            g_MHz = 0
+            chi_MHz = 0
+            Delta_GHz = 0
+            anh_MHz = 0
+            Cres = 0
+            Lres = 0
+            kappa_MHz = 0
+            T1p_ms = 0
         
         # Calculate junction parameters for target frequency (if applicable)
         if qubit_freq:
@@ -514,8 +612,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             E_J_GHz = (h * qubit_freq + E_C_J)**2 / (8 * E_C_J) / h / 1e9
             L_J_nH = phi_0**2 / (4 * np.pi**2 * h * E_J_GHz)
         else:
-            E_J_GHz = 'N/A'
-            L_J_nH = 'N/A'
+            E_J_GHz = 0
+            L_J_nH = 0
 
         if print_all_capacitances:
             print("Capacitance Results")
@@ -530,7 +628,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model):
             print(f"{'C_sigma':<16s} = {C_sigma * 1e15:>10.3f} fF\n")
 
         # Print Readout resonator parameters
-        if res is not None:
+        if (res is not None) and num_conductors >= 4:
             print("Readout Resonator")
             print("-------------------")
             print(f"{'f_res':<16s} = {f_r_Hz * 1e-9:>10.3f} GHz")

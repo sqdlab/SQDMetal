@@ -6,7 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+#VSCpde
+.vscode/
 
+#Nektos/act
+act
 
 # Distribution / packaging
 .Python
@@ -71,7 +75,10 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+doc-sphinx/build/
+doc-sphinx/source/generated/
+doc-sphinx/source/_autosummary/
+
 
 # PyBuilder
 .pybuilder/

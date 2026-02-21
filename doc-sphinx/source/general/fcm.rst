@@ -1,4 +1,5 @@
-# Full chip maker
+Full chip maker
+===============
 
 Modules found under `SQDMetal.Utilities.FullChipMaker` used for semi-automated generation of circuits commonly used for research of superconducting quantum circuits, taking inputs for important wafer-scale parameters (wafer size, die size, die layout), and all relevant circuit parameters (frequencies, materials, width dimension, etc.). 
 
@@ -6,30 +7,40 @@ This module relies on `SQDMetal` modules such as `SQDMetal.Utilities.QUtilities`
 
 Currently, the supported circuits are:
 
-- `MultiDieChip.make_resonator_chip()` - creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line
+- :func:`SQDMetal.Utilities.FullChipMaker.MultiDieChip.make_resonator_chip()` - creates a `.gds` full-wafer layout file for a simple coplanar waveguide λ/4 resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line
 
 
-## Circuit types
+Circuit types
+-------------
 
 The circuits listed within the section are called as functions within the `MultiDieChip` class.
 
 
-### Hanger-mode $\lambda/4$ resonator chip
+Hanger-mode λ/4 resonator chip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To import, use:
-```python
-from SQDMetal.Utilities.FullChipMaker import MultiDieChip
-```
+
+.. code-block:: python
+
+    from SQDMetal.Utilities.FullChipMaker import MultiDieChip
 
 You can generate a `.gds` file for the full multi-die chip with the function `make_resonator_chip` as follows:
 
-```python
-d = MultiDieChip.make_resonator_chip(export_filename="FullChipMakerDemo", export_path='gds_designs', cpw_width="25um",export_type="positive", text_label="Just a demo :)", chip_dimension=("8.4mm", "10.6mm"), text_size=400, text_position=(0.2, 0.9))
-```
+
+.. code-block:: python
+
+    d = MultiDieChip.make_resonator_chip(export_filename="FullChipMakerDemo", export_path='gds_designs', cpw_width="25um",export_type="positive", text_label="Just a demo :)", chip_dimension=("8.4mm", "10.6mm"), text_size=400, text_position=(0.2, 0.9))
+
 
 The above call mostly uses the default function values (which can be found in the source code), and user-input arguments. This produces the `.gds` shown below.
 
-![Example output from the make_resonator_chip function in the MultiDieChip class.](FullChipMaker.png)
+.. figure:: /_static/FullChipMaker.png
+    :alt: Example output from the make_resonator_chip function in the MultiDieChip class.
+    :align: center
+    :scale: 100%
+
+    Example output from the make_resonator_chip function in the MultiDieChip class.
 
 The full list of inputs are as follows:
 - `export_filename` - Filename for gds export (e.g. "test")
@@ -60,5 +71,6 @@ The full list of inputs are as follows:
 - `print_all_infos` - (Defaults to True) Choose whether to print info as the `.gds` is being generated
 - `date_stamp_on_export` - (Defaults to True) If True, will print date and time of export in exported .gds filename
 
+TODO: Need to put this into class docstring instead...
 
 

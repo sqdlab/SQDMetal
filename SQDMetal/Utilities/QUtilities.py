@@ -5,6 +5,7 @@
 import shapely
 import numpy as np
 import itertools
+import geopandas as gpd
 from qiskit_metal import Dict
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
@@ -24,6 +25,25 @@ import matplotlib.pyplot as plt
 class QUtilities:
     @staticmethod
     def get_units(design):
+        '''
+        Convert the Qiskit Metal design unit string into a numeric scale factor.
+
+        This utility reads the spatial unit specification from the provided
+        Qiskit Metal `design` object (e.g., "mm", "um", "nm") and returns the
+        corresponding multiplier for converting values expressed in that unit into
+        meters.
+
+        Args:
+            design (qiskit_metal.designs.DesignPlanar): Qiskit Metal design object 
+            from which to retrieve the unit specification.
+
+        Returns:
+            float: Multiplicative scale factor that converts the design's spatial
+            units into meters.
+
+        Raises:
+            AssertionError: If the design reports an unrecognized unit string.
+        '''
         unit_conv = design.get_units()
         if unit_conv == "mm":
             unit_conv = 1e-3
@@ -36,12 +56,40 @@ class QUtilities:
         return unit_conv
 
     @staticmethod
-    def parse_value_length(strVal):
-        # This is far too slow!?
-        # ureg = UnitRegistry().Quantity
-        # return ureg(strVal).to('m').magnitude
+    def parse_value_length(strVal:str|float|int):
+        '''
+        Parse a length value with units and convert it to meters.
 
-        # So do this instead...
+        This function interprets strings representing lengths (e.g., "5mm",
+        "12 um") by parsing the numeric portion and applying the correct scale 
+        factor. It returns the length expressed in meters.
+
+        Supported units:
+            - mm → 1e-3 m
+            - um → 1e-6 m
+            - nm → 1e-9 m
+            - pm → 1e-12 m
+            - fm → 1e-15 m
+            - m  → 1 m (base unit)
+
+        Parameters
+        ----------
+            strVal : str | float | int
+                Length value to parse. May be a string with units or a raw numeric value.
+
+        Returns
+        -------
+            value : float
+                The value converted to meters - returned if successful.
+            error : str
+                Returns string unchanged if the format is invalid and no unit can
+                be parsed (fallback case).
+
+        Raises
+        ------
+            AssertionError: If the string is too short to contain meaningful units
+                or appears malformed.
+        '''
         if isinstance(strVal, int) or isinstance(strVal, float):
             return strVal
         strVal = strVal.strip().replace(' ', '')
@@ -64,6 +112,35 @@ class QUtilities:
 
     @staticmethod
     def get_comp_bounds(design, objs, units_metres=False):
+        """
+        Compute the axis-aligned bounding box for one or more Qiskit Metal components.
+
+        This function inspects the `path` and `poly` geometries of each component and
+        returns the minimum and maximum x/y extents. For path geometries, the bounds
+        are expanded by half the path width. If a component has no geometry (e.g., 
+        abstract components such as junctions), its `pos_x` and `pos_y` options are used
+        as a fallback.
+
+        Args:
+            design (qiskit_metal.designs.DesignPlanar): The Qiskit Metal design containing 
+                the components and geometry tables.
+            objs (str or list of str): One or more component names whose bounding region 
+                will be computed. A single component may be given as a string.
+            units_metres (bool, optional): If True, the returned bounds are converted to 
+                metres using the design's unit scale. If False (default), the bounds are 
+                returned in design units.
+
+        Returns:
+            A tuple in the form:
+            ``(min_x, min_y, max_x, max_y)``
+            representing the bounding extents of the component(s).
+
+        Raises:
+            ValueError:
+                If none of the components contain geometry or valid positional data, 
+                so that no bounding box can be computed.
+
+        """
         if not (isinstance(objs, list) or isinstance(objs, np.ndarray)):
             objs = [objs]
         x_vals = []
@@ -113,7 +190,18 @@ class QUtilities:
     @staticmethod
     def calc_length_of_path(design, component_name, trace_name=""):
         """
-        Variant of calc_point_on_path that returns the total length of a path.
+        VGives the total length of a path in Qiskit metal units.
+
+        Args:
+            design (qiskit_metal.designs.DesignPlanar): Qiskit metal design.
+            component_name (str): Name of the QComponent in the design.
+            trace_name (str, optional): If provided, then the path given by the 
+                trace_name is selected. Otherwise, the default path (typically
+                called 'trace' in normal wiring/routing objects) is selected.
+        
+        Returns:
+            Total length of path as a float in Qiskit metal design units.
+
         """
         return QUtilities.calc_points_on_path([0], design, component_name, trace_name=trace_name)[-1]
 
@@ -129,24 +217,32 @@ class QUtilities:
         """
         Returns the points along a path taking into account the curved edges (i.e. fillets).
 
-        Inputs:
-            * dists - List of raw distances (or fractional distances from 0 to 1 if dists_are_fractional is made True) along the path. If dists
-                      is given as a single value, then dists_are_fractional is ignored, and the returned path will be a bunch of points spaced
-                      by the value given by dists. Units are in Qiskit-Metal design units (when not fractional).
-            * component_name - Name of the QComponent in the design
-            * trace_name - (Optional) If provided, then the path given by the trace_name is selected. Otherwise, the default path (typically
-                           called 'trace' in normal wiring/routing objects) is selected.
-            * trace_name_gap - (Optional) If provided, then the returned gap width is given by the trace_name_gap entity. Otherwise, the
-                               default path (typically called 'cut' in normal wiring/routing objects) is taken for the gap width.
-            * dists_are_fractional - (Defaults to True) If True, then the argument dists is taken as a list of  fractional distances from 0 to 1.
+        Args:
+            dists: List of raw distances (or fractional distances from 0 to 1 if 
+                dists_are_fractional is made True) along the path. If dists
+                is given as a single value, then dists_are_fractional is ignored, 
+                and the returned path will be a bunch of points spaced by the value 
+                given by dists. Units are in Qiskit-Metal design units (when not fractional).
+            component_name: Name of the QComponent in the design
+            trace_name (optional): If provided, then the path given by the trace_name is selected. 
+                Otherwise, the default path (typically called 'trace' in normal 
+                wiring/routing objects) is selected.
+            trace_name_gap (optional): If provided, then the returned gap width is given 
+                by the trace_name_gap entity. Otherwise, the default path (typically called 
+                'cut' in normal wiring/routing objects) is taken for the gap width.
+            dists_are_fractional (bool, optional): (Defaults to True) If True, then the argument 
+                dists is taken as a list of  fractional distances from 0 to 1.
 
-        Returns tuple (final_pts, normals, width, gap, total_dist) where:
-            * final_pts - Numpy array of coordinates along the path given as (x,y) on every row.
-            * normals   - Numpy array of unit-vectors for the right-hand normal vector for every point in final_pts given as (nx, ny) on every row.
-            * width - CPW trace width.
-            * gap   - CPW trace gap.
-            * total_dist - Total length of path.
-        Note that the units in the returned values are in Qiskit-Metal design units...
+        Returns: 
+            Tuple (final_pts, normals, width, gap, total_dist) where:
+                * final_pts - Numpy array of coordinates along the path given as (x,y) on every row.
+                * normals   - Numpy array of unit-vectors for the right-hand normal vector for every point in final_pts given as (nx, ny) on every row.
+                * width - CPW trace width.
+                * gap   - CPW trace gap.
+                * total_dist - Total length of path.
+        Notes:
+            - the units in the returned values are in Qiskit-Metal design units...
+
         """
 
         df = design.qgeometry.tables["path"]
@@ -225,25 +321,32 @@ class QUtilities:
         """
         Returns the line segments and curved fillets on a given path of points.
 
-        Inputs:
-            * points - Numpy array of points given as (x,y) on every row.
-            * rFillet - Radius of fillets on every corner.
-            * precision - The numeric precision in which to calculate bad fillets taken usually as design.template_options.PRECISION
+        Args:
+            points: Numpy array of points given as (x,y) on every row.
+            rFillet: Radius of fillets on every corner.
+            precision: The numeric precision in which to calculate bad fillets taken 
+                usually as design.template_options.PRECISION.
 
-        The function returns list of segments each represented as dictionaries. Straight segments have the keys:
-            * 'start' - Starting point of line segment
-            * 'end'   - Ending point of line segment
-            * 'dir'   - Unit-vector of the direction of the line segment
-            * 'dist'  - Length of the line segment
-        Curved segments (i.e. ones with fillets) have the keys:
-            * 'start'  - Starting point of line segment
-            * 'end'    - Ending point of line segment
-            * 'centre' - Centre of the circle drawing the fillet arc
-            * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc (in radians) on the corner (not from the centre)
-            * 'angleDelta' - Angle traversed by the fillet arc (in radians) using the typical polar angle direction convention in R2...
-            * 'dist'   - Arclength of the fillet
+        Returns:
+            The function returns list of segments each represented as dictionaries. 
+
+            Straight segments have the keys:
+                * 'start' - Starting point of line segment
+                * 'end'   - Ending point of line segment
+                * 'dir'   - Unit-vector of the direction of the line segment
+                * 'dist'  - Length of the line segment
+
+            Curved segments (i.e. ones with fillets) have the keys:
+                * 'start'  - Starting point of line segment
+                * 'end'    - Ending point of line segment
+                * 'centre' - Centre of the circle drawing the fillet arc
+                * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc 
+                    (in radians) on the corner (not from the centre)
+                * 'angleDelta' - Angle traversed by the fillet arc (in radians) 
+                    using the typical polar angle direction convention in R2
+                * 'dist'   - Arclength of the fillet
+
         """
-
         # Get list of vertices that can't be filleted
         no_fillet = bad_fillet_idxs(points, rFillet, precision)
 
@@ -320,12 +423,15 @@ class QUtilities:
         """
         Returns the coordinates of a given path after filleting (like in Qiskit-Metal).
 
-        Inputs:
-            * points - Numpy array of points given as (x,y) on every row.
-            * rFillet - Radius of fillets on every corner.
-            * precision - The numeric precision in which to calculate bad fillets taken usually as design.template_options.PRECISION
+        Args:
+            points: Numpy array of points given as (x,y) on every row.
+            rFillet: Radius of fillets on every corner.
+            precision: The numeric precision in which to calculate bad fillets 
+                taken usually as design.template_options.PRECISION
 
-        The function returns list of points (x,y) for the points defining the filleted path.
+        Returns:
+            List of points (x,y) for the points defining the filleted path.
+
         """
         line_segs = QUtilities.calc_lines_and_fillets_on_path(
             points, rFillet, precision
@@ -354,37 +460,63 @@ class QUtilities:
     @staticmethod
     def get_metals_in_layer(design, layer_id, **kwargs):
         """
-        Partitions unique conductors from a layer in a Qiskit-Metal design object. If the particular layer has fancy PVD evaporation steps, the added
-        metallic layer will account for said steps and merge the final result. In addition, all metallic elements that are contiguous are merged into
-        single blobs. NOTE: Everything is in METRES.
+        Partitions unique conductors from a layer in a Qiskit-Metal design object. 
+        
+        If the particular layer has fancy PVD evaporation steps, the added
+        metallic layer will account for said steps and merge the final result. 
+        In addition, all metallic elements that are contiguous are merged into
+        single blobs. 
 
-        Inputs:
-            - design - Qiskit-Metal deisgn object
-            - layer_id - The index of the layer from which to take the metallic polygons. If this is given as a LIST, then the metals in the specified
-                         layer (0 being ground plane) will be fused and then added into COMSOL.
-            - restrict_rect - (Optional) List highlighting the clipping rectangle [xmin,ymin,xmax,ymax]
-            - resolution - (Optional) Defaults to 4. This is the number of points along a curved section of a path object in Qiskit-Metal.
-            - threshold - (Optional) Defaults to -1. This is the threshold in metres, below which consecutive vertices along a given polygon are
-                          combined into a single vertex. This simplification helps with meshing as COMSOL will not overdo the meshing. If this
-                          argument is negative, the argument is ignored.
-            - fuse_threshold - (Optional) Defaults to 1e-12. This is the minimum distance between metallic elements, below which they are considered
-                               to be a single polygon and thus, the polygons are merged with the gap filled. This accounts for floating-point errors
-                               that make adjacent elements fail to merge as a single element, due to infinitesimal gaps between them.
-            - evap_mode - (Optional) Defaults to 'separate_delete_below'. These are the methods upon which to separate or merge overlapping elements
-                          across multiple evaporation steps. See documentation on PVD_Shadows for more details on the available options.
-            - group_by_evaporations - (Optional) Defaults to False. If set to True, if elements on a particular evaporation step are separated due
-                                      to the given evap_mode, they will still be selected as a part of the same conductor (useful for example, in
-                                      capacitance matrix simulations).
-            - evap_trim - (Optional) Defaults to 20e-9. This is the trimming distance used in certain evap_mode profiles. See documentation on
-                          PVD_Shadows for more details on its definition.
-            - multilayer_fuse - (Optional) Defaults to False. Flattens everything into a single layer (careful when using this with evap_mode).
-            - smooth_radius - (Optional) Defaults to 0. If above 0, then the corners of the metallic surface will be smoothed via this radius. Only works
-                              if multilayer_fuse is set to True.
-            - ground_cutout - (Optional) MUST BE SPECIFIED if layer_id is 0. It is a tuple (x1, x2, y1, y2) for the x and y bounds
+        Args:
+            design: Qiskit-Metal design object
+            layer_id: The index of the layer from which to take the metallic polygons. 
+                If this is given as a LIST, then the metals in the specified
+                layer (0 being ground plane) will be fused and then added into COMSOL.
+            **kwargs:
+                restrict_rect (optional): 
+                    List highlighting the clipping rectangle [xmin,ymin,xmax,ymax]
+                resolution (optional): 
+                    Defaults to 4. This is the number of points along a 
+                    curved section of a path object in Qiskit-Metal.
+                threshold (optional): 
+                    Defaults to -1. This is the threshold in metres, below which 
+                    consecutive vertices along a given polygon are combined into a single vertex. 
+                    This simplification helps with meshing as COMSOL will not overdo the meshing. If this
+                    argument is negative, the argument is ignored.
+                fuse_threshold (optional): 
+                    Defaults to 1e-12. This is the minimum distance between metallic 
+                    elements, below which they are considered to be a single polygon and thus, the polygons 
+                    are merged with the gap filled. This accounts for floating-point errors that make adjacent 
+                    elements fail to merge as a single element, due to infinitesimal gaps between them.
+                evap_mode (optional): 
+                    Defaults to 'separate_delete_below'. These are the methods upon which 
+                    to separate or merge overlapping elements across multiple evaporation steps. 
+                    See documentation on PVD_Shadows for more details on the available options.
+                group_by_evaporations (optional): 
+                    Defaults to False. If set to True, if elements on a 
+                    particular evaporation step are separated due to the given evap_mode, they will still 
+                    be selected as a part of the same conductor (useful for example, in
+                    capacitance matrix simulations).
+                evap_trim (optional): 
+                    Defaults to 20e-9. This is the trimming distance used in certain evap_mode 
+                    profiles. See documentation on PVD_Shadows for more details on its definition.
+                multilayer_fuse (optional): 
+                    Defaults to False. Flattens everything into a single layer 
+                    (careful when using this with evap_mode).
+                smooth_radius (optional): 
+                    Defaults to 0. If above 0, then the corners of the metallic surface 
+                    will be smoothed via this radius. Only works if multilayer_fuse is set to True.
+                ground_cutout (optional): 
+                    MUST BE SPECIFIED if layer_id is 0. 
+                    It is a tuple (x1, x2, y1, y2) for the x and y bounds
 
-        Outputs a tuple containing:
-            - metal_polys_all - All separate metallic islands
-            - metal_sel_ids   - Selection indices for each of the metallic islands (mostly relevant when using group_by_evaporations)
+        Returns:
+            A tuple containing:
+                * metal_polys_all All separate metallic islands
+                * metal_sel_ids   Selection indices for each of the metallic islands (mostly relevant when using group_by_evaporations)
+        
+        Notes:
+            - everything is in METRES
         """
         # Fresh update on PVD profiles...
         pvd_shadows = PVD_Shadows(design)
@@ -522,14 +654,40 @@ class QUtilities:
 
     @staticmethod
     def plot_all_components(design, **kwargs):
-        len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
-        arrow_width = kwargs.get('arrow_width', 0.001)
-        push_to_back = kwargs.get('push_to_back', False)
+        """
+        Plot all metal and ground-plane geometries in a Qiskit Metal design.
 
+        This function extracts all component geometries from the provided
+        Qiskit Metal ``design`` via the Shapely renderer, reconstructs the
+        ground plane by subtracting etched metal regions, and plots both the
+        metal features and the ground plane using GeoPandas/Matplotlib.
+
+        The plot can optionally be drawn on an existing axes object and supports
+        several keyword arguments for tweaking visual appearance.
+
+        Parameters
+        ----------
+        design : QDesign
+            A Qiskit Metal design object containing component geometry and
+            chip metadata.
+        kwargs : dict
+            Keyword arguments:
+
+            *   ``'resolution'`` (`int`):
+                Polygon resolution passed to ``get_net_coordinates`` (default is 4).
+            *   ``'fuse_threshold'`` (`float`):
+                Distance threshold in metres when fusing adjacent polygons in the subtractive layers.
+                Default is 1e-10
+            *   ``'ax'`` (`matplotlib.axes.Axes`):
+                Existing axes to draw on. If omitted, a new figure and axes are created.
+
+        Note
+        ----
+            - Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.
+            - The chip dimensions and center coordinates are taken from ``design.chips['main']['size']`` and converted to consistent units.
+        """
         qmpl = QiskitShapelyRenderer(None, design, None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
-        # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
-        # obstacles = shapely.unary_union(gsdf['geometry'])
         
         qm_units = QUtilities.get_units(design)
         filt = gsdf.loc[gsdf['subtract']]
@@ -561,7 +719,50 @@ class QUtilities:
         ax.set_facecolor('#DDAA33')
 
     @staticmethod
-    def plot_highlight_component(component_name, design, **kwargs):
+    def plot_highlight_component(component_name:str, design, **kwargs):
+        """
+        Plot a single component of a Qiskit Metal design and visually highlight it.
+
+        This function renders all metal and gap geometries from the design, but
+        highlights the specified component using distinct colors. Component pins
+        are annotated with arrows and labels. Useful for visually debugging
+        component placement, orientation, and connectivity.
+
+        Parameters
+        ----------
+        component_name : str
+            The name of the QComponent in ``design.components`` to highlight.
+        design : QDesign
+            A Qiskit Metal design object containing component geometry,
+            chip settings, and pin locations.
+        kwargs : dict
+            Optional keyword arguments:
+            *   ``'resolution'`` (`int`):  
+                Polygon simplification resolution passed to
+                ``QiskitShapelyRenderer.get_net_coordinates()`` (defaults to 4).
+            *   ``'ax'`` (`matplotlib.axes.Axes`):  
+                Existing axis to draw on. If not provided, a new figure and axis
+                are created.
+            *   ``'len_pin_arrow_frac_axis'`` (`float`):  
+                Fraction of the current axis extent used to set the arrow length
+                for pin direction indicators. Defaults to 0.2.
+            *   ``'arrow_width'`` (`float`):  
+                Width of arrows used to indicate pin normals. Defaults to 0.001.
+            *   ``'push_to_back'`` (`bool`):  
+                If True, non-highlighted polygons are sorted so they are drawn
+                behind the highlighted ones. Default to False.
+
+        Returns
+        -------
+            None
+                The function produces a plot but does not return any data.
+
+        Note
+        ----
+            - Metal polygons for the highlighted component are drawn in **#069AF3** (blue). Other metals appear in light blue.
+            - Gap polygons for the highlighted component are drawn in **#808080** (grey). Other gaps appear in a light grey.
+            - Pin arrows are drawn in red with text labels centered along the arrow.
+        """
         len_pin_arrow_frac_axis = kwargs.get('len_pin_arrow_frac_axis', 0.2)
         arrow_width = kwargs.get('arrow_width', 0.001)
         push_to_back = kwargs.get('push_to_back', False)
@@ -574,7 +775,7 @@ class QUtilities:
         if 'ax' in kwargs:
             ax = kwargs['ax']
         else:
-            fig, ax = plt.subplots(1)
+            _, ax = plt.subplots(1)
 
         cur_comp_id = design.components[component_name].id
 
@@ -615,6 +816,29 @@ class QUtilities:
 
     @staticmethod
     def get_perimetric_polygons(design, comp_names, **kwargs):
+        """
+        Returns the perimetric polygons of specified components in a design.
+
+        Args:
+            design: Qiskit Metal design object containing components.
+            comp_names (list of str): Names of components to extract polygons for.
+            **kwargs: Optional keyword arguments.
+                threshold (float): Currently unused. Default is -1.
+                resolution (int): Resolution for getting net coordinates. Default is 4.
+                metals_only (bool): If True, only include metal (non-subtract) geometries.
+                unit_conv (float): Multiplier to convert units (default from `QUtilities.get_units(design)`).
+                fuse_threshold (float): Tolerance for fusing nearby polygons. Default is 1e-12.
+                restrict_rect (list or None): Rectangular bounding box [xmin, ymin, xmax, ymax] to restrict polygons.
+
+        Returns:
+            list of shapely.geometry.Polygon: 
+                List of polygons representing the perimetric geometry of the requested components, 
+                in design units scaled by `unit_conv`. Returns None if no geometries are found.
+
+        Raises:
+            AssertionError: If a name in `comp_names` does not exist in `design.components`.
+            
+        """
         thresh = kwargs.get("threshold", -1)  # noqa: F841 # abhishekchak52: unused variable thresh
         resolution = kwargs.get("resolution", 4)
 
@@ -653,6 +877,27 @@ class QUtilities:
 
     @staticmethod
     def _get_LauncherWB_params(design, launcher_name, unit_conv_extra=1):
+        """
+        Computes the key waveguide launcher parameters for a given launcher component.
+
+        Args:
+            design: Qiskit Metal design object containing the components.
+            launcher_name (str): Name of the launcher component.
+            unit_conv_extra (float, optional): Default is 1. Additional scaling factor to apply to units. 
+
+        Returns:
+            A tuple containing:
+                - startPt (np.ndarray): Starting point of the launcher in design coordinates, 
+                    scaled by `unit_conv_extra`.
+                - padDir (np.ndarray): Normalized direction vector of the launcher pad.
+                - padWid (float): Width of the launcher pad, scaled by `unit_conv_extra`.
+                - padGap (float): Gap of the launcher pad, scaled by `unit_conv_extra`.
+
+        Notes:
+            - Values are computed from the component's `pad_height`, `taper_height`, `lead_length`, 
+                `pad_width`, and `pad_gap` options.
+            - Uses the `tie` pin of the launcher to define start position and orientation.
+        """
         launcher_len = (
             QUtilities.parse_value_length(
                 design.components[launcher_name].options["pad_height"]
@@ -686,6 +931,28 @@ class QUtilities:
 
     @staticmethod
     def _get_Route_params(design, route_name, pin_name, unit_conv_extra=1):
+        """
+        Computes the key waveguide launcher parameters for a given launcher component.
+
+        Args:
+            design: Qiskit Metal design object containing the components.
+            route_name (str): Name of the route component.
+            pin_name (str): Name of the pin.
+            unit_conv_extra (float, optional): Default is 1. Additional scaling factor to apply to units. 
+
+        Returns:
+            A tuple containing:
+                - startPt (np.ndarray): Starting point of the route in design coordinates, 
+                    scaled by `unit_conv_extra`.
+                - padDir (np.ndarray): Normalized direction vector of the launcher pad.
+                - padWid (float): Width of the route, scaled by `unit_conv_extra`.
+                - padGap (float): Gap of the route, scaled by `unit_conv_extra`.
+
+        Notes:
+            - Values are computed from the component's `pad_height`, `taper_height`, `lead_length`, 
+                `pad_width`, and `pad_gap` options.
+            - Uses the `tie` pin of the launcher to define start position and orientation.
+        """
         unit_conv = QUtilities.get_units(design)
 
         startPt = design.components[route_name].pins[pin_name]["middle"] * unit_conv
@@ -715,6 +982,30 @@ class QUtilities:
     def get_RFport_CPW_coords_Launcher(
         design, qObjName, len_launch=20e-6, unit_conv_extra=1
     ):
+        """
+        Computes the coordinates for the coplanar waveguide (CPW) pads of a launcher
+        associated with an RF port.
+
+        Args:
+            design: Qiskit Metal design object containing the components.
+            qObjName (str): Name of the RF port component (must be a LaunchpadWirebond).
+            len_launch (float, optional): Length of the CPW launch section. Default is 20e-6 meters.
+            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
+
+        Returns:
+            A tuple containing:
+                - launchesA (list of list of float): List of four 2D coordinates for the first CPW pad polygon.
+                - launchesB (list of list of float): List of four 2D coordinates for the second CPW pad polygon.
+                - vec_perp (np.ndarray): 2D vector perpendicular to the CPW propagation direction.
+
+        Raises:
+            AssertionError: If the specified component is not a `LaunchpadWirebond`.
+
+        Notes:
+            - Uses `_get_LauncherWB_params` to obtain the origin, direction, width, and gap of the CPW.
+            - Coordinates are returned in the design's unit system, optionally scaled by `unit_conv_extra`.
+            - The CPW polygons are defined relative to the origin and oriented along the launch direction.
+        """
         qObj = design.components[qObjName]
         if isinstance(qObj, LaunchpadWirebond):
             vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_LauncherWB_params(
@@ -748,6 +1039,28 @@ class QUtilities:
     def get_RFport_CPW_coords_Route(
         design, qObjName, pin_name, len_launch=20e-6, unit_conv_extra=1
     ):
+        """
+        Computes the coordinates for the a coplanar waveguide (CPW) port at the start
+        of a CPW for a given component pin.
+
+        Args:
+            design: Qiskit Metal design object containing the components.
+            qObjName (str): Name of the component containing the RF port pin.
+            pin_name (str): Name of the pin on the component for which to compute CPW coordinates.
+            len_launch (float, optional): Length of the CPW launch section. Default is 20e-6 meters.
+            unit_conv_extra (float, optional): Additional unit scaling factor. Default is 1.
+
+        Returns:
+            A tuple containing:
+                - launchesA (list of list of float): List of four 2D coordinates for the first CPW pad polygon.
+                - launchesB (list of list of float): List of four 2D coordinates for the second CPW pad polygon.
+                - vec_perp (np.ndarray): 2D vector perpendicular to the CPW propagation direction.
+
+        Notes:
+            - Uses `_get_Route_params` to obtain the origin, launch direction, width, and gap of the CPW.
+            - Coordinates are returned in the design's unit system, optionally scaled by `unit_conv_extra`.
+            - The CPW polygons are defined relative to the origin and oriented along the launch direction.
+        """
         qObj = design.components[qObjName]  # noqa: F841 # abhishekchak52: unused variable qObj
 
         # TODO: Add in type-checking somehow here?
@@ -779,12 +1092,49 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Launcher_inplane(
         design,
-        qObjName,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
-        unit_conv_extra=1,
+        qObjName:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
+        unit_conv_extra:float=1,
     ):
+        """
+        Computes the in-plane "U"-shaped ground polygon coordinates for a 
+        coplanar waveguide (CPW) launcher component. Used to connect ground
+        either side of a CPW.
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Note:
+            - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
+            - Coordinates are scaled by `unit_conv_extra`.
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        qObjName : str
+            Name of the launcher component.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
+        """
         qObj = design.components[qObjName]
         if isinstance(qObj, LaunchpadWirebond):
             vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_LauncherWB_params(
@@ -819,20 +1169,56 @@ class QUtilities:
     @staticmethod
     def get_RFport_CPW_groundU_Route_inplane(
         design,
-        route_name,
-        pin_name,
-        thickness_side=20e-6,
-        thickness_back=20e-6,
-        separation_gap=0e-6,
+        route_name:str,
+        pin_name:str,
+        thickness_side:float=20e-6,
+        thickness_back:float=20e-6,
+        separation_gap:float=0e-6,
         unit_conv_extra=1,
     ):
-        # qObj = design.components[route_name]
+        """
+        Computes the in-plane "U"-shaped ground polygon coordinates for a 
+        coplanar waveguide (CPW) route component.
+
+        Note:
+            - The polygon is oriented relative to the CPW launch direction and perpendicular vector.
+            - Coordinates are scaled by `unit_conv_extra`.
+            - Type-checking for the routed component is not enforced (TODO).
+
+        .. figure:: /_static/palace_sim_Uclip_dims.drawio.svg
+            :alt: Parameters used in the U-clip
+            :align: center
+            :scale: 100%
+
+            Parameters used in the U-clip
+
+        Parameters
+        ----------
+        design : QDesign
+            Qiskit Metal `LaunchpadWirebond` object containing the components.
+        route_name : str
+            Name of the routed component.
+        pin_name : str
+            Name of the pin used to determine the CPW start point.
+        thickness_side : float
+            Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.
+        thickness_back : float
+            Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6
+        separation_gap : float
+            Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+            to zero whereupon, it will use the gap distance of the CPW.
+        unit_conv_extra : float
+            Additional unit scaling factor. Default is 1.
+
+        Returns
+        -------
+            coords : np.ndarray
+                List of 8 coordinates defining the vertices of the U-shaped ground polygon in 2D.
+        """
         # TODO: Do type-checking here?
         vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(
             design, route_name, pin_name, unit_conv_extra
         )
-        # else:
-        #     assert False, f"\'{qObjName}\' is an unsupported object type."
 
         vec_perp = np.array([-vec_launch[1], vec_launch[0]])
 
@@ -862,13 +1248,16 @@ class QUtilities:
         """
         Calculates centre coordinates (x, y) of multiple die on a chip.
 
-        Inputs:
-            - chip_dim - tuple containing chip dimensions (x, y) strings with units (Qiskit Metal style - e.g. "20mm")
-            - die_dim - tuple containing die dimensions (x, y) strings with units (Qiskit Metal style - e.g. "4.0mm")
-            - num_die - tuple containing the number of die (num_x, num_y) in x and y
+        Args:
+            chip_dim: Tuple containing chip dimensions (x, y) Qiskit Metal style - e.g. "20mm"
+            die_dim: Tuple containing die dimensions (x, y) Qiskit Metal style - e.g. "4.0mm"
+            num_die: Tuple containing the number of die (num_x, num_y) in x and y
 
-        Output:
-            - die_coords_sorted - a list of tuples of floats containing all die centre positions (relative to (0,0) in the chip centre) in units of meters. Sorted, ascending up each column from bottom left to top right.
+        Returns:
+            A list of tuples of floats containing all die centre positions 
+            (relative to (0,0) in the chip centre) in units of meters. 
+            Sorted, ascending up each column from bottom left to top right.
+
         """
 
         # check input data is in correct format of (x, y)
@@ -894,9 +1283,7 @@ class QUtilities:
             num_die[0] * num_die[1]
         )  # check coordinate list matches number of die
 
-        # sort from top left, vertical down, end on bottom right
         die_coords_sorted = sorted(die_coords, key=lambda tup: (tup[0],tup[1]))
-
         return die_coords_sorted
 
     @staticmethod
@@ -914,24 +1301,26 @@ class QUtilities:
         print_checks=True,
     ):
         """
-        Function for calculating launchpad parameters, placing launchpads on the design, and returning launchpad objects as a tuple containing the left and right launchpads of each die as (lp_L, lp_R). Using Qiskit Metal's `LaunchpadWirebonds`.
+        Function for calculating launchpad parameters, placing launchpads on the design, 
+        and returning launchpad objects as a tuple containing the left and right launchpads 
+        of each die as (lp_L, lp_R).
 
         Inputs:
-            - design - Qiskit Metal design object
-            - cpw_gap - transmission line gap as string with units (e.g. "5um")
-            - cpw_width - transmission line central conductor width as string with units (e.g. "5um")
-            - die_origin - centre coordinates of die as tuple (float(x), float(y)) in units of meters
-            - die dimension - tuple containing die dimensions (x, y) in units of meters
-            - die_number - die number (int) for launchpad object naming (defaults to None)
-            - dimension - horizontal length of launchpad as string with units (defaults to "600um")
-            - inset - distance from edge of die to start of launchpad gap in x as a string with units (defaults to "0um")
-            - taper - length of taper from launchpad to transmission line as a string with units (defaults to "300um")
-            - print_checks - flag if user wants to print statements after launchpads are written to design (defaults to True)
+            design: Qiskit Metal design object
+            cpw_gap: transmission line gap as string with units (e.g. "5um")
+            cpw_width: transmission line central conductor width as string with units (e.g. "5um")
+            die_origin: centre coordinates of die as tuple (float(x), float(y)) in units of meters
+            die dimension: tuple containing die dimensions (x, y) in units of meters
+            die_number: die number (int) for launchpad object naming (defaults to None)
+            dimension: horizontal length of launchpad as string with units (defaults to "600um")
+            inset: distance from edge of die to start of launchpad gap in x as a string with units (defaults to "0um")
+            taper: length of taper from launchpad to transmission line as a string with units (defaults to "300um")
+            print_checks: flag if user wants to print statements after launchpads are written to design (defaults to True)
 
-        Output:
-            - launchpad_objects - tuple containing the LaunchpadWirebond objects (lp_L, lp_R)
+        Returns:
+            launchpad_objects: tuple containing the LaunchpadWirebond objects (lp_L, lp_R)
+
         """
-
         # check inputs
         for i in [dimension, inset, taper, cpw_gap, cpw_width, lead_length]:
             assert isinstance(i, str)
@@ -1041,38 +1430,42 @@ class QUtilities:
         meander_method="qiskit_metal"
     ):
         """
-        Function for placing multiple hanger-mode quarter-wavelength resonators (coupled end open-terminated with 10um ground pocket) coupled to a shared transmission line on a multi-die chip. Resonator length, start and end position are automatically calculated based on frequency, number of die, number of resonators, and launchpad properties. The function returns generated resonator names, and optionally, resonator capicatance and inductance. Clear print-out statements are also made.
+        Place multiple hanger-mode quarter-wavelength resonators on a multi-die chip.
 
-        Inputs:
-            - design - Qiskit Metal design object
-            - gap - transmission line gap as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
-            - width - transmission line central conductor width as string with units (e.g. "5um"). You can pass a list of strings if you want to scale each resonator seperately.
-            - num_resonators - number of resonators to be placed on each die
-            - frequencies - list of frequencies in Hz (must be same length as num_resonators)
-            - die_origin - centre coordinates of die as tuple (float(x), float(y)) in units of meters
-            - die dimension - tuple containing die dimensions (x, y) in units of meters
-            - die_index - die number (int) for resonator object naming
-            - launchpad_extent - total width of the launchpad including inset from edge of die in units of meters
-        Inputs (optional):
-            - feedline_upscale - upscale factor for feedline gap/width compared to resonators (defaults to 1.0)
-            - film thickness - as a string with units (defaults to "100nm")
-            - coupling gap - amount of ground plane between transmission line and resonator coupling length as a string with units (defaults to "20um")
-            - transmission_line_y - y-position of tranmission line in relation to die centre as a string with units (defaults to "0um")
-            - launchpad_to_res - minimum horizontal gap between resonator start pin and the launchpad connector as a string with units (defaults to "200um")
-            - res_shift_x - amount to shift resonators along the feedline as a string with units (to be used for manually adjusting resonator position, defaults to "225um")
-            - min_res_gap - minimum gap between resonators as a string with units (defaults to "150um")
-            - res_vertical - vertical extent of resonator meanders as a string with units (defaults to "1500um")
-            - chip name - defaults to "main"
-            - LC_calculation - boolean to activate capicatance and inductance calculations and outputs (defaults to True)
-            - print_statements - boolean to activate print statements containing resonator names, lengths and frequencies (defaults to True)
-            - fillet - choose fillet size as string with units (defaults to "100um")
-        Outputs:
-            - resonators - list containing resonator QComponents
-            - resontor_vals - list containing 3-tuples of (length, effective permittivity, filling factor)
-            - resonator_names - list containing resonator names as strings
-        Outputs (optional, if LC_calculation = True):
-            - capacitances - list containing calculated capacitances of resonators
-            - inductances - list containing calculated inductances of resonators
+        Resonators are capacitively coupled to a shared transmission line with a 10 µm ground pocket. 
+        Lengths, start and end positions are automatically calculated based on frequencies, number of dies, 
+        number of resonators, and launchpad properties. Optional capacitance and inductance calculations can be performed.
+
+        Args:
+            design (Qiskit Metal Design): Qiskit Metal design object.
+            gap (str or list of str): Transmission line gap (e.g., "5um").
+            width (str or list of str): Transmission line central conductor width (e.g., "5um").
+            num_resonators (int): Number of resonators per die.
+            frequencies (list of float): Resonator frequencies in Hz; length must match `num_resonators`.
+            die_origin (tuple of float): Die center coordinates in meters (x, y).
+            die_dimension (tuple of float): Die dimensions in meters (x, y).
+            die_index (int): Die number used for naming resonators.
+            launchpad_extent (float): Total width of launchpad including inset from die edge, in meters.
+            feedline_upscale (float, optional): Scaling factor for feedline gap/width. Defaults to 1.0.
+            film_thickness (str, optional): Film thickness (e.g., "100nm"). Defaults to "100nm".
+            coupling_gap (str, optional): Ground gap between transmission line and resonator coupling. Defaults to "20um".
+            transmission_line_y (str, optional): Y-position relative to die center. Defaults to "0um".
+            launchpad_to_res (str, optional): Min gap between resonator start pin and launchpad. Defaults to "200um".
+            res_shift_x (str, optional): Manual horizontal shift along feedline. Defaults to "225um".
+            min_res_gap (str, optional): Minimum gap between resonators. Defaults to "150um".
+            res_vertical (str, optional): Vertical extent of resonator meanders. Defaults to "1500um".
+            chip_name (str, optional): Chip name. Defaults to "main".
+            LC_calculation (bool, optional): Calculate capacitance/inductance. Defaults to True.
+            print_statements (bool, optional): Print resonator info. Defaults to True.
+            fillet (str, optional): Fillet size (e.g., "100um"). Defaults to "100um".
+
+        Returns:
+            tuple: 
+                - resonators (list of QComponents): Generated resonator components.
+                - resonator_vals (list of tuple): Tuples (length, effective permittivity, filling factor).
+                - resonator_names (list of str): Names of resonators.
+                - capacitances (list of float, optional): Calculated capacitances (if `LC_calculation` is True).
+                - inductances (list of float, optional): Calculated inductances (if `LC_calculation` is True).
         """
 
         # Estimate of resonator width along x
@@ -1258,15 +1651,8 @@ class QUtilities:
                 fillet_cur = fillet[i]
             else: 
                 fillet_cur = fillet
-            
-            """
-            Add resonators.
-            We need to figure out the best routing options.. bug free and robust.add()
-            TODO: many checks for routing.
-            """
 
             # make resonator
-            # TODO: replace with SQDMetal meander? 
             if meander_method == "sqdmetal":
                 res = ResonatorMeander(design, 
                                        res, 
@@ -1323,22 +1709,23 @@ class QUtilities:
     @staticmethod
     def place_transmission_line_from_launchpads(design, tl_y, gap, width, launchpads, die_index, die_origin=[0, 0], start_straight="100um", fillet="85um", anchor_inset="250um"):
         """
-        Function to place transmission lines between launchpad pins on a multi-die chip. Each transmission line is named as "tl_die{die_index}".
+        Function to place transmission lines between launchpad pins on a multi-die chip. 
+        Each transmission line is named as "tl_die{die_index}".
 
-        Inputs:
-            - design - qiskit metal design
-            - tl_y - y coordinate for the primary routing of the transmission line, relative to the die centre as a string with units
-            - gap - transmission line gap as a string with units
-            - width - transmission line width as a string with units
-            - launchpads - QComponents for launchpads
-            - die_index - index of the current die for QComponent naming
-            - die_origin - (Default to ["0um", "0um"]) origin coordinates of current die as a list of strings with units
-            - start_straight - (Defaults to "80um") Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to "50um"
-            - fillet - (Defaults to "50um") Fillet size on transmission line
-            - anchor_inset - (Defaults to "250um") Distance in x between launchpad connection and anchor
+        Args:
+            design: qiskit metal design
+            tl_y: y coordinate for the primary routing of the transmission line, relative to the die centre as a string with units
+            gap: transmission line gap as a string with units
+            width: transmission line width as a string with units
+            launchpads: QComponents for launchpads
+            die_index: index of the current die for QComponent naming
+            die_origin: (Default to ["0um", "0um"]) origin coordinates of current die as a list of strings with units
+            start_straight: (Defaults to "80um") Straight length of transmission line at launchpad connections (symmetrically at both the start and end) as a string with units. Should be equal to or larger than fillet, which defaults to "50um"
+            fillet: (Defaults to "50um") Fillet size on transmission line
+            anchor_inset: (Defaults to "250um") Distance in x between launchpad connection and anchor
         
-        Outputs:
-            - tl - transmission line QComponent
+        Returns:
+            Transmission line QComponent
         """
 
         # assign launchpads
@@ -1415,13 +1802,13 @@ class QUtilities:
         """
         Function to place dicing markers on a multi-die chip.
 
-        Inputs:
-            - design - qiskit metal design
-            - die_origin - tuple containing die origin (x, y) as float in meters
-            - die_dim - die dimensionsion as a yuple (x, y) containing strings with units
-            - die_index - die number for currently placing markers
-        Input (optional):
-            - marker_type - marker type, currently only supports cross markers (defaults to "cross")
+        Args:
+            design: qiskit metal design
+            die_origin: tuple containing die origin (x, y) as float in meters
+            die_dim: die dimensionsion as a yuple (x, y) containing strings with units
+            die_index: die number for currently placing markers
+            marker_type (optional): marker type, currently only supports cross markers (defaults to "cross")
+
         """
 
         # get values for die dimensions
@@ -1458,6 +1845,15 @@ class QUtilities:
     
     @staticmethod
     def is_string_or_list_of_strings(var):
+        """
+        Check if the input is a string or a list of strings.
+
+        Args:
+            var: The variable to check.
+
+        Returns:
+            bool: True if `var` is a string or a list of strings, False otherwise.
+        """
         if isinstance(var, str):
             return True
         elif isinstance(var, list) and all(isinstance(item, str) for item in var):
@@ -1466,6 +1862,20 @@ class QUtilities:
     
     @staticmethod
     def create_even_spacing_along_line_1d(start, end, n, inset_factor=0.2):
+        """
+        Generate `n` evenly spaced points along a 1D line segment with optional insets at both ends.
+
+        If `n` is 1, the single point returned is the midpoint of the line segment.
+
+        Args:
+            start (float): Start coordinate of the line segment.
+            end (float): End coordinate of the line segment.
+            n (int): Number of points to generate along the line.
+            inset_factor (float, optional): Fraction of spacing to inset from each end. Default is 0.2.
+
+        Returns:
+            list of float: List of `n` coordinates evenly spaced along the line segment.
+        """
         # n == 1, return the middle point
         if n == 1:
             return [(start + end) / 2]
@@ -1480,7 +1890,23 @@ class QUtilities:
         return values
 
     @staticmethod
-    def get_cpw_resonator_length(f0_Hz, resonator_type="quarter", cpw_width=10e-6, cpw_gap=6e-6, substrate_thickness=500e-6, film_thickness=200e-9):
+    def get_cpw_resonator_length(f0_Hz, resonator_type="quarter", cpw_width=10e-6, cpw_gap=6e-6, 
+                                 substrate_thickness=500e-6, film_thickness=200e-9):
+        """
+        Calculate the physical length of a CPW resonator for a given target frequency.
+
+        Args:
+            f0_Hz (float): Target resonant frequency in Hz.
+            resonator_type (str, optional): Type of resonator: "quarter", "half", or "full". Defaults to "quarter".
+            cpw_width (float, optional): Width of the CPW center conductor in meters. Defaults to 10e-6.
+            cpw_gap (float, optional): Gap between CPW center and ground in meters. Defaults to 6e-6.
+            substrate_thickness (float, optional): Thickness of the substrate in meters. Defaults to 500e-6.
+            film_thickness (float, optional): Thickness of the superconducting film in meters. Defaults to 200e-9.
+
+        Returns:
+            float: Physical length of the resonator in meters.
+            
+        """
         assert resonator_type in ["quarter", "half", "full"], \
             'Chooses resonator_type from "quarter", "half", or "full".'
         l_full, _, _ = cpw_calculations.guided_wavelength(
