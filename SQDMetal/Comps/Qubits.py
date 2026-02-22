@@ -22,6 +22,7 @@ from shapely.geometry.base import CAP_STYLE
 from shapely.geometry import Polygon
 from SQDMetal.Utilities.QUtilities import QUtilities 
 from shapely.geometry import LineString
+from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 
 class TransmonTapered(BaseQubit):
     """Transmon pocket with 'Teeth' connection pads.
@@ -2224,3 +2225,165 @@ class FluxoniumPocket(_FluxoniumPocket):
         points = list(port_line_cords)
         self.add_pin('readout_line',
                      points, cpw_width)
+        
+class TransmonPocketTeeth(TransmonPocketTeeth):
+    """Idenitical to TransmonPocketTeeth except CPW length coming from teeth scales with
+    pocket_height and NOT pocket_width
+
+    Inherits `BaseQubit` class
+
+    Description:
+        Create a standard pocket transmon qubit for a ground plane with teeth
+        Here we use the 'Teeth' shape which ones connected to the top pad and one connection pad.
+
+    Options:
+        Convention: Values (unless noted) are strings with units included,
+        (e.g., '30um')
+
+    Pocket:
+        * pad_gap            - the distance between the two charge islands, which is also the
+          resulting 'length' of the pseudo junction
+        * inductor_width     - width of the pseudo junction between the two charge islands
+          (if in doubt, make the same as pad_gap). Really just for simulating
+          in HFSS / other EM software
+        * pad_width          - the width (x-axis) of the charge island pads, except the circle radius from both sides
+        * pad_height         - the size (y-axis) of the charge island pads
+        * pocket_width       - size of the pocket (cut out in ground) along x-axis
+        * pocket_height      - size of the pocket (cut out in ground) along y-axis
+        * coupled_pad_gap    - the distance between the two teeth shape
+        * coupled_pad_width  - the width (x-axis) of the teeth shape on the island pads
+        * coupled_pad_height - the size (y-axis) of the teeth shape on the island pads
+                            
+
+    Connector lines:
+        * pad_gap        - space between the connector pad and the charge island it is
+          nearest to
+        * pad_width      - width (x-axis) of the connector pad
+        * pad_height     - height (y-axis) of the connector pad
+        * pad_cpw_shift  - shift the connector pad cpw line by this much away from qubit
+        * pad_cpw_extent - how long should the pad be - edge that is parallel to pocket
+        * cpw_width      - center trace width of the CPW line
+        * cpw_gap        - dielectric gap width of the CPW line
+        * cpw_extend     - depth the connector line extends into ground (past the pocket edge)
+        * pocket_extent  - How deep into the pocket should we penetrate with the cpw connector
+          (into the ground plane)
+        * pocket_rise    - How far up or down relative to the center of the transmon should we
+          elevate the cpw connection point on the ground plane
+        * loc_W / H      - which 'quadrant' of the pocket the connector is set to, +/- 1 (check
+          if diagram is correct)
+
+
+    Sketch:
+        Below is a sketch of the qubit
+        ::
+
+                 +1              0             +1
+                _________________________________
+            -1  |                |               |  +1      Y
+                |           | | |_| | |          |          ^
+                |        ___| |_____| |____      |          |
+                |       /     island       \     |          |----->  X
+                |       \__________________/     |
+                |                |               |
+                |  pocket        x               |
+                |        ________|_________      |
+                |       /                  \     |
+                |       \__________________/     |
+                |                                |
+                |                                |
+            -1  |________________________________|   +1
+                 
+                 -1                            -1
+
+    .. image::
+        transmon_pocket_teeth.png
+
+    .. meta::
+        Transmon Pocket Teeth
+
+    """
+
+    def make_connection_pad(self, name: str):
+        """Makes n individual connector.
+
+        Args:
+            name (str) : Name of the connector
+        """
+
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+        p = self.p
+        pc = self.p.connection_pads[name]  # parser on connector options
+
+        # define commonly used variables once
+        cpw_width = pc.cpw_width
+        cpw_extend = pc.cpw_extend
+        pad_width = pc.pad_width
+        pad_height = pc.pad_height
+        pad_cpw_shift = pc.pad_cpw_shift
+        pocket_rise = pc.pocket_rise
+        pocket_extent = pc.pocket_extent
+
+        loc_W = float(pc.loc_W)
+        loc_W, loc_H = float(pc.loc_W), float(pc.loc_H)
+        if float(loc_W) not in [-1., +1., 0] or float(loc_H) not in [-1., +1.]:
+            self.logger.info(
+                'Warning: Did you mean to define a transmon qubit with loc_W and'
+                ' loc_H that are not +1, -1, or 0? Are you sure you want to do this?'
+            )
+
+        # Define the geometry
+        # Connector pad
+
+        if float(loc_W) != 0:
+            connector_pad = draw.rectangle(pad_width, pad_height,
+                                           -pad_width / 2, pad_height / 2)
+            # Connector CPW wire
+            connector_wire_path = draw.wkt.loads(f"""LINESTRING (\
+                0 {pad_cpw_shift+cpw_width/2}, \
+                {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
+                {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
+                {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
+                                            )""")
+        else:
+            connector_pad = draw.rectangle(pad_width, pad_height, 0,
+                                           pad_height / 2)
+            connector_wire_path = draw.LineString(
+                [[0, pad_height],
+                 [
+                     0,
+                     (p.pocket_height / 2 - p.pad_height - p.pad_gap / 2 -#only line editted
+                      pc.pad_gap) + cpw_extend
+                 ]])
+
+        # Position the connector, rotate and translate
+        objects = [connector_pad, connector_wire_path]
+
+        if loc_W == 0:
+            loc_Woff = 1
+        else:
+            loc_Woff = loc_W
+
+        objects = draw.scale(objects, loc_Woff, loc_H, origin=(0, 0))
+        objects = draw.translate(
+            objects,
+            loc_W * (p.pad_width) / 2.,
+            loc_H * (p.pad_height + p.pad_gap / 2 + pc.pad_gap))
+        objects = draw.rotate_position(objects, p.orientation,
+                                       [p.pos_x, p.pos_y])
+        [connector_pad, connector_wire_path] = objects
+
+        self.add_qgeometry('poly', {f'{name}_connector_pad': connector_pad})
+        self.add_qgeometry('path', {f'{name}_wire': connector_wire_path},
+                           width=cpw_width)
+        self.add_qgeometry('path', {f'{name}_wire_sub': connector_wire_path},
+                           width=cpw_width + 2 * pc.cpw_gap,
+                           subtract=True)
+
+        ############################################################
+
+        # add pins
+        points = np.array(connector_wire_path.coords)
+        self.add_pin(name,
+                     points=points[-2:],
+                     width=cpw_width,
+                     input_as_norm=True)
