@@ -505,7 +505,7 @@ class TransmonTapered(BaseQubit):
 
 class TransmonTaperedInsets(BaseQubit):
     """Transmon pocket with tapered connection pads, with insets for improved coupling. 
-    The qubit-resonator coupling has also been modified.
+    The qubit-resonator coupling has also been modified. 
 
     Inherits `BaseQubit` class
 
@@ -934,23 +934,46 @@ class TransmonTaperedInsets(BaseQubit):
         ###############################################################################################
         # Pins outside the qubit pocket
         # Define the pin positions relative to (0,0)
-        top_pocket_pin = LineString(
+        # 4 pins, 2 on each side, aligned with the qubit pads and taper, and starting from the edge of the pocket.
+        top_right_pocket_pin = LineString(
             [
-                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2],  # Start point (near pocket)
                 [
                     p.pocket_width / 2 + p.chrgln_pin_y_offset,
-                    0,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
         )
 
-        bottom_pocket_pin = LineString(
+        bottom_right_pocket_pin = LineString(
             [
-                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l],  # Start point (near pocket)
+                [
+                    p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2  ,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2],  # Start point (near pocket)
                 [
                     -p.pocket_width / 2 - p.chrgln_pin_y_offset,
-                    0,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l ],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -986,8 +1009,10 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
-            top_pocket_pin,
-            bottom_pocket_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
         ]
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
@@ -998,8 +1023,10 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
-            top_pocket_pin,
-            bottom_pocket_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
         ] = polys
 
         # Add shapes as qiskit geometries
@@ -1023,11 +1050,20 @@ class TransmonTaperedInsets(BaseQubit):
 
         # Add pins to the component
         self.add_pin(
-            "bottom_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+            "top_right_pin", points=list(top_right_pocket_pin.coords), width=taper_width_top
         )
         self.add_pin(
-            "top_pin",
-            points=list(bottom_pocket_pin.coords),
+            "bottom_right_pin",
+            points=list(bottom_right_pocket_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        self.add_pin(
+            "top_left_pin", points=list(top_left_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_left_pin",
+            points=list(bottom_left_pocket_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
         )
