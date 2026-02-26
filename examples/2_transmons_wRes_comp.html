@@ -1,0 +1,669 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2 Transmons with resonator, Capacitance and qubit parameters computation &mdash; SQDMetal  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SQDMetal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SQDMetal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">2 Transmons with resonator, Capacitance and qubit parameters computation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/2_transmons_wRes_comp.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="2-Transmons-with-resonator,-Capacitance-and-qubit-parameters-computation">
+<h1>2 Transmons with resonator, Capacitance and qubit parameters computation<a class="headerlink" href="#2-Transmons-with-resonator,-Capacitance-and-qubit-parameters-computation" title="Link to this heading"></a></h1>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KMP_DUPLICATE_LIB_OK&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;TRUE&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMPI_MCA_btl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tcp,self&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMPI_MCA_rmaps_base_oversubscribe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+
+<span class="c1"># Import useful packages</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">open_docs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QUtilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">QUtilities</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Qubits</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonTaperedInsets</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Test_capacitor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Smooth_CapacitorProngPin</span><span class="p">,</span> <span class="n">Smooth_Capacitor_Semicircle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Resonators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorMeanderPinPin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.analyses</span><span class="w"> </span><span class="kn">import</span> <span class="n">cpw_calculations</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.CpwParams</span><span class="w"> </span><span class="kn">import</span> <span class="n">CpwParams</span>
+
+<span class="c1">### Qubit, resonator frequencies</span>
+<span class="n">qubit_freq</span> <span class="o">=</span> <span class="p">[</span><span class="mf">4.5</span><span class="o">*</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">4.5</span><span class="o">*</span><span class="mf">1e9</span><span class="p">]</span>
+<span class="n">res_freq_GHZ</span> <span class="o">=</span> <span class="n">qubit_freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">2.3</span> <span class="o">*</span><span class="mf">1e9</span>
+</pre></div>
+</div>
+</div>
+<section id="Design">
+<h2>Design<a class="headerlink" href="#Design" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## Resonator design parameters</span>
+<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="n">res_freq_GHZ</span><span class="p">)</span>
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s2">&quot;siliconcryo&quot;</span><span class="p">)</span>
+
+<span class="c1"># CPW parameters</span>
+<span class="n">cpw_width</span> <span class="o">=</span> <span class="mf">10e-6</span>
+<span class="n">cpw</span> <span class="o">=</span> <span class="n">CpwParams</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">permittivity</span><span class="p">,</span> <span class="mf">500e-6</span><span class="p">)</span>
+<span class="n">cpw_gap</span> <span class="o">=</span> <span class="n">cpw</span><span class="o">.</span><span class="n">get_gap_from_width</span><span class="p">(</span><span class="n">cpw_width</span><span class="p">)</span>
+
+<span class="n">l_fullwave</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cpw_calculations</span><span class="o">.</span><span class="n">guided_wavelength</span><span class="p">(</span>
+                <span class="n">freq</span><span class="o">=</span><span class="n">resonator</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span>
+                <span class="n">line_width</span><span class="o">=</span><span class="n">cpw_width</span><span class="p">,</span>
+                <span class="n">line_gap</span><span class="o">=</span><span class="n">cpw_gap</span><span class="p">,</span>
+                <span class="n">substrate_thickness</span><span class="o">=</span><span class="n">cpw</span><span class="o">.</span><span class="n">dielectric_thickness</span><span class="p">,</span>
+                <span class="n">film_thickness</span><span class="o">=</span><span class="mf">200e-9</span><span class="p">,</span>
+            <span class="p">)</span>
+<span class="n">l_halfwave</span> <span class="o">=</span> <span class="n">l_fullwave</span> <span class="o">/</span> <span class="mi">2</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resonator length (f = </span><span class="si">{</span><span class="n">res_freq_GHZ</span><span class="si">}</span><span class="s2"> GHz): </span><span class="si">{</span><span class="n">l_halfwave</span><span class="w"> </span><span class="o">*</span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Resonator length (f = 6800000000.0 GHz): 8.96 mm
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+
+<span class="c1"># Set up chip design as planar</span>
+<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="n">overwrite_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># Set up chip dimensions</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;5.0mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;2.0mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;-280um&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
+
+<span class="c1"># Resonator and feedline gap width (W) and center conductor width (S)</span>
+<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;10 um&#39;</span> <span class="c1">#S</span>
+<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_gap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6 um&#39;</span> <span class="c1">#W</span>
+
+<span class="c1">#gui = MetalGUI(design)</span>
+
+
+<span class="c1">########################################</span>
+
+<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;-1.25mm&#39;</span><span class="p">,</span> <span class="n">pos_y</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+                                                       <span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;0.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;420um&#39;</span><span class="p">,</span><span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s2">&quot;-10um&quot;</span><span class="p">))</span>
+
+
+<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Qubit2&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;1.65mm&#39;</span><span class="p">,</span> <span class="n">pos_y</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+                                                       <span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;0.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;420um&#39;</span><span class="p">,</span> <span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s2">&quot;-10um&quot;</span><span class="p">))</span>
+
+
+<span class="n">Smooth_Capacitor_Semicircle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_right_pin&#39;</span><span class="p">)),</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
+                                                              <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;160um&#39;</span><span class="p">,</span><span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;80um&#39;</span><span class="p">,</span> <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;60um&#39;</span><span class="p">,</span>
+                                                              <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span><span class="p">,</span><span class="n">fillet_resolution</span> <span class="o">=</span> <span class="mi">20</span><span class="p">))</span>
+
+<span class="n">Smooth_Capacitor_Semicircle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Capacitor2&#39;</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Qubit2&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_left_pin&#39;</span><span class="p">)),</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                              <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;160um&#39;</span><span class="p">,</span><span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;80um&#39;</span><span class="p">,</span> <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;60um&#39;</span><span class="p">,</span>
+                                                              <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span><span class="p">,</span><span class="n">fillet_resolution</span> <span class="o">=</span> <span class="mi">20</span><span class="p">))</span>
+
+<span class="n">ResonatorMeanderPinPin</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Resonator1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">),</span>
+                                                            <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Capacitor2&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)),</span>
+                                            <span class="n">total_length</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">l_halfwave</span><span class="o">*</span><span class="mf">1e3</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">,</span> <span class="n">start_left</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                                            <span class="n">trace_width</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_width&#39;</span><span class="p">],</span> <span class="n">gap_width</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_gap&#39;</span><span class="p">]))</span>
+
+
+<span class="c1">#######################################</span>
+
+<span class="c1"># Create GUI</span>
+<span class="c1">#gui.rebuild()</span>
+<span class="n">design</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">QUtilities</span><span class="o">.</span><span class="n">plot_all_components</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_2_transmons_wRes_comp_5_0.png" src="../_images/examples_2_transmons_wRes_comp_5_0.png" />
+</div>
+</div>
+</section>
+<section id="Capacitance-Simulation">
+<h2>Capacitance Simulation<a class="headerlink" href="#Capacitance-Simulation" title="Link to this heading"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Capacitance_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Capacitance_Simulation</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+
+<span class="c1">#Eigenmode Simulation Options</span>
+<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
+                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
+                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
+                <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>                                <span class="c1">#number of solutions to save for E-field visualization - ordered by the entries in the computed capacitance matrix</span>
+                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>                              <span class="c1">#error residual tolerance for iterative solver</span>
+                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
+                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
+                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/repo/spack/opt/spack/linux-skylake/palace-0.15.0-p26f6lzvfjt4qemxgkdpjhhyogo7axk4/bin/palace&quot;</span><span class="p">,</span><span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
+                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>                                  <span class="c1">#number of threads to use in PALACE simulation</span>
+                <span class="c1">#e.g.: &quot;palace_dir&quot;:&quot;/home/prasanna/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.2.0/palace-0.12.0-q65qvkwsa5zglixv3rmm424wqsu3mcpv/bin/palace&quot;</span>
+                <span class="p">}</span>
+
+<span class="c1">#Create the Palace capacitance simulation</span>
+<span class="n">cap_sim</span> <span class="o">=</span> <span class="n">PALACE_Capacitance_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;2_transmons_wRes_comp&#39;</span><span class="p">,</span>                                      <span class="c1">#name of simulation</span>
+                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                      <span class="c1">#feed in qiskit metal design</span>
+                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                  <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
+                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                             <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
+                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                           <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
+                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                        <span class="c1">#provide options chosen above</span>
+                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                        <span class="c1">#create mesh, config and HPC batch files</span>
+
+<span class="c1">#Add metallic elements from layer 1 in design file</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="c1">#Add ground plane to simulations</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+
+<span class="c1">#Fine mesh the transmon cross qubit region</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span> <span class="s1">&#39;Qubit2&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="c1">#Fine mesh resonator, launch pads and transmission line</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Resonator1&#39;</span><span class="p">,</span><span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span><span class="s1">&#39;Capacitor2&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">120e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">)</span>
+
+<span class="c1">#This will prepare the mesh file and the config file</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+
+<span class="n">capMat</span> <span class="o">=</span> <span class="n">cap_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Error   : Gmsh has not been initialized
+Error   : Gmsh has not been initialized
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&gt;&gt; /usr/bin/mpirun -n 16 /home/leont/repo/spack/opt/spack/linux-skylake/palace-0.15.0-p26f6lzvfjt4qemxgkdpjhhyogo7axk4/bin/palace-x86_64.bin 2_transmons_wRes_comp.json
+
+_____________     _______
+_____   __   \____ __   /____ ____________
+____   /_/  /  __ ` /  /  __ ` /  ___/  _ \
+___   _____/  /_/  /  /  /_/  /  /__/  ___/
+  /__/     \___,__/__/\___,__/\_____\_____/
+
+
+<span style="color: rgb(255,255,0)">--&gt; Warning!</span>
+Output folder is not empty; program will overwrite content! (outputFiles)
+Git changeset ID: b676277
+Running with 16 MPI processes
+Device configuration: cpu
+Memory configuration: host-std
+libCEED backend: /cpu/self/xsmm/blocked
+
+Added 1128 boundary elements for material interfaces to the mesh
+Finished partitioning mesh into 16 subdomains
+
+Characteristic length and time scales:
+ Lc = 6.000e-03 m, tc = 2.001e-02 ns
+
+Mesh curvature order: 1
+Mesh bounding box:
+ (Xmin, Ymin, Zmin) = (-3.000e-03, -1.200e-03, -2.800e-04) m
+ (Xmax, Ymax, Zmax) = (+3.000e-03, +1.200e-03, +2.800e-04) m
+
+Parallel Mesh Stats:
+
+                minimum     average     maximum       total
+ vertices          2240        2650        2939       42414
+ edges            16179       17320       18508      277120
+ faces            28065       29055       30271      464891
+ elements         14061       14386       14702      230184
+ neighbors            3           5           9
+
+            minimum     maximum
+ h      0.000296999   0.0313019
+ kappa      1.02042     92.4409
+
+Configuring Dirichlet BC at attributes:
+ 10-15, 1-6
+
+Assembling system matrices, number of global unknowns:
+ H1 (p = 2): 319534, ND (p = 2): 1484022, RT (p = 2): 2085225
+ Operator assembly level: Partial
+ Mesh geometries:
+  Tetrahedron: P = 20, Q = 11 (quadrature order = 4)
+
+Assembling multigrid hierarchy:
+ Level 0 (p = 1): 42414 unknowns
+ Level 1 (p = 2): 319534 unknowns
+
+Computing electrostatic fields for 6 terminal boundaries
+
+It 1/6: Index = 1 (elapsed time = 1.66e-07 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 2.448392e+01
+  1 KSP residual norm ||r||_B = 2.121257e+00
+  2 KSP residual norm ||r||_B = 2.539193e-01
+  3 KSP residual norm ||r||_B = 4.098513e-02
+  4 KSP residual norm ||r||_B = 8.845225e-03
+  5 KSP residual norm ||r||_B = 2.156941e-03
+  6 KSP residual norm ||r||_B = 5.551920e-04
+  7 KSP residual norm ||r||_B = 1.567196e-04
+  8 KSP residual norm ||r||_B = 3.739797e-05
+  9 KSP residual norm ||r||_B = 8.646898e-06
+ 10 KSP residual norm ||r||_B = 2.243936e-06
+ 11 KSP residual norm ||r||_B = 5.988850e-07
+PCG solver converged in 11 iterations (avg. reduction factor: 1.697e-01)
+ Sol. ||V|| = 3.122235e+02 (||RHS|| = 1.780161e+02)
+ Field energy E = 1.035e-09 J
+
+ Wrote fields to disk (Paraview) for source 1
+ Updating solution error estimates
+
+It 2/6: Index = 2 (elapsed time = 6.59e+00 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 5.905616e+00
+  1 KSP residual norm ||r||_B = 7.014801e-01
+  2 KSP residual norm ||r||_B = 1.434889e-01
+  3 KSP residual norm ||r||_B = 3.431404e-02
+  4 KSP residual norm ||r||_B = 8.626627e-03
+  5 KSP residual norm ||r||_B = 2.194025e-03
+  6 KSP residual norm ||r||_B = 5.414656e-04
+  7 KSP residual norm ||r||_B = 1.075673e-04
+  8 KSP residual norm ||r||_B = 2.274393e-05
+  9 KSP residual norm ||r||_B = 4.356246e-06
+ 10 KSP residual norm ||r||_B = 1.082311e-06
+ 11 KSP residual norm ||r||_B = 2.659825e-07
+PCG solver converged in 11 iterations (avg. reduction factor: 1.729e-01)
+ Sol. ||V|| = 1.235568e+02 (||RHS|| = 6.452242e+01)
+ Field energy E = 3.550e-11 J
+
+ Wrote fields to disk (Paraview) for source 2
+ Updating solution error estimates
+
+It 3/6: Index = 3 (elapsed time = 1.47e+01 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 5.871942e+00
+  1 KSP residual norm ||r||_B = 7.117299e-01
+  2 KSP residual norm ||r||_B = 1.378763e-01
+  3 KSP residual norm ||r||_B = 3.403832e-02
+  4 KSP residual norm ||r||_B = 1.020005e-02
+  5 KSP residual norm ||r||_B = 2.733200e-03
+  6 KSP residual norm ||r||_B = 6.376058e-04
+  7 KSP residual norm ||r||_B = 1.448014e-04
+  8 KSP residual norm ||r||_B = 3.438152e-05
+  9 KSP residual norm ||r||_B = 7.344243e-06
+ 10 KSP residual norm ||r||_B = 1.734110e-06
+ 11 KSP residual norm ||r||_B = 3.267723e-07
+PCG solver converged in 11 iterations (avg. reduction factor: 1.762e-01)
+ Sol. ||V|| = 1.243390e+02 (||RHS|| = 6.410218e+01)
+ Field energy E = 3.409e-11 J
+
+ Wrote fields to disk (Paraview) for source 3
+ Updating solution error estimates
+
+It 4/6: Index = 4 (elapsed time = 2.17e+01 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 8.611613e+00
+  1 KSP residual norm ||r||_B = 9.223523e-01
+  2 KSP residual norm ||r||_B = 9.557595e-02
+  3 KSP residual norm ||r||_B = 1.722228e-02
+  4 KSP residual norm ||r||_B = 3.675845e-03
+  5 KSP residual norm ||r||_B = 8.407168e-04
+  6 KSP residual norm ||r||_B = 1.993362e-04
+  7 KSP residual norm ||r||_B = 5.078951e-05
+  8 KSP residual norm ||r||_B = 1.422766e-05
+  9 KSP residual norm ||r||_B = 3.126110e-06
+ 10 KSP residual norm ||r||_B = 6.010530e-07
+PCG solver converged in 10 iterations (avg. reduction factor: 1.502e-01)
+ Sol. ||V|| = 1.471850e+02 (||RHS|| = 1.026553e+02)
+ Field energy E = 2.946e-10 J
+ Updating solution error estimates
+
+It 5/6: Index = 5 (elapsed time = 2.78e+01 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 5.885579e+00
+  1 KSP residual norm ||r||_B = 7.010339e-01
+  2 KSP residual norm ||r||_B = 1.350799e-01
+  3 KSP residual norm ||r||_B = 2.758399e-02
+  4 KSP residual norm ||r||_B = 5.499763e-03
+  5 KSP residual norm ||r||_B = 1.050490e-03
+  6 KSP residual norm ||r||_B = 2.017101e-04
+  7 KSP residual norm ||r||_B = 3.566719e-05
+  8 KSP residual norm ||r||_B = 8.086616e-06
+  9 KSP residual norm ||r||_B = 1.687743e-06
+ 10 KSP residual norm ||r||_B = 3.348761e-07
+PCG solver converged in 10 iterations (avg. reduction factor: 1.484e-01)
+ Sol. ||V|| = 1.235942e+02 (||RHS|| = 6.470774e+01)
+ Field energy E = 3.553e-11 J
+ Updating solution error estimates
+
+It 6/6: Index = 6 (elapsed time = 3.40e+01 s)
+
+  Residual norms for PCG solve
+  0 KSP residual norm ||r||_B = 5.848285e+00
+  1 KSP residual norm ||r||_B = 6.882317e-01
+  2 KSP residual norm ||r||_B = 1.319430e-01
+  3 KSP residual norm ||r||_B = 2.820304e-02
+  4 KSP residual norm ||r||_B = 6.694378e-03
+  5 KSP residual norm ||r||_B = 1.687664e-03
+  6 KSP residual norm ||r||_B = 3.815532e-04
+  7 KSP residual norm ||r||_B = 7.460119e-05
+  8 KSP residual norm ||r||_B = 1.744350e-05
+  9 KSP residual norm ||r||_B = 3.228566e-06
+ 10 KSP residual norm ||r||_B = 6.319365e-07
+PCG solver converged in 10 iterations (avg. reduction factor: 1.582e-01)
+ Sol. ||V|| = 1.243491e+02 (||RHS|| = 6.419542e+01)
+ Field energy E = 3.409e-11 J
+ Updating solution error estimates
+
+Completed 0 iterations of adaptive mesh refinement (AMR):
+ Indicator norm = 4.245e-01, global unknowns = 319534
+ Max. iterations = 0, tol. = 1.000e-02
+
+Elapsed Time Report (s)           Min.        Max.        Avg.
+==============================================================
+Initialization                   0.052       0.085       0.062
+  Mesh Preprocessing             1.859       1.860       1.859
+Operator Construction            0.261       0.283       0.273
+Linear Solve                     0.727       0.976       0.804
+  Setup                          1.134       1.135       1.134
+  Preconditioner                 5.472       6.030       5.870
+  Coarse Solve                   0.208       0.537       0.301
+Estimation                       0.112       0.145       0.139
+  Construction                   3.493       3.502       3.497
+  Solve                         27.275      27.276      27.276
+Postprocessing                   1.613       1.619       1.615
+  Paraview                       4.058       4.060       4.059
+Disk IO                          0.960       0.970       0.962
+--------------------------------------------------------------
+Total                           47.920      47.922      47.920
+
+Error in plotting: &#39;Data array (V) not present in this dataset.&#39;
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Display the indices of the conductors to match with capacitance matrix - it will be automatically generated with the output anyway</span>
+<span class="n">cap_sim</span><span class="o">.</span><span class="n">display_conductor_indices</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_2_transmons_wRes_comp_8_0.png" src="../_images/examples_2_transmons_wRes_comp_8_0.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gives qubit parameters</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">cap_sim</span><span class="o">.</span><span class="n">calc_params_2_floating_transmons</span><span class="p">(</span><span class="n">print_all_capacitances</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                            <span class="n">qubit_freq</span><span class="o">=</span><span class="p">(</span><span class="n">qubit_freq</span><span class="p">),</span>
+                                            <span class="n">res</span> <span class="o">=</span> <span class="n">resonator</span>
+                                            <span class="p">)</span>
+
+<span class="c1">###</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Capacitance Results
+--------------------
+C1-Ground        =     73.452 fF
+C2-Ground        =     79.691 fF
+C3-Ground        =     73.500 fF
+C4-Ground        =     79.727 fF
+CQ1              =     78.826 fF
+CQ2              =     78.839 fF
+Cg1              =      7.124 fF
+Cg2              =      7.163 fF
+C_r              =   1445.730 fF
+C1_prime         =     85.915 fF
+C2_prime         =     85.967 fF
+C_r_prime        =   1458.830 fF
+Cg1_prime        =   8800.541 fF
+Cg2_prime        =   8757.446 fF
+
+Readout Resonator
+-------------------
+f_res            =      6.800 GHz
+L_res            =    745.009 pH
+C_res            =    735.294 fF
+Circuit Parameters
+-------------------
+f_qubit1         =      4.500 GHz
+f_qubit2         =      4.500 GHz
+E_C1             =    225.457 MHz
+E_C2             =    225.321 MHz
+E_Cc             =      0.183 MHz
+g1               =     82.732 MHz
+g2               =     83.176 MHz
+
+Target Junction Parameters
+ (for f_qubit1 = 4.5 GHz)
+--------------------------
+E_J1             =     12.380 GHz
+L_J1             =     13.203 nH
+E_J1/E_C1        =     54.912
+
+Target Junction Parameters
+ (for f_qubit2 = 4.5 GHz)
+--------------------------
+E_J2             =     12.387 GHz
+L_J2             =     13.196 nH
+E_J2/E_C2        =     54.975
+
+Q1-Q2 g12        =      0.006 GHz
+Q1-res g1        =    301.813 MHz
+Q2-res g2        =    303.386 MHz
+Q1 freq (uncoupled) =      4.500 GHz
+Q2 freq (uncoupled) =      4.500 GHz
+Res freq (uncoupled) =     30.333 GHz
+Z on/off ratio   =      1.121
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res_ground: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pad1 to pad2: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res to pad1: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res to pad2: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Res_ground:  -1445.730348239 fF
+Pad1 to pad2:  -35.65852572964 fF
+Res to pad1:  -17.64799832657 fF
+Res to pad2:  -2.3543623043 fF
+</pre></div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">resonator</span><span class="o">.</span><span class="n">get_res_inductance</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+7.450087032524837e-10
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

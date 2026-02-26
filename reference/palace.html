@@ -72,6 +72,8 @@
 <li class="toctree-l4"><a class="reference internal" href="palacebase.html">Palace Simulation Base classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Capacitance_Simulation</span></code></a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">HPC_parent_simulation_dir</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons"><code class="docutils literal notranslate"><span class="pre">calc_params_2_floating_transmons()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons_from_files"><code class="docutils literal notranslate"><span class="pre">calc_params_2_floating_transmons_from_files()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon"><code class="docutils literal notranslate"><span class="pre">calc_params_floating_Transmon()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files"><code class="docutils literal notranslate"><span class="pre">calc_params_floating_Transmon_from_files()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
@@ -294,6 +296,136 @@ are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, �
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir">
 <span class="sig-name descname"><span class="pre">HPC_parent_simulation_dir</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'C:/PALACE_Simulations/'</span></span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.HPC_parent_simulation_dir" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons">
+<span class="sig-name descname"><span class="pre">calc_params_2_floating_transmons</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons" title="Link to this definition"></a></dt>
+<dd><p>Class method mirroring <a class="reference internal" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons_from_files" title="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons_from_files"><code class="xref py py-func docutils literal notranslate"><span class="pre">calc_params_2_floating_transmons_from_files()</span></code></a> (without the <code class="docutils literal notranslate"><span class="pre">directory</span></code> parameter as it is inferred from the current simulation)</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons_from_files">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_params_2_floating_transmons_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit_freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacitance_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conductor_indices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_all_capacitances</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_J</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Z0_feedline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_2_floating_transmons_from_files" title="Link to this definition"></a></dt>
+<dd><p>Static method to calculate key circuit parameters (chi, kappa, g, etc.) for 2 Floating Transmons qubits using the simulated capacitance matrix.</p>
+<p>The design can be either 2 isolated floating transmons or 2 floating transmons coupled to a
+resonator, depending on the number of conductors in the capacitance matrix.</p>
+<dl class="simple">
+<dt>There are three supported cases:</dt><dd><dl class="simple">
+<dt>5 conductors:</dt><dd><p>2 floating transmons coupled through mutual capacitance
+(ground, pad 1, pad 2, pad 3, pad 4)</p>
+</dd>
+<dt>6 conductors:</dt><dd><p>2 floating transmons coupled through mutual capacitance, and coupled to resonator
+(ground, pad 1, pad 2, pad 3, pad 4, resonator)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<em>str</em>) – Directory containing Palace output files.</p></li>
+<li><p><strong>qubit_freq</strong> (<em>List</em><em> of </em><em>floats</em>) – (Defaults to None) Qubits freqeuncy in Hertz (Hz), used to calculate parameters.</p></li>
+<li><p><strong>res</strong> (<a class="reference internal" href="qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><em>SQDMetal.Utilities.QubitDesigner.ResonatorBase</em></a>) – (Defaults to None) A resonator object (<a class="reference internal" href="qubitdesigner.html#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a>) is used
+for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).</p></li>
+<li><p><strong>capacitance_matrix</strong> (<em>np.ndarray</em>) – (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.</p></li>
+<li><p><strong>conductor_indeces</strong> (<em>dict</em>) – <dl class="simple">
+<dt>(Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix.</dt><dd><p>If None, the defaults are set to: <code class="docutils literal notranslate"><span class="pre">{</span> <span class="pre">'ground':</span> <span class="pre">0,</span> <span class="pre">'pad1':</span> <span class="pre">1,</span> <span class="pre">'pad2':</span> <span class="pre">2,</span> <span class="pre">'pad</span> <span class="pre">3':</span> <span class="pre">3,</span> <span class="pre">'pad</span> <span class="pre">4':</span> <span class="pre">4</span> <span class="pre">}</span></code></p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>print_all_capacitances</strong> (<em>bool</em>) – (Defaults to False) If True, prints all capacitances (i.e. pad1-to-ground, pad2-to-ground, etc.).</p></li>
+<li><p><strong>C_J</strong> (<em>float</em>) – (Defaults to 0) Optional capacitance of the Josephson junction.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p><strong>params</strong> – Dictionary containing calculated parameters. Some entries may be “N/A” for the provided capacitance matrix.
+The dictionary is of the form:</p>
+<p>Energies and key circuit parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_C1_GHz'</span></code> (<cite>float</cite>):
+Charging energy in gigahertz (GHz) for qubit 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_C2_GHz'</span></code> (<cite>float</cite>):
+Charging energy in gigahertz (GHz) for qubit 2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_Cc_GHz'</span></code> (<cite>float</cite>):
+Charging energy in gigahertz (GHz) for the coupled qubits</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_sigma_fF'</span></code> (<cite>float</cite>):
+Total capacitance in femtofarad (fF) for qubit 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_sigma_fF'</span></code> (<cite>float</cite>):
+Total capacitance in femtofarad (fF) for qubit 2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'g1_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit1 g-coupling in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'g2_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit2 g-coupling in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'g12_MHz'</span></code> (<cite>float</cite>):
+Qubit-Qubit g-coupling in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'chi_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit <span class="math notranslate nohighlight">\(\chi\)</span> in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Delta_GHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit detuning in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'anh_MHz'</span></code> (<cite>float</cite>):
+Qubit anharmonicity in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'f_q_GHz'</span></code> (<cite>float</cite>):
+Qubit frequency in gigahertz (GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'kappa_MHz'</span></code> (<cite>float</cite>):
+Resonator-Qubit kappa (decay rate) in megahertz (MHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'T1,p_ms'</span></code>” (<cite>float</cite>):
+Purcell-limited T1 in milliseconds (ms)</p></li>
+</ul>
+<p>Individual capacitances and inductances:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_ground_fF'</span></code> (<cite>float</cite>):
+C1 to ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_ground_fF'</span></code> (<cite>float</cite>):
+C2_ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C3_ground_fF'</span></code> (<cite>float</cite>):
+C3 to ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C4_ground_fF'</span></code> (<cite>float</cite>):
+C4 to ground capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C1_res_fF'</span></code> (<cite>float</cite>):
+C1_res capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'CQ1</span> <span class="pre">fF'</span></code> (<cite>float</cite>):
+Effective capacitance of qubit 1 (capacitance between pad 1 and pad 2, including their capacitance to ground) in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'CQ2</span> <span class="pre">fF'</span></code> (<cite>float</cite>):
+Effective capacitance of qubit 2 (capacitance between pad 3 and pad 4, including their capacitance to ground) in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C2_res_fF'</span></code> (<cite>float</cite>):
+C2_res capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C3_res_fF'</span></code> (<cite>float</cite>):
+C3_res capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'C4_res_fF'</span></code> (<cite>float</cite>):
+C4_res capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'CQ1Q2</span> <span class="pre">fF'</span></code> (<cite>float</cite>):
+Coupling capacitance between qubit 1 and qubit 2 (capacitance between the two qubits excluding coupling through the resonator) in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Cres_fF'</span></code> (<cite>float</cite>):
+Cres capacitance in femtofarad (fF)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'Lres_pH'</span></code> (<cite>float</cite>):
+Resonator inductance in picohenries (pH)</p></li>
+</ul>
+<p>Junction parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">'L1_J_nH'</span></code> (<cite>float</cite>):
+Inductance of Josephson junction in nanohenries (nH)</p></li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'L2_J_nH'</span></code> (<cite>float</cite>):</dt><dd><p>Inductance of Josephson junction in nanohenries (nH)</p>
+</dd>
+</dl>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E1_J_GHz'</span></code> (<cite>float</cite>):
+Josephson energy in gigahertz (GHz) for qubit 1</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E2_J_GHz'</span></code> (<cite>float</cite>):
+Josephson energy in gigahertz (GHz) for qubit 2</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'I_C_nA'</span></code> (<cite>float</cite>):
+Critical current of Josephson junction in nanoamperes (nA)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">'E_J/E_C'</span></code> (<cite>float</cite>):
+E_J/E_C ratio required to test if qubit is in transmon regime.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation.calc_params_floating_Transmon">
