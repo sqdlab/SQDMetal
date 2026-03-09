@@ -937,10 +937,10 @@ class TransmonTaperedInsets(BaseQubit):
         # 4 pins, 2 on each side, aligned with the qubit pads and taper, and starting from the edge of the pocket.
         top_right_pocket_pin = LineString(
             [
-                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2],  # Start point (near pocket)
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
                 [
                     p.pocket_width / 2 + p.chrgln_pin_y_offset,
-                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -948,10 +948,10 @@ class TransmonTaperedInsets(BaseQubit):
 
         bottom_right_pocket_pin = LineString(
             [
-                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l],  # Start point (near pocket)
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset],  # Start point (near pocket)
                 [
                     p.pocket_width / 2 + p.chrgln_pin_y_offset,
-                    -p.pad_gap/2 - p.pad_height/2  ,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -959,10 +959,10 @@ class TransmonTaperedInsets(BaseQubit):
 
         top_left_pocket_pin = LineString(
             [
-                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2],  # Start point (near pocket)
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
                 [
                     -p.pocket_width / 2 - p.chrgln_pin_y_offset,
-                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -970,10 +970,10 @@ class TransmonTaperedInsets(BaseQubit):
 
         bottom_left_pocket_pin = LineString(
             [
-                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l ],  # Start point (near pocket)
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset ],  # Start point (near pocket)
                 [
                     -p.pocket_width / 2 - p.chrgln_pin_y_offset,
-                    -p.pad_gap/2 - p.pad_height/2,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
