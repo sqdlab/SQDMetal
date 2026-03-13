@@ -2384,18 +2384,17 @@ class Smooth_Capacitor_Semicircle(QComponent):
 
     #  Define structure functions
 
-    default_options = Dict(rect_width='50um',
-                           rect_length='50um',
-                           semi_radius='25um',
-                           circle_offset='0um',
-                           gap_side='5um',
-                           gap_front='5um',
-                           gap_back='10um',
+    default_options = Dict(rect_width='170um',
+                           rect_length='170um',
+                           semi_radius='60um',
+                           circle_offset='-10um',
+                           gap_side='25um',
+                           gap_front='25um',
+                           gap_back='25um',
                            trace_width='10um',
                             orientation = 0,
-                            fillet_radius = '5um',
-                            fillet_resolution = 16,
-                            gap_fillet_radius = '5um')
+                            fillet_radius = '10um',
+                            fillet_resolution = 16)
     """Default drawing options"""
 
     TOOLTIP = """Create a rectangular capacitor pad with a ground pocket cutout."""
@@ -2475,9 +2474,14 @@ class Smooth_Capacitor_Semicircle(QComponent):
              if p.fillet_radius > 0:
                  pad = smooth_polygon(pad, p.fillet_radius)
                  
-             if p.gap_fillet_radius > 0:
-                 gap = smooth_polygon(gap, p.gap_fillet_radius)
-
+             if p.fillet_radius > 0:
+                 gap = smooth_polygon(gap, p.fillet_radius)
+        #pad = pad.buffer(p.big_fillet_radius).buffer(-p.big_fillet_radius)  # Apply a large fillet to the entire pad to smooth the semicircle-rectangle junction
+        #gap = gap.buffer(p.big_fillet_radius).buffer(-p.big_fillet_radius)
+        trans_x = p.rect_length + p.circle_offset -100e-3 # Translate back to original position after filleting
+        pad = draw.translate(pad, -trans_x, 0)
+        gap = draw.translate(gap, -trans_x, 0)
+        pin = draw.translate(pin, -trans_x, 0)
         polys = [pad, gap, pin]
         user_angle_deg = float(p.orientation) # Get user-specified orientation angle in degrees
         polys = draw.rotate(polys, user_angle_deg, origin=(0, 0))
@@ -2611,7 +2615,6 @@ class Smooth_rectangle(QComponent):
                 (p.rect_length+p.gap_front, -p.rect_width*0.5-p.gap_side),
                 (p.rect_length+p.gap_front, p.rect_width*0.5+p.gap_side)
               ]
-        
 
         pad = shapely.Polygon(pad[::-1])
         gap = shapely.Polygon(gap)
@@ -2647,12 +2650,204 @@ class Smooth_rectangle(QComponent):
                  
              if p.gap_fillet_radius > 0:
                  gap = smooth_polygon(gap, p.gap_fillet_radius)
-
+        
+        trans_y = 65e-3 + p.rect_width/2
+        if p.orientation == 0:
+            trans_y = -trans_y
+        trans_x = -100e-3 
+        pad = draw.translate(pad, -trans_x, -trans_y)
+        gap = draw.translate(gap, -trans_x, -trans_y)
+        pin = draw.translate(pin, -trans_x, -trans_y)
         polys = [pad, gap, pin]
         user_angle_deg = float(p.orientation) # Get user-specified orientation angle in degrees
         polys = draw.rotate(polys, user_angle_deg, origin=(0, 0))
         polys = draw.rotate(polys, np.arctan2(startPtNorm[1], startPtNorm[0]), origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, *startPt)
+        [pad, gap, pin] = polys
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(pad=pad),
+                           layer=p.layer)
+
+        #subtracts out ground plane on the layer it's on
+        self.add_qgeometry('poly',
+                           dict(padGap=gap),
+                           subtract=True,
+                           layer=p.layer)
+
+        # Generates its own pin
+        self.add_pin('a', pin.coords, width=p.trace_width)
+
+
+class Smooth_synapse(QComponent):
+    """Creates a synapse-style capacitor
+
+    Inherits QComponent class.
+
+    Original rectangle capacitor design:
+        * Rect_width  - Width of the rectangular pad
+        * Rect_length - Length of the rectangular pad
+        * orientation - Angle of the capacitor in degrees
+        * bulb radius - Radius of the bulbous end of the synapse
+        * bulb_scale_y - Scaling factor for the bulb in the y direction (towards/away from the target pin)
+
+    Spacing around the structure (i.e. cuts into the ground plane) can be controlled via:
+        * gap_side  - Spacing to ground plane on the outer sides 
+        * gap_front - Spacing to ground plane in the direction of the target pin
+
+    The positioning can be done dynamically via:
+        * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying the target component pin
+
+    Pins:
+        There is one pin 'a' to link to the fork (there is no trace drawn in this structure intrinsically). Only needs a width defined
+        * trace_width - center trace width of the trace that attaches to this capacitor.
+
+    Sketch:
+        Below is a sketch of the capacitor
+        ::
+
+            @@@@@@@@@@@@@@@@@@@     @  = Ground Plane
+            @  W W W W W W GB @     #  = Target pin
+            @   _____x_____GB @     x = pin location with width trace_width
+            @ L|           |  @     W = rect_width
+            @ L|           |  @     L = rect_length
+            @ L|           |GS@     r = semi_radius
+            @ L|           |  @    
+            @ L|___________|  @     
+            @       ###   GF  @     BG = gap_back
+            @       ###   GF  @     GF = gap_front
+            @@@@@@  ###  @@@@@@     GS = gap_side
+
+    .. image::
+        Cap3Interdigital.png
+
+    .. meta::
+        Cap 3 Interdigital
+
+    Default Options:
+        * rect_width='50um'
+        * rect_length='50um'
+        * gap_side='5um'
+        * gap_front='5um'
+        * orientation = 0
+        * bulb_radius = '60um'
+        * bulb_scale_y = 1.0
+
+        ## Fillet options for the prongs and ground plane cutouts:
+        * fillet_radius = '5um' - Radius of edge fillets. If 0, no fillets are created.
+        * fillet_resolution = 16 - Resolution of the fillets in number of points. Higher number means smoother fillets but longer simulation time.
+        * big_fillet_radius = '40um' - Fillet radius for the larger corners in the capacitor design. If 0, no fillets are created.
+    """
+
+    #  Define structure functions
+
+    default_options = Dict(rect_width='50um',
+                           rect_length='50um',
+                           gap_side='5um',
+                           gap_front='5um',
+                           trace_width='10um',
+                           bulb_radius='80um',
+                           bulb_scale_y=1.0,
+                           circle_offset = '20um',
+                           semi_radius = '60um',
+                            orientation = 0,
+                            fillet_radius = '5um',
+                            fillet_resolution = 16,
+                            big_fillet_radius = '40um')
+    """Default drawing options"""
+
+    TOOLTIP = """Create a rectangular capacitor pad with a ground pocket cutout."""
+
+    def __init__(self, design,
+                    name: str = None,
+                    options: Dict = None,
+                    type: str = "CPW",
+                    **kwargs):
+        #QRoute forces an end-pin to exist... So make it artificial...
+        assert 'pin_inputs' in options, "Must provide a starting pin input via \'pin_inputs\'."
+        assert 'start_pin' in options.pin_inputs, "Must provide \'start_pin\' in \'pin_inputs\'."
+        assert 'component' in options.pin_inputs.start_pin, "Must provide \'component\' in \'start_pin\'."
+        assert 'pin' in options.pin_inputs.start_pin, "Must provide \'pin\' in \'start_pin\'."
+        super().__init__(design, name, options, **kwargs)
+        #TODO: Perhaps a pull request to add poppable options?
+
+    def make(self):
+        """This is executed by the user to generate the qgeometry for the
+        component."""
+        p = self.p
+        #########################################################
+
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        startPtNorm = start_point['normal']
+
+        #wid = start_point['width']
+            #define the polygons for the basic capacitor structure (before filleting and rotation)
+            # Rectangular pad 
+        pad = [(p.bulb_radius,p.rect_width/2),
+                (p.bulb_radius,-p.rect_width/2),
+                (p.rect_length+p.bulb_radius, -p.rect_width/2),
+                (p.rect_length+p.bulb_radius, p.rect_width*0.5)
+              ]
+
+        gap = [(-p.gap_front,p.rect_width/2 + p.gap_side),
+                (-p.gap_front,-p.rect_width/2 - p.gap_side),
+                (p.gap_front + p.rect_length + p.bulb_radius ,-p.rect_width*0.5-p.gap_side),
+                (p.rect_length+p.gap_front + p.bulb_radius, p.rect_width*0.5+p.gap_side)
+              ]
+
+        def smooth_all_corners(poly, fillet_radius):
+            if fillet_radius <= 0:
+                return poly
+
+            res = max(1, int(p.fillet_resolution))
+
+            # Round convex corners first (+r then -r), then concave corners (-r then +r).
+            smoothed = poly.buffer(fillet_radius, resolution=res, join_style=1)
+            smoothed = smoothed.buffer(-fillet_radius, resolution=res, join_style=1)
+            if smoothed.is_empty:
+                return poly
+
+            smoothed_2 = smoothed.buffer(-fillet_radius, resolution=res, join_style=1)
+            smoothed_2 = smoothed_2.buffer(fillet_radius, resolution=res, join_style=1)
+            return smoothed if smoothed_2.is_empty else smoothed_2
+        
+        circle_center = (0.0,0.0)
+        circle_resolution = max(32, int(p.fillet_resolution) * 4)
+        circ  = draw.Point(circle_center).buffer(p.bulb_radius, resolution=circle_resolution)
+        gap_circle = draw.Point(circle_center).buffer(p.bulb_radius + p.gap_side, resolution=circle_resolution)
+        
+        circle_center_x = p.circle_offset 
+        circle_center_y = 0
+        circle_2 = draw.Point(circle_center_x, circle_center_y).buffer(p.semi_radius, resolution=circle_resolution)
+
+        if p.bulb_scale_y != 1.0:
+          from shapely.affinity import scale
+          circ  = scale(circ,  xfact= 1.0, yfact=p.bulb_scale_y, origin=circle_center)
+          gap_circle = scale(gap_circle,  xfact=1.0, yfact=p.bulb_scale_y, origin=circle_center)
+        
+        circ = circ.difference(circle_2)
+        circ = smooth_all_corners(circ, p.fillet_radius)
+        pad = shapely.Polygon(pad[::-1])
+        pad = draw.union(circ, pad)
+        gap = shapely.Polygon(gap)
+        gap = draw.union(gap, gap_circle)
+        pin = shapely.LineString([(p.bulb_radius + p.rect_length - p.gap_front , p.rect_width*0.5),
+                                  (p.bulb_radius + p.rect_length - p.gap_front , -p.rect_width*0.5)])
+
+        trans_x = 100e-3 -abs(p.circle_offset)  
+        # Apply smoothing with independent radii for metal and ground cutout.
+        pad = smooth_all_corners(pad, p.big_fillet_radius)
+        gap = gap.buffer(p.big_fillet_radius, resolution=max(1, int(p.fillet_resolution)), join_style=1).buffer(-p.big_fillet_radius, resolution=max(1, int(p.fillet_resolution)), join_style=1)
+        pad = draw.translate(pad, -trans_x, 0)
+        gap = draw.translate(gap, -trans_x, 0)
+        pin = draw.translate(pin, -trans_x, 0)
+        polys = [pad, gap, pin]
+        user_angle_deg = float(p.orientation) # Get user-specified orientation angle in degrees
+        polys = draw.rotate(polys, user_angle_deg, origin=(0, 0))
+        polys = draw.rotate(polys, np.arctan2(startPtNorm[1], startPtNorm[0]), origin=(0, 0), use_radians=True)
+        polys = draw.translate(polys,*startPt)
         [pad, gap, pin] = polys
 
         # Adds the object to the qgeometry table
