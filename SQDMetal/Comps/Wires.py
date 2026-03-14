@@ -781,15 +781,18 @@ class Lollipop(QComponent):
 
     Created by Alex Nguyen
     
-                              ___ 
-               |             /   \             |           ^   
-               |            |  x  |            |           |
-               |             \   /             |           |
+               |                               |           ^
+               |                               |           |
+               |                               |           |
                |              | |   L          |           |----->  X
                |              | |   L          |    
                |              | |   L          |           x = (pox_x, pos_y)
                |              | |   L          |           L = length
-               |              |_|   L          |           P = Pin
+               |              |_|   L          |           P = Pin 
+               |             /   \             |           ^   
+               |            |  x  |            |           |
+               |             \   /             |
+               |               -               |
                |               P               |
     
     
@@ -829,7 +832,7 @@ class Lollipop(QComponent):
         # Position the charge_line, rotate and translate
         objects = [charge_line, charge_line_gap, port_line]
         objects = draw.scale(objects, 1, -1, origin=(0, 0))#Figen Yilmaz made an upside lollipop
-        objects = draw.rotate(objects, p.orientation)
+        objects = draw.rotate(objects, p.orientation, origin=(0,0))
         objects = draw.translate(
             objects,
             pos_x,
@@ -887,7 +890,7 @@ class Wire(QComponent):
 
         
 
-        # Charge Line CPW wire
+        # For the pins
         port_line1 = draw.LineString([(-cpw_width/2, length/2),
                                      (cpw_width/2, length/2)])
         

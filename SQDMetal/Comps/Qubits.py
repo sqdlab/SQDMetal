@@ -23,6 +23,7 @@ from shapely.geometry import Polygon
 from SQDMetal.Utilities.QUtilities import QUtilities 
 from shapely.geometry import LineString
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
+from SQDMetal.Comps.Markers import MarkerSquarePocket
 
 class TransmonTapered(BaseQubit):
     """Transmon pocket with 'Teeth' connection pads.
@@ -1788,7 +1789,18 @@ class FluxoniumPocket(_FluxoniumPocket):
                                # distance between centers of the teeth. edge to edge distance depends on coupled_pad_width
                                coupled_pad_gap='100um',
                                pad_gap='15um'  # this is the gap between the CPW and the capacitor. NotE: because of rounded end the top of the rounded end is half a cpw_width closer than stated gap
-                           ))
+                           ),
+                           alignment_markers_options=Dict(
+                                make_markers=False,
+                                marker_seperation='0.16mm',
+                                marker_width='20um',
+                                marker_height='20um',
+                                pocket_distance='5um',
+                                distance_from_pocket='0.085mm',
+                                flush_to_pocket=False,
+                                marker_prefix='placeholder',
+                                qubit_prefix=True
+                            ))
 
     def make(self):
         """Define the way the options are turned into QGeometry.
@@ -2225,6 +2237,296 @@ class FluxoniumPocket(_FluxoniumPocket):
         points = list(port_line_cords)
         self.add_pin('readout_line',
                      points, cpw_width)
+    
+    def make_markers(self, design):
+        """Makes 6 alignment markers outside the 4 corners of the pocket. Intended for 2
+        layers of lithography, 3 alignment markers for each layer. Markers going veritcally
+        are flush with horizontal markers and not the pocket to leave as much room as
+        possible for connection_pads unless flush_to_pocket is True"""
+        p = self.p
+        pam = self.p.alignment_markers_options 
+
+        #define commonly used variables once
+
+        marker_seperation=pam.marker_seperation
+        marker_width=pam.marker_width
+        marker_height=pam.marker_height
+        pocket_distance=pam.pocket_distance#size of the pocket OF THE MARKER
+        distance_from_pocket=pam.distance_from_pocket
+        marker_prefix=pam.marker_prefix
+        if pam.qubit_prefix:
+            marker_prefix=self.name+"_"
+        pocket_height=p.pocket_height
+        pocket_width=p.pocket_width
+        flush_to_pocket=p.flush_to_pocket
+        
+
+        #=======Northwest======
+        #top left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #top left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=(pocket_height/2)-pocket_distance-(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #=============Southwest===========
+        #bottom left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #==========Southeast==========
+        #bottom left markers going horizontally
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #==========Northeast==========
+        #bottom left markers going horizontally
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+
         
 class TransmonPocketTeeth(TransmonPocketTeeth):
     """Idenitical to TransmonPocketTeeth except CPW length coming from teeth scales with
@@ -2272,6 +2574,15 @@ class TransmonPocketTeeth(TransmonPocketTeeth):
         * loc_W / H      - which 'quadrant' of the pocket the connector is set to, +/- 1 (check
           if diagram is correct)
 
+    flux_bias_line_options (as a Dict):
+        * flux_bias_line_options=Dict
+            * make_fbl = True -- Boolean to make the flux bias line 
+            * fbl_sep: '100um' -- The separation between the flux bias line and the inductor along the x-axis
+            * fbl_height: '50um' -- The height of the flux bias line along the y-axis
+            * cpw_width: 'cpw_width' -- The width of the flux bias line
+            * cpw_gap: 'cpw_gap' -- The dielectric gap width of the flux bias line
+            * mirror: False -- Boolean to mirror flux line across y-axis
+
 
     Sketch:
         Below is a sketch of the qubit
@@ -2302,6 +2613,46 @@ class TransmonPocketTeeth(TransmonPocketTeeth):
         Transmon Pocket Teeth
 
     """
+
+    default_options = Dict(TransmonPocketTeeth.default_options,
+                            flux_bias_line_options=Dict(
+                            make_fbl=False,
+                            fbl_sep='170um',
+                            fbl_width='50um',
+                            cpw_width='cpw_width',
+                            cpw_gap='cpw_gap',
+                            mirror=False,
+                            fbl_lead='0um'),
+                            alignment_markers_options=Dict(
+                                make_markers=False,
+                                marker_seperation='0.16mm',
+                                marker_width='20um',
+                                marker_height='20um',
+                                pocket_distance='5um',
+                                distance_from_pocket='0.085mm',
+                                flush_to_pocket=False,
+                                marker_prefix='placeholder',
+                                qubit_prefix=True
+                            )
+                            )
+    def make(self):
+        """Define the way the options are turned into QGeometry.
+
+        The make function implements the logic that creates the geometry
+        (poly, path, etc.) from the qcomponent.options dictionary of
+        parameters, and the adds them to the design, using
+        qcomponent.add_qgeometry(...), adding in extra needed
+        information, such as layer, subtract, etc.
+        """
+        
+        
+        self.make_pocket()
+        self.make_connection_pads()
+
+        if self.p.flux_bias_line_options.make_fbl:
+            self.make_flux_bias_line()
+        if self.p.alignment_markers_options.make_markers:
+            self.make_markers(self.design)
 
     def make_connection_pad(self, name: str):
         """Makes n individual connector.
@@ -2387,3 +2738,402 @@ class TransmonPocketTeeth(TransmonPocketTeeth):
                      points=points[-2:],
                      width=cpw_width,
                      input_as_norm=True)
+    def make_flux_bias_line(self):
+        """ Adds flux bias line to fluxonium pocket."""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+
+        p = self.p
+        pfb = self.p.flux_bias_line_options  # parser on connector options
+
+        # define commonly used variables once
+        fbl_sep = pfb.fbl_sep
+        fbl_width = pfb.fbl_width
+        cpw_width = pfb.cpw_width
+        cpw_gap = pfb.cpw_gap
+        mirror = pfb.mirror
+        fbl_lead = pfb.fbl_lead
+
+        # Define the geometry
+        # Flux Bias Line
+        # The position of flux bias line on the y-axis, starting point inside the pocket
+        d = p.pocket_height/2
+        # Draw the line of the flux-bias line that connects to launcherpad
+        flux_bias_lineright = draw.Polygon([
+            (fbl_width/2, -d),   # point a
+            (fbl_width/2+cpw_width, -d),    # point b
+            (fbl_width/2+cpw_width, -fbl_sep-cpw_width),   # point c
+            (fbl_width/2, -fbl_sep-cpw_width),   # point d
+        ])
+        # Draw the middle line of the flux-bias line
+        flux_bias_linemid = draw.Polygon([
+            (fbl_width/2, -fbl_sep-cpw_width),   # point e
+            (fbl_width/2, -fbl_sep),    # point f
+            (-fbl_width/2, -fbl_sep),   # point g
+            (-fbl_width/2, -fbl_sep-cpw_width),   # point h
+        ])
+
+        # Here we make flux-bias line curvy for the top side and also bottom side and the union all of them
+        circle_left = draw.Point(-fbl_width/2, -(fbl_sep+cpw_width)).buffer(cpw_width)
+        cut_ply = draw.Polygon([
+            (-fbl_width/2-cpw_width, -d),   # point o
+            (-fbl_width/2-cpw_width, -(fbl_sep+cpw_width)),    # point p
+            (-fbl_width/2, -(fbl_sep+cpw_width)),   # point r same with point m
+            (-fbl_width/2, -fbl_sep),   # point s
+            (fbl_width/2, -fbl_sep),  # point t
+            (fbl_width/2, -d),  # point u
+        ])
+        circle_left = draw.subtract(circle_left, cut_ply)
+        # same goes for bottom edge
+        circle_right = draw.Point(fbl_width/2, -fbl_sep-cpw_width).buffer(cpw_width)
+        cut_ply2 = draw.Polygon([
+            (fbl_width/2+cpw_width, -d),   # point v same with h or i
+            (fbl_width/2+cpw_width, -(fbl_sep+cpw_width)),    # point y
+            (fbl_width/2, -(fbl_sep+cpw_width)),   # point z
+            (fbl_width/2, -fbl_sep),   # point w
+            (-fbl_width/2, -fbl_sep),  # point x
+            (-fbl_width/2, -d),  # point k
+        ])
+        circle_right = draw.subtract(circle_right, cut_ply2)
+        flux_bias_lineleft = draw.Polygon([
+            (-fbl_width/2, -(d+fbl_lead)),   # point i
+            (-fbl_width/2-cpw_width, -(d+fbl_lead)),    # point k
+            (-fbl_width/2-cpw_width, -fbl_sep-cpw_width),   # point l
+            (-fbl_width/2, -fbl_sep-cpw_width,),   # point m
+        ])
+        flux_bias_line = draw.union(
+            flux_bias_lineright, flux_bias_linemid,  flux_bias_lineleft, circle_left, circle_right)
+
+        # Flux Bias line's gap part, inside the GND
+        flux_bias_line_gap = draw.rectangle(
+            cpw_width+cpw_gap*2, fbl_lead, (-fbl_width/2-cpw_width/2), -(d+fbl_lead/2))
+
+        # Flux-Bias Line CPW wire
+        port_line = draw.LineString([(0, -(d+fbl_lead)),
+                                    (-(fbl_width+cpw_width), -(d+fbl_lead))])
+
+        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias
+        fake_port_line = draw.LineString([((fbl_width*2+cpw_width*2), -d),
+                                          (-(fbl_width+cpw_width), -d)])
+        if mirror:
+            flux_bias_line = draw.scale(flux_bias_line, -1, 1, origin=(0, 0))
+            port_line = draw.scale(port_line, -1, 1, origin=(0, 0))
+            fake_port_line = draw.scale(fake_port_line, -1, 1, origin=(0, 0))
+            flux_bias_line_gap = draw.scale(flux_bias_line_gap, -1, 1, origin=(0, 0))
+
+        objects = [flux_bias_line, flux_bias_line_gap,
+                   port_line, fake_port_line, circle_right, circle_left, cut_ply, cut_ply2]
+        
+        #objects = draw.scale(objects, 1, loc_H, origin=(0, 0))
+        objects = draw.rotate(objects, p.orientation, origin=(0, 0))
+        objects = draw.translate(objects, p.pos_x, p.pos_y)
+        [flux_bias_line, flux_bias_line_gap, port_line, fake_port_line,
+         circle_right, circle_left, cut_ply, cut_ply2] = objects
+
+        self.add_qgeometry('poly', {'flux_bias_line': flux_bias_line})
+        self.add_qgeometry(
+            'poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)
+        #self.add_qgeometry('poly', {'cut_ply2' : cut_ply2})
+        #self.add_qgeometry('poly', {'circle_left': circle_left})
+
+        ####################################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('flux_bias_line',
+                     port_line_cords, cpw_width)
+
+        fake_port_line_cords = list(
+            draw.shapely.geometry.shape(fake_port_line).coords)
+        self.add_pin('fake_flux_bias_line',
+                     fake_port_line_cords[::-1], cpw_width)
+        
+    def make_markers(self, design):
+        """Makes 6 alignment markers outside the 4 corners of the pocket. Intended for 2
+        layers of lithography, 3 alignment markers for each layer. Markers going veritcally
+        are flush with horizontal markers and not the pocket to leave as much room as
+        possible for connection_pads unless flush_to_pocket is True"""
+        p = self.p
+        pam = self.p.alignment_markers_options 
+
+        #define commonly used variables once
+
+        marker_seperation=pam.marker_seperation
+        marker_width=pam.marker_width
+        marker_height=pam.marker_height
+        pocket_distance=pam.pocket_distance#size of the pocket OF THE MARKER
+        flush_to_pocket=pam.flush_to_pocket
+        distance_from_pocket=pam.distance_from_pocket
+        marker_prefix=pam.marker_prefix
+        if pam.qubit_prefix:
+            marker_prefix=self.name+"_"
+        pocket_height=p.pocket_height
+        pocket_width=p.pocket_width
+        
+        #print(type(marker_prefix))"""
+
+        #=======Northwest======
+        #top left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #top left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=(pocket_height/2)-pocket_distance-(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #=============Southwest===========
+        #bottom left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x+marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SW',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SW',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #==========Southeast==========
+        #bottom left markers going horizontally
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y+marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #==========Northeast==========
+        #bottom left markers going horizontally
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_x=marker_location_x-marker_seperation
+        
+        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NE',
+                                         options=Dict(pos_x=str(marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(first_marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+        
+        marker_location_y=marker_location_y-marker_seperation
+
+        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NE',
+                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
+                                                      pos_y=str(marker_location_y)+"mm",
+                                                      square_width=str(marker_width)+"mm",
+                                                      square_height=str(marker_height)+"mm",
+                                                      pocket_distance=pocket_distance,
+                                                      layer=1))
+

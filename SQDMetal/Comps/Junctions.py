@@ -19,7 +19,7 @@ from qiskit_metal.qlibrary.qubits.JJ_Manhattan import jj_manhattan
 
 
 
-class JunctionManhattan(jj_manhattan):
+class jj_manhattan(jj_manhattan):
     # -*- coding: utf-8 -*-
     # Author: Alexander Nguyen
     # Creation Date: 2025
