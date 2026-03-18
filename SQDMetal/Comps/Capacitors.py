@@ -2384,9 +2384,9 @@ class Smooth_Capacitor_Semicircle(QComponent):
 
     #  Define structure functions
 
-    default_options = Dict(rect_width='170um',
+    default_options = Dict(rect_width='190um',
                            rect_length='170um',
-                           semi_radius='60um',
+                           semi_radius='61um',
                            circle_offset='-10um',
                            gap_side='25um',
                            gap_front='25um',
@@ -2564,14 +2564,14 @@ class Smooth_rectangle(QComponent):
 
     #  Define structure functions
 
-    default_options = Dict(rect_width='50um',
-                           rect_length='50um',
-                           gap_side='5um',
-                           gap_front='5um',
+    default_options = Dict(rect_width='200um',
+                           rect_length='80um',
+                           gap_side='10um',
+                           gap_front='10um',
                            gap_back='10um',
                            trace_width='10um',
                             orientation = 0,
-                            fillet_radius = '5um',
+                            fillet_radius = '10um',
                             fillet_resolution = 16,
                             gap_fillet_radius = '5um')
     """Default drawing options"""
@@ -2651,8 +2651,8 @@ class Smooth_rectangle(QComponent):
              if p.gap_fillet_radius > 0:
                  gap = smooth_polygon(gap, p.gap_fillet_radius)
         
-        trans_y = 65e-3 + p.rect_width/2
-        if p.orientation == 0:
+        trans_y = 60e-3 + p.rect_width/2
+        if p.orientation == 0:  # to keep the capacitor on top of the pads, regardless of the orientation
             trans_y = -trans_y
         trans_x = -100e-3 
         pad = draw.translate(pad, -trans_x, -trans_y)
@@ -2707,17 +2707,6 @@ class Smooth_synapse(QComponent):
         Below is a sketch of the capacitor
         ::
 
-            @@@@@@@@@@@@@@@@@@@     @  = Ground Plane
-            @  W W W W W W GB @     #  = Target pin
-            @   _____x_____GB @     x = pin location with width trace_width
-            @ L|           |  @     W = rect_width
-            @ L|           |  @     L = rect_length
-            @ L|           |GS@     r = semi_radius
-            @ L|           |  @    
-            @ L|___________|  @     
-            @       ###   GF  @     BG = gap_back
-            @       ###   GF  @     GF = gap_front
-            @@@@@@  ###  @@@@@@     GS = gap_side
 
     .. image::
         Cap3Interdigital.png
@@ -2750,7 +2739,7 @@ class Smooth_synapse(QComponent):
                            bulb_radius='80um',
                            bulb_scale_y=1.0,
                            circle_offset = '20um',
-                           semi_radius = '60um',
+                           semi_radius = '65um',
                             orientation = 0,
                             fillet_radius = '5um',
                             fillet_resolution = 16,
@@ -2827,18 +2816,21 @@ class Smooth_synapse(QComponent):
           circ  = scale(circ,  xfact= 1.0, yfact=p.bulb_scale_y, origin=circle_center)
           gap_circle = scale(gap_circle,  xfact=1.0, yfact=p.bulb_scale_y, origin=circle_center)
         
+        pad2 = pad
+        pad2 = shapely.Polygon(pad2)
         circ = circ.difference(circle_2)
         circ = smooth_all_corners(circ, p.fillet_radius)
         pad = shapely.Polygon(pad[::-1])
         pad = draw.union(circ, pad)
         gap = shapely.Polygon(gap)
         gap = draw.union(gap, gap_circle)
-        pin = shapely.LineString([(p.bulb_radius + p.rect_length - p.gap_front , p.rect_width*0.5),
-                                  (p.bulb_radius + p.rect_length - p.gap_front , -p.rect_width*0.5)])
+        pin = shapely.LineString([( p.bulb_radius + p.rect_length - p.gap_front , p.rect_width*0.5),
+                                  ( p.bulb_radius + p.rect_length - p.gap_front , -p.rect_width*0.5)])
 
         trans_x = 100e-3 -abs(p.circle_offset)  
         # Apply smoothing with independent radii for metal and ground cutout.
         pad = smooth_all_corners(pad, p.big_fillet_radius)
+        pad = draw.union(pad,pad2)
         gap = gap.buffer(p.big_fillet_radius, resolution=max(1, int(p.fillet_resolution)), join_style=1).buffer(-p.big_fillet_radius, resolution=max(1, int(p.fillet_resolution)), join_style=1)
         pad = draw.translate(pad, -trans_x, 0)
         gap = draw.translate(gap, -trans_x, 0)
