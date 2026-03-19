@@ -13,7 +13,7 @@ from SQDMetal.Utilities.QiskitShapelyRenderer import QiskitShapelyRenderer
 from SQDMetal.Utilities.ShapelyEx import ShapelyEx
 
 class MakeGDS:
-    def __init__(self, design, threshold:float=1e-9, precision:float=1e-9, curve_resolution:int=22, smooth_radius:float=0, export_type:str='all', export_layers:list[int]=[], print_statements:bool=False):
+    def __init__(self, design, cell_name='Main', threshold:float=1e-9, precision:float=1e-9, curve_resolution:int=22, smooth_radius:float=0, export_type:str='all', export_layers:list[int]=[], print_statements:bool=False):
         """
         Class to export a Qiskit-Metal design into GDS.
 
@@ -45,6 +45,7 @@ class MakeGDS:
             Print debug/status messages when exporting. Default value is False.
         """
         self._design = design
+        self.cell_name = cell_name
         self.curve_resolution = curve_resolution
         self.threshold = threshold
         self.precision = precision
@@ -119,7 +120,7 @@ class MakeGDS:
 
         # Now rebuild library and cell, removing only layers that are about to be recreated
         self.lib = gdstk.Library('GDS Export')
-        self.cell = self.lib.new_cell('Main')
+        self.cell = self.lib.new_cell(self.cell_name)
         self.lib.replace(self.cell)  # over-write existing cell if it exists
         # Rebuild _layer_metals with only standard layers, preserve user layers below
         self._layer_metals = {}
