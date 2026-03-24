@@ -1526,13 +1526,13 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
         new_wvprt['type'] = 'waveport'
         self._ports.append(new_wvprt)
 
-    def create_CPW_feed_Uclip_on_Launcher(self, qObjName:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=0e-6):
+    def create_CPW_feed_Uclip_on_Launcher(self, qObjName:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=20e-6, add_port=False, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
         """
         *Applies Qiskit-Metal designs only*
 
         Create a U-Clip that adjoins the two ground planes on a CPW launcher feeding from the edge of the chip. That
         is, a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
-        planes. It is a simple concave octogan with 90° corners.
+        planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.
 
         This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
@@ -1541,7 +1541,7 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
             :align: center
             :scale: 100%
 
-            Parameters used in the U-clip
+            Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).
 
         Parameters
         ----------
@@ -1554,6 +1554,14 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
         separation_gap : float
             Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
             to zero whereupon, it will use the gap distance of the CPW.
+        add_port : bool
+            If ``True``, create a RF single-element port that feeds the CPW from the grounded Uclip.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50. Only relevant when ``add_port=True``.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0. Only relevant when ``add_port=True``.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0. Only relevant when ``add_port=True``.
         """
         self._metallic_layers += [{
             'type': 'Uclip',
@@ -1563,14 +1571,36 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
             'thickness_back':thickness_back,
             'separation_gap':separation_gap
         }]
+        #
+        if add_port:
+            vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_LauncherWB_params(self._geom_processor.design, qObjName)
+            unit_conv = QUtilities.get_units(self._geom_processor.design)
+            pos1 = vec_ori - vec_launch*separation_gap
+            pos2 = vec_ori
+            rect_width = cpw_wid
 
-    def create_CPW_feed_Uclip_on_Route(self, route_name:str, pin_name:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=0e-6):
+            v_parl = pos2-pos1
+            v_parl /= np.linalg.norm(v_parl)
+
+            portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width, False)
+            portCoords = [x for x in portCoords]
+            portCoords = portCoords + [portCoords[0]]   #Close loop...
+
+            port_name = "rf_port_" + str(len(self._ports))
+            self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width,
+                    'vec_field': v_parl.tolist(),
+                    'portCoords': portCoords,
+                    'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
+
+
+
+    def create_CPW_feed_Uclip_on_Route(self, route_name:str, pin_name:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=20e-6, add_port=False, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
         """
         *Applies Qiskit-Metal designs only*
 
         Create a U-Clip that adjoins the two ground planes on a CPW route feeding from the edge of the chip. That is,
         a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
-        planes. It is a simple concave octogan with 90° corners.
+        planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.
 
         This function must be run before calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation`.
 
@@ -1579,7 +1609,7 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
             :align: center
             :scale: 100%
 
-            Parameters used in the U-clip
+            Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).
 
         Parameters
         ----------
@@ -1595,6 +1625,14 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
         separation_gap : float
             Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
             to zero whereupon, it will use the gap distance of the CPW.
+        add_port : bool
+            If ``True``, create a RF single-element port that feeds the CPW from the grounded Uclip.
+        impedance_R : float
+            Resistive component of this port's impedance given in Ohm (Ω). Defaults to 50. Only relevant when ``add_port=True``.
+        impedance_L : float
+            Inductive component of this port's impedance given in Henry (H). Defaults to 0. Only relevant when ``add_port=True``.
+        impedance_C : float
+            Capacitive component of this port's impedance given in Farad (F). Defaults to 0. Only relevant when ``add_port=True``.
         """
         self._metallic_layers += [{
             'type': 'Uclip',
@@ -1605,8 +1643,27 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
             'thickness_back':thickness_back,
             'separation_gap':separation_gap
         }]
+        #
+        if add_port:
+            vec_ori, vec_launch, cpw_wid, cpw_gap = QUtilities._get_Route_params(self._geom_processor.design, route_name, pin_name)
+            unit_conv = QUtilities.get_units(self._geom_processor.design)
+            pos1 = vec_ori - vec_launch*separation_gap
+            pos2 = vec_ori
+            rect_width = cpw_wid
+
+            v_parl = pos2-pos1
+            v_parl /= np.linalg.norm(v_parl)
+
+            portCoords = ShapelyEx.rectangle_from_line(pos1, pos2, rect_width, False)
+            portCoords = [x for x in portCoords]
+            portCoords = portCoords + [portCoords[0]]   #Close loop...
+
+            port_name = "rf_port_" + str(len(self._ports))
+            self._ports += [{'port_name':port_name, 'type':'single_rect', 'elem_type':'single', 'pos1':pos1, 'pin2':pos2, 'rect_width': rect_width,
+                    'vec_field': v_parl.tolist(),
+                    'portCoords': portCoords,
+                    'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
         #TODO: Do this in general for GDS as well?
-        #TODO: Also consider a single-conductor feed onto the U-Clip?
 
     def _process_ports(self, ports):
         #Assumes that ports is a dictionary that contains the port names (with separate keys with suffixes a and b for multi-element ports)
