@@ -28,7 +28,7 @@ git clone https://github.com/sqdlab/SQDMetal.git
 Now run (changing `sqdmetal_env` to any other desired name for the virtual environment):
 
 ```bash
-conda create -n sqdmetal_env python==3.12
+conda create -n sqdmetal_env python==3.11
 ```
 
 Now activate the environment and install Qiskit-Metal:
