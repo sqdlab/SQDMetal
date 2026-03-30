@@ -86,7 +86,7 @@ class two_Qubits_chip(QComponent):
             q_x_coord_mm, q_y_coord_mm]
         
         qubit34_coords = [
-            -q_x_coord_mm, q_y_coord_mm]
+            -q_x_coord_mm, -q_y_coord_mm]
 
         lp_abs_x = chip_x_mm / 2 - p.lp_inset_mm
         lp_coords_mm = [(-lp_abs_x, 0), (lp_abs_x, 0)]  # launchpads
@@ -194,6 +194,7 @@ class two_Qubits_chip(QComponent):
             freq=freq,
             rebuild_design=False,
             readout_pad=True,
+            ensemble_orientation_deg=0,
         )
         
         # junctions
@@ -326,9 +327,10 @@ class two_Qubits_chip(QComponent):
             freq=freq,
             rebuild_design=False,
             readout_pad=True,
+            ensemble_orientation_deg=180,
         )
         
-        '''# junctions
+        # junctions
         if p.with_junctions:
             JunctionSingleDolanPinStretch(self.design,f"Qubit1_JJ{surname}",
                 options=Dict(pin_inputs=Dict(start_pin=Dict(component=f"Qubit1{surname}", pin="pin_island")),
@@ -362,9 +364,9 @@ class two_Qubits_chip(QComponent):
         coupler3 = CoupledLineTee(
             self.design,"Coupler3",
             options=dict(
-                pos_x=f"{offset_x_mm + q_x_coord_mm - coupler_qubit_offset_mm - 1.5}mm",
+                pos_x=f"{offset_x_mm - q_x_coord_mm - coupler_qubit_offset_mm + 1.5}mm",
                 pos_y=f"{offset_y_mm}mm",
-                orientation="180",
+                orientation="0",
                 **coupler_options,
             ),
         )
@@ -372,12 +374,13 @@ class two_Qubits_chip(QComponent):
         coupler4 = CoupledLineTee(
             self.design, "Coupler4",
             options=dict(
-                pos_x=f"{offset_x_mm + q_x_coord_mm - coupler_qubit_offset_mm + 1.5}mm",
+                pos_x=f"{offset_x_mm - q_x_coord_mm - coupler_qubit_offset_mm - 1.5}mm",
                 pos_y=f"{offset_y_mm}mm",
-                orientation="180",
+                orientation="0",
                 **coupler_options,
             ),
         )
+        
         # calculate extra resonator length due to coupling regions
         res_coupler_l_mm = QUtilities.calc_length_of_path(
             self.design,
@@ -433,7 +436,7 @@ class two_Qubits_chip(QComponent):
                 fillet=p.readout_res_fillet,
                 total_length=f"{(l2_half * 1e3) - extra_length_mm:.2f}mm",
             ),
-        ) '''
+        ) 
 
         ############################# Lanchpad, feedline and Markers ################################ 
         # Launchpads
