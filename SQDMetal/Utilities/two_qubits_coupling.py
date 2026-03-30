@@ -27,7 +27,7 @@ from SQDMetal.Utilities.MakeGDS import MakeGDS
 
 ## This file contains a function that gives a 2 qubit design given a coupling strength J12 and the capacitor choice. 
 
-def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= [0.0,0.0], freq= [4.5e9,4.5e9], print_results=False):
+def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= [0.0,0.0], freq= [4.5e9,4.5e9], print_results=False, rebuild_design=True, readout_pad=False):
 
     ''' This function gives a 2 qubit design given a coupling strength J12 and the capacitor choice. The coupling strength is determined by the capacitor geometry and the frequencies of the qubits.
         This function is limited to the frequency 4.5 GHz, 5 GHz and coupling strength J12 is confined between different values for different capacitor types and frequencies difference.
@@ -121,15 +121,34 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
                 line_gap=cpw_gap,substrate_thickness=cpw.dielectric_thickness,film_thickness=200e-9,)
     l_halfwave = l_fullwave / 2
 
+    readout_pad_options = Dict(
+        connection_pads=Dict(
+            readout=Dict(
+                cpw_extend="5um",
+                pad_gap="90um",
+                cpw_width=f"{cpw_width*1e6}um",
+                cpw_gap=f"{cpw_gap*1e6}um",
+                loc_W="0",
+                loc_H="-1",
+            )
+        )
+    )
+     
+    surname = '' 
+    qubit1_exist = 'Qubit1' in design.components
+    if qubit1_exist:
+        surname = '_2nd'
 
     ################# Transmons defintion ###################################################################################
 
-    TransmonTaperedInsets(design, 'Qubit1', options = Dict(pos_x = f'{pos_x1}mm', pos_y = f'{position[1]}mm', orientation = '0',
-                                                       pocket_lower_tighten = '0.0um',pocket_height = '400um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um"))
+    TransmonTaperedInsets(design, f'Qubit1{surname}', options = Dict(pos_x = f'{pos_x1}mm', pos_y = f'{position[1]}mm', orientation = '0',
+                                                       pocket_lower_tighten = '-200.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
+                                                       **readout_pad_options))
 
 
-    TransmonTaperedInsets(design, 'Qubit2', options = Dict(pos_x = f'{pos_x2}mm', pos_y = f'{position[1]}mm', orientation = '0',
-                                                       pocket_lower_tighten = '0.0um',pocket_height = '400um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um"))
+    TransmonTaperedInsets(design, f'Qubit2{surname}', options = Dict(pos_x = f'{pos_x2}mm', pos_y = f'{position[1]}mm', orientation = '0',
+                                                       pocket_lower_tighten = '-200.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
+                                                       **readout_pad_options))
 
 
     ################ Capacitor parameters ###################################################################################
@@ -142,11 +161,11 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
            rect_length = (-0.041 + np.sqrt(0.041**2 - 4*5.66e-4*(-0.251-J12_target)))/(2*5.66e-4)
 
 
-        Smooth_rectangle(design, 'Capacitor1',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1',pin='top_right_pin')), orientation=180,
+        Smooth_rectangle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1{surname}',pin='top_right_pin')), orientation=180,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', gap_side = f'{gap_side}um', gap_back = f'{gap_back}um', gap_front = f'{gap_front}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_fillet_radius = f'{fillet_radius}um'))
 
-        Smooth_rectangle(design, 'Capacitor2',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2',pin='top_left_pin')), orientation=0,
+        Smooth_rectangle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2{surname}',pin='top_left_pin')), orientation=0,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um',gap_side = f'{gap_side}um', gap_back = f'{gap_back}um', gap_front = f'{gap_front}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_fillet_radius = f'{fillet_radius}um'))
 
@@ -164,11 +183,11 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
             if circle_offset < -10:
                circle_offset = -10
 
-        Smooth_Capacitor_Semicircle(design, 'Capacitor1',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1',pin='top_right_pin')), orientation=180,
+        Smooth_Capacitor_Semicircle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1{surname}',pin='top_right_pin')), orientation=180,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', semi_radius = f'{semi_radius}um', circle_offset = f'{circle_offset}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_side = f'{gap_side}um', gap_back = f'{gap_back}um'))
 
-        Smooth_Capacitor_Semicircle(design, 'Capacitor2',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2',pin='top_left_pin')), orientation=0,
+        Smooth_Capacitor_Semicircle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2{surname}',pin='top_left_pin')), orientation=0,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', semi_radius = f'{semi_radius}um', circle_offset = f'{circle_offset}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_side = f'{gap_side}um', gap_back = f'{gap_back}um'))
 
@@ -188,12 +207,12 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
         elif diff_freq:
            bulb_scale_y = 1.2
 
-        Smooth_synapse(design, 'Capacitor1', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1',pin='top_right_pin')),
+        Smooth_synapse(design, f'Capacitor1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit1{surname}',pin='top_right_pin')),
                                                    pos_x = '0.0mm', pos_y = '0.0mm', orientation = '0', fillet_resolution = 16, bulb_radius = f"{bulb_radius}um",
                                                    rect_length = f"{rect_length}um", rect_width = f"{rect_width}um", bulb_scale_y = f"{bulb_scale_y}", circle_offset = f"{circle_offset}um",
                                                    gap_side = f"{gap_side}um", gap_front = f"{gap_front}um", fillet_radius = f"{fillet_radius}um", semi_radius = f"{semi_radius}um", big_fillet_radius = f"{big_fillet_radius}um"))
 
-        Smooth_synapse(design, 'Capacitor2', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2',pin='top_left_pin')),
+        Smooth_synapse(design, f'Capacitor2{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Qubit2{surname}',pin='top_left_pin')),
                                                    pos_x = '0.0mm', pos_y = '0.0mm', orientation = '180', fillet_resolution = 16, bulb_radius = f"{bulb_radius}um",
                                                    rect_length = f"{rect_length}um", rect_width = f"{rect_width}um", bulb_scale_y = f"{bulb_scale_y}", circle_offset = f"{circle_offset}um",
                                                    gap_side = f"{gap_side}um", gap_front = f"{gap_front}um", fillet_radius = f"{fillet_radius}um", semi_radius = f"{semi_radius}um", big_fillet_radius = f"{big_fillet_radius}um"))
@@ -205,7 +224,7 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
 
     ############### Resonator definition ###################################################################################
 
-    ResonatorMeanderPinPin(design, 'Resonator1', options = Dict(pin_inputs=Dict(start_pin=Dict(component='Capacitor1', pin='a'),end_pin=Dict(component='Capacitor2', pin='a')),
+    ResonatorMeanderPinPin(design, f'Resonator1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Capacitor1{surname}', pin='a'),end_pin=Dict(component=f'Capacitor2{surname}', pin='a')),
                                             total_length = f"{l_halfwave*1e3}mm", start_left = True, const_radius = '10um', const_width_max = '200um', fillet_padding = '50 um',
                                             trace_width = f"{cpw_width*1e6}um", gap_width = f"{cpw_gap*1e6}um"))
     
@@ -234,6 +253,8 @@ def two_qubits_coupling(J12_target, capacitor_type='rode',design=None,position= 
             print(f"Circle offset: {circle_offset} um")
             print(f"Bulb scale Y: {bulb_scale_y}")
 
-    design.rebuild()
+
+    if rebuild_design:
+        design.rebuild()
 
     return design
