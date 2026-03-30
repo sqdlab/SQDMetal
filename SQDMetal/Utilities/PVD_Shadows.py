@@ -228,7 +228,7 @@ class PVD_Shadows:
             profiles += [self._get_poly_shadow(cur_poly, dict_evap_params, list_evap_metals)]
             list_evap_metals = self._add_metallic_layer(list_evap_metals, profiles[-1], dict_evap_params['metal_thickness'])
         if mode == 'merge':
-            return [shapely.unary_union(profiles)]
+            return shapely.unary_union(profiles)
         elif mode == 'separate':
             return profiles
         elif mode == 'separate_delete_below':

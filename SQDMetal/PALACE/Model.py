@@ -254,7 +254,8 @@ class PALACE_Model_Base:
             *   ``'evap_mode'`` (`str`):
                     Defaults to 'separate_delete_below'. These are the methods upon which to separate
                     or merge overlapping elements across multiple evaporation steps. See documentation
-                    on PVD_Shadows for more details on the available options.
+                    on PVD_Shadows for more details on the available options. If set to ``None``, then
+                    the plain mask/metallic region is taken with no regard to the PVD profiles.
             *   ``'group_by_evaporations'`` (`bool`):
                     Defaults to False. If set to True, if elements on a particular evaporation step are
                     separated due to the given evap_mode, they will still be selected as a part of the

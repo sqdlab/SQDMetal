@@ -9,7 +9,8 @@ import shapely
 
 from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
 from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
-
+# import matplotlib.pyplot as plt
+# import geopandas as gpd
 class GMSH_Geometry_Builder:
 
     def __init__(self, geom_processor:GeomBase, fillet_resolution, gmsh_verbosity=1):
@@ -41,12 +42,22 @@ class GMSH_Geometry_Builder:
         # import gmsh
         # gmsh.fltk.run()
 
+        self._unit_conv = 1e-3
+
         # Do pre-processing in shapely to get metallic elements and dielectric cutouts ready to build in GMSH.
         # Note: metals list contains ground plane. Dielectric gaps are the difference between the dielectric cutout
         # and the metals
-        metals, dielectric_gaps = self._geom_processor.process_layers(metallic_layers, ground_plane, fuse_threshold=fuse_threshold, fillet_resolution=self.fillet_resolution, unit_conv=1e-3, **kwargs)    #It's in mm...
+        metals, dielectric_gaps = self._geom_processor.process_layers(metallic_layers, ground_plane, fuse_threshold=fuse_threshold, fillet_resolution=self.fillet_resolution, unit_conv=self._unit_conv, **kwargs)    #It's in mm...
+        metals_div = [{f'metal_{m}':x} for m,x in enumerate(metals)]
+        gaps_div = [{f'gap_{m}':x} for m,x in enumerate(dielectric_gaps)]
 
-        self._unit_conv = 1e-3
+        #If integration areas are specified, the metal plus dielectric-gaps are subdivided. Note that these subdivisions
+        #should keep Polygons as Polygons - i.e. can't create holes from just partitioned cuts...
+        if 'integration_areas' in kwargs:
+            int_areas = []
+            for m,cur_area in enumerate(kwargs['integration_areas']):
+                cur_area_scaled = shapely.affinity.scale( cur_area, xfact=1/self._unit_conv, yfact=1/self._unit_conv, origin=(0, 0) )
+                metals_div, gaps_div, int_areas = self._divide_surface_with_area(cur_area_scaled, metals_div, gaps_div, int_areas)
 
         # Get dimensions of chip base and convert to design units in 'mm'
         chip_centre = self._geom_processor.chip_centre
@@ -57,7 +68,7 @@ class GMSH_Geometry_Builder:
         self.size_y = self._geom_processor.chip_size_y / self._unit_conv
         self.size_z = self._geom_processor.chip_size_z / self._unit_conv
 
-        # Plot the shapely metals for user to see device
+        # # Plot the shapely metals for user to see device
         # geoms = metals# + ground_plane
         # metal_names = [str(i) for i,_ in enumerate(geoms)]
         # gdf = gpd.GeoDataFrame({'names':metal_names}, geometry=geoms)
@@ -73,11 +84,17 @@ class GMSH_Geometry_Builder:
         # Draw shapely metal and dielectric gap polygons into GMSH. If the polygon has an interior, the interior sections are subtracted from
         # the exterior boundary
         metal_names = []
-        for m,cur_metal in enumerate(self._create_gmsh_geometry_from_shapely_polygons(metals)):
-            metal_name = 'metal_' + str(m)
-            metal_names.append(metal_name)
-            dict_all_entities[metal_name] = [cur_metal]
-        dict_all_entities['dielectric_gaps'] = self._create_gmsh_geometry_from_shapely_polygons(dielectric_gaps)         #create all the gaps between the metal traces and the ground plane
+        for cur_metal in metals_div:
+            for metal_name in cur_metal:
+                cur_gmsh_poly = self._create_gmsh_geometry_from_shapely_polygons([cur_metal[metal_name]])
+                metal_names.append(metal_name)
+                dict_all_entities[metal_name] = cur_gmsh_poly
+        gap_names = []
+        for cur_gap in gaps_div:
+            for gap_name in cur_gap:
+                cur_gmsh_poly = self._create_gmsh_geometry_from_shapely_polygons([cur_gap[gap_name]])
+                gap_names.append(gap_name)
+                dict_all_entities[gap_name] = cur_gmsh_poly
         # Process simulation constructs - e.g. ports
         wave_ports = []
         sim_construct_names = []
@@ -101,7 +118,7 @@ class GMSH_Geometry_Builder:
                 self._gmsh_cut_overlapping_parts(dict_all_entities, sim_construct_names, metal_names)
             else:
                 assert cleanup_sim_construct_metal_overlap == '', "The argument cleanup_sim_construct_metal_overlap must be either '', 'preserve_sim_constructs' or 'preserve_metals'"
-            self._gmsh_cut_overlapping_parts(dict_all_entities, ['dielectric_gaps'], sim_construct_names)
+            self._gmsh_cut_overlapping_parts(dict_all_entities, gap_names, sim_construct_names)
 
         fine_mesh_elems = []
         for cur_fine_mesh in fine_meshes:
@@ -175,7 +192,10 @@ class GMSH_Geometry_Builder:
         if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
             trench_depth = full_3D_params['substrate_trenching'] * 1e3
 
-            trenches = gmsh.model.occ.extrude(dict_all_entities['dielectric_gaps'], 0, 0, -trench_depth)
+            gap_entities = []
+            for cur_gap in gap_names:
+                gap_entities += gap_names[cur_gap]
+            trenches = gmsh.model.occ.extrude(gap_entities, 0, 0, -trench_depth)
             self._gmsh_sync()
             dict_all_entities['temp_trenches'] = [x for x in trenches if x[0] == 3]
 
@@ -256,16 +276,15 @@ class GMSH_Geometry_Builder:
         self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip'],metal_names)
         if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
             # self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip']+metal_names,ff_names+wave_port_names,[])
-            # dict_all_entities['chip'] = [x for x in dict_all_entities['chip'] if not (x[0] == 2 and x[1] in all_dielectric_gaps)]
+            assert len(kwargs.get('integration_areas',[])) == 0, "Integration areas is not supported when using trenching..."
             all_surfaces = gmsh.model.occ.getEntities(2)
-            all_dielectric_gaps = []
             dict_all_entities['dielectric_gaps'] = []
             for dim, tag in all_surfaces:
                 com = gmsh.model.occ.getCenterOfMass(dim, tag)
                 if com[2] < -0.25*trench_depth and com[2] > -1.25*trench_depth and np.min(np.abs(self._extents.T - np.array(com))) > 1e-6:
                     dict_all_entities['dielectric_gaps'].append((dim, tag))
-                    all_dielectric_gaps.append(tag)
-        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox']+metal_names,ff_names+['dielectric_gaps']+sim_construct_names+wave_port_names,[])
+            gap_names = ['dielectric_gaps']
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox']+metal_names,ff_names+gap_names+sim_construct_names+wave_port_names,[])
 
         metal_tags_on_boundaries = []
         for metal_name in metal_names:
@@ -287,10 +306,6 @@ class GMSH_Geometry_Builder:
                     metal_tags_on_boundaries.append(x[1])
             dict_all_entities[metal_name] = allowed_tags
 
-        all_metal_tags = []
-        for metal_name in metal_names:
-            all_metal_tags += [x[1] for x in dict_all_entities[metal_name]]
-
         # metal_tags_on_boundaries = [x[1] for x in dict_all_entities['metals_on_boundaries']]
         if len(wave_ports) > 0:
             # Anything on the metal overlapping with the waveport belongs to the metal
@@ -305,10 +320,18 @@ class GMSH_Geometry_Builder:
         for cur_sim_constr in sim_construct_names:
             lePortPolys[cur_sim_constr] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_sim_constr]], name = cur_sim_constr)
         # Create physical groups for metals
+        phys_grp_ints = {}
         lemetals_physgrps = []
-        for metal_name in metal_names:
-            metal_physical_group = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[metal_name]], name = metal_name)
-            lemetals_physgrps.append(metal_physical_group)
+        contiguous_metal_mapping = []
+        for m,cur_metal in enumerate(metals_div):
+            cur_metal_pieces = []
+            for cur_piece in cur_metal:
+                cur_entities = [x[1] for x in dict_all_entities[cur_piece]]
+                metal_physical_group = gmsh.model.addPhysicalGroup(2, cur_entities, name = cur_piece)
+                lemetals_physgrps.append(metal_physical_group)
+                cur_metal_pieces.append(metal_physical_group)
+                phys_grp_ints[cur_piece] = metal_physical_group
+            contiguous_metal_mapping.append(cur_metal_pieces)
         leAirBox_entities = []
         chip_entities = [x[1] for x in dict_all_entities['chip']]
         for cur_entity in dict_all_entities['airbox']:
@@ -316,7 +339,6 @@ class GMSH_Geometry_Builder:
                 leAirBox_entities.append(cur_entity[1])
         leAirBox = gmsh.model.addPhysicalGroup(3, leAirBox_entities, name = 'air_box')
         leDielectric = gmsh.model.addPhysicalGroup(3, [x[1] for x in dict_all_entities['chip']], name = 'dielectric_substrate')       
-        leDielectricGaps = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities['dielectric_gaps']], name = 'dielectric_gaps')
         for wave_port_name in wave_port_names:
             lePortPolys[wave_port_name] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[wave_port_name]], name = wave_port_name)
 
@@ -327,15 +349,36 @@ class GMSH_Geometry_Builder:
 
         gmsh.model.occ.removeAllDuplicates()
 
+        #Partition the dielectric gaps as per the integration areas:
+        #TODO: support overlapping areas (will require pre-paritioning into mutually exclusive areas and then combing them in post-processing).
+        #TODO: support integration over metals (for superconductors, it's fine as it'll reject B-field anyway)
+        #Process Dielectric Gaps
+        leDielectricGaps = []
+        for cur_gap in gaps_div:
+            for cur_piece in cur_gap:
+                cur_phys_grp = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_piece]], name=cur_piece)
+                phys_grp_ints[cur_piece] = cur_phys_grp
+                leDielectricGaps.append(cur_phys_grp)
+        
+        final_int_areas = []
+        if 'integration_areas' in kwargs:
+            for m,cur_area in enumerate(int_areas):
+                cur_entities = []
+                for cur_piece in cur_area:
+                    cur_entities.append(phys_grp_ints[cur_piece])
+                final_int_areas.append(cur_entities)
+
         ret_dict = {
             'air_box'   : self._conv_to_lists(leAirBox),
             'metals'    : lemetals_physgrps,
+            'contiguous_metal_mapping': contiguous_metal_mapping,
             'metalsShapely'    : metals,
             'far_field' : ff_physgrps,
             'ports'     : lePortPolys,
             'dielectric': self._conv_to_lists(leDielectric),
-            'dielectric_gaps': self._conv_to_lists(leDielectricGaps),
-            'fine_mesh_elems': fine_mesh_elems
+            'dielectric_gaps': leDielectricGaps,
+            'fine_mesh_elems': fine_mesh_elems,
+            'integration_areas':final_int_areas
         }
         return ret_dict
 
@@ -344,6 +387,70 @@ class GMSH_Geometry_Builder:
             return data
         else:
             return [data]
+
+    def _divide_surface_with_area(self, new_area, metals:list, dielectric_gaps:list, areas: list):
+        #Try to keep the contiguous metals contiguous - hence metals is a list of dictionaries; e.g. [{'metal0':poly1, 'metal1':poly2}, {'metal3':poly3}] means poly1/poly2 comprise the first metal while
+        #poly3 is another metallic piece. Same with the gaps. The list `areas` is a list of lists; e.g. [['metal0i', 'metal1ii'], [metal2i]] implies that the first area comprises of the pieces given
+        #by those IDs...
+        final_new_area = []
+        final_areas = areas
+        final_metals = []
+        for cur_metal in metals:
+            new_metal = {}
+            for cur_piece in cur_metal:
+                intersecting_piece = shapely.intersection(cur_metal[cur_piece], new_area)
+                left_over_piece = shapely.difference(cur_metal[cur_piece], new_area)
+                left_over = False
+                if left_over_piece.area > 1e-15:
+                    #An edge-case where the intersection splits the polygon into multiple separated pieces...
+                    left_over_piece = ShapelyEx.shapely_to_list(left_over_piece)
+                    if len(left_over_piece) == 1:
+                        new_metal[cur_piece] = left_over_piece[0]
+                    else:
+                        for m in range(len(left_over_piece)):
+                            new_metal[cur_piece+f'_{m}'] = left_over_piece[m]
+                    left_over = True
+                if intersecting_piece.area > 1e-15:
+                    new_name = cur_piece+'i'
+                    new_metal[new_name] = intersecting_piece
+                    final_new_area.append(new_name)
+                    for m in range(len(areas)):
+                        if cur_piece in areas[m]:
+                            if not left_over:
+                                areas[m].pop(cur_piece)
+                            areas[m].append(new_name)
+            final_metals.append(new_metal)
+        #
+        final_gaps = []
+        for cur_gap in dielectric_gaps:
+            new_gap = {}
+            for cur_piece in cur_gap:
+                intersecting_piece = shapely.intersection(cur_gap[cur_piece], new_area)
+                left_over_piece = shapely.difference(cur_gap[cur_piece], new_area)
+                left_over = False
+                if left_over_piece.area > 1e-15:
+                    #An edge-case where the intersection splits the polygon into multiple separated pieces...
+                    left_over_piece = ShapelyEx.shapely_to_list(left_over_piece)
+                    if len(left_over_piece) == 1:
+                        new_gap[cur_piece] = left_over_piece[0]
+                    else:
+                        for m in range(len(left_over_piece)):
+                            new_gap[cur_piece+f'_{m}'] = left_over_piece[m]
+                    left_over = True
+                if intersecting_piece.area > 1e-15:
+                    new_name = cur_piece+'i'
+                    new_gap[new_name] = intersecting_piece
+                    final_new_area.append(new_name)
+                    for m in range(len(areas)):
+                        if cur_piece in areas[m]:
+                            if not left_over:
+                                areas[m].pop(cur_piece)
+                            areas[m].append(new_name)
+            final_gaps.append(new_gap)
+        #
+        areas.append(final_new_area)
+        return final_metals, final_gaps, areas
+
 
     def _gmsh_sync(self):
         gmsh.model.occ.synchronize()
@@ -376,7 +483,7 @@ class GMSH_Geometry_Builder:
         # See here: https://gitlab.onelab.info/gmsh/gmsh/-/blob/master/tutorials/python/t16.py for details on the mapping...
         main_objs, leMap = gmsh.model.occ.fragment(main_dim_tags, tool_dim_tags, removeObject=True, removeTool=True)
 
-        # Using leMap (which gives the list of dim,tag pairs that the original dim,tag pairs in target_dim_tags map onto), redo the main_objects and
+        # Using leMap (which gives the list of dim,tag pairs that the original dim,tag pairs in main_objects map onto), redo the main_objects and
         # tool_objects while making sure to keep the appropriate names:
         cur_index = 0
         for cur_target in (main_objects + tool_objects):
