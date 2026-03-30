@@ -387,7 +387,7 @@ of a CPW for a given component pin.</p>
 coplanar waveguide (CPW) launcher component. Used to connect ground
 either side of a CPW.</p>
 <figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="231" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="401" />
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
 </a>
 <figcaption>
 <p><span class="caption-text">Parameters used in the U-clip</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
@@ -435,7 +435,7 @@ coplanar waveguide (CPW) route component.</p>
 </ul>
 </div>
 <figure class="align-center" id="id2">
-<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="231" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="401" />
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
 </a>
 <figcaption>
 <p><span class="caption-text">Parameters used in the U-clip</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
@@ -555,7 +555,9 @@ elements fail to merge as a single element, due to infinitesimal gaps between th
 </dd>
 <dt>evap_mode (optional):</dt><dd><p>Defaults to ‘separate_delete_below’. These are the methods upon which
 to separate or merge overlapping elements across multiple evaporation steps.
-See documentation on PVD_Shadows for more details on the available options.</p>
+See documentation on PVD_Shadows for more details on the available options.
+If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, then the plain mask/metallic region is taken with no regard
+to the PVD profiles.</p>
 </dd>
 <dt>group_by_evaporations (optional):</dt><dd><p>Defaults to False. If set to True, if elements on a
 particular evaporation step are separated due to the given evap_mode, they will still

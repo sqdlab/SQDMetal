@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Basic Magnetostatic Simulation of a Flux Line &mdash; SQDMetal  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../_static/nbsphinx-code-cells.css?v=2aa19091" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+      <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+      <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Inductance simulation in COMSOL" href="COMSOL_Inductance.html" />
+    <link rel="prev" title="Eigenmode simulation: floating transmon" href="Palace_Eigenmode_FloatingTransmon.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SQDMetal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Worked examples</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#palace-simulation-examples">Palace Simulation Examples</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="Palace_Capacitance_Xmon_Gmsh.html"> Capacitance simulation of X-mon (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="2_transmons_wRes_comp.html"> Capacitance simulation with 2 resonator-coupled transmons (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Qubit_Gmsh.html"> Eigenmode simulation of an X-Mon Qubit (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Res_Gmsh.html"> Eigenmode simulation of side-coupled resonator (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Res_PortFeed_Gmsh.html"> Eigenmode simulation of side-coupled resonator demonstrating single and double CPW RF ports (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_Transmon_Res.html"> Eigenmode simulation of transmon coupled to a resonator with Hamiltonian parameter extraction using EPR (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="two_transmon.html"> Eigenmode simulation of two capacitively coupled transmons (Gmsh)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Palace_Eigenmode_FloatingTransmon.html"> Capacitance and Eigenmode simulation of floating transmon coupled to resonator</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#"> Magnetostatic simulation of a flux line (Gmsh)</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Qiskit-Metal-Design">Qiskit Metal Design</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Magnetostatic-Simulation">Magnetostatic Simulation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#comsol-simulation-examples">COMSOL Simulation Examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#useful-utilities">Useful Utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">API reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SQDMetal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Worked Examples</a></li>
+      <li class="breadcrumb-item active">Basic Magnetostatic Simulation of a Flux Line</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/examples/Palace_Magnetostatic_Example.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="Basic-Magnetostatic-Simulation-of-a-Flux-Line">
+<h1>Basic Magnetostatic Simulation of a Flux Line<a class="headerlink" href="#Basic-Magnetostatic-Simulation-of-a-Flux-Line" title="Link to this heading"></a></h1>
+<section id="Qiskit-Metal-Design">
+<h2>Qiskit Metal Design<a class="headerlink" href="#Qiskit-Metal-Design" title="Link to this heading"></a></h2>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">reload_ext</span> autoreload
+<span class="o">%</span><span class="k">autoreload</span> 2
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">metal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Headings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyEPR</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.terminations.open_to_ground</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenToGround</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.meandered</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteMeander</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.qubits.transmon_pocket</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonPocket</span>
+<span class="c1">#</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Xmon</span><span class="w"> </span><span class="kn">import</span> <span class="n">Xmon</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Capacitors</span><span class="w"> </span><span class="kn">import</span> <span class="n">CapacitorGapPinStretch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireTaperPinStretch</span><span class="p">,</span> <span class="n">WirePinStretch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.FluxLines</span><span class="w"> </span><span class="kn">import</span> <span class="n">FluxLineTPin</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionDolanPinStretch</span>
+
+<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;size_x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;400um&#39;</span>
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="p">[</span><span class="s1">&#39;size_y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;400um&#39;</span>
+
+<span class="n">Xmon</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leXmon&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">vBar_width</span><span class="o">=</span><span class="s1">&#39;24um&#39;</span><span class="p">,</span> <span class="n">hBar_width</span><span class="o">=</span><span class="s1">&#39;24um&#39;</span><span class="p">,</span> <span class="n">vBar_gap</span><span class="o">=</span><span class="s1">&#39;16um&#39;</span><span class="p">,</span> <span class="n">hBar_gap</span><span class="o">=</span><span class="s1">&#39;16um&#39;</span><span class="p">,</span>
+                                    <span class="n">cross_width</span><span class="o">=</span><span class="s1">&#39;144um&#39;</span><span class="p">,</span> <span class="n">cross_height</span><span class="o">=</span><span class="s1">&#39;144um&#39;</span><span class="p">,</span>
+                                    <span class="n">gap_up</span><span class="o">=</span><span class="s1">&#39;24um&#39;</span><span class="p">,</span> <span class="n">gap_left</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">gap_right</span><span class="o">=</span><span class="s1">&#39;24um&#39;</span><span class="p">))</span>
+
+<span class="n">FluxLineTPin</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;flux_line_T&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">ref_comp</span><span class="o">=</span><span class="s1">&#39;leXmon&#39;</span><span class="p">,</span> <span class="n">ref_pin</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>
+                                                 <span class="n">width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;100um&#39;</span><span class="p">,</span>
+                                                 <span class="n">trace_width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;8um&#39;</span><span class="p">,</span>
+                                                 <span class="n">trace_gap</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;12um&#39;</span><span class="p">,</span><span class="n">pin_dist</span><span class="o">=</span><span class="s1">&#39;24um&#39;</span><span class="p">))</span>
+<span class="n">WireTaperPinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;flux_ln_taper&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;start_pin&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;component&#39;</span><span class="p">:</span> <span class="s1">&#39;flux_line_T&#39;</span><span class="p">,</span> <span class="s1">&#39;pin&#39;</span><span class="p">:</span> <span class="s1">&#39;a&#39;</span><span class="p">}},</span>
+                                                   <span class="n">trace_width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">trace_gap</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;28um&#39;</span><span class="p">,</span> <span class="n">taper_length</span><span class="o">=</span><span class="s1">&#39;50um&#39;</span><span class="p">))</span>
+<span class="n">WirePinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;flux_ln_wire&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;flux_ln_taper&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)),</span>
+                                                    <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;54um&#39;</span><span class="p">,</span> <span class="n">trace_width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">trace_gap</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;28um&#39;</span><span class="p">))</span>
+<span class="n">CapacitorGapPinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;capProng&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">cpw_width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span>
+                                            <span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;leXmon&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)),</span>
+                                            <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;120um&#39;</span><span class="p">,</span>
+                                            <span class="n">cap_width</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;50um&#39;</span><span class="p">,</span>
+                                            <span class="n">cap_gap</span><span class="o">=</span><span class="s1">&#39;3um&#39;</span><span class="p">,</span>
+                                            <span class="n">gnd_width</span><span class="o">=</span><span class="s1">&#39;1um&#39;</span><span class="p">,</span>
+                                            <span class="n">len_diag</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">len_flat</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;50um&#39;</span><span class="p">,</span>
+                                            <span class="n">side_gap</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;10um&#39;</span><span class="p">,</span> <span class="n">init_pad</span><span class="o">=</span><span class="s1">&#39;10um&#39;</span>
+                                            <span class="p">))</span>
+
+<span class="c1">############################</span>
+<span class="n">JunctionDolanPinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;junction&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;flux_line_T&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;t&#39;</span><span class="p">)),</span>
+                                                         <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;25um&#39;</span><span class="p">,</span>
+                                                         <span class="n">finger_width</span><span class="o">=</span><span class="s1">&#39;0.4um&#39;</span><span class="p">,</span> <span class="n">t_pad_size</span><span class="o">=</span><span class="s1">&#39;0.385um&#39;</span><span class="p">,</span>
+                                                         <span class="n">squid_width</span><span class="o">=</span><span class="s1">&#39;5.4um&#39;</span><span class="p">,</span> <span class="n">prong_width</span><span class="o">=</span><span class="s1">&#39;0.9um&#39;</span><span class="p">,</span>
+                                                         <span class="n">layer</span><span class="o">=</span><span class="mi">2</span><span class="p">));</span>
+<span class="c1">############################</span>
+
+
+<span class="c1"># gui = MetalGUI(design)</span>
+<span class="c1"># gui.rebuild()</span>
+<span class="c1"># gui.autoscale()</span>
+</pre></div>
+</div>
+</div>
+<p>The idea is to run this through a shadow-evaporated Josephson junction (notice that <code class="docutils literal notranslate"><span class="pre">'junction'</span></code> is in layer 2). So let’s quickly do the PVD simulation to ensure that there is an enclosed loop:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.PVD_Shadows</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVD_Shadows</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
+<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;evaporations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+    <span class="n">layer2</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
+        <span class="n">bottom_layer</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
+        <span class="n">top_layer</span><span class="o">=</span><span class="s1">&#39;100nm&#39;</span><span class="p">,</span>
+        <span class="n">undercut</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
+        <span class="n">pvd1</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;-45&#39;</span><span class="p">,</span>
+        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;20nm&#39;</span>
+        <span class="p">),</span>
+        <span class="n">pvd2</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="n">pvdSh</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate&#39;</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_Palace_Magnetostatic_Example_3_0.png" src="../_images/examples_Palace_Magnetostatic_Example_3_0.png" />
+</div>
+</div>
+<p>We can extract the largest interior area for surface flux integration</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">int_area</span> <span class="o">=</span> <span class="n">pvdSh</span><span class="o">.</span><span class="n">get_shadow_largest_interior_for_component</span><span class="p">(</span><span class="s1">&#39;junction&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">int_area</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/examples_Palace_Magnetostatic_Example_5_0.svg" src="../_images/examples_Palace_Magnetostatic_Example_5_0.svg" />
+</div>
+</div>
+</section>
+<section id="Magnetostatic-Simulation">
+<h2>Magnetostatic Simulation<a class="headerlink" href="#Magnetostatic-Simulation" title="Link to this heading"></a></h2>
+<p>Now to run the Palace simulation (<em>make sure to update the path to the Palace binary first</em>)</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Inductance_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Inductance_Simulation</span>
+
+<span class="c1">#Eigenmode Simulation Options</span>
+<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span>  <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
+                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
+                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
+                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>                              <span class="c1">#error residual tolerance for iterative solver</span>
+                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
+                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
+                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;</span><span class="p">,</span><span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
+                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span>
+                <span class="p">}</span>
+
+<span class="c1">#Create the Palace Eigenmode simulation</span>
+<span class="n">mag_sim</span> <span class="o">=</span> <span class="n">PALACE_Inductance_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span><span class="s1">&#39;Test1&#39;</span><span class="p">,</span>                                              <span class="c1">#name of simulation</span>
+                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                      <span class="c1">#feed in qiskit metal design</span>
+                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                  <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
+                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                             <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
+                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                           <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
+                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                        <span class="c1">#provide options chosen above</span>
+                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                        <span class="c1">#create mesh and config files</span>
+
+<span class="c1">#add in metals from the first layer</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">evap_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+
+<span class="c1">#add ground plane into simulation</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+
+<span class="c1">#Create a lumped element port for the Josephson junction and assign Jospehson inductance and junction capacitance</span>
+<span class="c1"># mag_sim.create_port_JosephsonJunction(&#39;Q1&#39;, L_J = 11e-9, C_J = 0e-15)</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">create_current_source_with_Uclip_on_Route</span><span class="p">(</span><span class="s1">&#39;flux_ln_wire&#39;</span><span class="p">,</span> <span class="s1">&#39;end&#39;</span><span class="p">)</span>
+
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">add_integration_area</span><span class="p">(</span><span class="n">int_area</span><span class="p">)</span>
+
+<span class="c1">#Fine mesh the qubit and resonator - min_size/max_size is the min/max mesh element size</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;junction&#39;</span><span class="p">,</span> <span class="s1">&#39;flux_ln_wire&#39;</span><span class="p">,</span> <span class="s1">&#39;flux_ln_taper&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">5e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">50e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">20e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># mag_sim.fine_mesh_along_path(qObjName=&#39;readout&#39;, dist_resolution=10e-6, min_size=12e-6, max_size=150e-6, taper_dist_min=10e-6)</span>
+
+<span class="c1">#Prepare the simulation files - mesh file (.msh) and config file (.json)</span>
+<span class="n">mag_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mag_sim</span><span class="o">.</span><span class="n">open_mesh_gmsh</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flux_per_amp</span> <span class="o">=</span> <span class="n">mag_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The returned value is the flux per Ampere. We can normalise it to flux quanta for 1mA to get a reasonable estimate of the flux-tunability:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flux_per_amp</span> <span class="o">/</span> <span class="mf">2.067833848e-15</span> <span class="o">*</span> <span class="mf">0.001</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+array([[0.02227944]])
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Palace_Eigenmode_FloatingTransmon.html" class="btn btn-neutral float-left" title="Eigenmode simulation: floating transmon" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="COMSOL_Inductance.html" class="btn btn-neutral float-right" title="Inductance simulation in COMSOL" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

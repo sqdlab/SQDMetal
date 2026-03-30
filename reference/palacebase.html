@@ -115,6 +115,7 @@
 <li class="toctree-l4"><a class="reference internal" href="palace.html#SQDMetal.PALACE.Capacitance_Simulation.PALACE_Capacitance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Capacitance_Simulation</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="palace.html#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Eigenmode_Simulation</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="palace.html#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Driven_Simulation</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="palace.html#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Inductance_Simulation</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="palacevis.html">Palace Visualisation</a></li>
@@ -345,7 +346,8 @@ elements fail to merge as a single element, due to infinitesimal gaps between th
 <li><dl class="simple">
 <dt><code class="docutils literal notranslate"><span class="pre">'evap_mode'</span></code> (<cite>str</cite>):</dt><dd><p>Defaults to ‘separate_delete_below’. These are the methods upon which to separate
 or merge overlapping elements across multiple evaporation steps. See documentation
-on PVD_Shadows for more details on the available options.</p>
+on PVD_Shadows for more details on the available options. If set to <code class="docutils literal notranslate"><span class="pre">None</span></code>, then
+the plain mask/metallic region is taken with no regard to the PVD profiles.</p>
 </dd>
 </dl>
 </li>
@@ -1000,7 +1002,7 @@ is, a metallic piece (that is coplanar with the CPW) goes off the chip and comes
 planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.</p>
 <p>This function must be run before calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
 <figure class="align-center" id="id1">
-<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="231" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="401" />
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
 </a>
 <figcaption>
 <p><span class="caption-text">Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
@@ -1032,7 +1034,7 @@ a metallic piece (that is coplanar with the CPW) goes off the chip and comes aro
 planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.</p>
 <p>This function must be run before calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
 <figure class="align-center" id="id2">
-<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="231" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="401" />
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
 </a>
 <figcaption>
 <p><span class="caption-text">Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>

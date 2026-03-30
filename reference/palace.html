@@ -110,6 +110,19 @@
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Frequency_Driven_Simulation.PALACE_Driven_Simulation.set_port_excitation"><code class="docutils literal notranslate"><span class="pre">set_port_excitation()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation"><code class="docutils literal notranslate"><span class="pre">PALACE_Inductance_Simulation</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.HPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">HPC_parent_simulation_dir</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.add_integration_area"><code class="docutils literal notranslate"><span class="pre">add_integration_area()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Launcher"><code class="docutils literal notranslate"><span class="pre">create_current_source_with_Uclip_on_Launcher()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Route"><code class="docutils literal notranslate"><span class="pre">create_current_source_with_Uclip_on_Route()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.prepare_simulation"><code class="docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data"><code class="docutils literal notranslate"><span class="pre">retrieve_magnetostatic_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_magnetostatic_data_from_file()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.simPC_parent_simulation_dir"><code class="docutils literal notranslate"><span class="pre">simPC_parent_simulation_dir</span></code></a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="palacevis.html">Palace Visualisation</a></li>
@@ -1299,6 +1312,255 @@ Array of complex S21 values for the corresponding frequencies.</p></li>
 </dd>
 </dl>
 </dd></dl>
+
+</dd></dl>
+
+<p>To run magnetostatic/inductance simulations:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Inductance_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Inductance_Simulation</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">PALACE_Inductance_Simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_parent_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshing</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view_design_gmsh_gui</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base" title="SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="xref py py-class docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a></p>
+<p>Base class for PALACE simulation classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>meshing</strong> (<em>str</em>) – The meshing engine to use. It can be either ‘GMSH’ or ‘COMSOL’ with the latter
+requiring a local COMSOL installation.</p></li>
+<li><p><strong>mode</strong> (<em>str</em>) – Either ‘PC’ to run locally or ‘HPC’ to just generate the scripts to be run on
+a cluster/computer later.</p></li>
+<li><p><strong>options</strong> (<em>dict</em>) – <p>One must supply <strong>one</strong> of these keyword arguments depending on the input format of
+the design to simulate:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'metal_design'</span></code> (QDesign):</dt><dd><p>The Qiskit-Metal design object to simulate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gds_design'</span></code> (<cite>str</cite>):</dt><dd><p>Path to the GDS file with the design to simulate</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Additional options which include those of the daughter classes and:</p>
+<ul>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'dielectric_material'</span></code> (<cite>str</cite>):</dt><dd><p>Name of the dielectric to use on the substrate</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fillet_resolution'</span></code> (<cite>float</cite>):</dt><dd><p>All curved sections of paths (e.g. a CPW line) will be discretised into line
+segments. This value is the number of such segments observed over a 90° arc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default minimum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default maximum mesh element size to use when using the fine-meshing functions.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements remain at mesh_min.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code> (<cite>float</cite>):</dt><dd><p>The default distance to which the size of the mesh elements begin to be set at mesh_max.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which elements in a given layer are simplified. That
+is, adjacent vertices that are closer than this value are simplified into a single vertex.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fuse_threshold'</span></code> (<cite>float</cite>):</dt><dd><p>The default threshold (in metres) to which cracks are bridged together. Gaps that are twice
+this value are effectively bridged together so that there are no seams etc.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'simplify_edge_min_angle_deg'</span></code> (<cite>float</cite>):</dt><dd><p>The default simplification used to delete unnecessary vertices when they are adjacent
+and collinear. It weights them based on the distance from the central vertex. For
+example, consider three vertices ABC. If AB and BC are equidistant and the angle ABC
+is less than the supplied value, then B is removed as it is considered collinear. If
+the length of AB is greater than BC, then the ratio of the lengths R is multiplied by
+the angle ABC before checking for this threshold. That is, if there is a genuine sharp
+feature, it is not simplified. This is mostly designed for curved edges that may have
+an unnecessary number of vertices.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_verbosity'</span></code> (<cite>int</cite>):</dt><dd><p>The default level of messages to print from GMSH. The levels symbolised by the integers
+are: Nothing (0), Errors (1), Warnings (2), Direct (3), Information (4), Status (5),
+Debug (99). The verbosity of the messages increase with the listed levels.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'gmsh_dist_func_discretisation'</span></code> (<cite>int</cite>):</dt><dd><p>When a path or polygon is given for a fine-mesh field, GMSH needs to compute distances
+from these 1D or 2D regions in order to compute the mesh element size at a given location.
+Thus, it must be able to numerically approximate these lines/polygons. It does so by chopping
+every line-segment or polygon into smaller portions given by this supplied value. Note
+that making this too large will make the generation of the mesh slower as it will take
+longer to compute all the mesh field distances.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_mode'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, one may run it via a ‘local’ installation (e.g. Mac-OS,
+Linux etc.) or ‘wsl’ (e.g. Windows).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_dir'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace locally, the location of the Palace binary must be supplied so that
+SQDMetal can call it directly.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'palace_wsl_spack_repo_directory'</span></code> (<cite>str</cite>):</dt><dd><p>When running Palace in WSL (i.e. Windows), the location of the cloned repository (inside
+the WSL VM) needs to be supplied unless it is in the default ‘~/repo’ folder.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'comsol_meshing'</span></code> (<cite>str</cite>):</dt><dd><p>The default meshing size to use if using COMSOL to mesh the simulation. Acceptable values
+are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, ‘Normal’, ‘Coarse’, ‘Coarser’,
+‘Extra coarse’ or ‘Extremely coarse’.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>The constructed PALACE_Model_Base object.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.HPC_parent_simulation_dir">
+<span class="sig-name descname"><span class="pre">HPC_parent_simulation_dir</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'C:/PALACE_Simulations/'</span></span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.HPC_parent_simulation_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.add_integration_area">
+<span class="sig-name descname"><span class="pre">add_integration_area</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">integration_area</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Polygon</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">MultiPolygon</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.add_integration_area" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Launcher">
+<span class="sig-name descname"><span class="pre">create_current_source_with_Uclip_on_Launcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qObjName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separation_gap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Launcher" title="Link to this definition"></a></dt>
+<dd><p><em>Applies Qiskit-Metal designs only</em></p>
+<p>Create a U-Clip that adjoins the two ground planes on a CPW launcher feeding from the edge of the chip. That
+is, a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
+planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.</p>
+<p>This function must be run before calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
+<figure class="align-center" id="id1">
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
+</a>
+<figcaption>
+<p><span class="caption-text">Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).</span><a class="headerlink" href="#id1" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>qObjName</strong> (<em>float</em>) – Name of the LauncherWB Q-Component in the Qiskit-Metal design.</p></li>
+<li><p><strong>thickness_side</strong> (<em>float</em>) – Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.</p></li>
+<li><p><strong>thickness_back</strong> (<em>float</em>) – Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6</p></li>
+<li><p><strong>separation_gap</strong> (<em>float</em>) – Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+to zero whereupon, it will use the gap distance of the CPW.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Route">
+<span class="sig-name descname"><span class="pre">create_current_source_with_Uclip_on_Route</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">route_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pin_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_side</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness_back</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separation_gap</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2e-05</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.create_current_source_with_Uclip_on_Route" title="Link to this definition"></a></dt>
+<dd><p><em>Applies Qiskit-Metal designs only</em></p>
+<p>Create a U-Clip that adjoins the two ground planes on a CPW route feeding from the edge of the chip. That is,
+a metallic piece (that is coplanar with the CPW) goes off the chip and comes around to join the two ground
+planes. It is a simple concave octogan with 90° corners. It can also have an optional RF port.</p>
+<p>This function must be run before calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
+<figure class="align-center" id="id2">
+<a class="reference internal image-reference" href="../_images/palace_sim_Uclip_dims.drawio.svg"><img alt="Parameters used in the U-clip" height="232" src="../_images/palace_sim_Uclip_dims.drawio.svg" width="402" />
+</a>
+<figcaption>
+<p><span class="caption-text">Parameters used in the U-clip. The orange portion is the optional single-element RF port (arrow indicating excitation direction).</span><a class="headerlink" href="#id2" title="Link to this image"></a></p>
+</figcaption>
+</figure>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>route_name</strong> (<em>str</em>) – Name of the routing component (e.g. a CPW) in the Qiskit-Metal design</p></li>
+<li><p><strong>pin_name</strong> (<em>str</em>) – Name of the pin within the routing component in the Qiskit-Metal design. Typically a routing component has,
+at least, two pins named something like ‘start’ and ‘end’.</p></li>
+<li><p><strong>thickness_side</strong> (<em>float</em>) – Distance the U-clip, in metres, goes into the ground plane from the edge. Defaults to 20e-6.</p></li>
+<li><p><strong>thickness_back</strong> (<em>float</em>) – Thickness of the furthest section from the chip (but also parallel with the chip) in metres. Defaults to 20e-6</p></li>
+<li><p><strong>separation_gap</strong> (<em>float</em>) – Distance of the section parallel with the chip from the edge of the chip in metres. The default value is set
+to zero whereupon, it will use the gap distance of the CPW.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.default_user_options">
+<span class="sig-name descname"><span class="pre">default_user_options</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'HPC_Parameters_JSON':</span> <span class="pre">'',</span> <span class="pre">'solns_to_save':</span> <span class="pre">-1,</span> <span class="pre">'solver_maxits':</span> <span class="pre">100,</span> <span class="pre">'solver_order':</span> <span class="pre">2,</span> <span class="pre">'solver_tol':</span> <span class="pre">1e-08}</span></span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.default_user_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.prepare_simulation">
+<span class="sig-name descname"><span class="pre">prepare_simulation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.prepare_simulation" title="Link to this definition"></a></dt>
+<dd><p>Creates and saves the GMSH (.msh) and Palace configuration file (.json).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_data">
+<span class="sig-name descname"><span class="pre">retrieve_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_data" title="Link to this definition"></a></dt>
+<dd><p>Retrieves flux per</p>
+<p>Creates and saves B-field plots due to the different terminal injections (input1_normB.png and input1_normBz.png),
+and mesh (mesh.png)</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The flux per unit current (that is, Wb/A) through the different integration surfaces due to the different
+terminal current injections. If no surfaces are specified, then it just returns the dictionary specified
+in the function <code class="xref py py-func docutils literal notranslate"><span class="pre">retrieve_magnetostatic_data_from_file()</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data">
+<span class="sig-name descname"><span class="pre">retrieve_magnetostatic_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data_from_file">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">retrieve_magnetostatic_data_from_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_directory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.retrieve_magnetostatic_data_from_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.simPC_parent_simulation_dir">
+<span class="sig-name descname"><span class="pre">simPC_parent_simulation_dir</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'/home/experiment/PALACE/Simulations/input'</span></span><a class="headerlink" href="#SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation.simPC_parent_simulation_dir" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
