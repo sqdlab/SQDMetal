@@ -108,9 +108,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
             #metals to compute capacitances for
             Terminal = []
-            for i,value in enumerate(gmsh_render_attrs['metals']):
+            for i,value in enumerate(gmsh_render_attrs['contiguous_metal_mapping']):
                 metal = {"Index": i+1,
-                        "Attributes": [value]}
+                        "Attributes": value}
                 Terminal.append(metal)
 
             #define length scale
