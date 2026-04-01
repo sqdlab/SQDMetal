@@ -92,6 +92,8 @@ def two_qubits_coupling(
 
 
     #################### Design initialization ###################################################################################
+    
+    qubit1_exist = 'Qubit1' in design.components
 
     if design is None:
         design = designs.DesignPlanar({}, overwrite_enabled=True)
@@ -115,6 +117,8 @@ def two_qubits_coupling(
     chrgln_pin_y_offset =  0
     semi_radius = 61
     res_freq_GHZ = freq[1] + 1.3 *1e9
+    #if qubit1_exist: 
+    #    res_freq_GHZ = freq[3] + 1.3 *1e9
     resonator = ResonatorHalfWave(res_freq_GHZ)
     # Rotate the pair around the ensemble center (position) by ensemble_orientation_deg.
     theta = np.deg2rad(float(ensemble_orientation_deg))
@@ -158,7 +162,6 @@ def two_qubits_coupling(
     )
      
     surname = '' 
-    qubit1_exist = 'Qubit1' in design.components
     if qubit1_exist:
         surname = '_2nd'
 

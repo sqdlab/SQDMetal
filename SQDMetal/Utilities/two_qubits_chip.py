@@ -170,9 +170,9 @@ class two_Qubits_chip(QComponent):
 
 
         # Qubit coupling
-        freq = [4.5e9, 5.0e9, 4.7e9, 4.7e9] # frequencies of qubits in Hz
+        freq = [4.5e9, 5.0e9]#, 4.7e9, 4.7e9] # frequencies of qubits in Hz
         res_freq_GHZ = freq[1] + 1.3e9
-        res2_freq_GHZ = freq[3] + 1.3e9
+        # res2_freq_GHZ = freq[3] + 1.3e9
         J12_target = p.J12_target_MHz 
         # define resonator 1
         r = ResonatorHalfWave(res_freq_GHZ * 1e9)
@@ -305,7 +305,7 @@ class two_Qubits_chip(QComponent):
         )
 
          ######################## 2nd two qubits ensemble ########################
-
+        '''
         surname = '_2nd' 
          # define resonator 2
         r2 = ResonatorHalfWave(res2_freq_GHZ * 1e9)
@@ -436,7 +436,7 @@ class two_Qubits_chip(QComponent):
                 fillet=p.readout_res_fillet,
                 total_length=f"{(l2_half * 1e3) - extra_length_mm:.2f}mm",
             ),
-        ) 
+        ) '''
 
         ############################# Lanchpad, feedline and Markers ################################ 
         # Launchpads
