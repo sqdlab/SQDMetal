@@ -980,6 +980,29 @@ class TransmonTaperedInsets(BaseQubit):
             ]
         )
 
+        top_pocket_pin = LineString(
+            [
+                [0 , p.pocket_height/2 + pin_route_l/2],  # Start point (near pocket)
+                [
+                    0,
+                    p.pocket_height/2 - pin_route_l/2,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_pocket_pin = LineString(
+            [
+                [0 , -p.pocket_height/2 - pin_route_l/2],  # Start point (near pocket)
+                [
+                    0,
+                    -p.pocket_height/2 + pin_route_l/2,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+           
+
         ###############################################################################################
         # Josephson Junction
         rect_jj = draw.LineString(
@@ -1014,6 +1037,8 @@ class TransmonTaperedInsets(BaseQubit):
             bottom_right_pocket_pin,
             top_left_pocket_pin,
             bottom_left_pocket_pin,
+            top_pocket_pin,
+            bottom_pocket_pin,
         ]
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
@@ -1028,6 +1053,9 @@ class TransmonTaperedInsets(BaseQubit):
             bottom_right_pocket_pin,
             top_left_pocket_pin,
             bottom_left_pocket_pin,
+            top_pocket_pin,
+            bottom_pocket_pin,
+
         ] = polys
 
         # Add shapes as qiskit geometries
@@ -1043,7 +1071,7 @@ class TransmonTaperedInsets(BaseQubit):
             input_as_norm=True,
         )
         self.add_pin(
-            "pin_reservior",
+            "pin_reservoir",
             points=list(bottom_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
@@ -1068,6 +1096,13 @@ class TransmonTaperedInsets(BaseQubit):
             width=taper_width_top,
             input_as_norm=True,
         )
+        self.add_pin(
+            "top_pocket_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_pocket_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top
+        )
+
 
     def make_connection_pads(self):
         # """Makes standard transmon in a pocket."""

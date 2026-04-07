@@ -17,6 +17,9 @@ from SQDMetal.Comps.Markers import MarkerSquare4, MarkerDicingCross
 from SQDMetal.Comps.Wires import WirePins
 from SQDMetal.Comps.Labels import LabelText
 from SQDMetal.Comps import Junctions
+from SQDMetal.Comps.FluxLines import FluxLineTPin
+from SQDMetal.Comps.Junctions import JunctionDolanPinStretch
+from SQDMetal.Comps.Wires import WireTaperPinStretch, WirePinStretch
 import numpy as np
 from SQDMetal.Utilities.two_qubits_coupling import two_qubits_coupling
 
@@ -304,6 +307,19 @@ class two_Qubits_chip(QComponent):
             ),
         )
 
+        fluxLineT = FluxLineTPin(self.design, 'flux_line_T', options = Dict(ref_comp='Qubit2', ref_pin='top_pocket_pin', width='100um',trace_width='8um',trace_gap='12um',pin_dist='0um',pin_align_right = True, orientation = -90))
+
+        Wire_Taper = WireTaperPinStretch(self.design, 'flux_ln_taper', options=Dict(pin_inputs={'start_pin': {'component': 'flux_line_T', 'pin': 'a'}},trace_width=f'{cpw_width*1e6}um', trace_gap=f'{cpw_gap*1e6}um', taper_length='50um'))
+        Wire_stretch = WirePinStretch(self.design, 'flux_ln_wire', options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'flux_ln_taper',pin='a')),dist_extend='54um', trace_width=f'{cpw_width*1e6}um', trace_gap=f'{cpw_gap*1e6}um'))
+
+        #CapacitorGapPinStretch(self.design, f'capProng', options=Dict(cpw_width=f'20um',
+        #                                            pin_inputs=Dict(start_pin=Dict(component=f'Qubit1',pin='top_left_pin')),
+        #                                            dist_extend='120um',cap_width=f'50um',cap_gap='3um',
+        #                                            gnd_width='1um',len_diag='0um', len_flat=f'50um',side_gap=f'10um', init_pad='10um'))
+
+        Junction_stretch= JunctionDolanPinStretch(self.design, 'junction', options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'flux_line_T',pin='t')),
+                                                         dist_extend='100um',finger_width='0.4um', t_pad_size='0.385um',squid_width='5.4um', prong_width='0.9um',layer=2));
+
          ######################## 2nd two qubits ensemble ########################
         '''
         surname = '_2nd' 
@@ -460,6 +476,18 @@ class two_Qubits_chip(QComponent):
                 orientation="180",
             ),
         )
+
+         # Launchpads
+        lp_top = LaunchpadWirebond(
+            self.design,
+            "LP_top",
+            options=dict(
+                **lp_options,
+                pos_x=offset_x_mm + 1.53 +  q_x_coord_mm,   
+                pos_y=offset_y_mm + chip_y_mm/2 - p.lp_inset_mm,
+                orientation="-90",
+            ),
+        )
         #
         #
         #
@@ -471,6 +499,19 @@ class two_Qubits_chip(QComponent):
                 pin_inputs=dict(
                     start_pin=dict(component="LP_left", pin="tie"),
                     end_pin=dict(component="LP_right", pin="tie"),
+                ),
+                trace_width=f"{cpw_width*1e6}um",
+                trace_gap=f"{cpw_gap*1e6}um",
+            ),
+        )
+
+        feedline2 = RouteStraight(
+            self.design,
+            "feedline_flux",
+            options=dict(
+                pin_inputs=dict(
+                    start_pin=dict(component="LP_top", pin="tie"),
+                    end_pin=dict(component="flux_ln_wire", pin="end"),
                 ),
                 trace_width=f"{cpw_width*1e6}um",
                 trace_gap=f"{cpw_gap*1e6}um",

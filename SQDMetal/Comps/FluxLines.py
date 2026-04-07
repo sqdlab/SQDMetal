@@ -25,6 +25,7 @@ class FluxLineTPin(QComponent):
         * pin_dist - Distance from the target pin (e.g. a section of an Xmon)
         * trace_width - CPW width of the flux line inlet (it is used for the T section)
         * trace_gap   - CPW gap of the flux line inlet (it is used for the T section)
+        * orientation - orientation of the flux line T junction. 0 means the T is pointing to the right, 90 means the T is pointing up, etc.
 
     As usual, the positioning can be done dynamically as a vector given by the supplied parameters: (pos_x,pos_y) to (end_x,end_y)
         
@@ -67,7 +68,8 @@ class FluxLineTPin(QComponent):
                            pin_dist='30um',
                            trace_width='20um',
                            trace_gap='20um',
-                           pin_align_right=True)
+                           pin_align_right=True,
+                           orientation=0)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -78,7 +80,7 @@ class FluxLineTPin(QComponent):
         jointPin = self._design.components[self.options.ref_comp].pins[self.options.ref_pin]
         ptJoint = jointPin['middle']
         normal = -jointPin['normal']
-        rot_angle = np.arctan2(normal[1], normal[0])
+        rot_angle = np.arctan2(normal[1], normal[0]) - np.radians(p.orientation)
         targ_trace_width = jointPin['width']
 
         #The T-Section and Stem
