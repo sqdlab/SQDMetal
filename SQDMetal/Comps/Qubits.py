@@ -535,6 +535,9 @@ class TransmonTaperedInsets(BaseQubit):
         * coupled_pad_gap    - the distance between the two teeth shape
         * coupled_pad_width  - the width (x-axis) of the teeth shape on the island pads
         * coupled_pad_height - the size (y-axis) of the teeth shape on the island pads
+        * taper_centered # whether the junction is centered, on the right side or left side of the pocket. 
+        * junction_x_offset # if junction is not centered, how much should it be offset from the center of the pocket.
+        True means centered, False means on the right side, and 'left' means on the left side. This is for compatibility with existing qubits that have non-centered junctions.
                             
     Connector lines:
         * pad_gap        - space between the connector pad and the charge island it is
@@ -614,6 +617,8 @@ class TransmonTaperedInsets(BaseQubit):
         taper_height="40um",
         taper_fillet_radius="3um",
         fillet_resolution_tapered=64,
+        junction_centered = True,  
+        junction_x_offset = "0um",
         # Insets
         inset_width="0um",
         inset_depth="100um",
@@ -720,6 +725,12 @@ class TransmonTaperedInsets(BaseQubit):
         coupled_pad_height = p.coupled_pad_height
         coupled_pad_width = p.coupled_pad_width
         coupled_pad_gap = p.coupled_pad_gap
+        if p.junction_centered is False:
+            taper_x_offset = p.pad_width / 2 - p.taper_width_base / 2 + p.junction_x_offset
+        elif p.junction_centered == 'left':
+            taper_x_offset = -p.pad_width / 2 + p.taper_width_base / 2 - p.junction_x_offset
+        else:
+            taper_x_offset = 0
 
         # TOP PAD
         # make the pads as rectangles (shapely polygons)
@@ -742,8 +753,9 @@ class TransmonTaperedInsets(BaseQubit):
                 p.taper_height,
                 (pad_gap / 2) - float(p.taper_height),
                 p.taper_fillet_radius,
-                p.pad_width / 2,
+                p.pad_width / 2 ,
             )
+            trapezoid_top = draw.translate(trapezoid_top, -taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
             trapezoid_top_rotated = draw.rotate(
                 trapezoid_top,
@@ -829,6 +841,7 @@ class TransmonTaperedInsets(BaseQubit):
                 rfillet=p.taper_fillet_radius,
                 startx=p.pad_width / 2,
             )
+            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             pad_bot = draw.union(pad_bot, trapezoid_bot)
 
         # outer corners
@@ -919,15 +932,15 @@ class TransmonTaperedInsets(BaseQubit):
             pin_route_l = p.taper_height
         top_pin = LineString(
             [
-                [0, pad_gap / 2 + p.junction_pin_inset],
-                [0, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
                 # Extend outward
             ]
         )
         bottom_pin = LineString(
             [
-                [0, -pad_gap / 2 - p.junction_pin_inset],
-                [0, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset],
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
                 # Extend outward
             ]
         )
