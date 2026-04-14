@@ -24,7 +24,7 @@ from SQDMetal.Utilities.QUtilities import QUtilities
 from shapely.geometry import LineString
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 from SQDMetal.Comps.Markers import MarkerSquarePocket
-
+ 
 class TransmonTapered(BaseQubit):
     """Transmon pocket with 'Teeth' connection pads.
 
@@ -503,7 +503,608 @@ class TransmonTapered(BaseQubit):
 
 
 ###################################################################################################################################
+class TransmonTapered2(TransmonTapered):
+    """Identical to TransmonTapered. Only difference is that it includes making a flux
+    line inside the pocket.
+    flux_bias_line_options (as a Dict):
+        * flux_bias_line_options=Dict
+            * make_fbl = True -- Boolean to make the flux bias line 
+            * fbl_sep: '100um' -- The separation between the flux bias line and the inductor along the x-axis
+            * fbl_height: '50um' -- The height of the flux bias line along the y-axis
+            * cpw_width: 'cpw_width' -- The width of the flux bias line
+            * cpw_gap: 'cpw_gap' -- The dielectric gap width of the flux bias line
+            * mirror: False -- Boolean to mirror flux line across y-axis"""
 
+    default_options = Dict(
+        TransmonTapered.default_options,
+        fillet_radius_gap='0um',#HAS TO be 0 for the flux line to work
+        flux_bias_line_options=Dict(
+            make_fbl=False,
+            fbl_sep='170um',
+            fbl_width='50um',
+            cpw_width='cpw_width',
+            cpw_gap='cpw_gap',
+            mirror=False,
+            fbl_lead='0um'
+
+        ),
+        flux_bias_line_optionsRight=Dict(
+            make_fbl=False,
+            fbl_sep='170um',
+            fbl_height='50um',
+            cpw_width='cpw_width',
+            cpw_gap='cpw_gap',
+            mirror=False,
+            fbl_lead='0um'
+
+        ),
+        flux_bias_line_optionsLeft=Dict(
+            make_fbl=False,
+            fbl_sep='170um',
+            fbl_height='50um',
+            cpw_width='cpw_width',
+            cpw_gap='cpw_gap',
+            mirror=False,
+            fbl_lead='0um'
+
+        ),
+
+
+        alignment_markers_options=Dict(
+                                make_markers=False,
+                                marker_seperation='0.16mm',
+                                marker_width='20um',
+                                marker_height='20um',
+                                pocket_distance='5um',
+                                distance_from_pocket='0.085mm',
+                                flush_to_pocket=False,
+                                marker_prefix='placeholder',
+                                qubit_prefix=True
+                            )
+    )
+    def make(self):   
+        self.make_pocket()
+        self.make_connection_pads()
+        if self.p.flux_bias_line_options.make_fbl:
+            self.make_flux_bias_line()
+        if self.p.flux_bias_line_optionsRight.make_fbl:
+            self.make_flux_bias_lineRight()
+        if self.p.flux_bias_line_optionsLeft.make_fbl:
+            self.make_flux_bias_lineLeft()
+        if self.p.alignment_markers_options.make_markers:
+            self.make_markers()
+
+    def make_flux_bias_line(self):
+        """ Adds flux bias line to fluxonium pocket."""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+
+        p = self.p
+        pfb = self.p.flux_bias_line_options  # parser on connector options
+
+        # define commonly used variables once
+        fbl_sep = pfb.fbl_sep
+        fbl_width = pfb.fbl_width
+        cpw_width = pfb.cpw_width
+        cpw_gap = pfb.cpw_gap
+        mirror = pfb.mirror
+        fbl_lead = pfb.fbl_lead
+
+        # Define the geometry
+        # Flux Bias Line
+        # The position of flux bias line on the y-axis, starting point inside the pocket
+        d = p.pocket_height/2
+        # Draw the line of the flux-bias line that connects to launcherpad
+        flux_bias_lineright = draw.Polygon([
+            (fbl_width/2, -d),   # point a
+            (fbl_width/2+cpw_width, -d),    # point b
+            (fbl_width/2+cpw_width, -fbl_sep-cpw_width),   # point c
+            (fbl_width/2, -fbl_sep-cpw_width),   # point d
+        ])
+        # Draw the middle line of the flux-bias line
+        flux_bias_linemid = draw.Polygon([
+            (fbl_width/2, -fbl_sep-cpw_width),   # point e
+            (fbl_width/2, -fbl_sep),    # point f
+            (-fbl_width/2, -fbl_sep),   # point g
+            (-fbl_width/2, -fbl_sep-cpw_width),   # point h
+        ])
+
+        # Here we make flux-bias line curvy for the top side and also bottom side and the union all of them
+        circle_left = draw.Point(-fbl_width/2, -(fbl_sep+cpw_width)).buffer(cpw_width)
+        cut_ply = draw.Polygon([
+            (-fbl_width/2-cpw_width, -d),   # point o
+            (-fbl_width/2-cpw_width, -(fbl_sep+cpw_width)),    # point p
+            (-fbl_width/2, -(fbl_sep+cpw_width)),   # point r same with point m
+            (-fbl_width/2, -fbl_sep),   # point s
+            (fbl_width/2, -fbl_sep),  # point t
+            (fbl_width/2, -d),  # point u
+        ])
+        circle_left = draw.subtract(circle_left, cut_ply)
+        # same goes for bottom edge
+        circle_right = draw.Point(fbl_width/2, -fbl_sep-cpw_width).buffer(cpw_width)
+        cut_ply2 = draw.Polygon([
+            (fbl_width/2+cpw_width, -d),   # point v same with h or i
+            (fbl_width/2+cpw_width, -(fbl_sep+cpw_width)),    # point y
+            (fbl_width/2, -(fbl_sep+cpw_width)),   # point z
+            (fbl_width/2, -fbl_sep),   # point w
+            (-fbl_width/2, -fbl_sep),  # point x
+            (-fbl_width/2, -d),  # point k
+        ])
+        circle_right = draw.subtract(circle_right, cut_ply2)
+        flux_bias_lineleft = draw.Polygon([
+            (-fbl_width/2, -(d+fbl_lead)),   # point i
+            (-fbl_width/2-cpw_width, -(d+fbl_lead)),    # point k
+            (-fbl_width/2-cpw_width, -fbl_sep-cpw_width),   # point l
+            (-fbl_width/2, -fbl_sep-cpw_width,),   # point m
+        ])
+        flux_bias_line = draw.union(
+            flux_bias_lineright, flux_bias_linemid,  flux_bias_lineleft, circle_left, circle_right)
+
+        # Flux Bias line's gap part, inside the GND
+        flux_bias_line_gap = draw.rectangle(
+            cpw_width+cpw_gap*2, fbl_lead, (-fbl_width/2-cpw_width/2), -(d+fbl_lead/2))
+
+        # Flux-Bias Line CPW wire
+        port_line = draw.LineString([(0, -(d+fbl_lead)),
+                                    (-(fbl_width+cpw_width), -(d+fbl_lead))])
+
+        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias
+        fake_port_line = draw.LineString([((fbl_width*2+cpw_width*2), -d),
+                                          (-(fbl_width+cpw_width), -d)])
+        if mirror:
+            flux_bias_line = draw.scale(flux_bias_line, -1, 1, origin=(0, 0))
+            port_line = draw.scale(port_line, -1, 1, origin=(0, 0))
+            fake_port_line = draw.scale(fake_port_line, -1, 1, origin=(0, 0))
+            flux_bias_line_gap = draw.scale(flux_bias_line_gap, -1, 1, origin=(0, 0))
+
+        objects = [flux_bias_line, flux_bias_line_gap,
+                   port_line, fake_port_line, circle_right, circle_left, cut_ply, cut_ply2]
+        
+        #objects = draw.scale(objects, 1, loc_H, origin=(0, 0))
+        objects = draw.rotate(objects, p.orientation, origin=(0, 0))
+        objects = draw.translate(objects, p.pos_x, p.pos_y)
+        [flux_bias_line, flux_bias_line_gap, port_line, fake_port_line,
+         circle_right, circle_left, cut_ply, cut_ply2] = objects
+
+        self.add_qgeometry('poly', {'flux_bias_line': flux_bias_line})
+        self.add_qgeometry(
+            'poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)
+        #self.add_qgeometry('poly', {'cut_ply2' : cut_ply2})
+        #self.add_qgeometry('poly', {'circle_left': circle_left})
+
+        ####################################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('flux_bias_line',
+                     port_line_cords, cpw_width)
+
+        fake_port_line_cords = list(
+            draw.shapely.geometry.shape(fake_port_line).coords)
+        self.add_pin('fake_flux_bias_line',
+                     fake_port_line_cords[::-1], cpw_width)
+        
+    def make_flux_bias_lineRight(self):
+        """ Adds flux bias line to fluxonium pocket."""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+
+        p = self.p
+        pfb = self.p.flux_bias_line_optionsRight  # parser on connector options
+
+        # define commonly used variables once
+        fbl_sep = pfb.fbl_sep
+        fbl_height = pfb.fbl_height
+        cpw_width = pfb.cpw_width
+        cpw_gap = pfb.cpw_gap
+        mirror = pfb.mirror
+        fbl_lead = pfb.fbl_lead
+
+        # Define the geometry
+        # Flux Bias Line
+        # The position of flux bias line on the x-axis, starting point inside the pocket
+        d = p.pocket_width/2
+        # Draw the top line of the flux-bias line
+        flux_bias_lineup = draw.Polygon([
+            (d, fbl_height/2),   # point a
+            (d, fbl_height/2+cpw_width),    # point b
+            (fbl_sep, fbl_height/2+cpw_width),   # point c
+            (fbl_sep, fbl_height/2),   # point d
+        ])
+        # Draw the middle line of the flux-bias line
+        flux_bias_linemid = draw.Polygon([
+            (fbl_sep-cpw_width, fbl_height/2),   # point e
+            (fbl_sep, fbl_height/2),    # point f
+            (fbl_sep, -fbl_height/2),   # point g
+            (fbl_sep-cpw_width, -fbl_height/2),   # point h
+        ])
+
+        # Here we make flux-bias line curvy for the top side and also bottom side and the union all of them
+        circle_top = draw.Point(fbl_sep, fbl_height/2).buffer(cpw_width)
+        cut_ply = draw.Polygon([
+            (fbl_sep*2, fbl_height+cpw_width),   # point o
+            (fbl_sep, fbl_height+cpw_width),    # point p
+            (fbl_sep, fbl_height/2),   # point r same with point d
+            (fbl_sep/2, fbl_height/2),   # point s
+            (fbl_sep/2, -fbl_height+cpw_width),  # point t
+            (fbl_sep*2, -fbl_height+cpw_width),  # point u
+        ])
+        circle_top = draw.subtract(circle_top, cut_ply)
+        # same goes for bottom edge
+        circle_bot = draw.Point(fbl_sep, -fbl_height/2).buffer(cpw_width)
+        cut_ply2 = draw.Polygon([
+            (fbl_sep-cpw_width, -fbl_height/2),   # point v same with h or i
+            (fbl_sep-cpw_width, fbl_height*2),    # point y
+            (fbl_sep, fbl_height),   # point z
+            (fbl_sep, fbl_height),   # point w
+            (fbl_sep*2, fbl_height),  # point x
+            (fbl_sep*2, -fbl_height/2),  # point k
+        ])
+        circle_bot = draw.subtract(circle_bot, cut_ply2)
+        flux_bias_linebot = draw.Polygon([
+            (d+fbl_sep/2, -fbl_height/2),   # point i
+            (d+fbl_sep/2, -fbl_height/2-cpw_width),    # point k
+            (fbl_sep, -fbl_height/2-cpw_width),   # point l
+            (fbl_sep, -fbl_height/2),   # point m
+        ])
+        flux_bias_line = draw.union(
+            flux_bias_lineup, flux_bias_linemid,  flux_bias_linebot, circle_top, circle_bot)
+
+        # Flux Bias line's gap part, inside the GND
+        flux_bias_line_gap = draw.rectangle(
+            fbl_sep/2, cpw_width+cpw_gap*2, d+fbl_sep/4, -fbl_height/2-cpw_width/2)
+
+        # Flux-Bias Line CPW wire
+        port_line = draw.LineString([((d+fbl_sep/2), 0),
+                                    ((d+fbl_sep/2), -(fbl_height+cpw_width))])
+
+        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias
+        fake_port_line = draw.LineString([(d, (fbl_height*2+cpw_width*2)),
+                                          (d, -(fbl_height+cpw_width))])
+        
+        if mirror:
+            flux_bias_line = draw.scale(flux_bias_line, 1, -1, origin=(0, 0))
+            port_line = draw.scale(port_line, 1, -1, origin=(0, 0))
+            fake_port_line = draw.scale(fake_port_line, 1, -1, origin=(0, 0))
+            flux_bias_line_gap = draw.scale(flux_bias_line_gap, 1, -1, origin=(0, 0))
+
+        objects = [flux_bias_line, flux_bias_line_gap,
+                   port_line, fake_port_line]
+        objects = draw.rotate(objects, p.orientation, origin=(0, 0))
+        objects = draw.translate(objects, p.pos_x, p.pos_y)
+        [flux_bias_line, flux_bias_line_gap, port_line, fake_port_line] = objects
+
+        self.add_qgeometry('poly', {'flux_bias_line': flux_bias_line})
+        self.add_qgeometry(
+            'poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)
+
+        ####################################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('flux_bias_line',
+                     port_line_cords, cpw_width)
+
+        fake_port_line_cords = list(
+            draw.shapely.geometry.shape(fake_port_line).coords)
+        self.add_pin('fake_flux_bias_line',
+                     fake_port_line_cords, cpw_width)
+        
+    def make_flux_bias_lineLeft(self):
+        """ Adds flux bias line to fluxonium pocket."""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+        p = self.p
+        pfb = self.p.flux_bias_line_optionsLeft  # parser on connector options
+
+        # define commonly used variables once
+        fbl_sep = pfb.fbl_sep
+        fbl_height = pfb.fbl_height
+        cpw_width = pfb.cpw_width
+        cpw_gap = pfb.cpw_gap
+        mirror = pfb.mirror
+        fbl_lead = pfb.fbl_lead
+
+        # Define the geometry
+        # Flux Bias Line
+        # The position of flux bias line on the x-axis, starting point inside the pocket
+        d = p.pocket_width/2
+        # Draw the top line of the flux-bias line
+        flux_bias_lineup = draw.Polygon([
+            (-d, fbl_height/2),   # point a
+            (-d, fbl_height/2+cpw_width),    # point b
+            (-fbl_sep, fbl_height/2+cpw_width),   # point c
+            (-fbl_sep, fbl_height/2),   # point d
+        ])
+        # Draw the middle line of the flux-bias line
+        flux_bias_linemid = draw.Polygon([
+            (-(fbl_sep-cpw_width), fbl_height/2),   # point e
+            (-fbl_sep, fbl_height/2),    # point f
+            (-fbl_sep, -fbl_height/2),  # point g
+            (-(fbl_sep-cpw_width), -fbl_height/2),   # point h
+
+        ])
+
+        # Here we make flux-bias line curvy for the top side and also bottom side and the union all of them
+        circle_top = draw.Point(-fbl_sep, fbl_height/2).buffer(cpw_width)
+        cut_ply = draw.Polygon([
+            (-fbl_sep*2, fbl_height+cpw_width),   # point o
+            (-fbl_sep, fbl_height+cpw_width),    # point p
+            (-fbl_sep, fbl_height/2),   # point r same with point d
+            (-fbl_sep/2, fbl_height/2),   # point s
+            (-fbl_sep/2, -fbl_height+cpw_width),  # point t
+            (-fbl_sep*2, -fbl_height+cpw_width),  # point u
+        ])
+        circle_top = draw.subtract(circle_top, cut_ply)
+        # same goes for bottom edge
+        circle_bot = draw.Point(-fbl_sep, -fbl_height/2).buffer(cpw_width)
+        cut_ply2 = draw.Polygon([
+            (-(fbl_sep-cpw_width), -fbl_height/2),   # point v same with h or i
+            (-(fbl_sep-cpw_width), fbl_height*2),    # point y
+            (-fbl_sep, fbl_height),   # point z
+            (-fbl_sep, fbl_height),   # point w
+            (-fbl_sep*2, fbl_height),  # point x
+            (-fbl_sep*2, -fbl_height/2),  # point k
+        ])
+        circle_bot = draw.subtract(circle_bot, cut_ply2)
+        flux_bias_linebot = draw.Polygon([
+            (-(d+fbl_sep/2), -fbl_height/2),   # point i
+            (-(d+fbl_sep/2), -fbl_height/2-cpw_width),    # point k
+            (-fbl_sep, -fbl_height/2-cpw_width),   # point l
+            (-fbl_sep, -fbl_height/2),   # point m
+        ])
+        flux_bias_line = draw.union(
+            flux_bias_lineup, flux_bias_linemid,  flux_bias_linebot, circle_top, circle_bot)
+
+        # Flux Bias line's gap part, inside the GND
+        flux_bias_line_gap = draw.rectangle(
+            fbl_sep/2, cpw_width+cpw_gap*2, -(d+fbl_sep/4), -fbl_height/2-cpw_width/2)
+
+        # Flux-Bias Line CPW wire
+        port_line = draw.LineString([(-(d+fbl_sep/2), 0),
+                                    (-(d+fbl_sep/2), -(fbl_height+cpw_width))])
+
+        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias
+        fake_port_line = draw.LineString([(-d, (fbl_height*2+cpw_width*2)),
+                                          (-d, -(fbl_height+cpw_width))])
+        
+        if mirror:
+            flux_bias_line = draw.scale(flux_bias_line, 1, -1, origin=(0, 0))
+            port_line = draw.scale(port_line, 1, -1, origin=(0, 0))
+            fake_port_line = draw.scale(fake_port_line, 1, -1, origin=(0, 0))
+            flux_bias_line_gap = draw.scale(flux_bias_line_gap, 1, -1, origin=(0, 0))
+
+        objects = [flux_bias_line, flux_bias_line_gap,
+                   port_line, fake_port_line]
+        objects = draw.rotate(objects, p.orientation, origin=(0, 0))
+        objects = draw.translate(objects, p.pos_x, p.pos_y)
+        [flux_bias_line, flux_bias_line_gap, port_line,
+            fake_port_line] = objects  # flux_bias_line,
+
+        self.add_qgeometry('poly', {'flux_bias_line': flux_bias_line})
+
+        self.add_qgeometry(
+            'poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)
+
+        ####################################################################
+
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('flux_bias_line2',
+                     port_line_cords[::-1], cpw_width)
+
+        fake_port_line_cords = list(
+            draw.shapely.geometry.shape(fake_port_line).coords)
+        self.add_pin('fake_flux_bias_line2',
+                     fake_port_line_cords[::-1], cpw_width)
+
+    def make_markers(self):
+        """Makes 6 alignment markers outside the 4 corners of the pocket. Intended for 2
+        layers of lithography, 3 alignment markers for each layer. Markers going veritcally
+        are flush with horizontal markers and not the pocket to leave as much room as
+        possible for connection_pads unless flush_to_pocket is True"""
+        p = self.p
+        pam = self.p.alignment_markers_options 
+
+        #define commonly used variables once
+
+        marker_seperation=pam.marker_seperation
+        marker_width=pam.marker_width
+        marker_height=pam.marker_height
+        pocket_distance=pam.pocket_distance#size of the pocket OF THE MARKER
+        distance_from_pocket=pam.distance_from_pocket
+        pocket_height=p.pocket_height
+        pocket_width=p.pocket_width
+        flush_to_pocket=pam.flush_to_pocket
+        
+
+        #=======Northwest======
+        #top left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance#+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)#+p.pos_y
+        
+        square_1_1_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+
+        square_1_2_NW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        marker_location_x=marker_location_x+marker_seperation
+        
+        square_1_3_NW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        #top left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket#+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=(pocket_height/2)-pocket_distance-(marker_height/2)#+p.pos_y
+
+        square_2_1_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+    
+        square_2_2_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        marker_location_y=marker_location_y-marker_seperation
+    
+        square_2_3_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        #=============Southwest===========
+        #bottom left markers going horizontally
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance#+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)#+p.pos_y
+        
+        square_1_1_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_x=first_marker_location_x+marker_seperation
+    
+        square_1_2_SW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        marker_location_x=marker_location_x+marker_seperation
+    
+        square_1_3_SW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket#+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
+
+        square_2_1_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+    
+        square_2_2_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        marker_location_y=marker_location_y+marker_seperation
+    
+        square_2_3_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        #==========Southeast==========
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance#+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)#+p.pos_y
+        
+        square_1_1_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+    
+        square_1_2_SE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        marker_location_x=marker_location_x-marker_seperation
+    
+        square_1_3_SE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket#+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
+
+        square_2_1_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_y=first_marker_location_y+marker_seperation
+    
+        square_2_2_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        marker_location_y=marker_location_y+marker_seperation
+        square_2_3_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        #==========Northeast==========
+        #bottom left markers going horizontally
+        #bottom right markers going horizontally
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance#+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)#+p.pos_y
+    
+        square_1_1_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_x=first_marker_location_x-marker_seperation
+    
+        square_1_2_NE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        marker_location_x=marker_location_x-marker_seperation
+    
+        square_1_3_NE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
+        
+        #bottom left markers going vertically
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket#+p.pos_x
+        if flush_to_pocket:
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
+
+        square_2_1_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
+        
+        marker_location_y=first_marker_location_y-marker_seperation
+    
+        square_2_2_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+        
+        marker_location_y=marker_location_y-marker_seperation
+    
+        square_2_3_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+    
+        polys = [square_1_1_NW, pocket_1_1_NW, square_1_2_NW, pocket_1_2_NW, square_1_3_NW, pocket_1_3_NW,
+                 square_2_1_NW, pocket_2_1_NW, square_2_2_NW, pocket_2_2_NW, square_2_3_NW, pocket_2_3_NW,
+                 square_1_1_SW, pocket_1_1_SW, square_1_2_SW, pocket_1_2_SW, square_1_3_SW, pocket_1_3_SW,
+                 square_2_1_SW, pocket_2_1_SW, square_2_2_SW, pocket_2_2_SW, square_2_3_SW, pocket_2_3_SW,
+                 square_1_1_SE, pocket_1_1_SE, square_1_2_SE, pocket_1_2_SE, square_1_3_SE, pocket_1_3_SE,
+                 square_2_1_SE, pocket_2_1_SE, square_2_2_SE, pocket_2_2_SE, square_2_3_SE, pocket_2_3_SE,
+                 square_1_1_NE, pocket_1_1_NE, square_1_2_NE, pocket_1_2_NE, square_1_3_NE, pocket_1_3_NE,
+                 square_2_1_NE, pocket_2_1_NE, square_2_2_NE, pocket_2_2_NE, square_2_3_NE, pocket_2_3_NE]
+        polys = draw.rotate(polys, p.orientation, origin=(0, 0))
+        polys = draw.translate(polys, p.pos_x, p.pos_y)
+        [square_1_1_NW, pocket_1_1_NW, square_1_2_NW, pocket_1_2_NW, square_1_3_NW, pocket_1_3_NW,
+                 square_2_1_NW, pocket_2_1_NW, square_2_2_NW, pocket_2_2_NW, square_2_3_NW, pocket_2_3_NW,
+                 square_1_1_SW, pocket_1_1_SW, square_1_2_SW, pocket_1_2_SW, square_1_3_SW, pocket_1_3_SW,
+                 square_2_1_SW, pocket_2_1_SW, square_2_2_SW, pocket_2_2_SW, square_2_3_SW, pocket_2_3_SW,
+                 square_1_1_SE, pocket_1_1_SE, square_1_2_SE, pocket_1_2_SE, square_1_3_SE, pocket_1_3_SE,
+                 square_2_1_SE, pocket_2_1_SE, square_2_2_SE, pocket_2_2_SE, square_2_3_SE, pocket_2_3_SE,
+                 square_1_1_NE, pocket_1_1_NE, square_1_2_NE, pocket_1_2_NE, square_1_3_NE, pocket_1_3_NE,
+                 square_2_1_NE, pocket_2_1_NE, square_2_2_NE, pocket_2_2_NE, square_2_3_NE, pocket_2_3_NE] = polys
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                           dict(square_1_1_NW=square_1_1_NW, square_1_2_NW=square_1_2_NW, square_1_3_NW=square_1_3_NW,
+                                square_2_1_NW=square_2_1_NW, square_2_2_NW=square_2_2_NW, square_2_3_NW=square_2_3_NW,
+                                square_1_1_SW=square_1_1_SW, square_1_2_SW=square_1_2_SW, square_1_3_SW=square_1_3_SW,
+                                square_2_1_SW=square_2_1_SW, square_2_2_SW=square_2_2_SW, square_2_3_SW=square_2_3_SW,
+                                square_1_1_SE=square_1_1_SE, square_1_2_SE=square_1_2_SE, square_1_3_SE=square_1_3_SE,
+                                square_2_1_SE=square_2_1_SE, square_2_2_SE=square_2_2_SE, square_2_3_SE=square_2_3_SE,
+                                square_1_1_NE=square_1_1_NE, square_1_2_NE=square_1_2_NE, square_1_3_NE=square_1_3_NE,
+                                square_2_1_NE=square_2_1_NE, square_2_2_NE=square_2_2_NE, square_2_3_NE=square_2_3_NE),
+                           layer=p.layer)
+        
+        self.add_qgeometry('poly',
+                           dict(pocket_1_1_NW=pocket_1_1_NW, pocket_1_2_NW=pocket_1_2_NW, pocket_1_3_NW=pocket_1_3_NW,
+                                pocket_2_1_NW=pocket_2_1_NW, pocket_2_2_NW=pocket_2_2_NW, pocket_2_3_NW=pocket_2_3_NW,
+                                pocket_1_1_SW=pocket_1_1_SW, pocket_1_2_SW=pocket_1_2_SW, pocket_1_3_SW=pocket_1_3_SW,
+                                pocket_2_1_SW=pocket_2_1_SW, pocket_2_2_SW=pocket_2_2_SW, pocket_2_3_SW=pocket_2_3_SW,
+                                pocket_1_1_SE=pocket_1_1_SE, pocket_1_2_SE=pocket_1_2_SE, pocket_1_3_SE=pocket_1_3_SE,
+                                pocket_2_1_SE=pocket_2_1_SE, pocket_2_2_SE=pocket_2_2_SE, pocket_2_3_SE=pocket_2_3_SE,
+                                pocket_1_1_NE=pocket_1_1_NE, pocket_1_2_NE=pocket_1_2_NE, pocket_1_3_NE=pocket_1_3_NE,
+                                pocket_2_1_NE=pocket_2_1_NE, pocket_2_2_NE=pocket_2_2_NE, pocket_2_3_NE=pocket_2_3_NE),
+                           layer=p.layer,
+                           subtract=True)
+        
+###################################################################################
 
 class TransmonTaperedInsets(BaseQubit):
     """Transmon pocket with tapered connection pads, with insets for improved coupling. 
@@ -1392,6 +1993,7 @@ class _FluxoniumPocket(BaseQubit):
             self.make_charge_line()
         if self.p.readout_line_options.make_rol == True:
             self.make_readout_line()
+        
 
     def make_pocket(self):
         """Makes standard fluxonium in a pocket."""
@@ -1781,6 +2383,7 @@ class FluxoniumPocket(_FluxoniumPocket):
                            make_rol_left=False,  # make the mirror image of the flux line on the other side
                            # make the edges of the rectangular part round.
                            round_edge=False,
+                           left_chain=False, #puts the JJ chain on the left
                            teeth_options=Dict(
                                make_teeth=False,  # make teeth in readout resonator pad. Will be FUNKY unless pad_radius=0
                                # using same defaults and variable names as transmon_pocket_teeth whenever possible
@@ -1798,8 +2401,6 @@ class FluxoniumPocket(_FluxoniumPocket):
                                 pocket_distance='5um',
                                 distance_from_pocket='0.085mm',
                                 flush_to_pocket=False,
-                                marker_prefix='placeholder',
-                                qubit_prefix=True
                             ))
 
     def make(self):
@@ -1822,6 +2423,9 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         if self.p.make_rol_left:
             self.make_flux_bias_line2()
+        
+        if self.p.alignment_markers_options.make_markers:
+            self.make_markers(self.design)
 
     def make_pocket(self):
         """Makes standard fluxonium in a pocket."""
@@ -1850,8 +2454,8 @@ class FluxoniumPocket(_FluxoniumPocket):
                 [(l_arm_length, l_length/2), (l_arm_length, -l_length/2)])
             # in the else below. regardless, this just defines the inductor as a straight simple line.
             if p.round_edge:  # note that the inductor is backwards when using the default value of inductor_orientation of -1
-                inductor = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), (pad_gap+pad_height-l_arm_width)/2), ((
-                    (pad_width+pad_height)/2)+(l_arm_length/4), -((pad_gap+pad_height-l_arm_width)/2))])  # ((pad_gap+pad_height)/2)-l_arm_width
+                inductor = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, (pad_gap+pad_height-l_arm_width)/2), (
+                    ((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, -((pad_gap+pad_height-l_arm_width)/2))])  # ((pad_gap+pad_height)/2)-l_arm_width
         else:
             l_length = p.array_length
             # This one is for JJ array
@@ -1860,9 +2464,10 @@ class FluxoniumPocket(_FluxoniumPocket):
             inductor = draw.LineString(
                 [(l_arm_length-l_arm_width, io*l_length/2), (l_arm_length-l_arm_width, -io*l_length/2)])
             if p.round_edge:
-                inductor = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/4), io*(pad_gap+pad_height-l_arm_width)/2), ((
-                    (pad_width+pad_height)/2)+(l_arm_length/4), -io*((pad_gap+pad_height-l_arm_width)/2))])
-
+                inductor = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, io*(pad_gap+pad_height-l_arm_width)/2), (
+                    ((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, -io*((pad_gap+pad_height-l_arm_width)/2))])
+        if p.left_chain:
+            inductor=draw.scale(inductor, -1, 1, origin=(0, 0))
         # Draw 'the arms' and make them curvy, first top arm and then same goes for the bottom
         l_arm_up = draw.Polygon([
             (pad_width/2, l_length/2+l_arm_width),  # point a
@@ -1873,7 +2478,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         if p.round_edge:
             # l_arm_up=draw.translate(l_arm_up, (pad_height/2)+(l_arm_length/4), pad_height/2)
             l_arm_up = draw.rectangle(
-                l_arm_length, l_arm_width, pad_width, (pad_gap+pad_height)/2)
+                l_arm_length, l_arm_width, (pad_width+pad_height)/2, (pad_gap+pad_height)/2)
             # self.add_qgeometry('poly', dict(l_arm_up=l_arm_up))
 
         """l_arm_up_fillet = draw.Point(l_arm_length, l_length/2).buffer(l_arm_width) # Having semicircle with subtracting the geometries
@@ -1896,7 +2501,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         ])
         if p.round_edge:
             l_arm_bot = draw.rectangle(
-                l_arm_length, l_arm_width, pad_width, -(pad_gap+pad_height)/2)
+                l_arm_length, l_arm_width, (pad_width+pad_height)/2, -(pad_gap+pad_height)/2)
         """l_arm_bot_fillet = draw.Point(l_arm_length, -l_length/2).buffer(l_arm_width)
         cut_ply_bot = draw.Polygon([
              ((l_arm_length-l_arm_width*2), -(l_length/2+l_arm_width*2)),   # point o
@@ -1907,7 +2512,8 @@ class FluxoniumPocket(_FluxoniumPocket):
              (l_arm_length-l_arm_width*2, -(l_length/2-l_arm_width*2)),  # point u
         ])
         l_arm_bot_fillet = draw.subtract(l_arm_bot_fillet, cut_ply_bot) # Having semicircle with subtracting the geometries"""
-
+        if p.left_chain:
+            [l_arm_up, l_arm_bot]=draw.scale([l_arm_up, l_arm_bot], -1, 1, origin=(0, 0))
         # Draw the pads (shapely polygons)
         pad_rect_top = draw.rectangle(
             pad_width, pad_height, 0, (pad_gap+pad_height)/2)
@@ -1969,7 +2575,9 @@ class FluxoniumPocket(_FluxoniumPocket):
                 p.top_wire_center_x,
                 p.top_wire_center_y
             )  # make "finger" for top capactior pad
-            pad_top = draw.union(pad_top, connector_top)
+            connector_top_circley=p.top_wire_center_y-(p.top_wire_height/2)
+            connector_top_circle=draw.Point(p.top_wire_center_x, connector_top_circley).buffer(p.top_wire_width/2)
+            pad_top = draw.union(pad_top, connector_top, connector_top_circle)
 
         if p.bot_wire_connector:
             connector_bot = draw.rectangle(
@@ -1978,7 +2586,9 @@ class FluxoniumPocket(_FluxoniumPocket):
                 p.bot_wire_center_x,
                 p.bot_wire_center_y
             )  # make "finger" for bot capactior pad
-            pad_bot = draw.union(pad_bot, connector_bot)
+            connector_bot_circley=p.bot_wire_center_y+(p.bot_wire_height/2)
+            connector_bot_circle=draw.Point(p.bot_wire_center_x, connector_bot_circley).buffer(p.bot_wire_width/2)
+            pad_bot = draw.union(pad_bot, connector_bot, connector_bot_circle)
 
         # Draw the junction
         # one can change the JJ orientation. Fab related detail.
@@ -2006,11 +2616,30 @@ class FluxoniumPocket(_FluxoniumPocket):
         # Draw the pocket
         rect_pk = draw.rectangle(pocket_width, pocket_height)
 
+        #port line for pin for JJ chain 
+        port_line = draw.LineString([(l_arm_length, l_length/2),
+                                    (l_arm_length, (l_length/2)+l_arm_width)])
+        if p.round_edge:
+            port_line = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, (pad_gap+pad_height-l_arm_width)/2),
+                                         (((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, (pad_gap+pad_height+l_arm_width)/2)])
+        if p.left_chain:
+            port_line=draw.scale(port_line, -1, 1, origin=(0, 0))
+        #regardless of being left or right the bot port line is mirror reflection across x-axis
+        port_line_bot=draw.scale(port_line, 1, -1, origin=(0, 0))#regardless of bein
+
         # Rotate and translate all qgeometry as needed.
-        polys = [rect_jj, pad_top, pad_bot, rect_pk, inductor]
+        polys = [rect_jj, pad_top, pad_bot, rect_pk, inductor, port_line, port_line_bot]
+        if p.top_wire_connector:
+            top_finger_line = draw.LineString([(p.top_wire_center_x-(p.top_wire_width/2), p.top_wire_center_y-(p.top_wire_height/2)), (p.top_wire_center_x+(p.top_wire_width/2), p.top_wire_center_y-(p.top_wire_height/2))])
+            top_finger_line = draw.rotate(top_finger_line, p.orientation, origin=(0, 0))
+            top_finger_line = draw.translate(top_finger_line, p.pos_x, p.pos_y)
+        if p.bot_wire_connector:
+            bot_finger_line = draw.LineString([(p.bot_wire_center_x+(p.bot_wire_width/2), p.bot_wire_center_y+(p.bot_wire_height/2)), (p.bot_wire_center_x-(p.bot_wire_width/2), p.bot_wire_center_y+(p.bot_wire_height/2))])
+            bot_finger_line = draw.rotate(bot_finger_line, p.orientation, origin=(0, 0))
+            bot_finger_line = draw.translate(bot_finger_line, p.pos_x, p.pos_y)
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [rect_jj, pad_top, pad_bot, rect_pk, inductor] = polys
+        [rect_jj, pad_top, pad_bot, rect_pk, inductor, port_line, port_line_bot] = polys
 
         # Use the geometry to create Metal qgeometry
         self.add_qgeometry('poly', dict(pad_top=pad_top, pad_bot=pad_bot))
@@ -2027,6 +2656,22 @@ class FluxoniumPocket(_FluxoniumPocket):
                            width=p.jj_width,
                            hfss_inductance=p.L_j,
                            hfss_capacitance=p.C_j)
+
+        # add pins
+        
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        self.add_pin('JJ_chain',
+                     port_line_cords[::-1], l_width)
+        port_line_bot_cords = list(draw.shapely.geometry.shape(port_line_bot).coords)
+        self.add_pin('JJ_chain_bot',
+                     port_line_bot_cords[::-1], l_width)
+        
+        top_finger_line_cords = list(draw.shapely.geometry.shape(top_finger_line).coords)
+        self.add_pin('top_finger',
+                     top_finger_line_cords[::-1], p.top_wire_width)
+        bot_finger_line_cords = list(draw.shapely.geometry.shape(bot_finger_line).coords)
+        self.add_pin('bot_finger',
+                     bot_finger_line_cords[::-1], p.bot_wire_width)
 
     def make_flux_bias_line2(self):
         """ Adds flux bias line to fluxonium pocket."""
@@ -2120,12 +2765,12 @@ class FluxoniumPocket(_FluxoniumPocket):
         # add pins
         port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
         self.add_pin('flux_bias_line2',
-                     port_line_cords, cpw_width)
+                     port_line_cords[::-1], cpw_width)
 
         fake_port_line_cords = list(
             draw.shapely.geometry.shape(fake_port_line).coords)
         self.add_pin('fake_flux_bias_line2',
-                     fake_port_line_cords, cpw_width)
+                     fake_port_line_cords[::-1], cpw_width)
 
     def make_readout_line(self):
         """ Adds readout line to fluxonium pocket."""
@@ -2253,284 +2898,205 @@ class FluxoniumPocket(_FluxoniumPocket):
         marker_height=pam.marker_height
         pocket_distance=pam.pocket_distance#size of the pocket OF THE MARKER
         distance_from_pocket=pam.distance_from_pocket
-        marker_prefix=pam.marker_prefix
-        if pam.qubit_prefix:
-            marker_prefix=self.name+"_"
         pocket_height=p.pocket_height
         pocket_width=p.pocket_width
-        flush_to_pocket=p.flush_to_pocket
+        flush_to_pocket=pam.flush_to_pocket
         
 
         #=======Northwest======
         #top left markers going horizontally
-        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
-        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance#+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)#+p.pos_y
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_1_1_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_x=first_marker_location_x+marker_seperation
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NW',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+
+        square_1_2_NW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         marker_location_x=marker_location_x+marker_seperation
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NW',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_1_3_NW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         #top left markers going vertically
-        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket#+p.pos_x
         if flush_to_pocket:
-            first_marker_location_y=(pocket_height/2)-pocket_distance-(marker_height/2)+p.pos_y
+            first_marker_location_y=(pocket_height/2)-pocket_distance-(marker_height/2)#+p.pos_y
 
-        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_2_1_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_y=first_marker_location_y-marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_2_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         marker_location_y=marker_location_y-marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_3_NW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_NW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         #=============Southwest===========
         #bottom left markers going horizontally
-        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance+p.pos_x
-        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        first_marker_location_x=((-pocket_width+marker_width)/2)+pocket_distance#+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)#+p.pos_y
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_1_1_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_x=first_marker_location_x+marker_seperation
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SW',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_1_2_SW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         marker_location_x=marker_location_x+marker_seperation
+    
+        square_1_3_SW = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SW',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
         
         #bottom left markers going vertically
-        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket+p.pos_x
+        first_marker_location_x=((-pocket_width-marker_width)/2)-pocket_distance-distance_from_pocket#+p.pos_x
         if flush_to_pocket:
-            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
 
-        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_2_1_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_y=first_marker_location_y+marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_2_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         marker_location_y=marker_location_y+marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SW',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_3_SW = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_SW = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         #==========Southeast==========
-        #bottom left markers going horizontally
         #bottom right markers going horizontally
-        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
-        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)+p.pos_y
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance#+p.pos_x
+        first_marker_location_y=-(pocket_height/2)-pocket_distance-distance_from_pocket-(marker_height/2)#+p.pos_y
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_1_SE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_1_1_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_x=first_marker_location_x-marker_seperation
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_2_SE',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_1_2_SE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         marker_location_x=marker_location_x-marker_seperation
+    
+        square_1_3_SE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
-        MarkerSquarePocket(design, marker_prefix+'marker_1_3_SE',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
         
         #bottom left markers going vertically
-        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket#+p.pos_x
         if flush_to_pocket:
-            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
 
-        MarkerSquarePocket(design, marker_prefix+'marker_2_1_SE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_2_1_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_y=first_marker_location_y+marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_2_SE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_2_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         marker_location_y=marker_location_y+marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_3_SE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_2_3_SE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_SE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         #==========Northeast==========
         #bottom left markers going horizontally
         #bottom right markers going horizontally
-        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance+p.pos_x
-        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)+p.pos_y
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_1_NE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        first_marker_location_x=((pocket_width-marker_width)/2)-pocket_distance#+p.pos_x
+        first_marker_location_y=(pocket_height/2)+pocket_distance+distance_from_pocket+(marker_height/2)#+p.pos_y
+    
+        square_1_1_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_1_1_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_x=first_marker_location_x-marker_seperation
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_2_NE',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_1_2_NE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_2_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         marker_location_x=marker_location_x-marker_seperation
-        
-        MarkerSquarePocket(design, marker_prefix+'marker_1_3_NE',
-                                         options=Dict(pos_x=str(marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_1_3_NE = draw.rectangle(marker_width, marker_height, marker_location_x, first_marker_location_y)
+        pocket_1_3_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, marker_location_x, first_marker_location_y)
         
         #bottom left markers going vertically
-        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket+p.pos_x
+        first_marker_location_x=((pocket_width+marker_width)/2)+pocket_distance+distance_from_pocket#+p.pos_x
         if flush_to_pocket:
-            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)+p.pos_y
+            first_marker_location_y=-(pocket_height/2)+pocket_distance+(marker_height/2)#+p.pos_y
 
-        MarkerSquarePocket(design, marker_prefix+'marker_2_1_NE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(first_marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        square_2_1_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, first_marker_location_y)
+        pocket_2_1_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, first_marker_location_y)
         
         marker_location_y=first_marker_location_y-marker_seperation
-
-        MarkerSquarePocket(design, marker_prefix+'marker_2_2_NE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+    
+        square_2_2_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_2_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
         
         marker_location_y=marker_location_y-marker_seperation
+    
+        square_2_3_NE = draw.rectangle(marker_width, marker_height, first_marker_location_x, marker_location_y)
+        pocket_2_3_NE = draw.rectangle(marker_width+pocket_distance, marker_height+pocket_distance, first_marker_location_x, marker_location_y)
+    
+        polys = [square_1_1_NW, pocket_1_1_NW, square_1_2_NW, pocket_1_2_NW, square_1_3_NW, pocket_1_3_NW,
+                 square_2_1_NW, pocket_2_1_NW, square_2_2_NW, pocket_2_2_NW, square_2_3_NW, pocket_2_3_NW,
+                 square_1_1_SW, pocket_1_1_SW, square_1_2_SW, pocket_1_2_SW, square_1_3_SW, pocket_1_3_SW,
+                 square_2_1_SW, pocket_2_1_SW, square_2_2_SW, pocket_2_2_SW, square_2_3_SW, pocket_2_3_SW,
+                 square_1_1_SE, pocket_1_1_SE, square_1_2_SE, pocket_1_2_SE, square_1_3_SE, pocket_1_3_SE,
+                 square_2_1_SE, pocket_2_1_SE, square_2_2_SE, pocket_2_2_SE, square_2_3_SE, pocket_2_3_SE,
+                 square_1_1_NE, pocket_1_1_NE, square_1_2_NE, pocket_1_2_NE, square_1_3_NE, pocket_1_3_NE,
+                 square_2_1_NE, pocket_2_1_NE, square_2_2_NE, pocket_2_2_NE, square_2_3_NE, pocket_2_3_NE]
+        polys = draw.rotate(polys, p.orientation, origin=(0, 0))
+        polys = draw.translate(polys, p.pos_x, p.pos_y)
+        [square_1_1_NW, pocket_1_1_NW, square_1_2_NW, pocket_1_2_NW, square_1_3_NW, pocket_1_3_NW,
+                 square_2_1_NW, pocket_2_1_NW, square_2_2_NW, pocket_2_2_NW, square_2_3_NW, pocket_2_3_NW,
+                 square_1_1_SW, pocket_1_1_SW, square_1_2_SW, pocket_1_2_SW, square_1_3_SW, pocket_1_3_SW,
+                 square_2_1_SW, pocket_2_1_SW, square_2_2_SW, pocket_2_2_SW, square_2_3_SW, pocket_2_3_SW,
+                 square_1_1_SE, pocket_1_1_SE, square_1_2_SE, pocket_1_2_SE, square_1_3_SE, pocket_1_3_SE,
+                 square_2_1_SE, pocket_2_1_SE, square_2_2_SE, pocket_2_2_SE, square_2_3_SE, pocket_2_3_SE,
+                 square_1_1_NE, pocket_1_1_NE, square_1_2_NE, pocket_1_2_NE, square_1_3_NE, pocket_1_3_NE,
+                 square_2_1_NE, pocket_2_1_NE, square_2_2_NE, pocket_2_2_NE, square_2_3_NE, pocket_2_3_NE] = polys
 
-        MarkerSquarePocket(design, marker_prefix+'marker_2_3_NE',
-                                         options=Dict(pos_x=str(first_marker_location_x)+"mm",
-                                                      pos_y=str(marker_location_y)+"mm",
-                                                      square_width=str(marker_width)+"mm",
-                                                      square_height=str(marker_height)+"mm",
-                                                      pocket_distance=pocket_distance,
-                                                      layer=1))
+        # Adds the object to the qgeometry table
+        self.add_qgeometry('poly',
+                        dict(square_1_1_NW=square_1_1_NW, square_1_2_NW=square_1_2_NW, square_1_3_NW=square_1_3_NW,
+                                square_2_1_NW=square_2_1_NW, square_2_2_NW=square_2_2_NW, square_2_3_NW=square_2_3_NW,
+                                square_1_1_SW=square_1_1_SW, square_1_2_SW=square_1_2_SW, square_1_3_SW=square_1_3_SW,
+                                square_2_1_SW=square_2_1_SW, square_2_2_SW=square_2_2_SW, square_2_3_SW=square_2_3_SW,
+                                square_1_1_SE=square_1_1_SE, square_1_2_SE=square_1_2_SE, square_1_3_SE=square_1_3_SE,
+                                square_2_1_SE=square_2_1_SE, square_2_2_SE=square_2_2_SE, square_2_3_SE=square_2_3_SE,
+                                square_1_1_NE=square_1_1_NE, square_1_2_NE=square_1_2_NE, square_1_3_NE=square_1_3_NE,
+                                square_2_1_NE=square_2_1_NE, square_2_2_NE=square_2_2_NE, square_2_3_NE=square_2_3_NE),
+                        layer=p.layer)
+        
+        self.add_qgeometry('poly',
+                           dict(pocket_1_1_NW=pocket_1_1_NW, pocket_1_2_NW=pocket_1_2_NW, pocket_1_3_NW=pocket_1_3_NW,
+                                pocket_2_1_NW=pocket_2_1_NW, pocket_2_2_NW=pocket_2_2_NW, pocket_2_3_NW=pocket_2_3_NW,
+                                pocket_1_1_SW=pocket_1_1_SW, pocket_1_2_SW=pocket_1_2_SW, pocket_1_3_SW=pocket_1_3_SW,
+                                pocket_2_1_SW=pocket_2_1_SW, pocket_2_2_SW=pocket_2_2_SW, pocket_2_3_SW=pocket_2_3_SW,
+                                pocket_1_1_SE=pocket_1_1_SE, pocket_1_2_SE=pocket_1_2_SE, pocket_1_3_SE=pocket_1_3_SE,
+                                pocket_2_1_SE=pocket_2_1_SE, pocket_2_2_SE=pocket_2_2_SE, pocket_2_3_SE=pocket_2_3_SE,
+                                pocket_1_1_NE=pocket_1_1_NE, pocket_1_2_NE=pocket_1_2_NE, pocket_1_3_NE=pocket_1_3_NE,
+                                pocket_2_1_NE=pocket_2_1_NE, pocket_2_2_NE=pocket_2_2_NE, pocket_2_3_NE=pocket_2_3_NE),
+                           layer=p.layer,
+                           subtract=True)
+
 
         
 class TransmonPocketTeeth(TransmonPocketTeeth):
     """Idenitical to TransmonPocketTeeth except CPW length coming from teeth scales with
-    pocket_height and NOT pocket_width
+    pocket_height and NOT pocket_width. Also comes with EBL alignment markers if you want.
 
     Inherits `BaseQubit` class
 
