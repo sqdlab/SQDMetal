@@ -864,27 +864,33 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         C3_ground  = abs(capMat[idx_pad3, idx_ground])
         C4_ground  = abs(capMat[idx_pad4, idx_ground])
         # Coupling capacitance between qubit 1 and qubit 2 (capacitance between the two qubits excluding coupling through the resonator)
-        CQ1Q2 = C13 + C14 + C23 + C24                            ####### Put the qubits far enough so that this is negligible compared to coupling through the resonator
+        #CQ1Q2 = C13 + C14 + C23 + C24                            ####### Put the qubits far enough so that this is negligible compared to coupling through the resonator
 
         C1_res = abs(capMat[idx_pad1, idx_res])
         C2_res = abs(capMat[idx_pad2, idx_res])
         C3_res = abs(capMat[idx_pad3, idx_res])
         C4_res = abs(capMat[idx_pad4, idx_res])
-        #New CQ1 and CQ2 including coupling through the resonator
-        CQ1 = C12 + ((C1_ground+C1_res)*(C2_ground+C2_res))/(C1_ground + C2_ground + C1_res + C2_res)
-        CQ2 = C34 + ((C3_ground+C3_res)*(C4_ground+C4_res))/(C3_ground + C4_ground + C3_res + C4_res)
-        # Resonator couplings (for kappa)
         C_r       = abs(capMat[idx_res, idx_ground])
-        Cg1 = (C2_ground*C1_res-C1_ground*C2_res)/(C1_ground + C2_ground + C1_res + C2_res) 
-        Cg2 = (C4_ground*C3_res-C3_ground*C4_res)/(C3_ground + C4_ground + C3_res + C4_res) 
+        a = (C1_ground + C2_ground + C1_res + C2_res + 4*C12)/4
+        b = (-2*C1_res + 2*C2_res)/4
+        c = (-2*C3_res + 2*C4_res)/4
+        x = 4*(C1_res + C2_res + C3_res + C4_res + C_r)/4
+        y = (C3_ground + C4_ground + C3_res + C4_res + 4*C34)/4
+        #New CQ1 and CQ2 including coupling through the resonator
+        Sigma = (-a*c*c - b*b*y + a*x*y)  #CQ1 = C12 + ((C1_ground+C1_res)*(C2_ground+C2_res))/(C1_ground + C2_ground + C1_res + C2_res)
+          #CQ2 = C34 + ((C3_ground+C3_res)*(C4_ground+C4_res))/(C3_ground + C4_ground + C3_res + C4_res)
+        # Resonator couplings (for kappa)   THE COMMENTED EQUATIONS BELOW ARE THE ONE FROM PRASANNA'S NOTES, LESS ACCURATE
+        
+           #Cg1 = (C2_ground*C1_res-C1_ground*C2_res)/(C1_ground + C2_ground + C1_res + C2_res) 
+           #Cg2 = (C4_ground*C3_res-C3_ground*C4_res)/(C3_ground + C4_ground + C3_res + C4_res) 
         # Global capacitance calculation
-        C_sigma = CQ1Q2*(Cg1+Cg2)*(CQ1+CQ2) + C_r*CQ1*CQ2 + CQ1Q2*C_r*(Cg1+Cg2+CQ1+CQ2) + Cg1*CQ2*(CQ1+C_r) + Cg2*CQ1*(CQ2+C_r) + Cg1*Cg2*(CQ1+CQ2+C_r)
-        C_1_prime = (C_sigma)/(-(Cg2**2) + (CQ1Q2+Cg2+CQ2)*(Cg1+Cg2+C_r))
-        C_2_prime = (C_sigma)/(-(Cg1**2) + (CQ1Q2+Cg1+CQ1)*(Cg1+Cg2+C_r))
-        C_r_prime = (C_sigma)/((Cg1+CQ1)*(Cg2+CQ2) + CQ1Q2*(Cg1+Cg2+CQ1+CQ2))
-        Cg1_prime = (C_sigma)/(2*(Cg1*(CQ2+Cg2)+CQ1Q2*(Cg1+Cg2)))
-        Cg2_prime = (C_sigma)/(2*(Cg2*(CQ1+Cg1)+CQ1Q2*(Cg1+Cg2)))
-        CQ1Q2_prime =  (C_sigma)/(2*(Cg1*Cg2 + CQ1Q2*(Cg1+Cg2+C_r)))
+        #C_sigma = CQ1Q2*(Cg1+Cg2)*(CQ1+CQ2) + C_r*CQ1*CQ2 + CQ1Q2*C_r*(Cg1+Cg2+CQ1+CQ2) + Cg1*CQ2*(CQ1+C_r) + Cg2*CQ1*(CQ2+C_r) + Cg1*Cg2*(CQ1+CQ2+C_r)
+        C_1_prime = Sigma/(-c*c+x*y)#C_1_prime = (C_sigma)/(-(Cg2**2) + (CQ1Q2+Cg2+CQ2)*(Cg1+Cg2+C_r))
+        C_2_prime = Sigma/(-b*b+a*x)#C_2_prime = (C_sigma)/(-(Cg1**2) + (CQ1Q2+Cg1+CQ1)*(Cg1+Cg2+C_r))
+        C_r_prime = Sigma/(a*y)#C_r_prime = (C_sigma)/((Cg1+CQ1)*(Cg2+CQ2) + CQ1Q2*(Cg1+Cg2+CQ1+CQ2))
+        Cg1_prime = Sigma/(-b*y)#Cg1_prime = (C_sigma)/(2*(Cg1*(CQ2+Cg2)+CQ1Q2*(Cg1+Cg2)))
+        Cg2_prime = Sigma/(-c*a)#Cg2_prime = (C_sigma)/(2*(Cg2*(CQ1+Cg1)+CQ1Q2*(Cg1+Cg2)))
+        CQ1Q2_prime = Sigma/(b*c)#CQ1Q2_prime =  (C_sigma)/(2*(Cg1*Cg2 + CQ1Q2*(Cg1+Cg2+C_r)))
         
         ## CALCULATIONS
         # Compute charging energy E_C1 and E_C2
@@ -899,43 +905,43 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         # Calculate qubit parameters (if possible)
         if (res is not None) and (qubit_freq is not None):    # Used for g1,g2 comparison for case with only one qubit coupled to resonator -> Not important
             # Use qubit calculator for chi, g, Delta etc.
-            params = FloatingTransmonDesigner(res).optimise(
-                {
-                    "fQubit": qubit_freq[0],
-                    "C_q1": C1_ground,
-                    "C_q2": C2_ground,
-                    "C_g1": C1_res,
-                    "C_g2": C2_res,
-                    "C_J": C12 ,
-                    "chi": (-1e6, -0.2e6),
-                    "C_sigma": (1e-18, 1e-6),
-                    "Ej/Ec": (50, 200),
-                },
-                print_results=False
-            )
-            g1_MHz = abs(params['g_Hz']) * 1e-6
-            chi_MHz = abs(params['chi_Hz']) * 1e-6
-            Delta_GHz = params['Delta_Hz'] * 1e-9
-            anh_MHz = params['anh_Hz'] * 1e-6
+            # params = FloatingTransmonDesigner(res).optimise(
+            #    {
+            #        "fQubit": qubit_freq[0],
+            #        "C_q1": C1_ground,
+            #        "C_q2": C2_ground,
+            #        "C_g1": C1_res,
+            #        "C_g2": C2_res,
+            #        "C_J": C12 ,
+            #        "chi": (-1e6, -0.2e6),
+            #        "C_sigma": (1e-18, 1e-6),
+            #        "Ej/Ec": (50, 200),
+            #    },
+            #    print_results=False
+            #)
+            #g1_MHz = abs(params['g_Hz']) * 1e-6
+            #chi_MHz = abs(params['chi_Hz']) * 1e-6
+            #Delta_GHz = params['Delta_Hz'] * 1e-9
+            #anh_MHz = params['anh_Hz'] * 1e-6
             f_r_Hz = res.get_res_frequency() # GHz
             Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
             kappa_MHz = None
             T1p_ms = None
-            params = FloatingTransmonDesigner(res).optimise(
-                {
-                    "fQubit": qubit_freq[1],
-                    "C_q1": C3_ground,
-                    "C_q2": C4_ground,
-                    "C_g1": C3_res,
-                    "C_g2": C4_res,
-                    "C_J": C34 ,
-                    "chi": (-1e6, -0.2e6),
-                    "C_sigma": (1e-18, 1e-6),
-                    "Ej/Ec": (50, 200),
-                },
-                print_results=False
-            )
-            g2_MHz = abs(params['g_Hz']) * 1e-6
+            #params = FloatingTransmonDesigner(res).optimise(
+            #    {
+            #        "fQubit": qubit_freq[1],
+            #        "C_q1": C3_ground,
+            #        "C_q2": C4_ground,
+            #        "C_g1": C3_res,
+            #        "C_g2": C4_res,
+            #        "C_J": C34 ,
+            #        "chi": (-1e6, -0.2e6),
+            #        "C_sigma": (1e-18, 1e-6),
+            #        "Ej/Ec": (50, 200),
+            #    },
+            #    print_results=False
+            #)
+            # g2_MHz = abs(params['g_Hz']) * 1e-6
 
         else:
             print("Could not calculate g, chi, kappa, or Purcell decay rate as there is no readout resonator present, or no defined qubit frequency.")
@@ -977,8 +983,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
               omega_2_GHz = (np.sqrt(8*E_C2_GHz*E2_J_GHz) - E_C2_GHz)
               omega_1_MHz = omega_1_GHz * 1e3
               omega_2_MHz = omega_2_GHz * 1e3
-              omega_r_GHz = 1/(np.sqrt(Lres*C_r_prime)) * 1e-9
-              omega_r_MHz = omega_r_GHz * 1e3
+              #omega_r_GHz = 1/(2*np.pi*np.sqrt(Lres*C_r_prime)) * 1e-9
+              #omega_r_MHz = omega_r_GHz * 1e3
               
 
              # Calculate Z on/off ratio (assuming on state is when qubits are resonant, off state is when they are detuned by 500 MHz)
@@ -993,10 +999,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             print(f"{'C2-Ground':<16s} = {C2_ground * 1e15:>10.3f} fF")
             print(f"{'C3-Ground':<16s} = {C3_ground * 1e15:>10.3f} fF")
             print(f"{'C4-Ground':<16s} = {C4_ground * 1e15:>10.3f} fF")
-            print(f"{'CQ1':<16s} = {CQ1 * 1e15:>10.3f} fF")
-            print(f"{'CQ2':<16s} = {CQ2 * 1e15:>10.3f} fF")
-            print(f"{'Cg1':<16s} = {Cg1 * 1e15:>10.3f} fF")
-            print(f"{'Cg2':<16s} = {Cg2 * 1e15:>10.3f} fF")
+            #print(f"{'CQ1':<16s} = {CQ1 * 1e15:>10.3f} fF")
+            #print(f"{'CQ2':<16s} = {CQ2 * 1e15:>10.3f} fF")
+            #print(f"{'Cg1':<16s} = {Cg1 * 1e15:>10.3f} fF")
+            #print(f"{'Cg2':<16s} = {Cg2 * 1e15:>10.3f} fF")
             print(f"{'C_r':<16s} = {C_r * 1e15:>10.3f} fF")
             #print(f"{'CQ1Q2':<16s} = {CQ1Q2 * 1e15} fF")
             #print(f"{'Mutual C12_prime':<16s} = {CQ1Q2_prime * 1e15:>10.3f} fF")
@@ -1023,8 +1029,8 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         print(f"{'E_C1':<16s} = {E_C1_GHz * 1e3:>10.3f} MHz")
         print(f"{'E_C2':<16s} = {E_C2_GHz * 1e3:>10.3f} MHz")
         print(f"{'E_Cc':<16s} = {E_Cc_GHz * 1e3:>10.3f} MHz")
-        print(f"{'g1':<16s} = {g1_MHz if isinstance(g1_MHz, str) else f'{g1_MHz:>10.3f}'} MHz")
-        print(f"{'g2':<16s} = {g2_MHz if isinstance(g2_MHz, str) else f'{g2_MHz:>10.3f}'} MHz")
+        #print(f"{'g1':<16s} = {g1_MHz if isinstance(g1_MHz, str) else f'{g1_MHz:>10.3f}'} MHz")
+        #print(f"{'g2':<16s} = {g2_MHz if isinstance(g2_MHz, str) else f'{g2_MHz:>10.3f}'} MHz")
         #print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         #print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
         #print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
@@ -1050,19 +1056,21 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             print(f"{'Q2-res g2':<16s} = {g2*1e-6:>10.3f} MHz")
             print(f"{'Q1 freq (uncoupled)':<16s} = {omega_1_GHz:>10.3f} GHz")
             print(f"{'Q2 freq (uncoupled)':<16s} = {omega_2_GHz:>10.3f} GHz")
-            print(f"{'Res freq (uncoupled)':<16s} = {omega_r_GHz:>10.3f} GHz")
+            #print(f"{'Res freq (uncoupled)':<16s} = {omega_r_GHz:>10.3f} GHz")
             print(f"{'Z on/off ratio':<16s} = {Z_onoff_ratio if isinstance(Z_onoff_ratio, str) else f'{Z_onoff_ratio:>10.3f}'}")
 
         return {
             # Energies and key circuit parameters
             "E_C1_GHz": E_C1_GHz,
             "E_C2_GHz": E_C2_GHz,
+            "E_C1_J": E_C1_J,
+            "E_C2_J": E_C2_J,
             "C_1_fF": C_1_prime * 1e15,
             "C_2_fF": C_2_prime * 1e15,
-            "g1_MHz": g1_MHz,
-            "chi_MHz": chi_MHz,
-            "Delta_GHz": Delta_GHz,
-            "anh_MHz": anh_MHz,
+            #"g1_MHz": g1_MHz,
+            #"chi_MHz": chi_MHz,
+            #"Delta_GHz": Delta_GHz,
+            #"anh_MHz": anh_MHz,
             "f_q1_GHz": qubit_freq[0] * 1e-9,
             "f_q2_GHz": qubit_freq[1] * 1e-9,
             "kappa_MHz": kappa_MHz,
@@ -1073,9 +1081,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             "C2_ground_fF": C2_ground * 1e15,
             "C3_ground_fF": C3_ground * 1e15,
             "C4_ground_fF": C4_ground * 1e15,
-            "CQ1_fF": CQ1 * 1e15,
-            "CQ2_fF": CQ2 * 1e15,
+            #"CQ1_fF": CQ1 * 1e15,
+            #"CQ2_fF": CQ2 * 1e15,
             "C_res_ground": C_r * 1e15,
+            "C_r_prime_fF": C_r_prime * 1e15,
             "C12_fF": CQ1Q2_prime * 1e15,
             "Cres_fF": Cres * 1e15,
             "Lres_pH": Lres * 1e12,
@@ -1090,11 +1099,11 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             'E_J1/E_C1': E1_J_GHz/E_C1_GHz,
             'E_J2/E_C2': E2_J_GHz/E_C2_GHz,
             'g12_MHz': g12_MHz,
-            'g1_MHz': g1,
-            'g2_MHz': g2,
+            'g1_MHz': g1*1e-6,
+            'g2_MHz': g2*1e-6,
             'omega_1_MHz': omega_1_MHz,
             'omega_2_MHz': omega_2_MHz,
-            'omega_r_MHz': omega_r_MHz,
+            #'omega_r_MHz': omega_r_MHz,
             'Z_onoff_ratio': Z_onoff_ratio
             
         }
