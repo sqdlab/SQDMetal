@@ -237,9 +237,7 @@ class FluxLineLPin(QComponent):
                   (p.trace_gap, p.trace_gap),#p.width*0.5),
                   (-p.trace_width-p.trace_gap, p.trace_gap),# p.width*0.5),
                   (-p.trace_width-p.trace_gap, -p.width),
-                  (p.trace_gap, -p.width),
-                  (p.trace_gap, -p.width+targ_trace_width),
-                  (p.trace_gap, -p.width+targ_trace_width)]
+                  (p.trace_gap, -p.width)]
         pad_gap = np.array(pad_gap)
 
         if p.pin_align_right:
@@ -285,21 +283,6 @@ class FluxLineLPin(QComponent):
         self.add_pin('a', pin.coords[::-1], width=p.trace_width)
         self.add_pin('t', pin2.coords[::-1], width=targ_trace_width)
 
-
-# -*- coding: utf-8 -*-
-"""
-Copyright 2026 [Your Name]
-SPDX-License-Identifier: Apache-2.0
-Author: [Your Name]
-Creation Date: 2026-04-10
-Description: FluxLineCircle class for SQDMetal - circular flux line for strong SQUID coupling.
-"""
-
-from qiskit_metal import draw
-from qiskit_metal.toolbox_python.attr_dict import Dict
-from qiskit_metal.qlibrary.core import QComponent
-import numpy as np
-import shapely
 from shapely.geometry import LineString, Polygon
 
 class FluxLineCircle(QComponent):
@@ -481,14 +464,3 @@ class FluxLineCircle(QComponent):
         self.add_pin('a', pin_a.coords[::-1], width=p.trace_width)
         self.add_pin('t', pin_t.coords[::-1], width=targ_trace_width)
 
-class FluxLineLCutout(QComponent):
-    '''
-    This Class is similar to the the FluxLineLPin but instead of moving the squid close to the outside of the pocket, we create a cutout in the ground plane that allows the flux line to get closer to the squid loop. 
-    This is useful for designs with tight space constraints where we want to maximize the mutual inductance between the flux line and the SQUID loop. 
-
-    This class will simply call the existing FluxLineLPin to create the flux line geometry, and then add an additional polygon to the qgeometry that will be subtracted from the ground plane. 
-    The cutout will be a rectangle that extends from the end of the flux line to the reference pin
-
-    
-
-    '''

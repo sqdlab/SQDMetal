@@ -37,6 +37,8 @@ def two_qubits_coupling(
     rebuild_design=True,
     readout_pad=False,
     ensemble_orientation_deg=0.0,
+    flux_line_left=False,
+    flux_line_right=False,
 ):
 
     ''' This function gives a 2 qubit design given a coupling strength J12 and the capacitor choice. The coupling strength is determined by the capacitor geometry and the frequencies of the qubits.
@@ -115,6 +117,7 @@ def two_qubits_coupling(
     fillet_radius = 10
     chrgln_pin_x_offset = 0
     chrgln_pin_y_offset =  0
+    taper_width_base = 200
     semi_radius = 61
     res_freq_GHZ = freq[1] + 1.3 *1e9
     #if qubit1_exist: 
@@ -124,6 +127,16 @@ def two_qubits_coupling(
     theta = np.deg2rad(float(ensemble_orientation_deg))
     c, s = np.cos(theta), np.sin(theta)
     x_c, y_c = position[0], position[1]
+    if flux_line_left:
+        taper_width_base = 100
+        junction_centered_left = 'left'
+    else: 
+        junction_centered_left = True
+    if flux_line_right:
+        taper_width_base = 100
+        junction_centered_right = False
+    else:
+        junction_centered_right = True
 
     dx1, dy1 = -1.5, 0.0
     dx2, dy2 = 1.5, 0.0
@@ -169,11 +182,13 @@ def two_qubits_coupling(
 
     TransmonTaperedInsets(design, f'Qubit1{surname}', options = Dict(pos_x = f'{pos_x1}mm', pos_y = f'{pos_y1}mm', orientation = q_orient,
                                                        pocket_lower_tighten = '-100.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
+                                                       taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_left,
                                                        **readout_pad_options))
 
 
     TransmonTaperedInsets(design, f'Qubit2{surname}', options = Dict(pos_x = f'{pos_x2}mm', pos_y = f'{pos_y2}mm', orientation = q_orient,
-                                                       pocket_lower_tighten = '-100.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
+                                                      pocket_lower_tighten = '-100.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
+                                                      taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_right,
                                                        **readout_pad_options))
 
 
