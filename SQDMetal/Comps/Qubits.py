@@ -22,6 +22,7 @@ from shapely.geometry.base import CAP_STYLE
 from shapely.geometry import Polygon
 from SQDMetal.Utilities.QUtilities import QUtilities 
 from shapely.geometry import LineString
+from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 
 class TransmonTapered(BaseQubit):
     """Transmon pocket with 'Teeth' connection pads.
@@ -505,7 +506,7 @@ class TransmonTapered(BaseQubit):
 
 class TransmonTaperedInsets(BaseQubit):
     """Transmon pocket with tapered connection pads, with insets for improved coupling. 
-    The qubit-resonator coupling has also been modified.
+    The qubit-resonator coupling has also been modified. 
 
     Inherits `BaseQubit` class
 
@@ -534,6 +535,9 @@ class TransmonTaperedInsets(BaseQubit):
         * coupled_pad_gap    - the distance between the two teeth shape
         * coupled_pad_width  - the width (x-axis) of the teeth shape on the island pads
         * coupled_pad_height - the size (y-axis) of the teeth shape on the island pads
+        * taper_centered # whether the junction is centered, on the right side or left side of the pocket. 
+        * junction_x_offset # if junction is not centered, how much should it be offset from the center of the pocket.
+        True means centered, False means on the right side, and 'left' means on the left side. This is for compatibility with existing qubits that have non-centered junctions.
                             
     Connector lines:
         * pad_gap        - space between the connector pad and the charge island it is
@@ -613,6 +617,8 @@ class TransmonTaperedInsets(BaseQubit):
         taper_height="40um",
         taper_fillet_radius="3um",
         fillet_resolution_tapered=64,
+        junction_centered = True,  
+        junction_x_offset = "0um",
         # Insets
         inset_width="0um",
         inset_depth="100um",
@@ -719,6 +725,12 @@ class TransmonTaperedInsets(BaseQubit):
         coupled_pad_height = p.coupled_pad_height
         coupled_pad_width = p.coupled_pad_width
         coupled_pad_gap = p.coupled_pad_gap
+        if p.junction_centered is False:
+            taper_x_offset = p.pad_width / 2 - p.taper_width_base / 2 + p.junction_x_offset
+        elif p.junction_centered == 'left':
+            taper_x_offset = -p.pad_width / 2 + p.taper_width_base / 2 - p.junction_x_offset
+        else:
+            taper_x_offset = 0
 
         # TOP PAD
         # make the pads as rectangles (shapely polygons)
@@ -741,8 +753,9 @@ class TransmonTaperedInsets(BaseQubit):
                 p.taper_height,
                 (pad_gap / 2) - float(p.taper_height),
                 p.taper_fillet_radius,
-                p.pad_width / 2,
+                p.pad_width / 2 ,
             )
+            trapezoid_top = draw.translate(trapezoid_top, -taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
             trapezoid_top_rotated = draw.rotate(
                 trapezoid_top,
@@ -828,6 +841,7 @@ class TransmonTaperedInsets(BaseQubit):
                 rfillet=p.taper_fillet_radius,
                 startx=p.pad_width / 2,
             )
+            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             pad_bot = draw.union(pad_bot, trapezoid_bot)
 
         # outer corners
@@ -918,15 +932,15 @@ class TransmonTaperedInsets(BaseQubit):
             pin_route_l = p.taper_height
         top_pin = LineString(
             [
-                [0, pad_gap / 2 + p.junction_pin_inset],
-                [0, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
                 # Extend outward
             ]
         )
         bottom_pin = LineString(
             [
-                [0, -pad_gap / 2 - p.junction_pin_inset],
-                [0, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset],
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
                 # Extend outward
             ]
         )
@@ -934,12 +948,57 @@ class TransmonTaperedInsets(BaseQubit):
         ###############################################################################################
         # Pins outside the qubit pocket
         # Define the pin positions relative to (0,0)
-        top_pocket_pin = LineString(
+        # 4 pins, 2 on each side, aligned with the qubit pads and taper, and starting from the edge of the pocket.
+        top_right_pocket_pin = LineString(
             [
-                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
                 [
                     p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_right_pocket_pin = LineString(
+            [
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset ],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_pocket_pin = LineString(
+            [
+                [0 , p.pocket_height/2 + pin_route_l/2],  # Start point (near pocket)
+                [
                     0,
+                    p.pocket_height/2 - pin_route_l/2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -947,14 +1006,15 @@ class TransmonTaperedInsets(BaseQubit):
 
         bottom_pocket_pin = LineString(
             [
-                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [0 , -p.pocket_height/2 - pin_route_l/2],  # Start point (near pocket)
                 [
-                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
                     0,
+                    -p.pocket_height/2 + pin_route_l/2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
         )
+           
 
         ###############################################################################################
         # Josephson Junction
@@ -986,6 +1046,10 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
             top_pocket_pin,
             bottom_pocket_pin,
         ]
@@ -998,8 +1062,13 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
             top_pocket_pin,
             bottom_pocket_pin,
+
         ] = polys
 
         # Add shapes as qiskit geometries
@@ -1015,7 +1084,7 @@ class TransmonTaperedInsets(BaseQubit):
             input_as_norm=True,
         )
         self.add_pin(
-            "pin_reservior",
+            "pin_reservoir",
             points=list(bottom_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
@@ -1023,14 +1092,30 @@ class TransmonTaperedInsets(BaseQubit):
 
         # Add pins to the component
         self.add_pin(
-            "bottom_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+            "top_right_pin", points=list(top_right_pocket_pin.coords), width=taper_width_top
         )
         self.add_pin(
-            "top_pin",
-            points=list(bottom_pocket_pin.coords),
+            "bottom_right_pin",
+            points=list(bottom_right_pocket_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
         )
+        self.add_pin(
+            "top_left_pin", points=list(top_left_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_left_pin",
+            points=list(bottom_left_pocket_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        self.add_pin(
+            "top_pocket_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_pocket_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top
+        )
+
 
     def make_connection_pads(self):
         # """Makes standard transmon in a pocket."""
@@ -2224,3 +2309,166 @@ class FluxoniumPocket(_FluxoniumPocket):
         points = list(port_line_cords)
         self.add_pin('readout_line',
                      points, cpw_width)
+ 
+class TransmonPocketTeeth(TransmonPocketTeeth):
+    """Idenitical to TransmonPocketTeeth except CPW length coming from teeth scales with
+    pocket_height and NOT pocket_width
+
+    Inherits `BaseQubit` class
+
+    Description:
+        Create a standard pocket transmon qubit for a ground plane with teeth
+        Here we use the 'Teeth' shape which ones connected to the top pad and one connection pad.
+
+    Options:
+        Convention: Values (unless noted) are strings with units included,
+        (e.g., '30um')
+
+    Pocket:
+        * pad_gap            - the distance between the two charge islands, which is also the
+          resulting 'length' of the pseudo junction
+        * inductor_width     - width of the pseudo junction between the two charge islands
+          (if in doubt, make the same as pad_gap). Really just for simulating
+          in HFSS / other EM software
+        * pad_width          - the width (x-axis) of the charge island pads, except the circle radius from both sides
+        * pad_height         - the size (y-axis) of the charge island pads
+        * pocket_width       - size of the pocket (cut out in ground) along x-axis
+        * pocket_height      - size of the pocket (cut out in ground) along y-axis
+        * coupled_pad_gap    - the distance between the two teeth shape
+        * coupled_pad_width  - the width (x-axis) of the teeth shape on the island pads
+        * coupled_pad_height - the size (y-axis) of the teeth shape on the island pads
+                            
+
+    Connector lines:
+        * pad_gap        - space between the connector pad and the charge island it is
+          nearest to
+        * pad_width      - width (x-axis) of the connector pad
+        * pad_height     - height (y-axis) of the connector pad
+        * pad_cpw_shift  - shift the connector pad cpw line by this much away from qubit
+        * pad_cpw_extent - how long should the pad be - edge that is parallel to pocket
+        * cpw_width      - center trace width of the CPW line
+        * cpw_gap        - dielectric gap width of the CPW line
+        * cpw_extend     - depth the connector line extends into ground (past the pocket edge)
+        * pocket_extent  - How deep into the pocket should we penetrate with the cpw connector
+          (into the ground plane)
+        * pocket_rise    - How far up or down relative to the center of the transmon should we
+          elevate the cpw connection point on the ground plane
+        * loc_W / H      - which 'quadrant' of the pocket the connector is set to, +/- 1 (check
+          if diagram is correct)
+
+
+    Sketch:
+        Below is a sketch of the qubit
+        ::
+
+                 +1              0             +1
+                _________________________________
+            -1  |                |               |  +1      Y
+                |           | | |_| | |          |          ^
+                |        ___| |_____| |____      |          |
+                |       /     island       \     |          |----->  X
+                |       \__________________/     |
+                |                |               |
+                |  pocket        x               |
+                |        ________|_________      |
+                |       /                  \     |
+                |       \__________________/     |
+                |                                |
+                |                                |
+            -1  |________________________________|   +1
+                 
+                 -1                            -1
+
+    .. image::
+        transmon_pocket_teeth.png
+
+    .. meta::
+        Transmon Pocket Teeth
+
+    """
+
+    def make_connection_pad(self, name: str):
+        """Makes n individual connector.
+
+        Args:
+            name (str) : Name of the connector
+        """
+
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+        p = self.p
+        pc = self.p.connection_pads[name]  # parser on connector options
+
+        # define commonly used variables once
+        cpw_width = pc.cpw_width
+        cpw_extend = pc.cpw_extend
+        pad_width = pc.pad_width
+        pad_height = pc.pad_height
+        pad_cpw_shift = pc.pad_cpw_shift
+        pocket_rise = pc.pocket_rise
+        pocket_extent = pc.pocket_extent
+
+        loc_W = float(pc.loc_W)
+        loc_W, loc_H = float(pc.loc_W), float(pc.loc_H)
+        if float(loc_W) not in [-1., +1., 0] or float(loc_H) not in [-1., +1.]:
+            self.logger.info(
+                'Warning: Did you mean to define a transmon qubit with loc_W and'
+                ' loc_H that are not +1, -1, or 0? Are you sure you want to do this?'
+            )
+
+        # Define the geometry
+        # Connector pad
+
+        if float(loc_W) != 0:
+            connector_pad = draw.rectangle(pad_width, pad_height,
+                                           -pad_width / 2, pad_height / 2)
+            # Connector CPW wire
+            connector_wire_path = draw.wkt.loads(f"""LINESTRING (\
+                0 {pad_cpw_shift+cpw_width/2}, \
+                {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
+                {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
+                {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
+                                            )""")
+        else:
+            connector_pad = draw.rectangle(pad_width, pad_height, 0,
+                                           pad_height / 2)
+            connector_wire_path = draw.LineString(
+                [[0, pad_height],
+                 [
+                     0,
+                     (p.pocket_height / 2 - p.pad_height - p.pad_gap / 2 -#only line editted
+                      pc.pad_gap) + cpw_extend
+                 ]])
+
+        # Position the connector, rotate and translate
+        objects = [connector_pad, connector_wire_path]
+
+        if loc_W == 0:
+            loc_Woff = 1
+        else:
+            loc_Woff = loc_W
+
+        objects = draw.scale(objects, loc_Woff, loc_H, origin=(0, 0))
+        objects = draw.translate(
+            objects,
+            loc_W * (p.pad_width) / 2.,
+            loc_H * (p.pad_height + p.pad_gap / 2 + pc.pad_gap))
+        objects = draw.rotate_position(objects, p.orientation,
+                                       [p.pos_x, p.pos_y])
+        [connector_pad, connector_wire_path] = objects
+
+        self.add_qgeometry('poly', {f'{name}_connector_pad': connector_pad})
+        self.add_qgeometry('path', {f'{name}_wire': connector_wire_path},
+                           width=cpw_width)
+        self.add_qgeometry('path', {f'{name}_wire_sub': connector_wire_path},
+                           width=cpw_width + 2 * pc.cpw_gap,
+                           subtract=True)
+
+        ############################################################
+
+        # add pins
+        points = np.array(connector_wire_path.coords)
+        self.add_pin(name,
+                     points=points[-2:],
+                     width=cpw_width,
+                     input_as_norm=True)
+
