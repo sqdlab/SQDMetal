@@ -64,45 +64,151 @@ class MultiDieChip:
         radius="100um",
     ):
         """
-        Creates a `.gds` full-wafer layout file for a simple coplanar waveguide $\lambda/4$ resonator chip containing a number of resonators (usually 5) capacitively coupled to a transmission line.
+        Creates a `.gds` full-wafer layout file for a simple coplanar waveguide λ/4 resonator chip
+        containing a number of resonators (usually 5) capacitively coupled to a transmission line.
 
-        Inputs:
-            - export_filename - Filename for gds export (e.g. "test")
-            - export_path - Path for export (e.g. 'exports'); the file will then be output to /exports/test.gds
-            - export_type - (Defaults to "all") Export type for lithography as per `MakeGDS` (options: "all", "positive", "negative")
-            - export_threshold - (Defaults to 1e-9) The smallest feature width that can exist; anything smaller will get culled out. This is to help remove artefacts from floating-point inaccuracies. It is given in metre
-            - frequency_range - (Defaults to (6e9, 7e9)) Tuple containing minimum and maximum resonator frequencies in Hz
-            - frequency_list - (Defaults to None) List containing discrete frequencies (must be same length as num_resonators) in Hz
-            - num_resonators - (Defaults to 5) Number of resonators per die
-            - cpw_width - (Defaults to "9um") Width of the central trace on the resonators. The gap will be automatically calculated for 50 Ohm impedance based on the `substrate_material`. If feedline_upscale==0, the feedline width will match the resonator width. You can pass a list of strings if you want to scale each resonator seperately.
-            - feedline_upscale - (Defaults to 1.0) scale of the feedline gap and width as a multiple of the resonator dimensions
-            - coupling_gap - (Defaults to "20um") Amount of ground plane in the coupling gap between the feedline and the resonator
-            - tl_y - (Defaults to "0um") The die-relative y-value for the main straight of the feedline
-            - res_vertical - (Defaults to "1500um") Vertical length of resonator meanders
-            - lp_to_res - (Defaults to "300um") Minimum distance between the launchpad taper and the coupling length of the left-most resonator
-            - lp_inset - (Defaults to "0um") Inset of the launchpads along the x-axis relative to the die boundaries
-            - lp_dimension - (Defaults to "600um") Width of the launchpads' conductive centre pad (the launchpad gap scales accordingly)
-            - lp_taper - (Defaults to "300um") Length of the taper from launchpad to feedline
-            - substrate_material - (Defaults to "silicon") Substrate material (currently only "silicon" and "sapphire" are supported)
-            - substrate_thickness - (Defaults to "0.5mm") Substrate thickness
-            - film_thickness - (Defaults to "100nm") Film thickness
-            - chip_dimension - (Defaults to ("20mm", "20mm")) Dimensions of the chip as an (x, y) Tuple
-            - chip_border - (Defaults to "500um") Chip border to leave un-patterned
-            - die_dimension - (Defaults to ("7.1mm", "4.4mm")) Dimensions of the die as an (x, y) Tuple
-            - die_num - (Defaults to [1, 1])) Die layout in [x, y] as a length-2 list
-            - fill_chip - (Defaults to True) Boolean to choose whether the full chip is automatically populated with dies (over-rides die_num if True)
-            - markers_on - (Defaults to True) Print dicing markers on export
-            - text_label - (Optional) Text label to print on chip. Prints a default message if text_label="". Set text_label=None for no text label.
-            - text_size - (Defaults to 600) Text size
-            - text_position - (Optional) Tuple of text label location as normalised (x, y) (e.g. (0.1, 0.9) will place the text label 1/10th of the way along the chip in the x-direction, and 9/10ths of the way up the chip in the y-direction)
-            - print_all_infos - (Defaults to True) Choose whether to print info as the `.gds` is being generated
-            - date_stamp_on_export - (Defaults to True) If True, will print date and time of export in exported .gds filename
-            - single_circuit_for_simulation - (Defaults to False) If true, the multi-chip layour will be cropped to a single chip that can be used for simulation
+        Parameters
+        ----------
+        export_filename : str
+            Filename for GDS export (e.g., ``"test"``).
 
-        Outputs:
-            - design - Qiskit Metal design object for the generated chip
+        export_path : str
+            Path for export (e.g., ``"exports"``). The file will then be output to
+            ``<export_path>/<export_filename>.gds``.
+
+        export_type : str, optional
+            Export type for lithography as per ``MakeGDS``.
+            Options: ``"all"``, ``"positive"``, ``"negative"``.
+            Default is ``"all"``.
+
+        export_threshold : float, optional
+            The smallest feature width that can exist. Anything smaller will be culled
+            to remove artefacts from floating-point inaccuracies. Given in metres.
+            Default is ``1e-9``.
+
+        frequency_range : tuple of float, optional
+            Tuple containing minimum and maximum resonator frequencies in Hz.
+            Default is ``(6e9, 7e9)``.
+
+        frequency_list : list of float or None, optional
+            List containing discrete resonator frequencies in Hz.
+            Must be the same length as ``num_resonators``.
+            Default is ``None``.
+
+        num_resonators : int, optional
+            Number of resonators per die.
+            Default is ``5``.
+
+        cpw_width : str or list of str, optional
+            Width of the central trace on the resonators (e.g., ``"9um"``).
+            The gap is automatically calculated for 50 Ω impedance based on
+            ``substrate_material``.
+            If ``feedline_upscale == 0``, the feedline width matches the resonator width.
+            A list may be provided to scale each resonator separately.
+            Default is ``"9um"``.
+
+        feedline_upscale : float, optional
+            Scale factor for the feedline gap and width relative to resonator dimensions.
+            Default is ``1.0``.
+
+        coupling_gap : str, optional
+            Ground plane width in the coupling gap between feedline and resonator.
+            Default is ``"20um"``.
+
+        tl_y : str, optional
+            Die-relative y-position of the main straight of the feedline.
+            Default is ``"0um"``.
+
+        res_vertical : str, optional
+            Vertical length of resonator meanders.
+            Default is ``"1500um"``.
+
+        lp_to_res : str, optional
+            Minimum distance between the launchpad taper and the coupling length
+            of the left-most resonator.
+            Default is ``"300um"``.
+
+        lp_inset : str, optional
+            Inset of the launchpads along the x-axis relative to die boundaries.
+            Default is ``"0um"``.
+
+        lp_dimension : str, optional
+            Width of the launchpads' conductive centre pad.
+            The launchpad gap scales accordingly.
+            Default is ``"600um"``.
+
+        lp_taper : str, optional
+            Length of the taper from launchpad to feedline.
+            Default is ``"300um"``.
+
+        substrate_material : str, optional
+            Substrate material. Currently supported: ``"silicon"``, ``"sapphire"``.
+            Default is ``"silicon"``.
+
+        substrate_thickness : str, optional
+            Substrate thickness.
+            Default is ``"0.5mm"``.
+
+        film_thickness : str, optional
+            Film thickness.
+            Default is ``"100nm"``.
+
+        chip_dimension : tuple of str, optional
+            Chip dimensions as ``(x, y)``.
+            Default is ``("20mm", "20mm")``.
+
+        chip_border : str, optional
+            Border region to leave un-patterned around the chip.
+            Default is ``"500um"``.
+
+        die_dimension : tuple of str, optional
+            Die dimensions as ``(x, y)``.
+            Default is ``("7.1mm", "4.4mm")``.
+
+        die_num : list of int, optional
+            Die layout in ``[x, y]`` format.
+            Default is ``[1, 1]``.
+
+        fill_chip : bool, optional
+            If True, the full chip is automatically populated with dies.
+            Overrides ``die_num`` if True.
+            Default is ``True``.
+
+        markers_on : bool, optional
+            Whether to print dicing markers on export.
+            Default is ``True``.
+
+        text_label : str or None, optional
+            Text label to print on chip.
+            If ``""``, a default message is printed.
+            If ``None``, no text label is added.
+
+        text_size : int, optional
+            Text size.
+            Default is ``600``.
+
+        text_position : tuple of float, optional
+            Normalized ``(x, y)`` location of text label.
+            For example, ``(0.1, 0.9)`` places the label 1/10th along x
+            and 9/10ths up y.
+
+        print_all_infos : bool, optional
+            Whether to print informational output during GDS generation.
+            Default is ``True``.
+
+        date_stamp_on_export : bool, optional
+            If True, appends date and time to exported filename.
+            Default is ``True``.
+
+        single_circuit_for_simulation : bool, optional
+            If True, crops multi-chip layout to a single chip for simulation.
+            Default is ``False``.
+
+        Returns
+        -------
+        design : qiskit_metal.designs.Design
+            Qiskit Metal design object corresponding to the generated chip layout.
         """
-
         if frequency_list:
             assert len(frequency_list) == num_resonators, "frequency_list must be the same length as num resonators."
 

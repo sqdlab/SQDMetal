@@ -19,9 +19,9 @@ dependencies = [
  "pyvista>=0.45.2",
  "pandas==2.3.3",
  "quantum-metal",
- "nbsphinx"
- ]  
-
+ "nbsphinx",
+ "svgpathtools",
+]
 [build-system]
     requires      = ["uv_build>=0.8.4,<0.9.0"]
     build-backend = "uv_build"

@@ -2309,7 +2309,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         points = list(port_line_cords)
         self.add_pin('readout_line',
                      points, cpw_width)
-        
+ 
 class TransmonPocketTeeth(TransmonPocketTeeth):
     """Idenitical to TransmonPocketTeeth except CPW length coming from teeth scales with
     pocket_height and NOT pocket_width
@@ -2471,3 +2471,4 @@ class TransmonPocketTeeth(TransmonPocketTeeth):
                      points=points[-2:],
                      width=cpw_width,
                      input_as_norm=True)
+
