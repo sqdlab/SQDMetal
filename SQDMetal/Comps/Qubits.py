@@ -1343,7 +1343,7 @@ class TransmonTaperedInsets(BaseQubit):
     default_options = Dict(
         # JJ box
         inductor_width="20um",
-        inductor_height="22um",
+        inductor_height="36um",
         # Pins
         chrgln_pin_x_offset="30um",  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset="50um",  # User-defined vertical distance from the pocket edge
@@ -1763,8 +1763,10 @@ class TransmonTaperedInsets(BaseQubit):
 
         ###############################################################################################
         # Josephson Junction
+        # print(top_pin)
+        # print(top_pin.coords[0][0])
         rect_jj = draw.LineString(
-            [(0, -p.inductor_height / 2), (0, p.inductor_height / 2)]
+            [(top_pin.coords[0][0], -p.inductor_height / 2), (top_pin.coords[0][0], p.inductor_height / 2)]
         )
 
         # Pocket
