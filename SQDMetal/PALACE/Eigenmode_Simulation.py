@@ -378,9 +378,6 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         '''
         return PALACE_Eigenmode_Simulation.calculate_hamiltonian_parameters_EPR_from_files(self._output_data_dir, self._sim_config, modes_to_compare=modes_to_compare, print_output=print_output)
 
-    def plot_fields_with_data(self, save=True, columns=4):
-        return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, columns=columns)
-
     @staticmethod
     def retrieve_interface_EPR_data_from_file(json_sim_config, output_directory) -> list:
         '''
@@ -468,9 +465,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
                 - kappa (np.array): returns the linewidths due to port couplings in Hz.
         '''
    
-        raw_data = pd.read_csv(output_directory + '/port-EPR.csv')
-        headers = raw_data.columns
-        raw_data = raw_data.to_numpy()
+        try:
+            raw_data = pd.read_csv(os.path.join(output_directory, 'port-EPR.csv'))
+            raw_data = raw_data.to_numpy()
+            mat_mode_port = raw_data[:, 1:]
+        except Exception:
+            mat_mode_port = None
 
         raw_dataE = pd.read_csv(output_directory + '/eig.csv')
         headers = raw_dataE.columns
@@ -493,7 +493,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         except Exception as e:
             kappa_sum = np.full(len(raw_dataE), np.nan)
 
-        return {'mat_mode_port': raw_data[:, 1:], 'eigenfrequencies': raw_dataE[:, col_Ref]*1e9, 'loaded_Q': raw_dataE[:, col_Ref_Q], 'kappa': kappa_sum}
+        return {'mat_mode_port': mat_mode_port, 'eigenfrequencies': raw_dataE[:, col_Ref]*1e9, 'loaded_Q': raw_dataE[:, col_Ref_Q], 'kappa': kappa_sum}
 
     @staticmethod
     def calculate_hamiltonian_parameters_EPR_from_files(directory: str, config_json_path: str, modes_to_compare = [], print_output=True) -> dict:
@@ -661,10 +661,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         #TODO: Strongly consider refactoring these keys/values...
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
     
+    def plot_fields_with_data(self, save=True, columns=4, skip_postprocessing=False):
+        return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, columns=columns, skip_postprocessing=skip_postprocessing)
+
     @staticmethod
     def plot_fields_with_data_from_files(directory, save=True, columns=4, skip_postprocessing=False):
-        mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(
-            directory)
+        mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
         if not skip_postprocessing:
             try:
                 participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(

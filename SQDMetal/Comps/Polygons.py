@@ -208,9 +208,10 @@ class PolyShapely(QComponent):
     Default Options:
         * strShapely = ''
         * is_ground_cutout=False
+        * scale=1
     """
 
-    default_options = Dict(strShapely='', is_ground_cutout=False)
+    default_options = Dict(strShapely='', is_ground_cutout=False, scale=1)
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -220,8 +221,15 @@ class PolyShapely(QComponent):
 
         lePoly = shapely.wkt.loads(p.strShapely)
 
+        scale = p.scale
+        lePoly = draw.scale(lePoly, scale, scale, scale, origin=(0, 0))
+        lePoly = draw.rotate(lePoly, p.orientation, origin=(0, 0))
+        lePoly = draw.translate(lePoly, p.pos_x, p.pos_y)
+
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
                            dict(shapelyPoly=lePoly),
                            layer=p.layer,
                            subtract=p.is_ground_cutout)
+        
+
