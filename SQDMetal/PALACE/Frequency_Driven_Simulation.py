@@ -18,6 +18,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 300,
+                 "solver_initial_guess": True,
                  "HPC_Parameters_JSON": ""
                 }
 
@@ -190,7 +191,8 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                     "Type": "SuperLU",
                     "KSPType": "FGMRES",
                     "Tol": self.user_options["solver_tol"],
-                    "MaxIts": self.user_options["solver_maxits"]
+                    "MaxIts": self.user_options["solver_maxits"],
+                    "InitialGuess": self.user_options["solver_initial_guess"]
                 }
             }
         }

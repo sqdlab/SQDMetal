@@ -677,6 +677,9 @@ class HallBar(QComponent):
         * pos_x         - X position
         * pos_y         - Y position
         * layer         - layer number
+    
+    Patches:
+        * add_patches   - add patches to probe pads
 
     Pins:
         There are no pins.
@@ -710,7 +713,9 @@ class HallBar(QComponent):
                            pocket_height="1.0mm",
                            T_height="500um",
                            fillet_radius="20um",
-                           layer=0
+                           layer=0,
+                           patches=True,
+                           patch_layer=3
                         )
     
     def __init__(self, design,
@@ -748,16 +753,33 @@ class HallBar(QComponent):
         T_mids = shapely.ops.unary_union([near_T_L, near_T_R])
         pads_L = shapely.ops.unary_union([pad_L_L, pad_L_ML, pad_L_MR, pad_L_R])
         pads_U = shapely.ops.unary_union([pad_U_L, pad_U_ML, pad_U_MR, pad_U_R])
+
         # merge all pads and T's
         pads_and_Ts = shapely.ops.unary_union([T_ends, T_mids, pads_L, pads_U])
         pads_and_Ts = pads_and_Ts.buffer(p.fillet_radius).buffer(-p.fillet_radius)
         pads_and_Ts = pads_and_Ts.buffer(-0.48*p.trace_width).buffer(0.48*p.trace_width)
 
+        # patches
+        if p.patches:
+            patch_U_L = draw.rectangle(p.pad_width, p.pad_height,  xoff=-0.5*trace_long+0.5*p.pad_width-0.5*p.trace_width,  yoff=0.5*p.T_height)
+            patch_U_ML = draw.rectangle(p.pad_width, p.pad_height, xoff=-0.5*trace_short-0.5*p.pad_width+0.5*p.trace_width, yoff=0.5*p.T_height)
+            patch_U_MR = draw.rectangle(p.pad_width, p.pad_height, xoff=0.5*trace_short+0.5*p.pad_width-0.5*p.trace_width,  yoff=0.5*p.T_height)
+            patch_U_R = draw.rectangle(p.pad_width, p.pad_height,  xoff=0.5*trace_long-0.5*p.pad_width+0.5*p.trace_width,  yoff=0.5*p.T_height)
+            patch_L_L = draw.rectangle(p.pad_width, p.pad_height,  xoff=-0.5*trace_long+0.5*p.pad_width-0.5*p.trace_width,  yoff=-0.5*p.T_height)
+            patch_L_ML = draw.rectangle(p.pad_width, p.pad_height, xoff=-0.5*trace_short-0.5*p.pad_width+0.5*p.trace_width, yoff=-0.5*p.T_height)
+            patch_L_MR = draw.rectangle(p.pad_width, p.pad_height, xoff=0.5*trace_short+0.5*p.pad_width-0.5*p.trace_width,  yoff=-0.5*p.T_height)
+            patch_L_R = draw.rectangle(p.pad_width, p.pad_height,  xoff=0.5*trace_long-0.5*p.pad_width+0.5*p.trace_width,  yoff=-0.5*p.T_height)
+            patches = shapely.ops.unary_union([patch_L_L, patch_L_ML, patch_L_MR, patch_L_R, patch_U_L, patch_U_ML, patch_U_MR, patch_U_R])
+            patches = patches.buffer(p.fillet_radius).buffer(-p.fillet_radius)
+            patches = patches.buffer(-0.48*p.trace_width).buffer(0.48*p.trace_width)
+        else: 
+            patches = []
+
         # rotate and translate
-        polys = [main_trace, pocket, pads_and_Ts]
+        polys = [main_trace, pocket, pads_and_Ts, patches]
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [main_trace, pocket, pads_and_Ts] = polys
+        [main_trace, pocket, pads_and_Ts, patches] = polys
 
         # subtract pocket
         self.add_qgeometry('poly', 
@@ -772,6 +794,15 @@ class HallBar(QComponent):
                                 ), 
                            subtract=False,
                            layer=p.layer)
+    
+        # add patches
+        if patches:
+            self.add_qgeometry('poly', 
+                           dict(patches=patches), 
+                           subtract=False,
+                           layer=p.patch_layer)
+        
+        
 
 class Lollipop(QComponent):
     """
@@ -780,18 +811,15 @@ class Lollipop(QComponent):
 
     Created by Alex Nguyen
     
-               |                               |           ^
-               |                               |           |
-               |                               |           |
+                              ___ 
+               |             /   \             |           ^   
+               |            |  x  |            |           |
+               |             \   /             |           |
                |              | |   L          |           |----->  X
                |              | |   L          |    
                |              | |   L          |           x = (pox_x, pos_y)
                |              | |   L          |           L = length
-               |              |_|   L          |           P = Pin 
-               |             /   \             |           ^   
-               |            |  x  |            |           |
-               |             \   /             |
-               |               -               |
+               |              |_|   L          |           P = Pin
                |               P               |
     
     
@@ -831,7 +859,7 @@ class Lollipop(QComponent):
         # Position the charge_line, rotate and translate
         objects = [charge_line, charge_line_gap, port_line]
         objects = draw.scale(objects, 1, -1, origin=(0, 0))#Figen Yilmaz made an upside lollipop
-        objects = draw.rotate(objects, p.orientation, origin=(0,0))
+        objects = draw.rotate(objects, p.orientation)
         objects = draw.translate(
             objects,
             pos_x,
@@ -889,7 +917,7 @@ class Wire(QComponent):
 
         
 
-        # For the pins
+        # Charge Line CPW wire
         port_line1 = draw.LineString([(-cpw_width/2, length/2),
                                      (cpw_width/2, length/2)])
         

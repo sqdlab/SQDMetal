@@ -492,6 +492,8 @@ class QUtilities:
                     Defaults to 'separate_delete_below'. These are the methods upon which 
                     to separate or merge overlapping elements across multiple evaporation steps. 
                     See documentation on PVD_Shadows for more details on the available options.
+                    If set to ``None``, then the plain mask/metallic region is taken with no regard
+                    to the PVD profiles.
                 group_by_evaporations (optional): 
                     Defaults to False. If set to True, if elements on a 
                     particular evaporation step are separated due to the given evap_mode, they will still 
@@ -576,7 +578,7 @@ class QUtilities:
             # Calculate the individual evaporated elements if required
             evap_mode = kwargs.get("evap_mode", "separate_delete_below")
             group_by_evaporations = kwargs.get("group_by_evaporations", False)
-            if group_by_evaporations and evap_mode != "merge":
+            if group_by_evaporations and evap_mode != "merge" and evap_mode != None:
                 metal_evap_polys_separate = pvd_shadows.get_all_shadows(
                     metal_polys, cur_layer_id, "separate"
                 )
@@ -585,11 +587,11 @@ class QUtilities:
                     metal_evap_polys_separate = [metal_evap_polys_separate]
             # Calculate evaporated shadows
             evap_trim = kwargs.get("evap_trim", 20e-9)
-            metal_evap_polys += [
-                pvd_shadows.get_all_shadows(
-                    metal_polys, cur_layer_id, evap_mode, layer_trim_length=evap_trim
-                )
-            ]
+            if evap_mode != None:
+                cur_evap_shadows = shapely.unary_union( pvd_shadows.get_all_shadows(metal_polys, cur_layer_id, evap_mode, layer_trim_length=evap_trim) )
+            else:
+                cur_evap_shadows = shapely.unary_union( metal_polys )
+            metal_evap_polys += ShapelyEx.shapely_to_list(cur_evap_shadows)
         if len(metal_evap_polys) == 0:
             return
         if kwargs.get("multilayer_fuse", False):
@@ -622,7 +624,7 @@ class QUtilities:
                 metal_polys_all += temp_cur_metals
                 num_polys = 1
 
-            if group_by_evaporations and evap_mode != "merge":
+            if group_by_evaporations and evap_mode != "merge" and evap_mode != None:
                 # Collect the separate polygons that live in the current evaporation layer
                 cur_polys_separate = metal_evap_polys_separate[m]
                 if isinstance(
