@@ -549,6 +549,18 @@ class TransmonTapered2(TransmonTapered):
 
         ),
 
+        exo_flux_bias_line_optionsRight=Dict(
+            make_fbl=False,
+            fbl_sep='0.05mm',#distance from pocket in x-axis
+            fbl_length='50um',
+            cpw_width='cpw_width',
+            cpw_gap='cpw_gap',
+            y_offset='0um',
+            make_left=False#Puts it on left side of qubit
+            
+
+        ),
+
 
         alignment_markers_options=Dict(
                                 make_markers=False,
@@ -571,6 +583,8 @@ class TransmonTapered2(TransmonTapered):
             self.make_flux_bias_lineRight()
         if self.p.flux_bias_line_optionsLeft.make_fbl:
             self.make_flux_bias_lineLeft()
+        if self.p.exo_flux_bias_line_optionsRight.make_fbl:
+            self.make_exo_flux_bias_lineRight()
         if self.p.alignment_markers_options.make_markers:
             self.make_markers()
 
@@ -894,6 +908,53 @@ class TransmonTapered2(TransmonTapered):
             draw.shapely.geometry.shape(fake_port_line).coords)
         self.add_pin('fake_flux_bias_line2',
                      fake_port_line_cords[::-1], cpw_width)
+
+    def make_exo_flux_bias_lineRight(self):
+        """Make a flux line to the right OUTSIDE of the pocket"""
+        p=self.p
+        pam=self.p.exo_flux_bias_line_optionsRight
+        
+        #define commonly used variables once
+        pos_x=p.pos_x
+        pos_y=p.pos_y
+        pocket_width=p.pocket_width
+        orientation=p.orientation
+        fbl_sep=pam.fbl_sep#distance from pocket in x-axis
+        fbl_length=pam.fbl_length
+        cpw_width=pam.cpw_width
+        cpw_gap=pam.cpw_gap
+        y_offset=pam.y_offset
+        make_left=pam.make_left#Puts it on left side of qubit
+
+        line=draw.rectangle(cpw_width, fbl_length, 0, 0)
+        gap=draw.rectangle(cpw_width+2*cpw_gap, fbl_length, 0, 0)
+
+        #for the pins
+        port_line1=draw.LineString([(-cpw_width/2, fbl_length/2),
+                                    (cpw_width/2, fbl_length/2)])
+        port_line2=draw.LineString([(-cpw_width/2, -fbl_length/2),
+                                    (cpw_width/2, -fbl_length/2)])
+        
+        #rotate and move to the right
+        polys=[line, gap, port_line1, port_line2]
+        polys=draw.rotate(polys, orientation, origin=(0, 0))
+        polys=draw.translate(polys, (pocket_width/2)+fbl_sep, y_offset)
+        if make_left:
+            polys=draw.scale(polys, -1, 1, origin=(0, 0))
+
+        #translate with qubit
+        polys=draw.translate(polys, pos_x, pos_y)
+        [line, gap, port_line1, port_line2]=polys
+
+        self.add_qgeometry('poly', {'exo_flux_line': line})
+        self.add_qgeometry('poly', {'exo_flux_line_gap': gap}, subtract=True)
+
+        #add pins
+        port_line_cord1=list(draw.shapely.geometry.shape(port_line1).coords)
+        self.add_pin('exo_fluxline1', port_line_cord1, cpw_width)
+
+        port_line_cord2=list(draw.shapely.geometry.shape(port_line2).coords)
+        self.add_pin('exo_fluxline2', port_line_cord2, cpw_width)
 
     def make_markers(self):
         """Makes 6 alignment markers outside the 4 corners of the pocket. Intended for 2
