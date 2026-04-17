@@ -749,15 +749,19 @@ class JunctionDolanPinStretch(QComponent):
         pin1_coords = np.array(pin1.coords, dtype=float)
         pin2_coords = np.array(pin2.coords, dtype=float)
         pin1_center = pin1_coords[0] #0.5 * (pin1_coords[0] + pin1_coords[1])
-        pin2_center = pin2_coords[1]#0.5 * (pin2_coords[0] + pin2_coords[1])
+        pin2_center = pin2_coords[0]#0.5 * (pin2_coords[0] + pin2_coords[1])
 
         # external start/end pin centers
         start_center = startPt
         end_center = endPt
 
         # straight connector centerlines
-        connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center)])
-        connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center)])
+        if p.dist_x_offset >= 0:
+            connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center)])
+            connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+        else:
+            connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+            connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center)])
 
         # rectangular connectors
         connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
