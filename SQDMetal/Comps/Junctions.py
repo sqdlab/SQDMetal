@@ -1310,7 +1310,7 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
-def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+def get_square_JJ_width(J_C_uA_um2, configuration='single', target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
     """
     Function to calculate the dimensions for a Josephson junction fabricated with a
     certain critical current density (J_C), where I_C = J_C * A. The critical current 
@@ -1341,7 +1341,12 @@ def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, round
         A_m2 = np.array([(i * h * 2 * np.pi)/(phi_0 * J_C_A_m2) for i in target_EJ_Hz])
     else:
         raise ValueError("No areas were calculated since no target values were supplied.")
-    width_JJ_nm = np.sqrt(A_m2) * 1e9
+    if configuration == 'single':
+        width_JJ_nm = np.sqrt(A_m2) * 1e9
+    elif configuration == 'double' or configuration == 'squid' or configuration == 'SQUID':
+        width_JJ_nm = np.sqrt(A_m2/2) * 1e9
+    else:
+        assert False, "Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'."
     if rounding:
         width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
     width_JJ_um = width_JJ_nm * 1e-3
