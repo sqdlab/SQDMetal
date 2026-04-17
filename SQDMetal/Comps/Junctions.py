@@ -724,7 +724,8 @@ class JunctionDolanPinStretch(QComponent):
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)'''
-
+        #print(self.design.components[self.name].options.pin_inputs.start_pin.pin)
+        pin_name_qubit = self.design.components[self.name].options.pin_inputs.start_pin.pin
         start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
         startPt = start_point['middle']
         norm = start_point['normal']
@@ -748,16 +749,29 @@ class JunctionDolanPinStretch(QComponent):
         # actual junction pin centers
         pin1_coords = np.array(pin1.coords, dtype=float)
         pin2_coords = np.array(pin2.coords, dtype=float)
-        pin1_center = pin1_coords[0] #0.5 * (pin1_coords[0] + pin1_coords[1])
-        pin2_center = pin2_coords[1]#0.5 * (pin2_coords[0] + pin2_coords[1])
+        pin1_center = 0.5 * (pin1_coords[0] + pin1_coords[1])
+        pin2_center = 0.5 * (pin2_coords[0] + pin2_coords[1])
 
         # external start/end pin centers
         start_center = startPt
         end_center = endPt
 
         # straight connector centerlines
-        connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center)])
-        connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center)])
+        if pin_name_qubit == 'pin_island':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+        elif pin_name_qubit == 'pin_reservoir':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+
 
         # rectangular connectors
         connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
