@@ -18,6 +18,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 300,
+                 "solver_initial_guess": True,
                  "HPC_Parameters_JSON": ""
                 }
 
@@ -190,10 +191,18 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                     "Type": "SuperLU",
                     "KSPType": "FGMRES",
                     "Tol": self.user_options["solver_tol"],
-                    "MaxIts": self.user_options["solver_maxits"]
+                    "MaxIts": self.user_options["solver_maxits"],
+                    "InitialGuess": self.user_options["solver_initial_guess"]
                 }
             }
         }
+
+         #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before processing
+        # the farfield. 
+        if self._use_KI:
+            self._setup_kinetic_inductance(config, PEC_metals)
+
+
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         self._process_farfield(config, far_field)

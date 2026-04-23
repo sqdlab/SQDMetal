@@ -24,7 +24,7 @@ from SQDMetal.Utilities.QUtilities import QUtilities
 from shapely.geometry import LineString
 from qiskit_metal.qlibrary.qubits.transmon_pocket_teeth import TransmonPocketTeeth
 from SQDMetal.Comps.Markers import MarkerSquarePocket
- 
+
 class TransmonTapered(BaseQubit):
     """Transmon pocket with 'Teeth' connection pads.
 
@@ -1169,7 +1169,7 @@ class TransmonTapered2(TransmonTapered):
 
 class TransmonTaperedInsets(BaseQubit):
     """Transmon pocket with tapered connection pads, with insets for improved coupling. 
-    The qubit-resonator coupling has also been modified.
+    The qubit-resonator coupling has also been modified. 
 
     Inherits `BaseQubit` class
 
@@ -1198,6 +1198,9 @@ class TransmonTaperedInsets(BaseQubit):
         * coupled_pad_gap    - the distance between the two teeth shape
         * coupled_pad_width  - the width (x-axis) of the teeth shape on the island pads
         * coupled_pad_height - the size (y-axis) of the teeth shape on the island pads
+        * taper_centered # whether the junction is centered, on the right side or left side of the pocket. 
+        * junction_x_offset # if junction is not centered, how much should it be offset from the center of the pocket.
+        True means centered, False means on the right side, and 'left' means on the left side. This is for compatibility with existing qubits that have non-centered junctions.
                             
     Connector lines:
         * pad_gap        - space between the connector pad and the charge island it is
@@ -1258,7 +1261,7 @@ class TransmonTaperedInsets(BaseQubit):
     default_options = Dict(
         # JJ box
         inductor_width="20um",
-        inductor_height="22um",
+        inductor_height="36um",
         # Pins
         chrgln_pin_x_offset="30um",  # User-defined horizontal distance from the qubit center
         chrgln_pin_y_offset="50um",  # User-defined vertical distance from the pocket edge
@@ -1277,6 +1280,8 @@ class TransmonTaperedInsets(BaseQubit):
         taper_height="40um",
         taper_fillet_radius="3um",
         fillet_resolution_tapered=64,
+        junction_centered = True,  
+        junction_x_offset = "0um",
         # Insets
         inset_width="0um",
         inset_depth="100um",
@@ -1383,6 +1388,12 @@ class TransmonTaperedInsets(BaseQubit):
         coupled_pad_height = p.coupled_pad_height
         coupled_pad_width = p.coupled_pad_width
         coupled_pad_gap = p.coupled_pad_gap
+        if p.junction_centered is False:
+            taper_x_offset = p.pad_width / 2 - p.taper_width_base / 2 + p.junction_x_offset
+        elif p.junction_centered == 'left':
+            taper_x_offset = -p.pad_width / 2 + p.taper_width_base / 2 - p.junction_x_offset
+        else:
+            taper_x_offset = 0
 
         # TOP PAD
         # make the pads as rectangles (shapely polygons)
@@ -1405,8 +1416,9 @@ class TransmonTaperedInsets(BaseQubit):
                 p.taper_height,
                 (pad_gap / 2) - float(p.taper_height),
                 p.taper_fillet_radius,
-                p.pad_width / 2,
+                p.pad_width / 2 ,
             )
+            trapezoid_top = draw.translate(trapezoid_top, -taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
             trapezoid_top_rotated = draw.rotate(
                 trapezoid_top,
@@ -1492,6 +1504,7 @@ class TransmonTaperedInsets(BaseQubit):
                 rfillet=p.taper_fillet_radius,
                 startx=p.pad_width / 2,
             )
+            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
             pad_bot = draw.union(pad_bot, trapezoid_bot)
 
         # outer corners
@@ -1582,15 +1595,15 @@ class TransmonTaperedInsets(BaseQubit):
             pin_route_l = p.taper_height
         top_pin = LineString(
             [
-                [0, pad_gap / 2 + p.junction_pin_inset],
-                [0, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
                 # Extend outward
             ]
         )
         bottom_pin = LineString(
             [
-                [0, -pad_gap / 2 - p.junction_pin_inset],
-                [0, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset],
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
                 # Extend outward
             ]
         )
@@ -1598,12 +1611,57 @@ class TransmonTaperedInsets(BaseQubit):
         ###############################################################################################
         # Pins outside the qubit pocket
         # Define the pin positions relative to (0,0)
-        top_pocket_pin = LineString(
+        # 4 pins, 2 on each side, aligned with the qubit pads and taper, and starting from the edge of the pocket.
+        top_right_pocket_pin = LineString(
             [
-                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
                 [
                     p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_right_pocket_pin = LineString(
+            [
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset ],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_pocket_pin = LineString(
+            [
+                [0 , p.pocket_height/2 + pin_route_l/2],  # Start point (near pocket)
+                [
                     0,
+                    p.pocket_height/2 - pin_route_l/2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
@@ -1611,19 +1669,22 @@ class TransmonTaperedInsets(BaseQubit):
 
         bottom_pocket_pin = LineString(
             [
-                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.chrgln_pin_x_offset],
+                [0 , -p.pocket_height/2 - pin_route_l/2],  # Start point (near pocket)
                 [
-                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
                     0,
+                    -p.pocket_height/2 + pin_route_l/2,
                 ],  # Start point (near pocket)
                 # Extend outward
             ]
         )
+           
 
         ###############################################################################################
         # Josephson Junction
+        # print(top_pin)
+        # print(top_pin.coords[0][0])
         rect_jj = draw.LineString(
-            [(0, -p.inductor_height / 2), (0, p.inductor_height / 2)]
+            [(top_pin.coords[0][0], -p.inductor_height / 2), (top_pin.coords[0][0], p.inductor_height / 2)]
         )
 
         # Pocket
@@ -1650,6 +1711,10 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
             top_pocket_pin,
             bottom_pocket_pin,
         ]
@@ -1662,8 +1727,13 @@ class TransmonTaperedInsets(BaseQubit):
             rect_pk,
             top_pin,
             bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
             top_pocket_pin,
             bottom_pocket_pin,
+
         ] = polys
 
         # Add shapes as qiskit geometries
@@ -1679,7 +1749,7 @@ class TransmonTaperedInsets(BaseQubit):
             input_as_norm=True,
         )
         self.add_pin(
-            "pin_reservior",
+            "pin_reservoir",
             points=list(bottom_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
@@ -1687,14 +1757,30 @@ class TransmonTaperedInsets(BaseQubit):
 
         # Add pins to the component
         self.add_pin(
-            "bottom_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+            "top_right_pin", points=list(top_right_pocket_pin.coords), width=taper_width_top
         )
         self.add_pin(
-            "top_pin",
-            points=list(bottom_pocket_pin.coords),
+            "bottom_right_pin",
+            points=list(bottom_right_pocket_pin.coords),
             width=taper_width_top,
             input_as_norm=True,
         )
+        self.add_pin(
+            "top_left_pin", points=list(top_left_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_left_pin",
+            points=list(bottom_left_pocket_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        self.add_pin(
+            "top_pocket_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_pocket_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top
+        )
+
 
     def make_connection_pads(self):
         # """Makes standard transmon in a pocket."""
@@ -2431,12 +2517,12 @@ class FluxoniumPocket(_FluxoniumPocket):
     This class was created by Alexander Nguyen and David Sommers.
     """
     default_options = Dict(_FluxoniumPocket.default_options,
-                           top_wire_connector=False,  # by default, the connector won't exist
+                           top_wire_connector=False,#by default, the connector won't exist
                            top_wire_center_x='0.0039mm',
                            top_wire_center_y='0.0097mm',
                            top_wire_height='0.012mm',
                            top_wire_width='0.0034mm',
-                           bot_wire_connector=False,  # by default, the connector won't exist
+                           bot_wire_connector=False,#by default, the connector won't exist
                            bot_wire_center_x='-0.0039mm',
                            bot_wire_center_y='-0.0097mm',
                            bot_wire_height='0.015mm',
@@ -2474,7 +2560,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         information, such as layer, subtract, etc.
         """
         self.make_pocket()
-
+       
         if self.p.flux_bias_line_options.make_fbl == True:
             self.make_flux_bias_line()
         if self.p.charge_line_options.make_cl == True:
@@ -2501,12 +2587,16 @@ class FluxoniumPocket(_FluxoniumPocket):
         pad_width = p.pad_width
         pad_radius = p.pad_radius
         pad_gap = p.pad_gap
-        # length of the horizontal arms on the right hand side where JJ array connects
-        l_arm_length = p.l_arm_length
+        l_arm_length = p.l_arm_length#length of the horizontal arms on the right hand side where JJ array connects
         l_arm_width = p.l_arm_width
         l_width = p.l_width
         nanowire_inductor = p.nanowire
-        teeth_options = p.teeth_options
+        teeth_options=p.teeth_options
+
+        if p.round_edge and (pad_height>pad_width):
+            self.logger.info(
+                'Warning: pad_height>pad_width. The pegs for the JJ array might be gone.'
+            )
 
         # Drawing the kinectic inductor
         if nanowire_inductor == True:
@@ -2520,10 +2610,8 @@ class FluxoniumPocket(_FluxoniumPocket):
         else:
             l_length = p.array_length
             # This one is for JJ array
-            # MY COMMENT: This just makes the inductor longer/shorter, inductor_orientation is just a scaling factor
-            io = float(p.inductor_orientation)
-            inductor = draw.LineString(
-                [(l_arm_length-l_arm_width, io*l_length/2), (l_arm_length-l_arm_width, -io*l_length/2)])
+            io = float(p.inductor_orientation)#MY COMMENT: This just makes the inductor longer/shorter, inductor_orientation is just a scaling factor
+            inductor = draw.LineString([(l_arm_length-l_arm_width, io*l_length/2), (l_arm_length-l_arm_width, -io*l_length/2)])
             if p.round_edge:
                 inductor = draw.LineString([(((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, io*(pad_gap+pad_height-l_arm_width)/2), (
                     ((pad_width+pad_height)/2)+(l_arm_length/2)-l_width, -io*((pad_gap+pad_height-l_arm_width)/2))])
@@ -2531,11 +2619,11 @@ class FluxoniumPocket(_FluxoniumPocket):
             inductor=draw.scale(inductor, -1, 1, origin=(0, 0))
         # Draw 'the arms' and make them curvy, first top arm and then same goes for the bottom
         l_arm_up = draw.Polygon([
-            (pad_width/2, l_length/2+l_arm_width),  # point a
-            (l_arm_length, l_length/2+l_arm_width),  # point b
-            (l_arm_length, l_length/2),  # point c
-            (pad_width/2, l_length/2),  # point d
-        ])
+            (pad_width/2, l_length/2+l_arm_width), # point a
+            (l_arm_length, l_length/2+l_arm_width), # point b
+            (l_arm_length, l_length/2), # point c
+            (pad_width/2, l_length/2), # point d
+            ])
         if p.round_edge:
             # l_arm_up=draw.translate(l_arm_up, (pad_height/2)+(l_arm_length/4), pad_height/2)
             l_arm_up = draw.rectangle(
@@ -2555,11 +2643,11 @@ class FluxoniumPocket(_FluxoniumPocket):
         """
         # Here the bottom arm
         l_arm_bot = draw.Polygon([
-            (pad_width/2, -l_length/2),  # point e
-            (l_arm_length, -l_length/2),  # point f
-            (l_arm_length, -(l_length/2+l_arm_width)),  # point g
-            (pad_width/2, -(l_length/2+l_arm_width)),  # point h
-        ])
+            (pad_width/2, -l_length/2), # point e
+            (l_arm_length, -l_length/2), # point f
+            (l_arm_length, -(l_length/2+l_arm_width)), # point g
+            (pad_width/2, -(l_length/2+l_arm_width)), # point h
+            ])
         if p.round_edge:
             l_arm_bot = draw.rectangle(
                 l_arm_length, l_arm_width, (pad_width+pad_height)/2, -(pad_gap+pad_height)/2)
@@ -2576,26 +2664,16 @@ class FluxoniumPocket(_FluxoniumPocket):
         if p.left_chain:
             [l_arm_up, l_arm_bot]=draw.scale([l_arm_up, l_arm_bot], -1, 1, origin=(0, 0))
         # Draw the pads (shapely polygons)
-        pad_rect_top = draw.rectangle(
-            pad_width, pad_height, 0, (pad_gap+pad_height)/2)
-        pad_circle_top = draw.Point(
-            0, (pad_radius+pad_height)).buffer(pad_radius)
-        pad_top = draw.union(pad_rect_top, pad_circle_top,
-                             l_arm_up)  # , l_arm_up_fillet)
+        pad_rect_top = draw.rectangle(pad_width, pad_height, 0, (pad_gap+pad_height)/2)
+        pad_circle_top = draw.Point(0, (pad_radius+pad_height)).buffer(pad_radius)
+        pad_top = draw.union(pad_rect_top, pad_circle_top, l_arm_up)#, l_arm_up_fillet)
         if p.round_edge:
-            # origin is middle of gap so go up half gap and half height
-            pad_right_circle_top = draw.Point(
-                pad_width/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
-            pad_left_circle_top = draw.Point(-(pad_width)/2,
-                                             (pad_gap+pad_height)/2).buffer(pad_height/2)
-            pad_top = draw.union(
-                pad_top, pad_right_circle_top, pad_left_circle_top)
-        pad_rect_bot = draw.rectangle(
-            pad_width, pad_height, 0, -(pad_gap+pad_height)/2)
-        pad_circle_bot = draw.Point(
-            0, -(pad_radius+pad_height)).buffer(pad_radius)
-        pad_bot = draw.union(pad_rect_bot, pad_circle_bot,
-                             l_arm_bot)  # , l_arm_bot_fillet)
+            pad_right_circle_top=draw.Point(pad_width/2, (pad_gap+pad_height)/2).buffer(pad_height/2)#origin is middle of gap so go up half gap and half height
+            pad_left_circle_top=draw.Point(-(pad_width)/2, (pad_gap+pad_height)/2).buffer(pad_height/2)
+            pad_top=draw.union(pad_top, pad_right_circle_top, pad_left_circle_top)
+        pad_rect_bot = draw.rectangle(pad_width, pad_height, 0, -(pad_gap+pad_height)/2)
+        pad_circle_bot = draw.Point(0, -(pad_radius+pad_height)).buffer(pad_radius)
+        pad_bot = draw.union(pad_rect_bot, pad_circle_bot, l_arm_bot)#, l_arm_bot_fillet)
         if p.round_edge:
             pad_right_circle_bot = draw.Point(
                 pad_width/2, -(pad_gap+pad_height)/2).buffer(pad_height/2)
@@ -2611,12 +2689,9 @@ class FluxoniumPocket(_FluxoniumPocket):
                 teeth_options.coupled_pad_width / 2,
                 resolution=16,
                 cap_style=CAP_STYLE.round)
-            tooth_right = draw.translate(
-                tooth_left, teeth_options.coupled_pad_gap, 0)
-            coupler_pad_round_right = draw.translate(
-                coupler_pad_round_left, teeth_options.coupled_pad_gap, 0)
-            pad_bot = draw.union(
-                pad_bot, tooth_left, coupler_pad_round_left, tooth_right, coupler_pad_round_right)
+            tooth_right=draw.translate(tooth_left, teeth_options.coupled_pad_gap , 0)
+            coupler_pad_round_right=draw.translate(coupler_pad_round_left, teeth_options.coupled_pad_gap , 0)
+            pad_bot=draw.union(pad_bot, tooth_left, coupler_pad_round_left, tooth_right, coupler_pad_round_right)
 
         if teeth_options.make_teeth:#makes teeth to insert readout resonator. best if pad_radius=0
             tooth_left=draw.rectangle(teeth_options.coupled_pad_width,
@@ -2652,24 +2727,20 @@ class FluxoniumPocket(_FluxoniumPocket):
             pad_bot = draw.union(pad_bot, connector_bot, connector_bot_circle)
 
         # Draw the junction
-        # one can change the JJ orientation. Fab related detail.
-        jj_o = float(p.jj_orientation)
+        jj_o = float(p.jj_orientation) # one can change the JJ orientation. Fab related detail.
         rect_jj = draw.LineString([(0, -pad_gap/2*jj_o), (0, +pad_gap/2*jj_o)])
 
         if p.top_wire_connector & p.bot_wire_connector:
-            center_x = (p.bot_wire_center_x+p.top_wire_center_x) / \
-                2  # trying to find the center between
-            # "fingers" between the capacitors
-            # bottom edge for transparent box
-            bot_edge = p.bot_wire_center_y+(p.bot_wire_height/2)
+            center_x=(p.bot_wire_center_x+p.top_wire_center_x)/2#trying to find the center between
+            #"fingers" between the capacitors
+            bot_edge = p.bot_wire_center_y+(p.bot_wire_height/2)#bottom edge for transparent box
             top_edge = p.top_wire_center_y-(p.top_wire_height/2)
-            rect_jj = draw.LineString(
-                [(center_x, bot_edge), (center_x, top_edge)])
+            rect_jj = draw.LineString([(center_x, bot_edge), (center_x, top_edge)])
 
             right_edge = p.top_wire_center_x+(p.top_wire_width/2)
             left_edge = p.bot_wire_center_x-(p.bot_wire_width/2)
             p.jj_width = right_edge-left_edge
-            # if necessary, consider the case where there is only one connector on top or bottom
+            #if necessary, consider the case where there is only one connector on top or bottom
 
         # the draw.rectangle representing the josephson junction
         # rect_jj = draw.rectangle(p.jj_width, pad_gap)
@@ -2707,12 +2778,12 @@ class FluxoniumPocket(_FluxoniumPocket):
         self.add_qgeometry('poly', dict(rect_pk=rect_pk), subtract=True)
         # self.add_qgeometry('poly', dict(
         #     rect_jj=rect_jj), helper=True)
-        self.add_qgeometry('junction',  # kinetic inductor
+        self.add_qgeometry('junction', # kinetic inductor
                            dict(inductor=inductor),
-                           width=l_width,
-                           hfss_inductance=p.l_inductance,
+                           width = l_width,
+                           hfss_inductance = p.l_inductance,
                            gds_cell_name=p.gds_cell_inductor)
-        self.add_qgeometry('junction',  # the main JJ
+        self.add_qgeometry('junction', # the main JJ
                            dict(rect_jj=rect_jj),
                            width=p.jj_width,
                            hfss_inductance=p.L_j,
@@ -2738,7 +2809,7 @@ class FluxoniumPocket(_FluxoniumPocket):
         """ Adds flux bias line to fluxonium pocket."""
         # self.p allows us to directly access parsed values (string -> numbers) form the user option
         p = self.p
-        pfb = self.p.flux_bias_line_options  # parser on connector options
+        pfb = self.p.flux_bias_line_options # parser on connector options
 
         # define commonly used variables once
         fbl_sep = pfb.fbl_sep
@@ -2748,78 +2819,74 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         # Define the geometry
         # Flux Bias Line
-        # The position of flux bias line on the x-axis, starting point inside the pocket
-        d = p.pocket_width/2
+        d = p.pocket_width/2 # The position of flux bias line on the x-axis, starting point inside the pocket
         # Draw the top line of the flux-bias line
         flux_bias_lineup = draw.Polygon([
-            (-d, fbl_height/2),   # point a
-            (-d, fbl_height/2+cpw_width),    # point b
-            (-fbl_sep, fbl_height/2+cpw_width),   # point c
-            (-fbl_sep, fbl_height/2),   # point d
+             (-d, fbl_height/2),   # point a
+             (-d, fbl_height/2+cpw_width),    # point b
+             (-fbl_sep, fbl_height/2+cpw_width),   # point c
+             (-fbl_sep, fbl_height/2),   # point d
         ])
         # Draw the middle line of the flux-bias line
         flux_bias_linemid = draw.Polygon([
-            (-(fbl_sep-cpw_width), fbl_height/2),   # point e
-            (-fbl_sep, fbl_height/2),    # point f
-            (-fbl_sep, -fbl_height/2),  # point g
-            (-(fbl_sep-cpw_width), -fbl_height/2),   # point h
-
+             (-(fbl_sep-cpw_width), fbl_height/2),   # point e
+             (-fbl_sep, fbl_height/2),    # point f  
+             (-fbl_sep, -fbl_height/2),# point g
+             (-(fbl_sep-cpw_width), -fbl_height/2),   # point h
+             
         ])
 
         # Here we make flux-bias line curvy for the top side and also bottom side and the union all of them
         circle_top = draw.Point(-fbl_sep, fbl_height/2).buffer(cpw_width)
         cut_ply = draw.Polygon([
-            (-fbl_sep*2, fbl_height+cpw_width),   # point o
-            (-fbl_sep, fbl_height+cpw_width),    # point p
-            (-fbl_sep, fbl_height/2),   # point r same with point d
-            (-fbl_sep/2, fbl_height/2),   # point s
-            (-fbl_sep/2, -fbl_height+cpw_width),  # point t
-            (-fbl_sep*2, -fbl_height+cpw_width),  # point u
+             (-fbl_sep*2, fbl_height+cpw_width),   # point o
+             (-fbl_sep, fbl_height+cpw_width ),    # point p
+             (-fbl_sep, fbl_height/2),   # point r same with point d
+             (-fbl_sep/2, fbl_height/2),   # point s
+             (-fbl_sep/2, -fbl_height+cpw_width),  # point t
+             (-fbl_sep*2, -fbl_height+cpw_width),  # point u
         ])
         circle_top = draw.subtract(circle_top, cut_ply)
         # same goes for bottom edge
         circle_bot = draw.Point(-fbl_sep, -fbl_height/2).buffer(cpw_width)
         cut_ply2 = draw.Polygon([
-            (-(fbl_sep-cpw_width), -fbl_height/2),   # point v same with h or i
-            (-(fbl_sep-cpw_width), fbl_height*2),    # point y
-            (-fbl_sep, fbl_height),   # point z
-            (-fbl_sep, fbl_height),   # point w
-            (-fbl_sep*2, fbl_height),  # point x
-            (-fbl_sep*2, -fbl_height/2),  # point k
+             (-(fbl_sep-cpw_width), -fbl_height/2),   # point v same with h or i
+             (-(fbl_sep-cpw_width), fbl_height*2),    # point y
+             (-fbl_sep, fbl_height),   # point z 
+             (-fbl_sep, fbl_height),   # point w
+             (-fbl_sep*2, fbl_height),  # point x
+             (-fbl_sep*2, -fbl_height/2),  # point k
         ])
         circle_bot = draw.subtract(circle_bot, cut_ply2)
         flux_bias_linebot = draw.Polygon([
-            (-(d+fbl_sep/2), -fbl_height/2),   # point i
-            (-(d+fbl_sep/2), -fbl_height/2-cpw_width),    # point k
-            (-fbl_sep, -fbl_height/2-cpw_width),   # point l
-            (-fbl_sep, -fbl_height/2),   # point m
+             (-(d+fbl_sep/2), -fbl_height/2),   # point i
+             (-(d+fbl_sep/2), -fbl_height/2-cpw_width),    # point k
+             (-fbl_sep, -fbl_height/2-cpw_width),   # point l
+             (-fbl_sep, -fbl_height/2),   # point m
         ])
-        flux_bias_line = draw.union(
-            flux_bias_lineup, flux_bias_linemid,  flux_bias_linebot, circle_top, circle_bot)
+        flux_bias_line = draw.union(flux_bias_lineup, flux_bias_linemid,  flux_bias_linebot, circle_top, circle_bot)
 
         # Flux Bias line's gap part, inside the GND
-        flux_bias_line_gap = draw.rectangle(
-            fbl_sep/2, cpw_width+cpw_gap*2, -(d+fbl_sep/4), -fbl_height/2-cpw_width/2)
+        flux_bias_line_gap = draw.rectangle(fbl_sep/2, cpw_width+cpw_gap*2, -(d+fbl_sep/4) ,-fbl_height/2-cpw_width/2)
 
         # Flux-Bias Line CPW wire
-        port_line = draw.LineString([(-(d+fbl_sep/2), 0),
+        port_line = draw.LineString([(-(d+fbl_sep/2), 0), 
                                     (-(d+fbl_sep/2), -(fbl_height+cpw_width))])
+        
+        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias 
+        fake_port_line = draw.LineString([(-d, (fbl_height*2+cpw_width*2)), 
+                                    (-d, -(fbl_height+cpw_width))])
 
-        # This port line is a fake port line, it is only in use during LOM analyses because we need to have an ungrounded line for the flux-bias
-        fake_port_line = draw.LineString([(-d, (fbl_height*2+cpw_width*2)),
-                                          (-d, -(fbl_height+cpw_width))])
-
-        objects = [flux_bias_line, flux_bias_line_gap,
-                   port_line, fake_port_line]
+        objects = [flux_bias_line, flux_bias_line_gap, port_line, fake_port_line]#
         objects = draw.rotate(objects, p.orientation, origin=(0, 0))
         objects = draw.translate(objects, p.pos_x, p.pos_y)
-        [flux_bias_line, flux_bias_line_gap, port_line,
-            fake_port_line] = objects  # flux_bias_line,
+        [flux_bias_line, flux_bias_line_gap, port_line, fake_port_line] = objects#flux_bias_line,
 
         self.add_qgeometry('poly', {'flux_bias_line': flux_bias_line})
 
-        self.add_qgeometry(
-            'poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)
+
+
+        self.add_qgeometry('poly', {'flux_bias_line_gap': flux_bias_line_gap}, subtract=True)      
 
         ####################################################################
 
@@ -2837,11 +2904,13 @@ class FluxoniumPocket(_FluxoniumPocket):
         """ Adds readout line to fluxonium pocket."""
         # self.p allows us to directly access parsed values (string -> numbers) form the user option
         p = self.p
-        pr = self.p.readout_line_options  # parser on readout line options
-        teeth_options = p.teeth_options  # to make resonator go inside qubit pocket
+        pr = self.p.readout_line_options # parser on readout line options
+        teeth_options=p.teeth_options # to make resonator go inside qubit pocket
         pocket_height = p.pocket_height
         pad_height_qubit = p.pad_height
-        pad_gap = p.pad_gap  # height of the gap between two capacitor pads in qubit
+        pad_gap = p.pad_gap#height of the gap between two capacitor pads in qubit
+        
+        
 
         # define commonly used variables once
         pad_sep = pr.pad_sep
@@ -2850,7 +2919,8 @@ class FluxoniumPocket(_FluxoniumPocket):
         cpw_width = pr.cpw_width
         cpw_gap = pr.cpw_gap
 
-        # For this design the loc_W has to be in 0 but loc_H can be -1 or +1,
+
+        # For this design the loc_W has to be in 0 but loc_H can be -1 or +1, 
         # For all other directions One can change the orientation of the qubit.
         loc_W = float(pr.loc_W)
         loc_W, loc_H = float(pr.loc_W), float(pr.loc_H)
@@ -2863,36 +2933,30 @@ class FluxoniumPocket(_FluxoniumPocket):
         # Define the geometry
         # Readout pad
         readout_pad = draw.rectangle(pad_width, pad_height, 0, 0)
-        # making the pad circle for left side
-        readout_pad_circle_left = draw.Point(-pad_width/2,
-                                             0).buffer(pad_height/2)
-        # making the pad circle for right side
-        readout_pad_circle_right = draw.Point(
-            pad_width/2, 0).buffer(pad_height/2)
+        readout_pad_circle_left = draw.Point(-pad_width/2, 0).buffer(pad_height/2) # making the pad circle for left side
+        readout_pad_circle_right = draw.Point(pad_width/2, 0).buffer(pad_height/2) # making the pad circle for right side
 
         # Readout pad's gap
-        readout_pad_gap = draw.rectangle(
-            pad_width+2*cpw_gap, pad_height+2*cpw_gap, 0, 0)
-        readout_pad_gap_circle_left = draw.Point(-(pad_width+2*cpw_gap)/2, 0).buffer(
-            (pad_height+2*cpw_gap)/2)  # making the pad's gap circle for left side
-        readout_pad_gap_circle_right = draw.Point((pad_width+2*cpw_gap)/2, 0).buffer(
-            (pad_height+2*cpw_gap)/2)  # making the pad's gap circle for right side
+        readout_pad_gap = draw.rectangle(pad_width+2*cpw_gap, pad_height+2*cpw_gap, 0, 0)
+        readout_pad_gap_circle_left = draw.Point(-(pad_width+2*cpw_gap)/2, 0).buffer((pad_height+2*cpw_gap)/2) # making the pad's gap circle for left side
+        readout_pad_gap_circle_right = draw.Point((pad_width+2*cpw_gap)/2, 0).buffer((pad_height+2*cpw_gap)/2) # making the pad's gap circle for right side
+
 
         # Defining the geometry for the readout pad line and it's gap
         readout_line = draw.rectangle(cpw_width, pad_height, 0, pad_height)
-        readout_line_gap = draw.rectangle(
-            cpw_width+2*cpw_gap, pad_height, 0, pad_height)
+        readout_line_gap = draw.rectangle(cpw_width+2*cpw_gap, pad_height, 0, pad_height)
 
         # Here, we union the readout pad and readout line and second line exactly the same for the gap
-        readout_padNline = draw.union(
-            readout_pad, readout_pad_circle_left, readout_pad_circle_right, readout_line)
-        readout_padNline_gap = draw.union(
-            readout_pad_gap, readout_pad_gap_circle_left, readout_pad_gap_circle_right, readout_line_gap)
-
+        readout_padNline = draw.union(readout_pad, readout_pad_circle_left, readout_pad_circle_right, readout_line)
+        readout_padNline_gap = draw.union(readout_pad_gap, readout_pad_gap_circle_left, readout_pad_gap_circle_right, readout_line_gap)
+    
         # Readout Line CPW wire
         port_line = draw.LineString([(cpw_width/2, pad_height*1.5),
                                      (-cpw_width/2, pad_height*1.5)])
-
+        
+        
+        
+       
         # Position the readout, rotate and translate
         objects = [readout_padNline, readout_padNline_gap, port_line]
         objects = draw.scale(objects, 1, loc_H, origin=(0, 0))
@@ -2903,34 +2967,30 @@ class FluxoniumPocket(_FluxoniumPocket):
         objects = draw.rotate_position(objects, p.orientation,
                                        [p.pos_x, p.pos_y])
         [readout_padNline, readout_padNline_gap, port_line] = objects
-
+        
         # if we are using teeth and putting the resonator inside the qubit pocket get rid of readout pad
         if not teeth_options.make_teeth:
             self.add_qgeometry('poly', {'readout_padNline': readout_padNline})
-            self.add_qgeometry(
-                'poly', {'readout_padNline_gap': readout_padNline_gap}, subtract=True)
-        else:  # the readout line has to be in the middle i.e. colinear with y axis when rotation=0
+            self.add_qgeometry('poly', {'readout_padNline_gap': readout_padNline_gap}, subtract=True)
+        else:#the readout line has to be in the middle i.e. colinear with y axis when rotation=0
             readout_line = draw.rectangle(cpw_width,
-                                          ((pocket_height-pad_gap)/2) -
-                                          pad_height_qubit-teeth_options.pad_gap,
+                                          ((pocket_height-pad_gap)/2)-pad_height_qubit-teeth_options.pad_gap, 
                                           0,
-                                          ((pocket_height+pad_gap)/4)+((pad_height_qubit+teeth_options.pad_gap)/2))  # the center of the rectangle moves up half a pocket_height-half height of rectangle
-            # readout_line_gap = draw.rectangle(cpw_width+2*cpw_gap, pad_height, 0, pad_height)
+                                          ((pocket_height+pad_gap)/4)+((pad_height_qubit+teeth_options.pad_gap)/2))#the center of the rectangle moves up half a pocket_height-half height of rectangle
+            #readout_line_gap = draw.rectangle(cpw_width+2*cpw_gap, pad_height, 0, pad_height)
             port_line = draw.LineString([(cpw_width/2, pocket_height/2),
-                                         (-cpw_width/2, pocket_height/2)])
-            readout_line_circle = draw.Point(
-                0, (pad_gap/2)+pad_height_qubit+teeth_options.pad_gap).buffer(cpw_width/2)
-            readout_line = draw.union(readout_line, readout_line_circle)
-
+                                     (-cpw_width/2, pocket_height/2)])
+            readout_line_circle=draw.Point(0, (pad_gap/2)+pad_height_qubit+teeth_options.pad_gap).buffer(cpw_width/2)
+            readout_line=draw.union(readout_line, readout_line_circle)
+        
             objects = [readout_line, port_line]
-            # reflects the shape across the x-axis if loc_H is negative
-            objects = draw.scale(objects, 1, loc_H, origin=(0, 0))
+            objects = draw.scale(objects, 1, loc_H, origin=(0, 0))#reflects the shape across the x-axis if loc_H is negative
             """objects = draw.translate(
                 objects,
                 0,
                 loc_H * (p.pocket_height/2 + pad_sep))"""
             objects = draw.rotate_position(objects, p.orientation,
-                                           [p.pos_x, p.pos_y])
+                                       [p.pos_x, p.pos_y])
             [readout_line, port_line] = objects
             self.add_qgeometry('poly', {'readout_line': readout_line})
 
@@ -2938,8 +2998,7 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         # add pins
         port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
-        port_line_cords = port_line_cords if loc_H == - \
-            1 else port_line_cords[::-1]
+        port_line_cords = port_line_cords if loc_H==-1 else port_line_cords[::-1]
         points = list(port_line_cords)
         self.add_pin('readout_line',
                      points, cpw_width)

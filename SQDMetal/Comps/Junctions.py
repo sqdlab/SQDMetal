@@ -564,6 +564,7 @@ class JunctionSingleDolanPinStretch(QComponent):
         p.end_y = endPt[1]
 
         pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionSingleDolan.draw_junction(p)
+        
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -609,6 +610,7 @@ class JunctionDolanPinStretch(QComponent):
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
         * dist_extend - Distance upon to stretch away from the start pin.
+        * dist_x_offset - Additional distance to stretch in the x direction (relative to the direction of the junction) away from the start pin. Default is 0.
     The resulting Josephson junction is right in the centre. This class ignores pos_x, pos_y and orientation...
         
     Pins:
@@ -660,6 +662,7 @@ class JunctionDolanPinStretch(QComponent):
         * t_pad_length= '3um'
         * fork_pad_size='0.5um'
         * t_pad_extra='0.0um'
+        * dist_x_offset='0um'
     """
 
     default_options = Dict(dist_extend='40um',
@@ -675,7 +678,8 @@ class JunctionDolanPinStretch(QComponent):
                            t_pad_length='3um',
                            fork_pad_size='0.5um',
                            t_pad_extra='0.0um',
-                           reverse=False)
+                           reverse=False,
+                           dist_x_offset='0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -683,7 +687,7 @@ class JunctionDolanPinStretch(QComponent):
         p = self.p
         #########################################################
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        '''start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
         startPt = start_point['middle']
         norm = start_point['normal']
         p.pos_x = startPt[0]
@@ -693,6 +697,12 @@ class JunctionDolanPinStretch(QComponent):
         p.end_y = endPt[1]
 
         pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
+
+        pad_T = draw.translate(pad_T, p.dist_x_offset, 0)
+        pad_Fork = draw.translate(pad_Fork, p.dist_x_offset, 0)
+        pin1 = draw.translate(pin1, p.dist_x_offset, 0)
+        pin2 = draw.translate(pin2, p.dist_x_offset, 0)
+        sim_JJ = draw.translate(sim_JJ, p.dist_x_offset, 0)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -713,7 +723,80 @@ class JunctionDolanPinStretch(QComponent):
 
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
+        self.add_pin('f', pin2.coords[::-1], width=p.stem_width)'''
+        #print(self.design.components[self.name].options.pin_inputs.start_pin.pin)
+        pin_name_qubit = self.design.components[self.name].options.pin_inputs.start_pin.pin
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        norm = start_point['normal']
+        p.pos_x = startPt[0]
+        p.pos_y = startPt[1]
+        endPt = startPt + norm*p.dist_extend
+        p.end_x = endPt[0]
+        p.end_y = endPt[1]
+
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
+
+        pad_T = draw.translate(pad_T, p.dist_x_offset, 0)
+        pad_Fork = draw.translate(pad_Fork, p.dist_x_offset, 0)
+        pin1 = draw.translate(pin1, p.dist_x_offset, 0)
+        pin2 = draw.translate(pin2, p.dist_x_offset, 0)
+        sim_JJ = draw.translate(sim_JJ, p.dist_x_offset, 0)
+
+        # connector width
+        half_w = 0.5 * p.stem_width
+
+        # actual junction pin centers
+        pin1_coords = np.array(pin1.coords, dtype=float)
+        pin2_coords = np.array(pin2.coords, dtype=float)
+        pin1_center = 0.5 * (pin1_coords[0] + pin1_coords[1])
+        pin2_center = 0.5 * (pin2_coords[0] + pin2_coords[1])
+
+        # external start/end pin centers
+        start_center = startPt
+        end_center = endPt
+
+        # straight connector centerlines
+        if pin_name_qubit == 'pin_island':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+        elif pin_name_qubit == 'pin_reservoir':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+
+
+        # rectangular connectors
+        connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
+        connect_end = connect_end_path.buffer(half_w, cap_style=2, join_style=2)
+
+        # robust unions
+        pad_T = pad_T.union(connect_start)
+        pad_Fork = pad_Fork.union(connect_end)
+
+        if pad_T.geom_type == 'MultiPolygon':
+           pad_T = max(pad_T.geoms, key=lambda g: g.area)
+        if pad_Fork.geom_type == 'MultiPolygon':
+           pad_Fork = max(pad_Fork.geoms, key=lambda g: g.area)
+
+        pad_T = pad_T.buffer(0)
+        pad_Fork = pad_Fork.buffer(0)
+
+        self.add_qgeometry('poly',dict(pad1=pad_T, pad_Fork=pad_Fork),layer=p.layer)
+        self.add_qgeometry('junction',{'design': sim_JJ},layer=p.layer,subtract=False,width=p.squid_width + 2 * p.t_pad_extra)
+
+        self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
+        
+
+
 
 # -*- coding: utf-8 -*-
 # Author: Pradeep
@@ -1241,7 +1324,7 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
-def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+def get_square_JJ_width(J_C_uA_um2, configuration='single', target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
     """
     Function to calculate the dimensions for a Josephson junction fabricated with a
     certain critical current density (J_C), where I_C = J_C * A. The critical current 
@@ -1272,7 +1355,12 @@ def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, round
         A_m2 = np.array([(i * h * 2 * np.pi)/(phi_0 * J_C_A_m2) for i in target_EJ_Hz])
     else:
         raise ValueError("No areas were calculated since no target values were supplied.")
-    width_JJ_nm = np.sqrt(A_m2) * 1e9
+    if configuration == 'single':
+        width_JJ_nm = np.sqrt(A_m2) * 1e9
+    elif configuration == 'double' or configuration == 'squid' or configuration == 'SQUID':
+        width_JJ_nm = np.sqrt(A_m2/2) * 1e9
+    else:
+        assert False, "Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'."
     if rounding:
         width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
     width_JJ_um = width_JJ_nm * 1e-3
