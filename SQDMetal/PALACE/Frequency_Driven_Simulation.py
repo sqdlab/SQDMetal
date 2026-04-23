@@ -196,6 +196,13 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                 }
             }
         }
+
+         #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before processing
+        # the farfield. 
+        if self._use_KI:
+            self._setup_kinetic_inductance(config, PEC_metals)
+
+
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         self._process_farfield(config, far_field)

@@ -648,7 +648,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
         print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
-        if kappa_MHz is not 'N/A':
+        if kappa_MHz != 'N/A':
             print(f"{'kappa':<16s} = {kappa_MHz:>10.3f} MHz")
             print(f"{'T_1,P':<16s} = {T1p_ms:>10.3f} ms")
         print()
