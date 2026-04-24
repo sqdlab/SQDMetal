@@ -384,7 +384,8 @@ class PALACE_Model_Base:
         with open("temp.sh", "w+", newline='\n') as f:
             f.write(f"cd {self._palace_wsl_repo_location}\n")
             f.write(f"source ./spack/share/spack/setup-env.sh\n")
-            f.write(f"spack env activate ./{self._palace_wsl_spack_env_name}\n")
+            if self._palace_wsl_spack_env_name != "":   #TODO: Add this to documentation
+                f.write(f"spack env activate ./{self._palace_wsl_spack_env_name}\n")
             f.write(f"cd \"{leDirWSL}\"\n")
             f.write(f"{self.palace_dir} -np {self._num_cpus} -nt {self._num_threads} {leFile} | tee \"{log_locationWSL}\"\n")
 
