@@ -2797,13 +2797,14 @@ class FluxoniumPocket(_FluxoniumPocket):
         port_line_bot_cords = list(draw.shapely.geometry.shape(port_line_bot).coords)
         self.add_pin('JJ_chain_bot',
                      port_line_bot_cords[::-1], l_width)
-        
-        top_finger_line_cords = list(draw.shapely.geometry.shape(top_finger_line).coords)
-        self.add_pin('top_finger',
+        if p.top_wire_connector:
+            top_finger_line_cords = list(draw.shapely.geometry.shape(top_finger_line).coords)
+            self.add_pin('top_finger',
                      top_finger_line_cords[::-1], p.top_wire_width)
-        bot_finger_line_cords = list(draw.shapely.geometry.shape(bot_finger_line).coords)
-        self.add_pin('bot_finger',
-                     bot_finger_line_cords[::-1], p.bot_wire_width)
+        if p.bot_wire_connector:
+            bot_finger_line_cords = list(draw.shapely.geometry.shape(bot_finger_line).coords)
+            self.add_pin('bot_finger',
+                        bot_finger_line_cords[::-1], p.bot_wire_width)
 
     def make_flux_bias_line2(self):
         """ Adds flux bias line to fluxonium pocket."""
