@@ -19,7 +19,7 @@ from qiskit_metal.qlibrary.qubits.JJ_Manhattan import jj_manhattan
 
 
 
-class JunctionManhattan(jj_manhattan):
+class jj_manhattan(jj_manhattan):
     # -*- coding: utf-8 -*-
     # Author: Alexander Nguyen
     # Creation Date: 2025
@@ -1366,3 +1366,210 @@ def get_square_JJ_width(J_C_uA_um2, configuration='single', target_EJ_GHz=None, 
     width_JJ_um = width_JJ_nm * 1e-3
     return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
 
+class JJ_arrayManhattan(QComponent):
+    # Author: Alexander Nguyen
+    # Creation Date: 2026
+    """An array of JJ's intended to be used with FluxoniumPocket.
+    Each JJ will consist of 2 orthogonal rectangles with the following geometry.
+    Note that in the picture height goes left to right.
+    Sketch:
+        Below is a sketch of the solitary square marker
+        ::
+
+                 <----l---->    
+             ___________________
+            |                   |  /|\    l = slider_length
+            |         X         |   |W    W = width
+            |___________________|  \|/    X = (pos_x, pos_y)
+            <----------H-------->         H = chain_link_height
+    
+    Each rectangle is referred to as a chain link with the following properties
+        * x_start - the x coordinate of the first (vertical) chain link
+        * y_start - the y coordinate of where the pin ON THE QUBIT to start the array will be
+        * slider_length - Length indicating the area where vertical chain links will connect. l<=H
+        * chain_link_height - Length of one of the sides of a chain link. l<=H
+        * width - Length of other side of chain link
+        * start_waves - number of "waves" at the start of JJ array, see class method waves
+        * JJ_total - total number of JJs in array. It is suggested that you make this smaller than what you really want and manually add the remaining ones. 
+        * union - if True, will union all chain links into 1 shape
+    
+    Atypical of the standard documentation of Quantum Metal components, the documentation of this component will be dispersed at the beginning of different methods. 
+    """
+
+    default_options = Dict(x_start='0mm', y_start='0mm', orientation='0',
+                           chain_link_height='7000nm', width='422.7nm',
+                           slider_length='0.0044mm',
+                           start_waves=3,
+                           JJ_total=94,
+                           union=True
+    )
+    def make(self):
+        [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]=self.waves()
+        if n<self.p.JJ_total:
+            [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]=self.waves2stairs(polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal)
+        if n<self.p.JJ_total:
+            [polys, jj_array, n]=self.stairs(polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal)
+
+        if not self.p.union:
+            polys = draw.rotate(polys, self.p.orientation, origin=(self.p.x_start, self.p.y_start))
+            polys = draw.translate(polys, self.p.pos_x, self.p.pos_y)
+        else:
+            jj_array = draw.rotate(jj_array, self.p.orientation, origin=(self.p.x_start, self.p.y_start))
+            jj_array = draw.translate(jj_array, self.p.pos_x, self.p.pos_y)
+
+
+        polys_dict={}
+        if self.p.union:
+            polys_dict=dict(jj_array=jj_array)
+        else:
+            for index in np.arange(n-1):
+                polys_dict.update({'chainlink'+str(index): polys[index]})
+        print(self.name+": "+str(n)+" JJs were made")
+        self.add_qgeometry('poly',
+                           polys_dict,
+                           layer=self.p.layer,
+                           subtract=False)
+        
+    def stairs(self, polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal):
+        """The remainder of the JJ chain will be in this formation
+        ____|_________________________________________________
+            |
+        ____|_____________________|___________________________
+            |                     |
+        __________________________|___________________|_______
+                                  |                   |
+        ______________|_______________________________|_______
+                      |                               |
+        ______________|_____________________|_________________
+                      |                     |
+        ____________________________________|_________________
+                                            |
+
+        Repeated over and over... The horizontal chain links will be TWICE as long
+        """
+        x_horizontal=x_horizontal+(0.5*self.p.chain_link_height)
+        n_vertical=0
+        x_vertical_trio=x_vertical
+        x_vertical_duo=x_vertical+(self.p.slider_length*0.5)
+        while n<=self.p.JJ_total:
+            if (n_vertical%5)<3:
+                #make vertical chain link on the left
+                chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical_trio, y_vertical)
+                polys.append(chain_link)
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+                n=n+1
+                n_vertical=n_vertical+1
+                x_vertical_trio=x_vertical_trio+(1.25*self.p.slider_length)#move to the right
+                y_vertical=y_vertical-self.p.slider_length
+            else:
+                chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical_duo, y_vertical)
+                polys.append(chain_link)
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+                n=n+1
+                n_vertical=n_vertical+1
+                x_vertical_duo=x_vertical_duo+(1.25*self.p.slider_length)#move to the right
+                y_vertical=y_vertical-self.p.slider_length
+                if (n_vertical%5)==0:#reset at the end of the end
+                    x_vertical_trio=x_vertical
+                    x_vertical_duo=x_vertical+(self.p.slider_length*0.5)
+            chain_link=draw.rectangle(self.p.chain_link_height*2, self.p.width, x_horizontal, y_horizontal)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            n=n+1
+            y_horizontal=y_horizontal-self.p.slider_length
+        return [polys, jj_array, n]
+    def waves2stairs(self, polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal):
+        #make vertical chain link on the left
+        chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical, y_vertical)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_vertical=x_vertical+self.p.slider_length#move to the right
+        y_vertical=y_vertical+self.p.slider_length
+        #horizontal chain link
+        chain_link=draw.rectangle(self.p.chain_link_height, self.p.width, x_horizontal, y_horizontal)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_horizontal=x_horizontal+self.p.slider_length+(0.5*self.p.chain_link_height)#move it to the right now
+        y_horizontal=y_horizontal+self.p.slider_length
+        #make LAST vertical chain link on the right
+        chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical, y_vertical)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_vertical=x_vertical+self.p.slider_length+self.p.chain_link_height#move to the right
+        #end it on horizontal chain link to the right
+        chain_link=draw.rectangle(self.p.chain_link_height*2, self.p.width, x_horizontal, y_horizontal)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_horizontal=x_horizontal+self.p.slider_length+(0.5*self.p.chain_link_height)#move it to the right again
+        y_horizontal=y_horizontal-self.p.slider_length#moving DOWN now
+        return [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]
+
+    def waves(self):
+        p=self.p
+
+        x_start=p.x_start
+        y_start=p.y_start
+        chain_link_height=p.chain_link_height
+        width=p.width
+        slider_length=p.slider_length
+        start_waves=p.start_waves
+        JJ_total=p.JJ_total
+
+        polys=[]
+        x_vertical=x_start
+        y_vertical=y_start+(slider_length/2)
+        x_horizontal=x_start+(slider_length/2)
+        y_horizontal=y_start+slider_length
+        for n_cycle in np.arange(start_waves):
+            #start with vertical chain link
+            chain_link=draw.rectangle(width, chain_link_height, x_vertical, y_vertical)
+            polys.append(chain_link)
+            if n_cycle==0:
+                n=0
+            else:
+                n=n+1
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+            x_vertical=x_vertical+slider_length#move to the right
+            y_vertical=y_vertical+slider_length
+            #horizontal chain link
+            chain_link2=draw.rectangle(chain_link_height, width, x_horizontal, y_horizontal)
+            polys.append(chain_link2)
+            if n_cycle==0 and self.p.union:
+                jj_array=draw.union(chain_link, chain_link2)
+            elif self.p.union:
+                jj_array=draw.union(jj_array, chain_link2)
+            y_horizontal=y_horizontal+slider_length
+            n=n+1
+            #vertical chain link
+            chain_link=draw.rectangle(width, chain_link_height, x_vertical, y_vertical)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            x_vertical=x_vertical-slider_length#move it to the left
+            y_vertical=y_vertical+slider_length
+            n=n+1
+            #horizontal chain_link
+            chain_link=draw.rectangle(chain_link_height, width, x_horizontal, y_horizontal)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            y_horizontal=y_horizontal+slider_length
+            n=n+1
+        
+        if not self.p.union:
+            jj_array=draw.Point(0, 0)#make it a worthless point at the origin if not uniting chainlinks
+        return [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]
+
+            
