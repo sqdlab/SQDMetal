@@ -771,6 +771,9 @@ class JunctionDolanPinStretch(QComponent):
             else:
                connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
                connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+        else:
+            connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center)])
+            connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center)])
 
 
         # rectangular connectors
