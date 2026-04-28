@@ -2684,8 +2684,8 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         if teeth_options.make_teeth:  # makes teeth to insert readout resonator. best if pad_radius=0
             tooth_left = draw.rectangle(teeth_options.coupled_pad_width,
-                                        teeth_options.coupled_pad_height, -teeth_options.coupled_pad_gap/2, -(pad_height+((pad_gap+teeth_options.coupled_pad_height)/2)))
-            coupler_pad_round_left = draw.Point(-teeth_options.coupled_pad_gap/2, -(teeth_options.coupled_pad_height + pad_height+(pad_gap/2))).buffer(
+                                        teeth_options.coupled_pad_height*1.1, -teeth_options.coupled_pad_gap/2, -((pad_height*0.9)+((pad_gap+teeth_options.coupled_pad_height)/2)))
+            coupler_pad_round_left = draw.Point(-teeth_options.coupled_pad_gap/2, -(teeth_options.coupled_pad_height + ((pad_height+(pad_gap/2))/1.0))).buffer(
                 teeth_options.coupled_pad_width / 2,
                 resolution=16,
                 cap_style=CAP_STYLE.round)
