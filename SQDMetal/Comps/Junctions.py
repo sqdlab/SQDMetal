@@ -771,15 +771,13 @@ class JunctionDolanPinStretch(QComponent):
             else:
                connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
                connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
-
-
-        # rectangular connectors
-        connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
-        connect_end = connect_end_path.buffer(half_w, cap_style=2, join_style=2)
-
-        # robust unions
-        pad_T = pad_T.union(connect_start)
-        pad_Fork = pad_Fork.union(connect_end)
+        if pin_name_qubit== 'pin_island' or pin_name_qubit=='pin_reservoir':
+            # rectangular connectors
+            connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
+            connect_end = connect_end_path.buffer(half_w, cap_style=2, join_style=2)
+            # robust unions
+            pad_T = pad_T.union(connect_start)
+            pad_Fork = pad_Fork.union(connect_end)
 
         if pad_T.geom_type == 'MultiPolygon':
            pad_T = max(pad_T.geoms, key=lambda g: g.area)
