@@ -40,7 +40,9 @@ def two_qubits_coupling(
     flux_line_left=False,
     flux_line_right=False,
     name_Q1 = 'Q1',
-    name_Q2 = 'Q2'
+    name_Q2 = 'Q2',
+    cpw_width = 10e-6,
+    cpw_gap = 6e-6
 ):
 
     ''' This function gives a 2 qubit design given a coupling strength J12 and the capacitor choice. The coupling strength is determined by the capacitor geometry and the frequencies of the qubits.
@@ -155,9 +157,9 @@ def two_qubits_coupling(
     m = Material("siliconcryo")
 
     # CPW parameters
-    cpw_width = 10e-6
+    #cpw_width = 10e-6
     cpw = CpwParams(m.permittivity, 500e-6)
-    cpw_gap = cpw.get_gap_from_width(cpw_width)
+    #cpw_gap = cpw.get_gap_from_width(cpw_width)
 
     l_fullwave, _, _ = cpw_calculations.guided_wavelength(freq=resonator.f0,line_width=cpw_width,
                 line_gap=cpw_gap,substrate_thickness=cpw.dielectric_thickness,film_thickness=200e-9,)
@@ -273,7 +275,7 @@ def two_qubits_coupling(
 
     ResonatorMeanderPinPin(design, f'Resonator1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Capacitor1{surname}', pin='a'),end_pin=Dict(component=f'Capacitor2{surname}', pin='a')),
                                             total_length = f"{l_halfwave*1e3}mm", start_left = True, const_radius = '10um', const_width_max = '200um', fillet_padding = '50 um',
-                                            trace_width = f"{cpw_width*1e6}um", gap_width = f"{cpw_gap*1e6}um"))
+                                            trace_width = f"{cpw_width*1e6}um", trace_gap = f"{cpw_gap*1e6}um"))
     
 
     if print_results:
