@@ -459,7 +459,7 @@ class WireTaperPinStretch(QComponent):
         norm = start_point['normal']
         rot_angle = np.arctan2(norm[1], norm[0])
         width = start_point['width']
-        if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
+        '''if 'trace_gap' in self.design.components[self.options.pin_inputs.start_pin.component].options:
             gap = self.design.components[self.options.pin_inputs.start_pin.component].options['trace_gap']
             #In case it is using a parameter - e.g. cpw_width or cpw_gap...
             if isinstance(gap, str):
@@ -467,7 +467,9 @@ class WireTaperPinStretch(QComponent):
                     gap = QUtilities.parse_value_length(self.design.variables[gap])
                 gap = QUtilities.parse_value_length(gap) / QUtilities.get_units(self.design)
         else:
-            gap = p.orig_gap
+            gap = p.orig_gap'''
+
+        gap = p.orig_gap
 
         taper = [
                 (0, width*0.5),
