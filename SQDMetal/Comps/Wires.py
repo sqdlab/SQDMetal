@@ -408,7 +408,7 @@ class WireTaperPinStretch(QComponent):
              g  ####  |         W = trace_width
               ######  |         G = trace_gap
             P ######  W         D = dist_extend
-              ######  |         g = 
+              ######  |         g = orig_gap
                 ####  |
                   ## \|/
               <..D.>
@@ -428,12 +428,12 @@ class WireTaperPinStretch(QComponent):
         * trace_width='20um'
         * trace_gap='10um'
         * dist_extend='30um'
-        * ='10um'
+        * orig_gap='10um'
     """
     default_options = Dict(trace_width='20um',
                            trace_gap='10um',
                            dist_extend='30um',
-                           ='10um')
+                           orig_gap='10um')
 
     def __init__(self, design,
                     name: str = None,
