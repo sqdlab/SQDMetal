@@ -684,6 +684,101 @@
 <img alt="../_images/comps_Comps_All_27_0.png" src="../_images/comps_Comps_All_27_0.png" />
 </div>
 </div>
+<p>Smooth rectangle capacitor</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Capacitors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Smooth_rectangle</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Qubits</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonTaperedInsets</span>
+<span class="n">design</span><span class="o">.</span><span class="n">delete_all_components</span><span class="p">()</span>
+
+<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;-100.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;500um&#39;</span><span class="p">,</span>
+                                                 <span class="n">pocket_width</span> <span class="o">=</span> <span class="s1">&#39;1000um&#39;</span><span class="p">,))</span>
+
+<span class="c1">##################</span>
+
+<span class="n">Smooth_rectangle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span> <span class="n">pin_inputs</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_right_pin&#39;</span><span class="p">)),</span>
+                                  <span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;200um&#39;</span><span class="p">,</span> <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;60um&#39;</span><span class="p">,</span> <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="mi">180</span><span class="p">,</span>
+                                  <span class="n">gap_back</span> <span class="o">=</span> <span class="s1">&#39;25um&#39;</span><span class="p">,</span> <span class="n">gap_front</span> <span class="o">=</span> <span class="s1">&#39;25um&#39;</span><span class="p">,</span> <span class="n">gap_side</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">gap_fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">))</span>
+
+<span class="c1">###################</span>
+
+<span class="n">QUtilities</span><span class="o">.</span><span class="n">plot_highlight_component</span><span class="p">(</span><span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">design</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/comps_Comps_All_29_0.png" src="../_images/comps_Comps_All_29_0.png" />
+</div>
+</div>
+<p>Smooth Semi-circle Capacitor for Transmons</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Capacitors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Smooth_Capacitor_Semicircle</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Qubits</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonTaperedInsets</span>
+<span class="n">design</span><span class="o">.</span><span class="n">delete_all_components</span><span class="p">()</span>
+
+<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;-100.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;500um&#39;</span><span class="p">,</span>
+                                                 <span class="n">pocket_width</span> <span class="o">=</span> <span class="s1">&#39;1000um&#39;</span><span class="p">,</span><span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s1">&#39;10um&#39;</span><span class="p">))</span>
+
+<span class="c1">##################</span>
+<span class="n">Smooth_Capacitor_Semicircle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span> <span class="n">pin_inputs</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_right_pin&#39;</span><span class="p">)),</span>
+                                  <span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;150um&#39;</span><span class="p">,</span> <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;190um&#39;</span><span class="p">,</span> <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;61um&#39;</span><span class="p">,</span> <span class="n">circle_offset</span> <span class="o">=</span> <span class="s1">&#39;10um&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="mi">180</span><span class="p">,</span>
+                                  <span class="n">gap_side</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">gap_back</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">))</span>
+
+<span class="c1">###################</span>
+
+<span class="n">QUtilities</span><span class="o">.</span><span class="n">plot_highlight_component</span><span class="p">(</span><span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">design</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/comps_Comps_All_31_0.png" src="../_images/comps_Comps_All_31_0.png" />
+</div>
+</div>
+<p>Synapse Capacitor for Transmons</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Capacitors</span><span class="w"> </span><span class="kn">import</span> <span class="n">Smooth_synapse</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Qubits</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonTaperedInsets</span>
+<span class="n">design</span><span class="o">.</span><span class="n">delete_all_components</span><span class="p">()</span>
+
+<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;-100.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;500um&#39;</span><span class="p">,</span>
+                                                 <span class="n">pocket_width</span> <span class="o">=</span> <span class="s1">&#39;1000um&#39;</span><span class="p">,</span><span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s1">&#39;10um&#39;</span><span class="p">))</span>
+
+<span class="c1">###################</span>
+
+<span class="n">Smooth_synapse</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span> <span class="n">pin_inputs</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_right_pin&#39;</span><span class="p">)),</span>
+                                  <span class="n">bulb_radius</span> <span class="o">=</span> <span class="s1">&#39;100um&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;40um&#39;</span><span class="p">,</span> <span class="n">rect_width</span> <span class="o">=</span><span class="s1">&#39;10um&#39;</span><span class="p">,</span><span class="n">bulb_scale_y</span> <span class="o">=</span> <span class="s2">&quot;1.1&quot;</span><span class="p">,</span> <span class="n">circle_offset</span> <span class="o">=</span> <span class="s2">&quot;-40um&quot;</span><span class="p">,</span>
+                                  <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;61um&#39;</span><span class="p">,</span> <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">big_fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">gap_side</span> <span class="o">=</span> <span class="s1">&#39;10um&#39;</span><span class="p">))</span>
+
+<span class="c1">###################</span>
+
+<span class="n">QUtilities</span><span class="o">.</span><span class="n">plot_highlight_component</span><span class="p">(</span><span class="s1">&#39;leCap&#39;</span><span class="p">,</span> <span class="n">design</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/comps_Comps_All_33_0.png" src="../_images/comps_Comps_All_33_0.png" />
+</div>
+</div>
 </section>
 </section>
 <section id="Inductors">
@@ -692,7 +787,7 @@
 <h3>Meander inductors<a class="headerlink" href="#Meander-inductors" title="Link to this heading"></a></h3>
 <p>Using absolute coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Inductors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InductorMeander</span>
@@ -723,12 +818,12 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_30_0.png" src="../_images/comps_Comps_All_30_0.png" />
+<img alt="../_images/comps_Comps_All_36_0.png" src="../_images/comps_Comps_All_36_0.png" />
 </div>
 </div>
 <p>Using relative coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Inductors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InductorMeanderPinStretch</span>
@@ -752,12 +847,12 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_32_0.png" src="../_images/comps_Comps_All_32_0.png" />
+<img alt="../_images/comps_Comps_All_38_0.png" src="../_images/comps_Comps_All_38_0.png" />
 </div>
 </div>
 <p>Using pins</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Inductors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InductorMeanderPinPin</span>
@@ -785,7 +880,7 @@
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_34_0.png" src="../_images/comps_Comps_All_34_0.png" />
+<img alt="../_images/comps_Comps_All_40_0.png" src="../_images/comps_Comps_All_40_0.png" />
 </div>
 </div>
 </section>
@@ -796,7 +891,7 @@
 <h3>Meander resonators<a class="headerlink" href="#Meander-resonators" title="Link to this heading"></a></h3>
 <p>Using absolute coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Resonators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorMeander</span>
@@ -848,7 +943,7 @@
 <div class="output_area docutils container">
 <div class="highlight"><pre>
 Expected Length: 1mm, Actual Length: 0.9999950580975743mm
-Expected Length: 1mm, Actual Length: 0.9999960457910892mm
+Expected Length: 1mm, Actual Length: 0.9999960457910895mm
 Expected Length: 1mm, Actual Length: 0.9999918916950894mm
 </pre></div></div>
 </div>
@@ -856,12 +951,12 @@ Expected Length: 1mm, Actual Length: 0.9999918916950894mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_37_1.png" src="../_images/comps_Comps_All_37_1.png" />
+<img alt="../_images/comps_Comps_All_43_1.png" src="../_images/comps_Comps_All_43_1.png" />
 </div>
 </div>
 <p>Using relative coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Resonators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorMeanderPin</span>
@@ -915,19 +1010,19 @@ Expected Length: 1mm, Actual Length: 0.9999918916950894mm
 <div class="highlight"><pre>
 Expected Length: 1mm, Actual Length: 0.9999950575725147mm
 Expected Length: 1mm, Actual Length: 0.999996045423972mm
-Expected Length: 1mm, Actual Length: 0.9999918934263768mm
+Expected Length: 1mm, Actual Length: 0.9999918934263767mm
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_39_1.png" src="../_images/comps_Comps_All_39_1.png" />
+<img alt="../_images/comps_Comps_All_45_1.png" src="../_images/comps_Comps_All_45_1.png" />
 </div>
 </div>
 <p>Using pins (can either constrain radius or width)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Resonators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorMeanderPinPin</span>
@@ -978,7 +1073,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_41_1.png" src="../_images/comps_Comps_All_41_1.png" />
+<img alt="../_images/comps_Comps_All_47_1.png" src="../_images/comps_Comps_All_47_1.png" />
 </div>
 </div>
 </section>
@@ -989,7 +1084,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Dicing cross<a class="headerlink" href="#Dicing-cross" title="Link to this heading"></a></h3>
 <p>Simple cross</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Markers</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkerDicingCross</span>
@@ -1011,7 +1106,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_44_0.png" src="../_images/comps_Comps_All_44_0.png" />
+<img alt="../_images/comps_Comps_All_50_0.png" src="../_images/comps_Comps_All_50_0.png" />
 </div>
 </div>
 </section>
@@ -1019,7 +1114,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Square marker<a class="headerlink" href="#Square-marker" title="Link to this heading"></a></h3>
 <p>Simple square</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Markers</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkerSquare</span>
@@ -1042,7 +1137,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_46_0.png" src="../_images/comps_Comps_All_46_0.png" />
+<img alt="../_images/comps_Comps_All_52_0.png" src="../_images/comps_Comps_All_52_0.png" />
 </div>
 </div>
 </section>
@@ -1050,7 +1145,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Quadruple square marker<a class="headerlink" href="#Quadruple-square-marker" title="Link to this heading"></a></h3>
 <p>A quadruple square</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Markers</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkerSquare4</span>
@@ -1075,7 +1170,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_48_0.png" src="../_images/comps_Comps_All_48_0.png" />
+<img alt="../_images/comps_Comps_All_54_0.png" src="../_images/comps_Comps_All_54_0.png" />
 </div>
 </div>
 </section>
@@ -1086,7 +1181,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Rectangular patches<a class="headerlink" href="#Rectangular-patches" title="Link to this heading"></a></h3>
 <p>Basic rectangular patch on a pin</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Bandages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BandageRectPin</span>
@@ -1130,7 +1225,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_51_0.png" src="../_images/comps_Comps_All_51_0.png" />
+<img alt="../_images/comps_Comps_All_57_0.png" src="../_images/comps_Comps_All_57_0.png" />
 </div>
 </div>
 </section>
@@ -1138,7 +1233,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Tapered patches<a class="headerlink" href="#Tapered-patches" title="Link to this heading"></a></h3>
 <p>Basic tapered patch on a pin (note it’s in the centre)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Bandages</span><span class="w"> </span><span class="kn">import</span> <span class="n">BandageTaperedPin</span>
@@ -1178,7 +1273,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_53_0.png" src="../_images/comps_Comps_All_53_0.png" />
+<img alt="../_images/comps_Comps_All_59_0.png" src="../_images/comps_Comps_All_59_0.png" />
 </div>
 </div>
 </section>
@@ -1186,7 +1281,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <section id="Text-Labels">
 <h2>Text Labels<a class="headerlink" href="#Text-Labels" title="Link to this heading"></a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Labels</span><span class="w"> </span><span class="kn">import</span> <span class="n">LabelText</span>
@@ -1230,7 +1325,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_55_0.png" src="../_images/comps_Comps_All_55_0.png" />
+<img alt="../_images/comps_Comps_All_61_0.png" src="../_images/comps_Comps_All_61_0.png" />
 </div>
 </div>
 </section>
@@ -1240,7 +1335,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Basic isolated pin<a class="headerlink" href="#Basic-isolated-pin" title="Link to this heading"></a></h3>
 <p>Basic joint</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[63]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Joints</span><span class="w"> </span><span class="kn">import</span> <span class="n">Joint</span>
@@ -1264,7 +1359,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_58_0.png" src="../_images/comps_Comps_All_58_0.png" />
+<img alt="../_images/comps_Comps_All_64_0.png" src="../_images/comps_Comps_All_64_0.png" />
 </div>
 </div>
 </section>
@@ -1272,7 +1367,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Extending pin off another pin<a class="headerlink" href="#Extending-pin-off-another-pin" title="Link to this heading"></a></h3>
 <p>Extending joint off another pin (can manually specify direction vector or use the source pin’s direction)</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[70]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Joints</span><span class="w"> </span><span class="kn">import</span> <span class="n">Joint</span>
@@ -1316,7 +1411,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_60_0.png" src="../_images/comps_Comps_All_60_0.png" />
+<img alt="../_images/comps_Comps_All_66_0.png" src="../_images/comps_Comps_All_66_0.png" />
 </div>
 </div>
 </section>
@@ -1324,7 +1419,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Pin on side of wire/routing object<a class="headerlink" href="#Pin-on-side-of-wire/routing-object" title="Link to this heading"></a></h3>
 <p>A pin to the side of a wire when given as a fraction of wire’s distance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[79]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Joints</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteJoint</span>
@@ -1361,12 +1456,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_62_0.png" src="../_images/comps_Comps_All_62_0.png" />
+<img alt="../_images/comps_Comps_All_68_0.png" src="../_images/comps_Comps_All_68_0.png" />
 </div>
 </div>
 <p>A pin to the side of a wire when given as an absolute distance along wire</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[99]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Joints</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteJoint</span>
@@ -1402,7 +1497,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_64_0.png" src="../_images/comps_Comps_All_64_0.png" />
+<img alt="../_images/comps_Comps_All_70_0.png" src="../_images/comps_Comps_All_70_0.png" />
 </div>
 </div>
 </section>
@@ -1413,7 +1508,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Wire extending off a pin<a class="headerlink" href="#Wire-extending-off-a-pin" title="Link to this heading"></a></h3>
 <p>Basic wire stretching off a pin</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[81]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WirePinStretch</span>
@@ -1436,12 +1531,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_67_0.png" src="../_images/comps_Comps_All_67_0.png" />
+<img alt="../_images/comps_Comps_All_73_0.png" src="../_images/comps_Comps_All_73_0.png" />
 </div>
 </div>
 <p>Gaps can be added to the start and end for grounding-cutting purposes</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[86]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WirePinStretch</span>
@@ -1472,7 +1567,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_69_0.png" src="../_images/comps_Comps_All_69_0.png" />
+<img alt="../_images/comps_Comps_All_75_0.png" src="../_images/comps_Comps_All_75_0.png" />
 </div>
 </div>
 </section>
@@ -1480,7 +1575,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Manual wire routing through pins<a class="headerlink" href="#Manual-wire-routing-through-pins" title="Link to this heading"></a></h3>
 <p>When facing each other in anti-parallel manner</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[101]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WirePins</span>
@@ -1515,7 +1610,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_71_0.png" src="../_images/comps_Comps_All_71_0.png" />
+<img alt="../_images/comps_Comps_All_77_0.png" src="../_images/comps_Comps_All_77_0.png" />
 </div>
 </div>
 </section>
@@ -1523,7 +1618,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Parallel connecting S-elbow wire<a class="headerlink" href="#Parallel-connecting-S-elbow-wire" title="Link to this heading"></a></h3>
 <p>Antiparallel connecting elbow wire</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[106]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireElbowParallelPinPin</span>
@@ -1557,12 +1652,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_73_0.png" src="../_images/comps_Comps_All_73_0.png" />
+<img alt="../_images/comps_Comps_All_79_0.png" src="../_images/comps_Comps_All_79_0.png" />
 </div>
 </div>
 <p>Antiparallel connecting elbow</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[109]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[36]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireElbowParallelPinPin</span>
@@ -1596,12 +1691,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_75_0.png" src="../_images/comps_Comps_All_75_0.png" />
+<img alt="../_images/comps_Comps_All_81_0.png" src="../_images/comps_Comps_All_81_0.png" />
 </div>
 </div>
 <p>Parallel connecting elbow</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[111]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[37]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireElbowParallelPinPin</span>
@@ -1634,7 +1729,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_77_0.png" src="../_images/comps_Comps_All_77_0.png" />
+<img alt="../_images/comps_Comps_All_83_0.png" src="../_images/comps_Comps_All_83_0.png" />
 </div>
 </div>
 </section>
@@ -1642,7 +1737,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Single elbow connector<a class="headerlink" href="#Single-elbow-connector" title="Link to this heading"></a></h3>
 <p>Basic connecting elbow wire</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[120]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireElbowSingle</span>
@@ -1667,7 +1762,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_79_0.png" src="../_images/comps_Comps_All_79_0.png" />
+<img alt="../_images/comps_Comps_All_85_0.png" src="../_images/comps_Comps_All_85_0.png" />
 </div>
 </div>
 </section>
@@ -1675,7 +1770,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Wire taper (to change wire size)<a class="headerlink" href="#Wire-taper-(to-change-wire-size)" title="Link to this heading"></a></h3>
 <p>Basic taper</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[133]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[60]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireTaperPinStretch</span>
@@ -1690,7 +1785,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 
 <span class="c1">#BASIC POSITIONING (RHS)####</span>
 <span class="n">WireTaperPinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;taper&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;leWire&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;end&#39;</span><span class="p">)),</span>
-                                                  <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;50um&#39;</span><span class="p">,</span> <span class="n">trace_width</span><span class="o">=</span><span class="s1">&#39;30um&#39;</span><span class="p">,</span> <span class="n">trace_gap</span><span class="o">=</span><span class="s1">&#39;20um&#39;</span><span class="p">))</span>
+                                                  <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;50um&#39;</span><span class="p">,</span> <span class="n">trace_width</span><span class="o">=</span><span class="s1">&#39;30um&#39;</span><span class="p">,</span> <span class="n">trace_gap</span><span class="o">=</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span><span class="n">orig_gap</span> <span class="o">=</span> <span class="s1">&#39;5.629um&#39;</span><span class="p">))</span>
 <span class="c1">############################</span>
 
 <span class="n">WirePinStretch</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leWire2&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;taper&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)),</span>
@@ -1704,7 +1799,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_81_0.png" src="../_images/comps_Comps_All_81_0.png" />
+<img alt="../_images/comps_Comps_All_87_0.png" src="../_images/comps_Comps_All_87_0.png" />
 </div>
 </div>
 </section>
@@ -1712,7 +1807,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Wire dual-probe taper<a class="headerlink" href="#Wire-dual-probe-taper" title="Link to this heading"></a></h3>
 <p>Dual probe pins</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[150]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WireTaperProbePinStretch</span>
@@ -1739,7 +1834,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_83_0.png" src="../_images/comps_Comps_All_83_0.png" />
+<img alt="../_images/comps_Comps_All_89_0.png" src="../_images/comps_Comps_All_89_0.png" />
 </div>
 </div>
 </section>
@@ -1750,7 +1845,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Basic Xmon<a class="headerlink" href="#Basic-Xmon" title="Link to this heading"></a></h3>
 <p>Basic Xmon</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[119]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Xmon</span><span class="w"> </span><span class="kn">import</span> <span class="n">Xmon</span>
@@ -1783,7 +1878,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_86_0.png" src="../_images/comps_Comps_All_86_0.png" />
+<img alt="../_images/comps_Comps_All_92_0.png" src="../_images/comps_Comps_All_92_0.png" />
 </div>
 </div>
 </section>
@@ -1794,7 +1889,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>T-junction flux line<a class="headerlink" href="#T-junction-flux-line" title="Link to this heading"></a></h3>
 <p>A T-junction flux line to equally balance the currents to ground on the CPW</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.FluxLines</span><span class="w"> </span><span class="kn">import</span> <span class="n">FluxLineTPin</span>
@@ -1835,7 +1930,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_89_0.png" src="../_images/comps_Comps_All_89_0.png" />
+<img alt="../_images/comps_Comps_All_95_0.png" src="../_images/comps_Comps_All_95_0.png" />
 </div>
 </div>
 </section>
@@ -1846,7 +1941,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Dolan bridge SQUIDs<a class="headerlink" href="#Dolan-bridge-SQUIDs" title="Link to this heading"></a></h3>
 <p>Using absolute coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionDolan</span>
@@ -1886,12 +1981,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_92_0.png" src="../_images/comps_Comps_All_92_0.png" />
+<img alt="../_images/comps_Comps_All_98_0.png" src="../_images/comps_Comps_All_98_0.png" />
 </div>
 </div>
 <p>Using relative coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionDolanPinStretch</span>
@@ -1939,7 +2034,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_94_0.png" src="../_images/comps_Comps_All_94_0.png" />
+<img alt="../_images/comps_Comps_All_100_0.png" src="../_images/comps_Comps_All_100_0.png" />
 </div>
 </div>
 </section>
@@ -1947,7 +2042,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Asymmetric Dolan bridge<a class="headerlink" href="#Asymmetric-Dolan-bridge" title="Link to this heading"></a></h3>
 <p>Using absolute coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionDolanAsymmetric</span>
@@ -1987,12 +2082,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_96_0.png" src="../_images/comps_Comps_All_96_0.png" />
+<img alt="../_images/comps_Comps_All_102_0.png" src="../_images/comps_Comps_All_102_0.png" />
 </div>
 </div>
 <p>Using relative coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionDolanAsymmetricPinStretch</span>
@@ -2031,7 +2126,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_98_0.png" src="../_images/comps_Comps_All_98_0.png" />
+<img alt="../_images/comps_Comps_All_104_0.png" src="../_images/comps_Comps_All_104_0.png" />
 </div>
 </div>
 </section>
@@ -2039,7 +2134,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Dolan bridge single junction<a class="headerlink" href="#Dolan-bridge-single-junction" title="Link to this heading"></a></h3>
 <p>Using absolute coordinates</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionSingleDolan</span>
@@ -2066,12 +2161,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_100_0.png" src="../_images/comps_Comps_All_100_0.png" />
+<img alt="../_images/comps_Comps_All_106_0.png" src="../_images/comps_Comps_All_106_0.png" />
 </div>
 </div>
 <p>From a pin</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[34]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Junctions</span><span class="w"> </span><span class="kn">import</span> <span class="n">JunctionSingleDolanPinStretch</span>
@@ -2101,7 +2196,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_102_0.png" src="../_images/comps_Comps_All_102_0.png" />
+<img alt="../_images/comps_Comps_All_108_0.png" src="../_images/comps_Comps_All_108_0.png" />
 </div>
 </div>
 </section>
@@ -2112,7 +2207,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Rectangular bound<a class="headerlink" href="#Rectangular-bound" title="Link to this heading"></a></h3>
 <p>Basic shielding</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Bounds</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoundRectangle</span>
@@ -2148,7 +2243,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_105_0.png" src="../_images/comps_Comps_All_105_0.png" />
+<img alt="../_images/comps_Comps_All_111_0.png" src="../_images/comps_Comps_All_111_0.png" />
 </div>
 </div>
 </section>
@@ -2156,7 +2251,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Ground shields<a class="headerlink" href="#Ground-shields" title="Link to this heading"></a></h3>
 <p>Basic shielding</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Bounds</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoundGroundShield</span>
@@ -2208,12 +2303,12 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_107_0.png" src="../_images/comps_Comps_All_107_0.png" />
+<img alt="../_images/comps_Comps_All_113_0.png" src="../_images/comps_Comps_All_113_0.png" />
 </div>
 </div>
 <p>Shielding that scales with the gap-to-metal distance</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Bounds</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoundGroundShieldScaleGap</span>
@@ -2266,7 +2361,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_109_0.png" src="../_images/comps_Comps_All_109_0.png" />
+<img alt="../_images/comps_Comps_All_115_0.png" src="../_images/comps_Comps_All_115_0.png" />
 </div>
 </div>
 </section>
@@ -2277,7 +2372,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Holes on borders<a class="headerlink" href="#Holes-on-borders" title="Link to this heading"></a></h3>
 <p>Basic borders</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Holes</span><span class="w"> </span><span class="kn">import</span> <span class="n">HoleBorders</span>
@@ -2335,7 +2430,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_112_0.png" src="../_images/comps_Comps_All_112_0.png" />
+<img alt="../_images/comps_Comps_All_118_0.png" src="../_images/comps_Comps_All_118_0.png" />
 </div>
 </div>
 </section>
@@ -2346,7 +2441,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Hall bar<a class="headerlink" href="#Hall-bar" title="Link to this heading"></a></h3>
 <p>Hall bar structure for four probe DC measurements.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Miscellaneous</span><span class="w"> </span><span class="kn">import</span> <span class="n">HallBar</span>
@@ -2376,7 +2471,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_115_0.png" src="../_images/comps_Comps_All_115_0.png" />
+<img alt="../_images/comps_Comps_All_121_0.png" src="../_images/comps_Comps_All_121_0.png" />
 </div>
 </div>
 </section>
@@ -2384,7 +2479,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <h3>Test junctions<a class="headerlink" href="#Test-junctions" title="Link to this heading"></a></h3>
 <p>Structure for four probe measurements of junctions.</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[54]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Miscellaneous</span><span class="w"> </span><span class="kn">import</span> <span class="n">FourProbeJJ</span>
@@ -2404,7 +2499,7 @@ Expected Length: 1mm, Actual Length: 0.9999925525931893mm
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/comps_Comps_All_117_0.png" src="../_images/comps_Comps_All_117_0.png" />
+<img alt="../_images/comps_Comps_All_123_0.png" src="../_images/comps_Comps_All_123_0.png" />
 </div>
 </div>
 </section>
