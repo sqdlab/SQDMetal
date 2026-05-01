@@ -1332,6 +1332,7 @@ def get_square_JJ_width(J_C_uA_um2, configuration='single', target_EJ_GHz=None, 
     must be given. Accepts a list of values, or a single value.
 
     Returns width = height in um of the required JJ area. 
+    Return area of the JJ.
     """
     #assert (target_EJ_GHz is not None) or (target_LJ_nH is not None), "Must supply target EJ or LJ."
     assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
@@ -1362,7 +1363,10 @@ def get_square_JJ_width(J_C_uA_um2, configuration='single', target_EJ_GHz=None, 
     if rounding:
         width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
     width_JJ_um = width_JJ_nm * 1e-3
-    return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+    width_JJ_um = width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+    area_JJ_um2 = width_JJ_um ** 2
+    return width_JJ_um, area_JJ_um2
+
 
 class JJ_arrayManhattan(QComponent):
     # Author: Alexander Nguyen
