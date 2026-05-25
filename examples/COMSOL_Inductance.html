@@ -108,44 +108,44 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KMP_DUPLICATE_LIB_OK&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;TRUE&quot;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
+%autoreload 2
+import os
+os.environ[&quot;KMP_DUPLICATE_LIB_OK&quot;]=&quot;TRUE&quot;
+os.environ[&quot;PMIX_MCA_gds&quot;]=&quot;hash&quot;
 
-<span class="c1"># Import useful packages</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">open_docs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Xmon</span><span class="w"> </span><span class="kn">import</span> <span class="n">Xmon</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Polygons</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolyRectangle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Inductors</span><span class="w"> </span><span class="kn">import</span> <span class="n">InductorMeander</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Joints</span><span class="w"> </span><span class="kn">import</span> <span class="n">JointExtend</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Wires</span><span class="w"> </span><span class="kn">import</span> <span class="n">WirePins</span>
+# Import useful packages
+from qiskit_metal import designs, draw
+from qiskit_metal import MetalGUI, Dict, open_docs
+from SQDMetal.Comps.Xmon import Xmon
+from SQDMetal.Comps.Polygons import PolyRectangle
+from SQDMetal.Comps.Inductors import InductorMeander
+from SQDMetal.Comps.Joints import JointExtend
+from SQDMetal.Comps.Wires import WirePins
 
-<span class="c1"># Set up chip design as planar</span>
-<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="n">overwrite_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+# Set up chip design as planar
+design = designs.DesignPlanar({}, overwrite_enabled=True)
 
-<span class="c1"># Set up chip dimensions</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;250um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;250um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;250um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
+# Set up chip dimensions
+design.chips.main.size.size_x = &#39;250um&#39;
+design.chips.main.size.size_y = &#39;250um&#39;
+design.chips.main.size.size_z = &#39;250um&#39;
+design.chips.main.size.center_x = &#39;0mm&#39;
+design.chips.main.size.center_y = &#39;0mm&#39;
 
 
-<span class="n">InductorMeander</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;leInd&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;-50um&#39;</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span> <span class="n">end_x</span><span class="o">=</span><span class="s1">&#39;50um&#39;</span> <span class="p">,</span> <span class="n">end_y</span><span class="o">=</span><span class="s1">&#39;0um&#39;</span><span class="p">,</span>
-                                              <span class="n">track_width</span><span class="o">=</span><span class="s1">&#39;2um&#39;</span><span class="p">,</span> <span class="n">meander_spacing</span><span class="o">=</span><span class="s1">&#39;4um&#39;</span><span class="p">,</span> <span class="n">meander_width</span><span class="o">=</span><span class="s1">&#39;30um&#39;</span><span class="p">,</span> <span class="n">num_long_sections</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-                                              <span class="n">init_gap</span><span class="o">=</span><span class="s1">&#39;5um&#39;</span><span class="p">,</span> <span class="n">mean_gap</span><span class="o">=</span><span class="s1">&#39;5um&#39;</span><span class="p">))</span>
-<span class="n">JointExtend</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;jntA&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">jointObj</span><span class="o">=</span><span class="s1">&#39;leInd&#39;</span><span class="p">,</span> <span class="n">jointPin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">extend_off_pin_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="n">JointExtend</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;jntB&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">jointObj</span><span class="o">=</span><span class="s1">&#39;leInd&#39;</span><span class="p">,</span> <span class="n">jointPin</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;20um&#39;</span><span class="p">,</span> <span class="n">extend_off_pin_dir</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="n">JointExtend</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;jntAa&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">jointObj</span><span class="o">=</span><span class="s1">&#39;jntA&#39;</span><span class="p">,</span> <span class="n">jointPin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;100um&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">90</span><span class="p">))</span>
-<span class="n">JointExtend</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;jntBa&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">jointObj</span><span class="o">=</span><span class="s1">&#39;jntB&#39;</span><span class="p">,</span> <span class="n">jointPin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="n">dist_extend</span><span class="o">=</span><span class="s1">&#39;100um&#39;</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">90</span><span class="p">))</span>
-<span class="n">WirePins</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;wireFeed&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pathObjPins</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;leInd&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">),</span> <span class="s1">&#39;jntA&#39;</span><span class="p">,</span> <span class="s1">&#39;jntAa&#39;</span><span class="p">,</span> <span class="s1">&#39;jntBa&#39;</span><span class="p">,</span> <span class="s1">&#39;jntB&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;leInd&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">)],</span> <span class="n">layer</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span>
+InductorMeander(design, &#39;leInd&#39;, options=dict(pos_x=&#39;-50um&#39;, pos_y=&#39;0um&#39;, end_x=&#39;50um&#39; , end_y=&#39;0um&#39;,
+                                              track_width=&#39;2um&#39;, meander_spacing=&#39;4um&#39;, meander_width=&#39;30um&#39;, num_long_sections=10,
+                                              init_gap=&#39;5um&#39;, mean_gap=&#39;5um&#39;))
+JointExtend(design, &#39;jntA&#39;, options=dict(jointObj=&#39;leInd&#39;, jointPin=&#39;a&#39;, dist_extend=&#39;20um&#39;, extend_off_pin_dir=True))
+JointExtend(design, &#39;jntB&#39;, options=dict(jointObj=&#39;leInd&#39;, jointPin=&#39;b&#39;, dist_extend=&#39;20um&#39;, extend_off_pin_dir=True))
+JointExtend(design, &#39;jntAa&#39;, options=dict(jointObj=&#39;jntA&#39;, jointPin=&#39;a&#39;, dist_extend=&#39;100um&#39;, orientation=90))
+JointExtend(design, &#39;jntBa&#39;, options=dict(jointObj=&#39;jntB&#39;, jointPin=&#39;a&#39;, dist_extend=&#39;100um&#39;, orientation=90))
+WirePins(design, &#39;wireFeed&#39;, options=Dict(pathObjPins=[(&#39;leInd&#39;, &#39;a&#39;), &#39;jntA&#39;, &#39;jntAa&#39;, &#39;jntBa&#39;, &#39;jntB&#39;, (&#39;leInd&#39;, &#39;b&#39;)], layer=7))
 
-<span class="c1"># gui = MetalGUI(design)</span>
-<span class="c1"># gui.rebuild()</span>
-<span class="n">design</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+# gui = MetalGUI(design)
+# gui.rebuild()
+design.rebuild()
 </pre></div>
 </div>
 </div>
@@ -153,32 +153,32 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.COMSOL.Model</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMSOL_Model</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.COMSOL.SimInductance</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMSOL_Simulation_Inductance</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.COMSOL.Model import COMSOL_Model
+from SQDMetal.COMSOL.SimInductance import COMSOL_Simulation_Inductance
 
-<span class="n">COMSOL_Model</span><span class="o">.</span><span class="n">init_engine</span><span class="p">()</span>
-<span class="n">cmsl</span> <span class="o">=</span> <span class="n">COMSOL_Model</span><span class="p">(</span><span class="s1">&#39;leModel&#39;</span><span class="p">)</span>
-<span class="n">sim_Inds</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_Inductance</span><span class="p">(</span><span class="n">cmsl</span><span class="p">)</span>
+COMSOL_Model.init_engine()
+cmsl = COMSOL_Model(&#39;leModel&#39;)
+sim_Inds = COMSOL_Simulation_Inductance(cmsl)
 
-<span class="n">cmsl</span><span class="o">.</span><span class="n">initialize_model</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="p">[</span><span class="n">sim_Inds</span><span class="p">],</span> <span class="n">bottom_grounded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+cmsl.initialize_model(design, [sim_Inds], bottom_grounded=True)
 
-<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">fuse_threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
-<span class="c1"># cmsl.add_ground_plane()</span>
-<span class="n">cmsl</span><span class="o">.</span><span class="n">fuse_all_metals</span><span class="p">()</span>
+cmsl.add_metallic(1, threshold=1e-10, fuse_threshold=1e-10)
+# cmsl.add_ground_plane()
+cmsl.fuse_all_metals()
 
-<span class="n">sim_Inds</span><span class="o">.</span><span class="n">set_return_loop_on_route</span><span class="p">(</span><span class="s1">&#39;wireFeed&#39;</span><span class="p">)</span>
+sim_Inds.set_return_loop_on_route(&#39;wireFeed&#39;)
 
-<span class="c1"># cmsl.set_current_feed_on_CPW_on_Route(&#39;wireFeed&#39;, pin_name=&#39;end&#39;, width_U = 20e-6, src_gnd_gap=10e-6)</span>
+# cmsl.set_current_feed_on_CPW_on_Route(&#39;wireFeed&#39;, pin_name=&#39;end&#39;, width_U = 20e-6, src_gnd_gap=10e-6)
 
-<span class="c1"># #(F) - OPTIONAL: Set everything within a rectangle to be finely meshed</span>
-<span class="c1"># cmsl.fine_mesh_in_rectangle(-3e-3, -140e-6, -2.9e-3, 167e-6, 2e-7, 5e-6)</span>
-<span class="c1"># #(G) - OPTIONAL: Set conductors within a rectangle to be finely meshed</span>
-<span class="c1"># cmsl.fine_mesh_conductors_in_rectangle(-2.86e-3, -145e-6, -2.53e-3, 167e-6, 2e-7, 5e-6)</span>
+# #(F) - OPTIONAL: Set everything within a rectangle to be finely meshed
+# cmsl.fine_mesh_in_rectangle(-3e-3, -140e-6, -2.9e-3, 167e-6, 2e-7, 5e-6)
+# #(G) - OPTIONAL: Set conductors within a rectangle to be finely meshed
+# cmsl.fine_mesh_conductors_in_rectangle(-2.86e-3, -145e-6, -2.53e-3, 167e-6, 2e-7, 5e-6)
 
-<span class="n">cmsl</span><span class="o">.</span><span class="n">build_geom_mater_elec_mesh</span><span class="p">(</span><span class="n">skip_meshing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mesh_structure</span><span class="o">=</span><span class="s1">&#39;Fine&#39;</span><span class="p">)</span>
+cmsl.build_geom_mater_elec_mesh(skip_meshing=True, mesh_structure=&#39;Fine&#39;)
 
-<span class="c1"># cmsl.save(&#39;Test&#39;)</span>
-<span class="n">inductance</span><span class="p">,</span> <span class="n">resistance</span> <span class="o">=</span> <span class="n">sim_Inds</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+# cmsl.save(&#39;Test&#39;)
+inductance, resistance = sim_Inds.run()
 </pre></div>
 </div>
 </div>
@@ -186,7 +186,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[56]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inductance</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>inductance
 </pre></div>
 </div>
 </div>

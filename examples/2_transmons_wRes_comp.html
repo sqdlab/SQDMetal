@@ -120,31 +120,31 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KMP_DUPLICATE_LIB_OK&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;TRUE&quot;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMPI_MCA_btl&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;tcp,self&#39;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;OMPI_MCA_rmaps_base_oversubscribe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
+%autoreload 2
+%matplotlib inline
+import os
+os.environ[&quot;KMP_DUPLICATE_LIB_OK&quot;]=&quot;TRUE&quot;
+os.environ[&quot;PMIX_MCA_gds&quot;]=&quot;hash&quot;
+os.environ[&#39;OMPI_MCA_btl&#39;] = &#39;tcp,self&#39;
+os.environ[&#39;OMPI_MCA_rmaps_base_oversubscribe&#39;] = &#39;1&#39;
 
-<span class="c1"># Import useful packages</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">open_docs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QUtilities</span><span class="w"> </span><span class="kn">import</span> <span class="n">QUtilities</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Qubits</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonTaperedInsets</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Test_capacitor</span><span class="w"> </span><span class="kn">import</span> <span class="n">Smooth_CapacitorProngPin</span><span class="p">,</span> <span class="n">Smooth_Capacitor_Semicircle</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Resonators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorMeanderPinPin</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.analyses</span><span class="w"> </span><span class="kn">import</span> <span class="n">cpw_calculations</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">Material</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.CpwParams</span><span class="w"> </span><span class="kn">import</span> <span class="n">CpwParams</span>
+# Import useful packages
+from qiskit_metal import designs, draw
+from qiskit_metal import MetalGUI, Dict, open_docs
+from SQDMetal.Utilities.QUtilities import QUtilities
+import matplotlib.pyplot as plt
+from SQDMetal.Comps.Qubits import TransmonTaperedInsets
+from SQDMetal.Comps.Test_capacitor import Smooth_CapacitorProngPin, Smooth_Capacitor_Semicircle
+from SQDMetal.Comps.Resonators import ResonatorMeanderPinPin
+from SQDMetal.Utilities.QubitDesigner import ResonatorHalfWave
+from qiskit_metal.analyses import cpw_calculations
+from SQDMetal.Utilities.Materials import Material
+from SQDMetal.Utilities.CpwParams import CpwParams
 
-<span class="c1">### Qubit, resonator frequencies</span>
-<span class="n">qubit_freq</span> <span class="o">=</span> <span class="p">[</span><span class="mf">4.5</span><span class="o">*</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">4.5</span><span class="o">*</span><span class="mf">1e9</span><span class="p">]</span>
-<span class="n">res_freq_GHZ</span> <span class="o">=</span> <span class="n">qubit_freq</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">2.3</span> <span class="o">*</span><span class="mf">1e9</span>
+### Qubit, resonator frequencies
+qubit_freq = [4.5*1e9, 4.5*1e9]
+res_freq_GHZ = qubit_freq[1] + 2.3 *1e9
 </pre></div>
 </div>
 </div>
@@ -154,26 +154,26 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">## Resonator design parameters</span>
-<span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="n">res_freq_GHZ</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>## Resonator design parameters
+resonator = ResonatorHalfWave(res_freq_GHZ)
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Material</span><span class="p">(</span><span class="s2">&quot;siliconcryo&quot;</span><span class="p">)</span>
+m = Material(&quot;siliconcryo&quot;)
 
-<span class="c1"># CPW parameters</span>
-<span class="n">cpw_width</span> <span class="o">=</span> <span class="mf">10e-6</span>
-<span class="n">cpw</span> <span class="o">=</span> <span class="n">CpwParams</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">permittivity</span><span class="p">,</span> <span class="mf">500e-6</span><span class="p">)</span>
-<span class="n">cpw_gap</span> <span class="o">=</span> <span class="n">cpw</span><span class="o">.</span><span class="n">get_gap_from_width</span><span class="p">(</span><span class="n">cpw_width</span><span class="p">)</span>
+# CPW parameters
+cpw_width = 10e-6
+cpw = CpwParams(m.permittivity, 500e-6)
+cpw_gap = cpw.get_gap_from_width(cpw_width)
 
-<span class="n">l_fullwave</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">cpw_calculations</span><span class="o">.</span><span class="n">guided_wavelength</span><span class="p">(</span>
-                <span class="n">freq</span><span class="o">=</span><span class="n">resonator</span><span class="o">.</span><span class="n">f0</span><span class="p">,</span>
-                <span class="n">line_width</span><span class="o">=</span><span class="n">cpw_width</span><span class="p">,</span>
-                <span class="n">line_gap</span><span class="o">=</span><span class="n">cpw_gap</span><span class="p">,</span>
-                <span class="n">substrate_thickness</span><span class="o">=</span><span class="n">cpw</span><span class="o">.</span><span class="n">dielectric_thickness</span><span class="p">,</span>
-                <span class="n">film_thickness</span><span class="o">=</span><span class="mf">200e-9</span><span class="p">,</span>
-            <span class="p">)</span>
-<span class="n">l_halfwave</span> <span class="o">=</span> <span class="n">l_fullwave</span> <span class="o">/</span> <span class="mi">2</span>
+l_fullwave, _, _ = cpw_calculations.guided_wavelength(
+                freq=resonator.f0,
+                line_width=cpw_width,
+                line_gap=cpw_gap,
+                substrate_thickness=cpw.dielectric_thickness,
+                film_thickness=200e-9,
+            )
+l_halfwave = l_fullwave / 2
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resonator length (f = </span><span class="si">{</span><span class="n">res_freq_GHZ</span><span class="si">}</span><span class="s2"> GHz): </span><span class="si">{</span><span class="n">l_halfwave</span><span class="w"> </span><span class="o">*</span><span class="mf">1e3</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> mm&quot;</span><span class="p">)</span>
+print(f&quot;Resonator length (f = {res_freq_GHZ} GHz): {l_halfwave *1e3:.2f} mm&quot;)
 </pre></div>
 </div>
 </div>
@@ -189,54 +189,54 @@ Resonator length (f = 6800000000.0 GHz): 8.96 mm
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%matplotlib inline
 
-<span class="c1"># Set up chip design as planar</span>
-<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="n">overwrite_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+# Set up chip design as planar
+design = designs.DesignPlanar({}, overwrite_enabled=True)
 
-<span class="c1"># Set up chip dimensions</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;5.0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;2.0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;-280um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
+# Set up chip dimensions
+design.chips.main.size.size_x = &#39;5.0mm&#39;
+design.chips.main.size.size_y = &#39;2.0mm&#39;
+design.chips.main.size.size_z = &#39;-280um&#39;
+design.chips.main.size.center_x = &#39;0.0mm&#39;
+design.chips.main.size.center_y = &#39;0mm&#39;
 
-<span class="c1"># Resonator and feedline gap width (W) and center conductor width (S)</span>
-<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;10 um&#39;</span> <span class="c1">#S</span>
-<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_gap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6 um&#39;</span> <span class="c1">#W</span>
+# Resonator and feedline gap width (W) and center conductor width (S)
+design.variables[&#39;cpw_width&#39;] = &#39;10 um&#39; #S
+design.variables[&#39;cpw_gap&#39;] = &#39;6 um&#39; #W
 
-<span class="c1">#gui = MetalGUI(design)</span>
-
-
-<span class="c1">########################################</span>
-
-<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;-1.25mm&#39;</span><span class="p">,</span> <span class="n">pos_y</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
-                                                       <span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;0.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;420um&#39;</span><span class="p">,</span><span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s2">&quot;-10um&quot;</span><span class="p">))</span>
+#gui = MetalGUI(design)
 
 
-<span class="n">TransmonTaperedInsets</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Qubit2&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;1.65mm&#39;</span><span class="p">,</span> <span class="n">pos_y</span> <span class="o">=</span> <span class="s1">&#39;0.0mm&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
-                                                       <span class="n">pocket_lower_tighten</span> <span class="o">=</span> <span class="s1">&#39;0.0um&#39;</span><span class="p">,</span><span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;420um&#39;</span><span class="p">,</span> <span class="n">chrgln_pin_x_offset</span><span class="o">=</span><span class="s2">&quot;0um&quot;</span><span class="p">,</span> <span class="n">chrgln_pin_y_offset</span><span class="o">=</span><span class="s2">&quot;-10um&quot;</span><span class="p">))</span>
+########################################
+
+TransmonTaperedInsets(design, &#39;Qubit1&#39;, options = Dict(pos_x = &#39;-1.25mm&#39;, pos_y = &#39;0.0mm&#39;, orientation = &#39;0&#39;,
+                                                       pocket_lower_tighten = &#39;0.0um&#39;,pocket_height = &#39;420um&#39;,chrgln_pin_x_offset=&quot;0um&quot;, chrgln_pin_y_offset=&quot;-10um&quot;))
 
 
-<span class="n">Smooth_Capacitor_Semicircle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_right_pin&#39;</span><span class="p">)),</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span>
-                                                              <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;160um&#39;</span><span class="p">,</span><span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;80um&#39;</span><span class="p">,</span> <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;60um&#39;</span><span class="p">,</span>
-                                                              <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span><span class="p">,</span><span class="n">fillet_resolution</span> <span class="o">=</span> <span class="mi">20</span><span class="p">))</span>
-
-<span class="n">Smooth_Capacitor_Semicircle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Capacitor2&#39;</span><span class="p">,</span><span class="n">options</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Qubit2&#39;</span><span class="p">,</span><span class="n">pin</span><span class="o">=</span><span class="s1">&#39;top_left_pin&#39;</span><span class="p">)),</span> <span class="n">orientation</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                                                              <span class="n">rect_width</span> <span class="o">=</span> <span class="s1">&#39;160um&#39;</span><span class="p">,</span><span class="n">rect_length</span> <span class="o">=</span> <span class="s1">&#39;80um&#39;</span><span class="p">,</span> <span class="n">semi_radius</span> <span class="o">=</span> <span class="s1">&#39;60um&#39;</span><span class="p">,</span>
-                                                              <span class="n">fillet_radius</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span><span class="p">,</span><span class="n">fillet_resolution</span> <span class="o">=</span> <span class="mi">20</span><span class="p">))</span>
-
-<span class="n">ResonatorMeanderPinPin</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Resonator1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span><span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">),</span>
-                                                            <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Capacitor2&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)),</span>
-                                            <span class="n">total_length</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">l_halfwave</span><span class="o">*</span><span class="mf">1e3</span><span class="si">}</span><span class="s2">mm&quot;</span><span class="p">,</span> <span class="n">start_left</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                                            <span class="n">trace_width</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_width&#39;</span><span class="p">],</span> <span class="n">gap_width</span> <span class="o">=</span> <span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_gap&#39;</span><span class="p">]))</span>
+TransmonTaperedInsets(design, &#39;Qubit2&#39;, options = Dict(pos_x = &#39;1.65mm&#39;, pos_y = &#39;0.0mm&#39;, orientation = &#39;0&#39;,
+                                                       pocket_lower_tighten = &#39;0.0um&#39;,pocket_height = &#39;420um&#39;, chrgln_pin_x_offset=&quot;0um&quot;, chrgln_pin_y_offset=&quot;-10um&quot;))
 
 
-<span class="c1">#######################################</span>
+Smooth_Capacitor_Semicircle(design, &#39;Capacitor1&#39;,options=Dict(pin_inputs=Dict(start_pin=Dict(component=f&#39;Qubit1&#39;,pin=&#39;top_right_pin&#39;)), orientation=180,
+                                                              rect_width = &#39;160um&#39;,rect_length = &#39;80um&#39;, semi_radius = &#39;60um&#39;,
+                                                              fillet_radius = &#39;5um&#39;,fillet_resolution = 20))
 
-<span class="c1"># Create GUI</span>
-<span class="c1">#gui.rebuild()</span>
-<span class="n">design</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+Smooth_Capacitor_Semicircle(design, &#39;Capacitor2&#39;,options=Dict(pin_inputs=Dict(start_pin=Dict(component=f&#39;Qubit2&#39;,pin=&#39;top_left_pin&#39;)), orientation=0,
+                                                              rect_width = &#39;160um&#39;,rect_length = &#39;80um&#39;, semi_radius = &#39;60um&#39;,
+                                                              fillet_radius = &#39;5um&#39;,fillet_resolution = 20))
+
+ResonatorMeanderPinPin(design, &#39;Resonator1&#39;, options = Dict(pin_inputs=Dict(start_pin=Dict(component=&#39;Capacitor1&#39;, pin=&#39;a&#39;),
+                                                            end_pin=Dict(component=&#39;Capacitor2&#39;, pin=&#39;a&#39;)),
+                                            total_length = f&quot;{l_halfwave*1e3}mm&quot;, start_left = False,
+                                            trace_width = design.variables[&#39;cpw_width&#39;], gap_width = design.variables[&#39;cpw_gap&#39;]))
+
+
+#######################################
+
+# Create GUI
+#gui.rebuild()
+design.rebuild()
 </pre></div>
 </div>
 </div>
@@ -244,8 +244,8 @@ Resonator length (f = 6800000000.0 GHz): 8.96 mm
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">QUtilities</span><span class="o">.</span><span class="n">plot_all_components</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>QUtilities.plot_all_components(design)
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -263,50 +263,50 @@ Resonator length (f = 6800000000.0 GHz): 8.96 mm
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Capacitance_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Capacitance_Simulation</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">io</span><span class="w"> </span><span class="kn">import</span> <span class="n">StringIO</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.PALACE.Capacitance_Simulation import PALACE_Capacitance_Simulation
+import contextlib
+import sys
+from io import StringIO
 
-<span class="c1">#Eigenmode Simulation Options</span>
-<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
-                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
-                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
-                <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>                                <span class="c1">#number of solutions to save for E-field visualization - ordered by the entries in the computed capacitance matrix</span>
-                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>                              <span class="c1">#error residual tolerance for iterative solver</span>
-                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
-                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
-                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/repo/spack/opt/spack/linux-skylake/palace-0.15.0-p26f6lzvfjt4qemxgkdpjhhyogo7axk4/bin/palace&quot;</span><span class="p">,</span><span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
-                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>                                  <span class="c1">#number of threads to use in PALACE simulation</span>
-                <span class="c1">#e.g.: &quot;palace_dir&quot;:&quot;/home/prasanna/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.2.0/palace-0.12.0-q65qvkwsa5zglixv3rmm424wqsu3mcpv/bin/palace&quot;</span>
-                <span class="p">}</span>
+#Eigenmode Simulation Options
+user_defined_options = {
+                &quot;mesh_refinement&quot;: 0,                             #refines mesh in PALACE - essetially divides every mesh element in half
+                &quot;dielectric_material&quot;: &quot;silicon&quot;,                  #choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;
+                &quot;solver_order&quot;: 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
+                &quot;solns_to_save&quot;: 3,                                #number of solutions to save for E-field visualization - ordered by the entries in the computed capacitance matrix
+                &quot;solver_tol&quot;: 1.0e-8,                              #error residual tolerance for iterative solver
+                &quot;solver_maxits&quot;: 200,                              #number of solver iterations
+                &quot;fillet_resolution&quot;:16,                            #number of vertices per quarter turn on a filleted path
+                &quot;palace_dir&quot;:&quot;~/repo/spack/opt/spack/linux-skylake/palace-0.15.0-p26f6lzvfjt4qemxgkdpjhhyogo7axk4/bin/palace&quot;,#&quot;PATH/TO/PALACE/BINARY&quot;,
+                &quot;num_cpus&quot;: 16,                                  #number of threads to use in PALACE simulation
+                #e.g.: &quot;palace_dir&quot;:&quot;/home/prasanna/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.2.0/palace-0.12.0-q65qvkwsa5zglixv3rmm424wqsu3mcpv/bin/palace&quot;
+                }
 
-<span class="c1">#Create the Palace capacitance simulation</span>
-<span class="n">cap_sim</span> <span class="o">=</span> <span class="n">PALACE_Capacitance_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;2_transmons_wRes_comp&#39;</span><span class="p">,</span>                                      <span class="c1">#name of simulation</span>
-                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                      <span class="c1">#feed in qiskit metal design</span>
-                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                  <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
-                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                             <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
-                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                           <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
-                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                        <span class="c1">#provide options chosen above</span>
-                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                        <span class="c1">#create mesh, config and HPC batch files</span>
+#Create the Palace capacitance simulation
+cap_sim = PALACE_Capacitance_Simulation(name = &#39;2_transmons_wRes_comp&#39;,                                      #name of simulation
+                                        metal_design = design,                                      #feed in qiskit metal design
+                                        sim_parent_directory = &quot;&quot;,                                  #choose directory where mesh file, config file and HPC batch file will be saved
+                                        mode = &#39;simPC&#39;,                                             #choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;
+                                        meshing = &#39;GMSH&#39;,                                           #choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;
+                                        user_options = user_defined_options,                        #provide options chosen above
+                                        create_files = True)                                        #create mesh, config and HPC batch files
 
-<span class="c1">#Add metallic elements from layer 1 in design file</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+#Add metallic elements from layer 1 in design file
+cap_sim.add_metallic(1)
 
-<span class="c1">#Add ground plane to simulations</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+#Add ground plane to simulations
+cap_sim.add_ground_plane()
 
-<span class="c1">#Fine mesh the transmon cross qubit region</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Qubit1&#39;</span><span class="p">,</span> <span class="s1">&#39;Qubit2&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+#Fine mesh the transmon cross qubit region
+cap_sim.fine_mesh_components([&#39;Qubit1&#39;, &#39;Qubit2&#39;], min_size=12e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=False)
 
-<span class="c1">#Fine mesh resonator, launch pads and transmission line</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Resonator1&#39;</span><span class="p">,</span><span class="s1">&#39;Capacitor1&#39;</span><span class="p">,</span><span class="s1">&#39;Capacitor2&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">120e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">)</span>
+#Fine mesh resonator, launch pads and transmission line
+cap_sim.fine_mesh_components([&#39;Resonator1&#39;,&#39;Capacitor1&#39;,&#39;Capacitor2&#39;], min_size=12e-6, max_size=120e-6, taper_dist_min=10e-6)
 
-<span class="c1">#This will prepare the mesh file and the config file</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+#This will prepare the mesh file and the config file
+cap_sim.prepare_simulation()
 
-<span class="n">capMat</span> <span class="o">=</span> <span class="n">cap_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+capMat = cap_sim.run()
 </pre></div>
 </div>
 </div>
@@ -532,9 +532,9 @@ Error in plotting: &#39;Data array (V) not present in this dataset.&#39;
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Display the indices of the conductors to match with capacitance matrix - it will be automatically generated with the output anyway</span>
-<span class="n">cap_sim</span><span class="o">.</span><span class="n">display_conductor_indices</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#Display the indices of the conductors to match with capacitance matrix - it will be automatically generated with the output anyway
+cap_sim.display_conductor_indices()
+plt.show()
 </pre></div>
 </div>
 </div>
@@ -549,13 +549,13 @@ Error in plotting: &#39;Data array (V) not present in this dataset.&#39;
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Gives qubit parameters</span>
-<span class="n">results</span> <span class="o">=</span> <span class="n">cap_sim</span><span class="o">.</span><span class="n">calc_params_2_floating_transmons</span><span class="p">(</span><span class="n">print_all_capacitances</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                                            <span class="n">qubit_freq</span><span class="o">=</span><span class="p">(</span><span class="n">qubit_freq</span><span class="p">),</span>
-                                            <span class="n">res</span> <span class="o">=</span> <span class="n">resonator</span>
-                                            <span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Gives qubit parameters
+results = cap_sim.calc_params_2_floating_transmons(print_all_capacitances=True,
+                                            qubit_freq=(qubit_freq),
+                                            res = resonator
+                                            )
 
-<span class="c1">###</span>
+###
 </pre></div>
 </div>
 </div>
@@ -623,10 +623,10 @@ Z on/off ratio   =      1.121
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res_ground: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pad1 to pad2: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res to pad1: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Res to pad2: &#39;</span><span class="p">,</span><span class="n">capMat</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">]</span><span class="o">*</span><span class="mf">1e15</span><span class="p">,</span> <span class="s1">&#39;fF&#39;</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>print(&#39;Res_ground: &#39;,capMat[0,3]*1e15, &#39;fF&#39;)
+print(&#39;Pad1 to pad2: &#39;,capMat[1,2]*1e15, &#39;fF&#39;)
+print(&#39;Res to pad1: &#39;,capMat[1,3]*1e15, &#39;fF&#39;)
+print(&#39;Res to pad2: &#39;,capMat[2,3]*1e15, &#39;fF&#39;)
 </pre></div>
 </div>
 </div>
@@ -645,7 +645,7 @@ Res to pad2:  -2.3543623043 fF
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">resonator</span><span class="o">.</span><span class="n">get_res_inductance</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>resonator.get_res_inductance()
 </pre></div>
 </div>
 </div>

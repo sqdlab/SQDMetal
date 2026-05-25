@@ -131,25 +131,12 @@ mkdir<span class="w"> </span>repo
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>compiler<span class="w"> </span>find
 </pre></div>
 </div>
-<p>Ensure that it says gcc is at least above version 11.</p>
-<p>Clone palace and <a class="reference external" href="https://github.com/awslabs/palace/issues/360#issuecomment-2874057931">install using spack</a>:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/awslabs/palace.git
-</pre></div>
-</div>
-<p>From here, we go through the Palace installation process for <a class="reference internal" href="#ubuntu"><span class="std std-ref">Ubuntu</span></a> and <a class="reference internal" href="#mac"><span class="std std-ref">Mac</span></a> separately, before covering the <a class="reference internal" href="#recommended-add-ons"><span class="std std-ref">installation of Paraview and Pyvista</span></a>.</p>
+<p>Ensure that it says gcc is at least above version 11. From here, we go through the Palace installation process for <a class="reference internal" href="#ubuntu"><span class="std std-ref">Ubuntu</span></a> and <a class="reference internal" href="#mac"><span class="std std-ref">Mac</span></a> separately, before covering the <a class="reference internal" href="#recommended-add-ons"><span class="std std-ref">installation of Paraview and Pyvista</span></a>.</p>
 <section id="ubuntu">
 <h2>Ubuntu<a class="headerlink" href="#ubuntu" title="Link to this heading"></a></h2>
-<p>Now the idea is that we create a local virtual environment in spack called <cite>spack-env</cite>, add local palace install as a repo in it and concretize+install. Note that you can skip the creation and activation of the environment, but you may run into issues due to dependecies if you have used spack previously. This is done via:</p>
+<p>The latest version of Palace successfully runs off spack via:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>./spack/share/spack/setup-env.sh
-spack<span class="w"> </span>repo<span class="w"> </span>add<span class="w"> </span>./palace/spack_repo/local
-spack<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>spack-env
-spack<span class="w"> </span>env<span class="w"> </span>activate<span class="w"> </span>spack-env
-spack<span class="w"> </span>add<span class="w"> </span>local.palace@develop
-</pre></div>
-</div>
-<p>Now concretize+install via:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>spack<span class="w"> </span>concretize<span class="w"> </span>-f
-spack<span class="w"> </span>install<span class="w"> </span>--only-concrete
+spack<span class="w"> </span>install<span class="w"> </span>palace@develop
 find<span class="w"> </span>-name<span class="w"> </span>palace*
 </pre></div>
 </div>

@@ -122,100 +122,100 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KMP_DUPLICATE_LIB_OK&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;TRUE&quot;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
+%autoreload 2
+import os
+os.environ[&quot;KMP_DUPLICATE_LIB_OK&quot;]=&quot;TRUE&quot;
+os.environ[&quot;PMIX_MCA_gds&quot;]=&quot;hash&quot;
 
-<span class="c1"># Import useful packages</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">metal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">open_docs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.toolbox_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">math_and_overrides</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">QComponent</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+# Import useful packages
+import qiskit_metal as metal
+from qiskit_metal import designs, draw
+from qiskit_metal import MetalGUI, Dict, open_docs
+from qiskit_metal.toolbox_metal import math_and_overrides
+from qiskit_metal.qlibrary.core import QComponent
+from collections import OrderedDict
 
-<span class="c1"># To create plots after geting solution data.</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+# To create plots after geting solution data.
+import matplotlib.pyplot as plt
+import numpy as np
 
-<span class="c1"># Packages for the simple design</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.meandered</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteMeander</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.straight_path</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteStraight</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.pathfinder</span><span class="w"> </span><span class="kn">import</span> <span class="n">RoutePathfinder</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.terminations.launchpad_wb</span><span class="w"> </span><span class="kn">import</span> <span class="n">LaunchpadWirebond</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.terminations.open_to_ground</span><span class="w"> </span><span class="kn">import</span> <span class="n">OpenToGround</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.terminations.short_to_ground</span><span class="w"> </span><span class="kn">import</span> <span class="n">ShortToGround</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.couplers.coupled_line_tee</span><span class="w"> </span><span class="kn">import</span> <span class="n">CoupledLineTee</span>
+# Packages for the simple design
+from qiskit_metal.qlibrary.tlines.meandered import RouteMeander
+from qiskit_metal.qlibrary.tlines.straight_path import RouteStraight
+from qiskit_metal.qlibrary.tlines.pathfinder import RoutePathfinder
+from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
+from qiskit_metal.qlibrary.terminations.open_to_ground import OpenToGround
+from qiskit_metal.qlibrary.terminations.short_to_ground import ShortToGround
+from qiskit_metal.qlibrary.couplers.coupled_line_tee import CoupledLineTee
 
-<span class="c1"># Set up chip design as planar, multiplanar also available</span>
-<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="n">overwrite_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+# Set up chip design as planar, multiplanar also available
+design = designs.DesignPlanar({}, overwrite_enabled=True)
 
-<span class="c1"># Set up chip dimensions</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;4.8mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;2.4mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;500um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;-1mm&#39;</span>
+# Set up chip dimensions
+design.chips.main.size.size_x = &#39;4.8mm&#39;
+design.chips.main.size.size_y = &#39;2.4mm&#39;
+design.chips.main.size.size_z = &#39;500um&#39;
+design.chips.main.size.center_x = &#39;0mm&#39;
+design.chips.main.size.center_y = &#39;-1mm&#39;
 
-<span class="c1"># Resonator and feedline gap width (W) and center conductor width (S) are set to 50 Ohm</span>
-<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_width&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;10 um&#39;</span> <span class="c1">#S</span>
-<span class="n">design</span><span class="o">.</span><span class="n">variables</span><span class="p">[</span><span class="s1">&#39;cpw_gap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;6 um&#39;</span> <span class="c1">#W</span>
+# Resonator and feedline gap width (W) and center conductor width (S) are set to 50 Ohm
+design.variables[&#39;cpw_width&#39;] = &#39;10 um&#39; #S
+design.variables[&#39;cpw_gap&#39;] = &#39;6 um&#39; #W
 
-<span class="c1"># Create GUI</span>
-<span class="n">gui</span> <span class="o">=</span> <span class="n">MetalGUI</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+# Create GUI
+gui = MetalGUI(design)
 
-<span class="c1"># Lauchpad 1</span>
-<span class="n">x1</span> <span class="o">=</span> <span class="s1">&#39;-2mm&#39;</span>
-<span class="n">y1</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-<span class="n">launch_options1</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chip</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">pos_x</span><span class="o">=</span><span class="n">x1</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="n">y1</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;360&#39;</span><span class="p">,</span> <span class="n">lead_length</span><span class="o">=</span><span class="s1">&#39;30um&#39;</span><span class="p">,</span> <span class="n">pad_height</span><span class="o">=</span><span class="s1">&#39;103um&#39;</span><span class="p">,</span>
-                      <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;103um&#39;</span><span class="p">,</span> <span class="n">pad_gap</span><span class="o">=</span><span class="s1">&#39;60um&#39;</span><span class="p">)</span>
-<span class="n">LP1</span> <span class="o">=</span> <span class="n">LaunchpadWirebond</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;LP1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">launch_options1</span><span class="p">)</span>
+# Lauchpad 1
+x1 = &#39;-2mm&#39;
+y1 = &#39;0mm&#39;
+launch_options1 = dict(chip=&#39;main&#39;, pos_x=x1, pos_y=y1, orientation=&#39;360&#39;, lead_length=&#39;30um&#39;, pad_height=&#39;103um&#39;,
+                      pad_width=&#39;103um&#39;, pad_gap=&#39;60um&#39;)
+LP1 = LaunchpadWirebond(design, &#39;LP1&#39;, options = launch_options1)
 
-<span class="c1"># Launchpad 2</span>
-<span class="n">x2</span> <span class="o">=</span> <span class="s1">&#39;2mm&#39;</span>
-<span class="n">y1</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-<span class="n">launch_options2</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chip</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">pos_x</span><span class="o">=</span><span class="n">x2</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="n">y1</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;180&#39;</span><span class="p">,</span> <span class="n">lead_length</span><span class="o">=</span><span class="s1">&#39;30um&#39;</span><span class="p">,</span> <span class="n">pad_height</span><span class="o">=</span><span class="s1">&#39;103um&#39;</span><span class="p">,</span>
-                      <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;103um&#39;</span><span class="p">,</span> <span class="n">pad_gap</span><span class="o">=</span><span class="s1">&#39;60um&#39;</span><span class="p">)</span>
-<span class="n">LP2</span> <span class="o">=</span> <span class="n">LaunchpadWirebond</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;LP2&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="n">launch_options2</span><span class="p">)</span>
+# Launchpad 2
+x2 = &#39;2mm&#39;
+y1 = &#39;0mm&#39;
+launch_options2 = dict(chip=&#39;main&#39;, pos_x=x2, pos_y=y1, orientation=&#39;180&#39;, lead_length=&#39;30um&#39;, pad_height=&#39;103um&#39;,
+                      pad_width=&#39;103um&#39;, pad_gap=&#39;60um&#39;)
+LP2 = LaunchpadWirebond(design, &#39;LP2&#39;, options = launch_options2)
 
-<span class="c1"># Using path finder to connect the two launchpads</span>
-<span class="n">TL</span> <span class="o">=</span> <span class="n">RoutePathfinder</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;TL&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">chip</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">trace_width</span> <span class="o">=</span><span class="s1">&#39;10um&#39;</span><span class="p">,</span>
-                                            <span class="n">trace_gap</span> <span class="o">=</span><span class="s1">&#39;6um&#39;</span><span class="p">,</span>
-                                            <span class="n">fillet</span><span class="o">=</span><span class="s1">&#39;90um&#39;</span><span class="p">,</span>
-                                            <span class="n">hfss_wire_bonds</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-                                            <span class="n">lead</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">end_straight</span><span class="o">=</span><span class="s1">&#39;0.1mm&#39;</span><span class="p">),</span>
-                                            <span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-                                                <span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-                                                    <span class="n">component</span><span class="o">=</span><span class="s1">&#39;LP1&#39;</span><span class="p">,</span>
-                                                    <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;tie&#39;</span><span class="p">),</span>
-                                                <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-                                                    <span class="n">component</span><span class="o">=</span><span class="s1">&#39;LP2&#39;</span><span class="p">,</span>
-                                                    <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;tie&#39;</span><span class="p">)</span>
-                                            <span class="p">)))</span>
+# Using path finder to connect the two launchpads
+TL = RoutePathfinder(design, &#39;TL&#39;, options = dict(chip=&#39;main&#39;, trace_width =&#39;10um&#39;,
+                                            trace_gap =&#39;6um&#39;,
+                                            fillet=&#39;90um&#39;,
+                                            hfss_wire_bonds = True,
+                                            lead=dict(end_straight=&#39;0.1mm&#39;),
+                                            pin_inputs=Dict(
+                                                start_pin=Dict(
+                                                    component=&#39;LP1&#39;,
+                                                    pin=&#39;tie&#39;),
+                                                end_pin=Dict(
+                                                    component=&#39;LP2&#39;,
+                                                    pin=&#39;tie&#39;)
+                                            )))
 
 
-<span class="c1">######################</span>
-<span class="c1"># lambda/4 resonator1#</span>
-<span class="c1">######################</span>
-<span class="n">otg1</span> <span class="o">=</span> <span class="n">OpenToGround</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;otg1&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">chip</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;-0.2mm&#39;</span><span class="p">,</span>  <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;-40um&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="mi">180</span><span class="p">))</span>
-<span class="n">stg1</span> <span class="o">=</span> <span class="n">ShortToGround</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;stg1&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">chip</span><span class="o">=</span><span class="s1">&#39;main&#39;</span><span class="p">,</span> <span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;0mm&#39;</span><span class="p">,</span>  <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;-1.35mm&#39;</span><span class="p">,</span> <span class="n">orientation</span> <span class="o">=</span> <span class="o">-</span><span class="mi">90</span><span class="p">))</span>
+######################
+# lambda/4 resonator1#
+######################
+otg1 = OpenToGround(design, &#39;otg1&#39;, options=dict(chip=&#39;main&#39;, pos_x=&#39;-0.2mm&#39;,  pos_y=&#39;-40um&#39;, orientation = 180))
+stg1 = ShortToGround(design, &#39;stg1&#39;, options=dict(chip=&#39;main&#39;, pos_x=&#39;0mm&#39;,  pos_y=&#39;-1.35mm&#39;, orientation = -90))
 
-<span class="c1"># Use RouteMeander to fix the total length of the resonator</span>
-<span class="n">res1</span> <span class="o">=</span> <span class="n">RouteMeander</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;resonator1&#39;</span><span class="p">,</span>  <span class="n">Dict</span><span class="p">(</span>
-        <span class="n">trace_width</span> <span class="o">=</span><span class="s1">&#39;10um&#39;</span><span class="p">,</span>
-        <span class="n">trace_gap</span> <span class="o">=</span><span class="s1">&#39;6um&#39;</span><span class="p">,</span>
-        <span class="n">total_length</span><span class="o">=</span><span class="s1">&#39;3.7mm&#39;</span><span class="p">,</span>
-        <span class="n">hfss_wire_bonds</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">fillet</span><span class="o">=</span><span class="s1">&#39;99.9 um&#39;</span><span class="p">,</span>
-        <span class="n">lead</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">start_straight</span><span class="o">=</span><span class="s1">&#39;300um&#39;</span><span class="p">),</span>
-        <span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-        <span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;otg1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;open&#39;</span><span class="p">),</span>
-        <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;stg1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;short&#39;</span><span class="p">)),</span> <span class="p">))</span>
+# Use RouteMeander to fix the total length of the resonator
+res1 = RouteMeander(design, &#39;resonator1&#39;,  Dict(
+        trace_width =&#39;10um&#39;,
+        trace_gap =&#39;6um&#39;,
+        total_length=&#39;3.7mm&#39;,
+        hfss_wire_bonds = False,
+        fillet=&#39;99.9 um&#39;,
+        lead = dict(start_straight=&#39;300um&#39;),
+        pin_inputs=Dict(
+        start_pin=Dict(component=&#39;otg1&#39;, pin=&#39;open&#39;),
+        end_pin=Dict(component=&#39;stg1&#39;, pin=&#39;short&#39;)), ))
 
-<span class="c1"># rebuild the GUI</span>
-<span class="n">gui</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
+# rebuild the GUI
+gui.rebuild()
 </pre></div>
 </div>
 </div>
@@ -227,54 +227,54 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Eigenmode_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Eigenmode_Simulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialInterface</span><span class="p">,</span> <span class="n">MaterialConductor</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
+from SQDMetal.Utilities.Materials import MaterialInterface, MaterialConductor
 
-<span class="c1">#Eigenmode Simulation Options</span>
-<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
-                 <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span>  <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
-                 <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
-                 <span class="s2">&quot;starting_freq&quot;</span><span class="p">:</span> <span class="mf">5e9</span><span class="p">,</span>                              <span class="c1">#starting frequency in Hz</span>
-                 <span class="s2">&quot;number_of_freqs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                              <span class="c1">#number of eigenmodes to find</span>
-                 <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>                                <span class="c1">#number of electromagnetic field visualizations to save</span>
-                 <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
-                 <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-8</span><span class="p">,</span>                              <span class="c1">#error residual tolerance foriterative solver</span>
-                 <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
-                 <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
-                 <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;</span><span class="p">,</span><span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
-                 <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span>                                     <span class="c1">#number of cpus to use in the simulation</span>
-                <span class="p">}</span>
+#Eigenmode Simulation Options
+user_defined_options = {
+                 &quot;mesh_refinement&quot;:  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
+                 &quot;dielectric_material&quot;: &quot;silicon&quot;,                  #choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;
+                 &quot;starting_freq&quot;: 5e9,                              #starting frequency in Hz
+                 &quot;number_of_freqs&quot;: 1,                              #number of eigenmodes to find
+                 &quot;solns_to_save&quot;: 1,                                #number of electromagnetic field visualizations to save
+                 &quot;solver_order&quot;: 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
+                 &quot;solver_tol&quot;: 1.0e-8,                              #error residual tolerance foriterative solver
+                 &quot;solver_maxits&quot;: 200,                              #number of solver iterations
+                 &quot;fillet_resolution&quot;:12,                            #number of vertices per quarter turn on a filleted path
+                 &quot;palace_dir&quot;:&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;,#&quot;PATH/TO/PALACE/BINARY&quot;,
+                 &quot;num_cpus&quot;: 16                                     #number of cpus to use in the simulation
+                }
 
-<span class="c1">#Creat the Palace Eigenmode simulation</span>
-<span class="n">eigen_sim</span> <span class="o">=</span> <span class="n">PALACE_Eigenmode_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span><span class="s1">&#39;res_eigen_test&#39;</span><span class="p">,</span>                              <span class="c1">#name of simulation</span>
-                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                      <span class="c1">#feed in qiskit metal design</span>
-                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>            <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
-                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                               <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
-                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                         <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
-                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                        <span class="c1">#provide options chosen above</span>
-                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                        <span class="c1">#create mesh, config and HPC batch files</span>
+#Creat the Palace Eigenmode simulation
+eigen_sim = PALACE_Eigenmode_Simulation(name =&#39;res_eigen_test&#39;,                              #name of simulation
+                                        metal_design = design,                                      #feed in qiskit metal design
+                                        sim_parent_directory = &quot;&quot;,            #choose directory where mesh file, config file and HPC batch file will be saved
+                                        mode = &#39;simPC&#39;,                                               #choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;
+                                        meshing = &#39;GMSH&#39;,                                         #choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;
+                                        user_options = user_defined_options,                        #provide options chosen above
+                                        create_files = True)                                        #create mesh, config and HPC batch files
 
-<span class="c1">#Add in metals from layer 1 of the design file</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+#Add in metals from layer 1 of the design file
+eigen_sim.add_metallic(1)
 
-<span class="c1">#Add in ground plane for simulation</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+#Add in ground plane for simulation
+eigen_sim.add_ground_plane()
 
-<span class="c1">#Add in lumped element ports on launcher pads for 50 Ohm matching</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;LP1&#39;</span><span class="p">,</span> <span class="mf">20e-6</span><span class="p">)</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;LP2&#39;</span><span class="p">,</span> <span class="mf">20e-6</span><span class="p">)</span>
+#Add in lumped element ports on launcher pads for 50 Ohm matching
+eigen_sim.create_port_CPW_on_Launcher(&#39;LP1&#39;, 20e-6)
+eigen_sim.create_port_CPW_on_Launcher(&#39;LP2&#39;, 20e-6)
 
-<span class="c1">#Fine mesh the resonator, launch apds and transmission line</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;TL&#39;</span><span class="p">,</span> <span class="s1">&#39;resonator1&#39;</span><span class="p">,</span> <span class="s1">&#39;LP1&#39;</span><span class="p">,</span> <span class="s1">&#39;LP2&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">8e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">100e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">10e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+#Fine mesh the resonator, launch apds and transmission line
+eigen_sim.fine_mesh_components([&#39;TL&#39;, &#39;resonator1&#39;, &#39;LP1&#39;, &#39;LP2&#39;], min_size=8e-6, max_size=100e-6, taper_dist_min=10e-6, metals_only=False)
 
-<span class="c1">#Sets up the lossy interfaces for MA, SA and MS interfaces</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">setup_EPR_interfaces</span><span class="p">(</span><span class="n">metal_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Aluminium-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_metal</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Aluminium&#39;</span><span class="p">))</span>
+#Sets up the lossy interfaces for MA, SA and MS interfaces
+eigen_sim.setup_EPR_interfaces(metal_air=MaterialInterface(&#39;Aluminium-Vacuum&#39;), substrate_air=MaterialInterface(&#39;Silicon-Vacuum&#39;), substrate_metal=MaterialInterface(&#39;Silicon-Aluminium&#39;))
 
-<span class="c1">#Only works in v0.14</span>
-<span class="c1"># eigen_sim.set_farfield(ff_type=&#39;conductor&#39;, ff_material=MaterialConductor(&quot;OFHC&quot;), ff_plane=&#39;z_neg&#39;)</span>
+#Only works in v0.14
+# eigen_sim.set_farfield(ff_type=&#39;conductor&#39;, ff_material=MaterialConductor(&quot;OFHC&quot;), ff_plane=&#39;z_neg&#39;)
 
-<span class="c1">#Prepares the mesh file and config file</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+#Prepares the mesh file and config file
+eigen_sim.prepare_simulation()
 </pre></div>
 </div>
 </div>
@@ -282,8 +282,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#run the simulation</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#run the simulation
+eigen_sim.run()
 </pre></div>
 </div>
 </div>
@@ -292,10 +292,10 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">matplotlib</span> inline
-<span class="n">pvdtu</span> <span class="o">=</span> <span class="n">eigen_sim</span><span class="o">.</span><span class="n">retrieve_field_plots</span><span class="p">()</span>
-<span class="n">leSlice</span> <span class="o">=</span> <span class="n">pvdtu</span><span class="o">.</span><span class="n">get_data_slice</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">leSlice</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">leSlice</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;E_real&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="s1">&#39;coolwarm&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">);</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%matplotlib inline
+pvdtu = eigen_sim.retrieve_field_plots()
+leSlice = pvdtu.get_data_slice(0)
+leSlice.plot(np.linalg.norm(leSlice.get_data(&#39;E_real&#39;), axis=1), &#39;coolwarm&#39;, True);
 </pre></div>
 </div>
 </div>

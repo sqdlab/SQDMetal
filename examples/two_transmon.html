@@ -122,51 +122,51 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">metal</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Headings</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">pyEPR</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">epr</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.qubits.transmon_pocket</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransmonPocket</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal.qlibrary.tlines.straight_path</span><span class="w"> </span><span class="kn">import</span> <span class="n">RouteStraight</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import qiskit_metal as metal
+from qiskit_metal import designs, draw
+from qiskit_metal import MetalGUI, Dict, Headings
+import pyEPR as epr
+from qiskit_metal.qlibrary.qubits.transmon_pocket import TransmonPocket
+from qiskit_metal.qlibrary.tlines.straight_path import RouteStraight
 
-<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="kc">True</span><span class="p">)</span>
+design = designs.DesignPlanar({}, True)
 
-<span class="c1">#Set up chip dimensions</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;2.2mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;1.8mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;-500um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0.5mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
+#Set up chip dimensions
+design.chips.main.size.size_x = &#39;2.2mm&#39;
+design.chips.main.size.size_y = &#39;1.8mm&#39;
+design.chips.main.size.size_z = &#39;-500um&#39;
+design.chips.main.size.center_x = &#39;0.5mm&#39;
+design.chips.main.size.center_y = &#39;0mm&#39;
 
-<span class="c1">#Create gui to visualise design</span>
-<span class="n">gui</span> <span class="o">=</span> <span class="n">MetalGUI</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
+#Create gui to visualise design
+gui = MetalGUI(design)
 
-<span class="c1">#Transmon 1</span>
-<span class="n">q1</span> <span class="o">=</span> <span class="n">TransmonPocket</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">pad_width</span> <span class="o">=</span> <span class="s1">&#39;425 um&#39;</span><span class="p">,</span>
-    <span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;650um&#39;</span><span class="p">,</span>
-    <span class="n">connection_pads</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
-        <span class="n">readout</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">loc_W</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span><span class="n">loc_H</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;200um&#39;</span><span class="p">)</span>
-    <span class="p">)))</span>
+#Transmon 1
+q1 = TransmonPocket(design, &#39;Q1&#39;, options = dict(
+    pad_width = &#39;425 um&#39;,
+    pocket_height = &#39;650um&#39;,
+    connection_pads=dict(
+        readout = dict(loc_W=+1,loc_H=+1, pad_width=&#39;200um&#39;)
+    )))
 
-<span class="c1">#Transmon 2</span>
-<span class="n">q2</span> <span class="o">=</span> <span class="n">TransmonPocket</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
-    <span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;1.0 mm&#39;</span><span class="p">,</span>
-    <span class="n">pad_width</span> <span class="o">=</span> <span class="s1">&#39;425 um&#39;</span><span class="p">,</span>
-    <span class="n">pocket_height</span> <span class="o">=</span> <span class="s1">&#39;650um&#39;</span><span class="p">,</span>
-    <span class="n">connection_pads</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
-        <span class="n">readout</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">loc_W</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">loc_H</span><span class="o">=+</span><span class="mi">1</span><span class="p">,</span> <span class="n">pad_width</span><span class="o">=</span><span class="s1">&#39;200um&#39;</span><span class="p">)</span>
-    <span class="p">)))</span>
+#Transmon 2
+q2 = TransmonPocket(design, &#39;Q2&#39;, options = dict(
+    pos_x = &#39;1.0 mm&#39;,
+    pad_width = &#39;425 um&#39;,
+    pocket_height = &#39;650um&#39;,
+    connection_pads=dict(
+        readout = dict(loc_W=-1,loc_H=+1, pad_width=&#39;200um&#39;)
+    )))
 
-<span class="c1">#Coupler for transmons</span>
-<span class="n">coupler</span> <span class="o">=</span> <span class="n">RouteStraight</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;coupler&#39;</span><span class="p">,</span> <span class="n">Dict</span><span class="p">(</span><span class="n">hfss_wire_bonds</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">pin_inputs</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-            <span class="n">start_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;readout&#39;</span><span class="p">),</span>
-            <span class="n">end_pin</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">pin</span><span class="o">=</span><span class="s1">&#39;readout&#39;</span><span class="p">)),</span> <span class="p">))</span>
+#Coupler for transmons
+coupler = RouteStraight(design, &#39;coupler&#39;, Dict(hfss_wire_bonds = True,
+        pin_inputs=Dict(
+            start_pin=Dict(component=&#39;Q1&#39;, pin=&#39;readout&#39;),
+            end_pin=Dict(component=&#39;Q2&#39;, pin=&#39;readout&#39;)), ))
 
-<span class="c1">#Rebuild circuit</span>
-<span class="n">gui</span><span class="o">.</span><span class="n">rebuild</span><span class="p">()</span>
-<span class="n">gui</span><span class="o">.</span><span class="n">autoscale</span><span class="p">()</span>
+#Rebuild circuit
+gui.rebuild()
+gui.autoscale()
 </pre></div>
 </div>
 </div>
@@ -178,50 +178,50 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.Eigenmode_Simulation</span><span class="w"> </span><span class="kn">import</span> <span class="n">PALACE_Eigenmode_Simulation</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.Materials</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialInterface</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.PALACE.Eigenmode_Simulation import PALACE_Eigenmode_Simulation
+from SQDMetal.Utilities.Materials import MaterialInterface
 
-<span class="c1">#Eigenmode Simulation Options</span>
-<span class="n">user_defined_options</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;mesh_refinement&quot;</span><span class="p">:</span>  <span class="mi">0</span><span class="p">,</span>                             <span class="c1">#refines mesh in PALACE - essetially divides every mesh element in half</span>
-                <span class="s2">&quot;dielectric_material&quot;</span><span class="p">:</span> <span class="s2">&quot;silicon&quot;</span><span class="p">,</span>                  <span class="c1">#choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;</span>
-                <span class="s2">&quot;starting_freq&quot;</span><span class="p">:</span> <span class="mf">5.0e9</span><span class="p">,</span>                            <span class="c1">#starting frequency in Hz</span>
-                <span class="s2">&quot;number_of_freqs&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                              <span class="c1">#number of eigenmodes to find</span>
-                <span class="s2">&quot;solns_to_save&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                <span class="c1">#number of electromagnetic field visualizations to save</span>
-                <span class="s2">&quot;solver_order&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>                                 <span class="c1">#increasing solver order increases accuracy of simulation, but significantly increases sim time</span>
-                <span class="s2">&quot;solver_tol&quot;</span><span class="p">:</span> <span class="mf">1.0e-10</span><span class="p">,</span>                             <span class="c1">#error residual tolerance foriterative solver</span>
-                <span class="s2">&quot;solver_maxits&quot;</span><span class="p">:</span> <span class="mi">250</span><span class="p">,</span>                              <span class="c1">#number of solver iterations</span>
-                <span class="s2">&quot;fillet_resolution&quot;</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span>                            <span class="c1">#number of vertices per quarter turn on a filleted path</span>
-                <span class="s2">&quot;palace_dir&quot;</span><span class="p">:</span><span class="s2">&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;</span><span class="p">,</span> <span class="c1">#&quot;PATH/TO/PALACE/BINARY&quot;,</span>
-                <span class="s2">&quot;num_cpus&quot;</span><span class="p">:</span> <span class="mi">16</span>
-                <span class="p">}</span>
+#Eigenmode Simulation Options
+user_defined_options = {
+                &quot;mesh_refinement&quot;:  0,                             #refines mesh in PALACE - essetially divides every mesh element in half
+                &quot;dielectric_material&quot;: &quot;silicon&quot;,                  #choose dielectric material - &#39;silicon&#39; or &#39;sapphire&#39;
+                &quot;starting_freq&quot;: 5.0e9,                            #starting frequency in Hz
+                &quot;number_of_freqs&quot;: 2,                              #number of eigenmodes to find
+                &quot;solns_to_save&quot;: 2,                                #number of electromagnetic field visualizations to save
+                &quot;solver_order&quot;: 2,                                 #increasing solver order increases accuracy of simulation, but significantly increases sim time
+                &quot;solver_tol&quot;: 1.0e-10,                             #error residual tolerance foriterative solver
+                &quot;solver_maxits&quot;: 250,                              #number of solver iterations
+                &quot;fillet_resolution&quot;:12,                            #number of vertices per quarter turn on a filleted path
+                &quot;palace_dir&quot;:&quot;~/spack/opt/spack/linux-ubuntu24.04-zen2/gcc-13.3.0/palace-develop-36rxmgzatchgymg5tcbfz3qrmkf4jnmj/bin/palace&quot;, #&quot;PATH/TO/PALACE/BINARY&quot;,
+                &quot;num_cpus&quot;: 16
+                }
 
-<span class="c1">#Create the Palace Eigenmode simulation</span>
-<span class="n">eigen_sim</span> <span class="o">=</span> <span class="n">PALACE_Eigenmode_Simulation</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span><span class="s1">&#39;two_transmon_test&#39;</span><span class="p">,</span>                                      <span class="c1">#name of simulation</span>
-                                        <span class="n">metal_design</span> <span class="o">=</span> <span class="n">design</span><span class="p">,</span>                                          <span class="c1">#feed in qiskit metal design</span>
-                                        <span class="n">sim_parent_directory</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>                                      <span class="c1">#choose directory where mesh file, config file and HPC batch file will be saved</span>
-                                        <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;simPC&#39;</span><span class="p">,</span>                                                 <span class="c1">#choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;</span>
-                                        <span class="n">meshing</span> <span class="o">=</span> <span class="s1">&#39;GMSH&#39;</span><span class="p">,</span>                                               <span class="c1">#choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;</span>
-                                        <span class="n">user_options</span> <span class="o">=</span> <span class="n">user_defined_options</span><span class="p">,</span>                            <span class="c1">#provide options chosen above</span>
-                                        <span class="n">create_files</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>                                            <span class="c1">#create mesh, config and HPC batch files</span>
-<span class="c1">#add in metals from the first layer</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+#Create the Palace Eigenmode simulation
+eigen_sim = PALACE_Eigenmode_Simulation(name =&#39;two_transmon_test&#39;,                                      #name of simulation
+                                        metal_design = design,                                          #feed in qiskit metal design
+                                        sim_parent_directory = &quot;&quot;,                                      #choose directory where mesh file, config file and HPC batch file will be saved
+                                        mode = &#39;simPC&#39;,                                                 #choose simulation mode &#39;HPC&#39; or &#39;simPC&#39;
+                                        meshing = &#39;GMSH&#39;,                                               #choose meshing &#39;GMSH&#39; or &#39;COMSOL&#39;
+                                        user_options = user_defined_options,                            #provide options chosen above
+                                        create_files = True)                                            #create mesh, config and HPC batch files
+#add in metals from the first layer
+eigen_sim.add_metallic(1)
 
-<span class="c1">#add ground plane into simulation</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">add_ground_plane</span><span class="p">()</span>
+#add ground plane into simulation
+eigen_sim.add_ground_plane()
 
-<span class="c1">#Create lumped element ports for each JJ</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_JosephsonJunction</span><span class="p">(</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="n">L_J</span><span class="o">=</span><span class="mf">13e-9</span><span class="p">,</span> <span class="n">C_J</span> <span class="o">=</span> <span class="mf">0e-15</span><span class="p">)</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">create_port_JosephsonJunction</span><span class="p">(</span><span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="n">L_J</span><span class="o">=</span><span class="mf">9e-9</span><span class="p">,</span> <span class="n">C_J</span> <span class="o">=</span> <span class="mf">0e-15</span><span class="p">)</span>
+#Create lumped element ports for each JJ
+eigen_sim.create_port_JosephsonJunction(&#39;Q1&#39;, L_J=13e-9, C_J = 0e-15)
+eigen_sim.create_port_JosephsonJunction(&#39;Q2&#39;, L_J=9e-9, C_J = 0e-15)
 
-<span class="c1">#Fine mesh the qubits (only qubit metal regions i.e. metals_only = True) and coupler</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">fine_mesh_components</span><span class="p">([</span><span class="s1">&#39;Q1&#39;</span><span class="p">,</span> <span class="s1">&#39;Q2&#39;</span><span class="p">,</span> <span class="s1">&#39;coupler&#39;</span><span class="p">],</span> <span class="n">min_size</span><span class="o">=</span><span class="mf">8e-6</span><span class="p">,</span> <span class="n">max_size</span><span class="o">=</span><span class="mf">150e-6</span><span class="p">,</span> <span class="n">taper_dist_min</span><span class="o">=</span><span class="mf">12e-6</span><span class="p">,</span> <span class="n">metals_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+#Fine mesh the qubits (only qubit metal regions i.e. metals_only = True) and coupler
+eigen_sim.fine_mesh_components([&#39;Q1&#39;, &#39;Q2&#39;, &#39;coupler&#39;], min_size=8e-6, max_size=150e-6, taper_dist_min=12e-6, metals_only=True)
 
-<span class="c1">#Run post-processing for participation ratios for lossy interfaces</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">setup_EPR_interfaces</span><span class="p">(</span><span class="n">metal_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Aluminium-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_air</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Vacuum&#39;</span><span class="p">),</span> <span class="n">substrate_metal</span><span class="o">=</span><span class="n">MaterialInterface</span><span class="p">(</span><span class="s1">&#39;Silicon-Aluminium&#39;</span><span class="p">))</span>
+#Run post-processing for participation ratios for lossy interfaces
+eigen_sim.setup_EPR_interfaces(metal_air=MaterialInterface(&#39;Aluminium-Vacuum&#39;), substrate_air=MaterialInterface(&#39;Silicon-Vacuum&#39;), substrate_metal=MaterialInterface(&#39;Silicon-Aluminium&#39;))
 
-<span class="c1">#Prepares the mesh file and config file</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">prepare_simulation</span><span class="p">()</span>
+#Prepares the mesh file and config file
+eigen_sim.prepare_simulation()
 </pre></div>
 </div>
 </div>
@@ -229,8 +229,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Inspect the mesh before running the simulation</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">open_mesh_gmsh</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#Inspect the mesh before running the simulation
+eigen_sim.open_mesh_gmsh()
 </pre></div>
 </div>
 </div>
@@ -238,8 +238,8 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#run the simulation</span>
-<span class="n">eigen_sim</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#run the simulation
+eigen_sim.run()
 </pre></div>
 </div>
 </div>

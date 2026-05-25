@@ -112,7 +112,7 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps</span><span class="w"> </span><span class="kn">import</span> <span class="n">Junctions</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.Comps import Junctions
 </pre></div>
 </div>
 </div>
@@ -120,41 +120,41 @@
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
-<span class="o">%</span><span class="k">autoreload</span> 2
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KMP_DUPLICATE_LIB_OK&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;TRUE&quot;</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
+%autoreload 2
+import os
+os.environ[&quot;KMP_DUPLICATE_LIB_OK&quot;]=&quot;TRUE&quot;
+os.environ[&quot;PMIX_MCA_gds&quot;]=&quot;hash&quot;
 
-<span class="c1"># Import useful packages</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">designs</span><span class="p">,</span> <span class="n">draw</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">qiskit_metal</span><span class="w"> </span><span class="kn">import</span> <span class="n">MetalGUI</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">open_docs</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Xmon</span><span class="w"> </span><span class="kn">import</span> <span class="n">Xmon</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Comps.Polygons</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolyRectangle</span>
+# Import useful packages
+from qiskit_metal import designs, draw
+from qiskit_metal import MetalGUI, Dict, open_docs
+from SQDMetal.Comps.Xmon import Xmon
+from SQDMetal.Comps.Polygons import PolyRectangle
 
-<span class="c1"># Set up chip design as planar</span>
-<span class="n">design</span> <span class="o">=</span> <span class="n">designs</span><span class="o">.</span><span class="n">DesignPlanar</span><span class="p">({},</span> <span class="n">overwrite_enabled</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+# Set up chip design as planar
+design = designs.DesignPlanar({}, overwrite_enabled=True)
 
-<span class="c1"># Set up chip dimensions</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_x</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_y</span> <span class="o">=</span> <span class="s1">&#39;5um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">size_z</span> <span class="o">=</span> <span class="s1">&#39;100um&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_x</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-<span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="o">.</span><span class="n">main</span><span class="o">.</span><span class="n">size</span><span class="o">.</span><span class="n">center_y</span> <span class="o">=</span> <span class="s1">&#39;0mm&#39;</span>
-
-
-<span class="n">Q1</span> <span class="o">=</span> <span class="n">Xmon</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;cross&#39;</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">pos_x</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;0&#39;</span><span class="p">,</span>
-                                          <span class="n">cross_width</span><span class="o">=</span><span class="s1">&#39;1um&#39;</span><span class="p">,</span> <span class="n">cross_height</span><span class="o">=</span><span class="s1">&#39;1um&#39;</span><span class="p">,</span>
-                                          <span class="n">vBar_width</span><span class="o">=</span><span class="s1">&#39;100nm&#39;</span><span class="p">,</span> <span class="n">hBar_width</span><span class="o">=</span><span class="s1">&#39;100nm&#39;</span><span class="p">,</span>
-                                          <span class="n">vBar_gap</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">hBar_gap</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
-<span class="n">gndCut</span> <span class="o">=</span> <span class="n">PolyRectangle</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s1">&#39;gndCutout&#39;</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">pos_x</span><span class="o">=</span><span class="s1">&#39;-2.5um&#39;</span><span class="p">,</span><span class="n">pos_y</span><span class="o">=</span><span class="s1">&#39;-2.5um&#39;</span><span class="p">,</span>
-                                                         <span class="n">end_x</span><span class="o">=</span><span class="s1">&#39;2.5um&#39;</span><span class="p">,</span><span class="n">end_y</span><span class="o">=</span><span class="s1">&#39;2.5um&#39;</span><span class="p">,</span>
-                                                         <span class="n">is_ground_cutout</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+# Set up chip dimensions
+design.chips.main.size.size_x = &#39;5um&#39;
+design.chips.main.size.size_y = &#39;5um&#39;
+design.chips.main.size.size_z = &#39;100um&#39;
+design.chips.main.size.center_x = &#39;0mm&#39;
+design.chips.main.size.center_y = &#39;0mm&#39;
 
 
-<span class="c1"># gui = MetalGUI(design)</span>
-<span class="c1"># gui.rebuild()</span>
-<span class="c1"># design.rebuild()</span>
+Q1 = Xmon(design, &#39;cross&#39;, options = dict(pos_x = &#39;0&#39;, pos_y=&#39;0&#39;,
+                                          cross_width=&#39;1um&#39;, cross_height=&#39;1um&#39;,
+                                          vBar_width=&#39;100nm&#39;, hBar_width=&#39;100nm&#39;,
+                                          vBar_gap=0, hBar_gap=0))
+gndCut = PolyRectangle(design, &#39;gndCutout&#39;, options=dict(pos_x=&#39;-2.5um&#39;,pos_y=&#39;-2.5um&#39;,
+                                                         end_x=&#39;2.5um&#39;,end_y=&#39;2.5um&#39;,
+                                                         is_ground_cutout=True))
+
+
+# gui = MetalGUI(design)
+# gui.rebuild()
+# design.rebuild()
 </pre></div>
 </div>
 </div>
@@ -172,22 +172,22 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;evaporations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
-    <span class="n">layer1</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-        <span class="n">bottom_layer</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
-        <span class="n">top_layer</span><span class="o">=</span><span class="s1">&#39;100nm&#39;</span><span class="p">,</span>
-        <span class="n">undercut</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
-        <span class="n">pvd1</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
-        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;-90&#39;</span><span class="p">,</span>
-        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span><span class="p">,</span>
-        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;100nm&#39;</span>
-        <span class="p">),</span>
-        <span class="n">pvd2</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
-        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
-        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span>
-        <span class="p">)</span>
-    <span class="p">)</span>
-<span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>design.chips[&#39;main&#39;][&#39;evaporations&#39;] = Dict(
+    layer1=Dict(
+        bottom_layer=&#39;200nm&#39;,
+        top_layer=&#39;100nm&#39;,
+        undercut=&#39;200nm&#39;,
+        pvd1 = Dict(
+        angle_phi = &#39;-90&#39;,
+        angle_theta = &#39;45&#39;,
+        metal_thickness = &#39;100nm&#39;
+        ),
+        pvd2 = Dict(
+        angle_phi = &#39;0&#39;,
+        angle_theta = &#39;45&#39;
+        )
+    )
+)
 </pre></div>
 </div>
 </div>
@@ -195,8 +195,8 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.PVD_Shadows</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVD_Shadows</span>
-<span class="o">%</span><span class="k">matplotlib</span> inline
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from SQDMetal.Utilities.PVD_Shadows import PVD_Shadows
+%matplotlib inline
 </pre></div>
 </div>
 </div>
@@ -204,8 +204,8 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pvdSh</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;separate&#39;</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>pvdSh = PVD_Shadows(design)
+pvdSh.plot_layer(1,&#39;separate&#39;, plot_mask=True)
 </pre></div>
 </div>
 </div>
@@ -222,8 +222,8 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Without mask</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_all_layers</span><span class="p">(</span><span class="n">plot_overlap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#Without mask
+pvdSh.plot_all_layers(plot_overlap=True, plot_mask=False)
 </pre></div>
 </div>
 </div>
@@ -246,8 +246,8 @@ Total area of overlapping regions: 0.010000 µm²
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#With mask</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_all_layers</span><span class="p">(</span><span class="n">plot_overlap</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#With mask
+pvdSh.plot_all_layers(plot_overlap=True, plot_mask=True)
 </pre></div>
 </div>
 </div>
