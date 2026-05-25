@@ -39,6 +39,10 @@ def two_qubits_coupling(
     ensemble_orientation_deg=0.0,
     flux_line_left=False,
     flux_line_right=False,
+    name_Q1 = 'Q1',
+    name_Q2 = 'Q2',
+    cpw_width = 10e-6,
+    cpw_gap = 6e-6
 ):
 
     ''' This function gives a 2 qubit design given a coupling strength J12 and the capacitor choice. The coupling strength is determined by the capacitor geometry and the frequencies of the qubits.
@@ -153,15 +157,16 @@ def two_qubits_coupling(
     m = Material("siliconcryo")
 
     # CPW parameters
-    cpw_width = 10e-6
+    #cpw_width = 10e-6
     cpw = CpwParams(m.permittivity, 500e-6)
-    cpw_gap = cpw.get_gap_from_width(cpw_width)
+    #cpw_gap = cpw.get_gap_from_width(cpw_width)
 
     l_fullwave, _, _ = cpw_calculations.guided_wavelength(freq=resonator.f0,line_width=cpw_width,
                 line_gap=cpw_gap,substrate_thickness=cpw.dielectric_thickness,film_thickness=200e-9,)
     l_halfwave = l_fullwave / 2
-
-    readout_pad_options = Dict(
+    
+    if readout_pad:
+      readout_pad_options = Dict(
         connection_pads=Dict(
             readout=Dict(
                 cpw_extend="5um",
@@ -172,7 +177,9 @@ def two_qubits_coupling(
                 loc_H="-1",
             )
         )
-    )
+      )
+    else:
+        readout_pad_options = Dict()
      
     surname = '' 
     qubit1_exist = False
@@ -181,15 +188,15 @@ def two_qubits_coupling(
 
     ################# Transmons defintion ###################################################################################
 
-    TransmonTaperedInsets(design, f'Q5{surname}', options = Dict(pos_x = f'{pos_x1}mm', pos_y = f'{pos_y1}mm', orientation = q_orient,
+    TransmonTaperedInsets(design, f'{name_Q1}{surname}', options = Dict(pos_x = f'{pos_x1}mm', pos_y = f'{pos_y1}mm', orientation = q_orient,
                                                        pocket_lower_tighten = '-100.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
-                                                       taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_left,
+                                                       taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_left,inductor_height='40um',
                                                        **readout_pad_options))
 
 
-    TransmonTaperedInsets(design, f'Q4{surname}', options = Dict(pos_x = f'{pos_x2}mm', pos_y = f'{pos_y2}mm', orientation = q_orient,
+    TransmonTaperedInsets(design, f'{name_Q2}{surname}', options = Dict(pos_x = f'{pos_x2}mm', pos_y = f'{pos_y2}mm', orientation = q_orient,
                                                       pocket_lower_tighten = '-100.0um',pocket_height = '500um', pocket_width = '1000um', chrgln_pin_x_offset=f"{chrgln_pin_x_offset}um", chrgln_pin_y_offset=f"{chrgln_pin_y_offset}um",
-                                                      taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_right,
+                                                      taper_width_base = f"{taper_width_base}um", junction_centered = junction_centered_right,inductor_height='40um',
                                                        **readout_pad_options))
 
 
@@ -203,11 +210,11 @@ def two_qubits_coupling(
            rect_length = (-0.041 + np.sqrt(0.041**2 - 4*5.66e-4*(-0.251-J12_target)))/(2*5.66e-4)
 
 
-        Smooth_rectangle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q5{surname}',pin='top_right_pin')), orientation= 180,
+        Smooth_rectangle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q1}{surname}',pin='top_right_pin')), orientation= 180,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', gap_side = f'{gap_side}um', gap_back = f'{gap_back}um', gap_front = f'{gap_front}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_fillet_radius = f'{fillet_radius}um'))
 
-        Smooth_rectangle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q4{surname}',pin='top_left_pin')), orientation= 0,
+        Smooth_rectangle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q2}{surname}',pin='top_left_pin')), orientation= 0,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um',gap_side = f'{gap_side}um', gap_back = f'{gap_back}um', gap_front = f'{gap_front}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_fillet_radius = f'{fillet_radius}um'))
 
@@ -225,11 +232,11 @@ def two_qubits_coupling(
             if circle_offset < -10:
                circle_offset = -10
 
-        Smooth_Capacitor_Semicircle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q5{surname}',pin='top_right_pin')), orientation=cap_orient_180,
+        Smooth_Capacitor_Semicircle(design, f'Capacitor1{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q1}{surname}',pin='top_right_pin')), orientation=cap_orient_180,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', semi_radius = f'{semi_radius}um', circle_offset = f'{circle_offset}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_side = f'{gap_side}um', gap_back = f'{gap_back}um'))
 
-        Smooth_Capacitor_Semicircle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q4{surname}',pin='top_left_pin')), orientation=cap_orient_0,
+        Smooth_Capacitor_Semicircle(design, f'Capacitor2{surname}',options=Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q2}{surname}',pin='top_left_pin')), orientation=cap_orient_0,
                                                               rect_width = f'{rect_width}um',rect_length = f'{rect_length}um', semi_radius = f'{semi_radius}um', circle_offset = f'{circle_offset}um',
                                                               fillet_radius = f'{fillet_radius}um',fillet_resolution = 20, gap_side = f'{gap_side}um', gap_back = f'{gap_back}um'))
 
@@ -249,12 +256,12 @@ def two_qubits_coupling(
         elif diff_freq:
            bulb_scale_y = 1.2
 
-        Smooth_synapse(design, f'Capacitor1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q5{surname}',pin='top_right_pin')),
+        Smooth_synapse(design, f'Capacitor1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q1}{surname}',pin='top_right_pin')),
                                pos_x = '0.0mm', pos_y = '0.0mm', orientation = str(cap_orient_0), fillet_resolution = 16, bulb_radius = f"{bulb_radius}um",
                                                    rect_length = f"{rect_length}um", rect_width = f"{rect_width}um", bulb_scale_y = f"{bulb_scale_y}", circle_offset = f"{circle_offset}um",
                                                    gap_side = f"{gap_side}um", gap_front = f"{gap_front}um", fillet_radius = f"{fillet_radius}um", semi_radius = f"{semi_radius}um", big_fillet_radius = f"{big_fillet_radius}um"))
 
-        Smooth_synapse(design, f'Capacitor2{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Q4{surname}',pin='top_left_pin')),
+        Smooth_synapse(design, f'Capacitor2{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'{name_Q2}{surname}',pin='top_left_pin')),
                                pos_x = '0.0mm', pos_y = '0.0mm', orientation = str(cap_orient_180), fillet_resolution = 16, bulb_radius = f"{bulb_radius}um",
                                                    rect_length = f"{rect_length}um", rect_width = f"{rect_width}um", bulb_scale_y = f"{bulb_scale_y}", circle_offset = f"{circle_offset}um",
                                                    gap_side = f"{gap_side}um", gap_front = f"{gap_front}um", fillet_radius = f"{fillet_radius}um", semi_radius = f"{semi_radius}um", big_fillet_radius = f"{big_fillet_radius}um"))
@@ -268,7 +275,7 @@ def two_qubits_coupling(
 
     ResonatorMeanderPinPin(design, f'Resonator1{surname}', options = Dict(pin_inputs=Dict(start_pin=Dict(component=f'Capacitor1{surname}', pin='a'),end_pin=Dict(component=f'Capacitor2{surname}', pin='a')),
                                             total_length = f"{l_halfwave*1e3}mm", start_left = True, const_radius = '10um', const_width_max = '200um', fillet_padding = '50 um',
-                                            trace_width = f"{cpw_width*1e6}um", gap_width = f"{cpw_gap*1e6}um"))
+                                            trace_width = f"{cpw_width*1e6}um", trace_gap = f"{cpw_gap*1e6}um"))
     
 
     if print_results:

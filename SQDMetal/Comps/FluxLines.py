@@ -234,10 +234,10 @@ class FluxLineLPin(QComponent):
         pad_L = np.array(pad_L)
         
         pad_gap = [
-                  (p.trace_gap, p.trace_gap),#p.width*0.5),
-                  (-p.trace_width-p.trace_gap, p.trace_gap),# p.width*0.5),
+                  (p.trace_gap, p.trace_gap + p.trace_width/2),#p.width*0.5),
+                  (-p.trace_width-p.trace_gap, p.trace_gap + p.trace_width/2),# p.width*0.5),
                   (-p.trace_width-p.trace_gap, -p.width),
-                  (p.trace_gap, -p.width)]
+                  (p.trace_gap, -p.width )]
         pad_gap = np.array(pad_gap)
 
         if p.pin_align_right:
@@ -251,6 +251,7 @@ class FluxLineLPin(QComponent):
         pad_gap[:,0] -= p.pin_dist
 
         pin = pad_L[3:5]
+        
         if p.pin_align_right:
             pin2 = [pad_L[-1], pad_L[-1]+np.array([0,targ_trace_width])]
         else:
