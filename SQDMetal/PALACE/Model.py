@@ -1594,8 +1594,6 @@ class PALACE_Model_Base_RF(PALACE_Model_Base):
                     'portCoords': portCoords,
                     'impedance_R':impedance_R, 'impedance_L':impedance_L, 'impedance_C':impedance_C}]
 
-
-
     def create_CPW_feed_Uclip_on_Route(self, route_name:str, pin_name:str, thickness_side:float=20e-6, thickness_back:float=20e-6, separation_gap:float=20e-6, add_port=False, impedance_R:float=50, impedance_L:float=0, impedance_C:float=0):
         """
         *Applies Qiskit-Metal designs only*
