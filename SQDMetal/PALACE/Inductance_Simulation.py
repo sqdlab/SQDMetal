@@ -39,7 +39,6 @@ class PALACE_Inductance_Simulation(PALACE_Model_Base):
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                                     view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
@@ -51,7 +50,7 @@ class PALACE_Inductance_Simulation(PALACE_Model_Base):
         self.cap_matrix = None
         self._ports = []
         self._int_areas = []
-        super().__init__(meshing, mode, user_options, **kwargs)
+        super().__init__(sim_parent_directory, meshing, mode, user_options, **kwargs)
 
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''

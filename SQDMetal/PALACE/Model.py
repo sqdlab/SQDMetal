@@ -45,12 +45,14 @@ class PALACE_Model_Base:
         "comsol_meshing": "Extremely fine"
     }
 
-    def __init__(self, meshing:str, mode:str, options: dict, **kwargs):
+    def __init__(self, sim_parent_directory, meshing:str, mode:str, options: dict, **kwargs):
         """
         Base class for PALACE simulation classes.
 
         Parameters
         ----------
+        sim_parent_directory : str
+            The directory in which to store simulation results. Ensure it ends with a slash.
         meshing : str 
             The meshing engine to use. It can be either 'GMSH' or 'COMSOL' with the latter
             requiring a local COMSOL installation.
@@ -141,6 +143,11 @@ class PALACE_Model_Base:
         self._KI = 0
         #
         self._mesh_refinement = {"UniformLevels": 0}
+
+        if len(sim_parent_directory) > 0 and sim_parent_directory[-1] != '/':
+            print("WARNING: The argument 'sim_parent_directory' must end with a slash. Adding one automatically.")
+            sim_parent_directory += '/'
+        self.sim_parent_directory = sim_parent_directory
 
         self._process_geometry_type(**kwargs)
         self._boundary_distances = {}

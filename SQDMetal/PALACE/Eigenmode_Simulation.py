@@ -36,7 +36,6 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                  view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.user_options = {}
         self._ff_type = {}
@@ -46,7 +45,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing, mode, user_options, **kwargs)
+        super().__init__(sim_parent_directory, meshing, mode, user_options, **kwargs)
 
     def _create_config_file(self, **kwargs):
         '''

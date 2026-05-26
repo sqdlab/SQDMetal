@@ -27,7 +27,6 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                  view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
@@ -39,7 +38,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         self.create_files = create_files
         self._ports = []
         self._dipole_sources = []
-        super().__init__(meshing, mode, user_options, **kwargs)
+        super().__init__(sim_parent_directory, meshing, mode, user_options, **kwargs)
         self.freqs = None
         self._current_sources = []
         self._rf_port_excitation = -1
