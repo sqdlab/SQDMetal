@@ -115,7 +115,7 @@ class AirBridgeCPW(QComponent):
         final_pts, normals, width, gap, total_dist = QUtilities.calc_points_on_path(dists, self._design, self.options.pathObj)
         assert gap > 0, f"The component {self.options.pathObj} does not appear to be a valid CPW with a finite trace width and finite trace gap."
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates()
         gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
         obstacles = shapely.unary_union(gsdf['geometry'])

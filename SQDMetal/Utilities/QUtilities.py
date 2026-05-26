@@ -526,7 +526,7 @@ class QUtilities:
         thresh = kwargs.get("threshold", -1)
         resolution = kwargs.get("resolution", 4)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
         if not isinstance(layer_id, (list, tuple)):
@@ -688,7 +688,7 @@ class QUtilities:
             - Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.
             - The chip dimensions and center coordinates are taken from ``design.chips['main']['size']`` and converted to consistent units.
         """
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
         
         qm_units = QUtilities.get_units(design)
@@ -769,7 +769,7 @@ class QUtilities:
         arrow_width = kwargs.get('arrow_width', 0.001)
         push_to_back = kwargs.get('push_to_back', False)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
         # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
         # obstacles = shapely.unary_union(gsdf['geometry'])
@@ -844,7 +844,7 @@ class QUtilities:
         thresh = kwargs.get("threshold", -1)  # noqa: F841 # abhishekchak52: unused variable thresh
         resolution = kwargs.get("resolution", 4)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
         ids = []
