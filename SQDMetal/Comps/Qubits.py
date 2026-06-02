@@ -1439,14 +1439,23 @@ class TransmonTapered2(TransmonTaperedInsets):
                 print("Skipping: connector pad rounding not yet implemented for W != 0")
 
             # Connector CPW wire
-            connector_wire_path = draw.wkt.loads(
-                f"""LINESTRING (\
-                0 {pad_cpw_shift+cpw_width/2}, \
-                {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
-                {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
-                {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
-                                            )"""
+            connector_wire_path=draw.LineString(
+                [
+                    [0, (cpw_width/2)],
+                    [
+                        cpw_extend,
+                        (cpw_width/2),
+                    ],
+                ]
             )
+            # connector_wire_path = draw.wkt.loads(
+            #     f"""LINESTRING (\
+            #     0 {pad_cpw_shift+cpw_width/2}, \
+            #     {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
+            #     {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
+            #     {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
+            #                                 )"""
+            # )
         else:
             readout_line = draw.rectangle(cpw_width,
                                           ((pocket_height-p.pad_gap)/2)-p.pad_height-pc.pad_gap, 
@@ -1549,7 +1558,7 @@ class TransmonTapered2(TransmonTaperedInsets):
             self.add_qgeometry(
                 "path", {f"{name}_wire": connector_wire_path}, width=cpw_width
             )
-            length=QUtilities.calc_points_on_path([0], self.design, component_name=self.name, trace_name=f"{name}_wire")[-1]
+            length=QUtilities.calc_points_on_path([0], self.design, component_name=self.name, trace_name=f"{name}_wire")[-1]#in terms of calclating dists, the first input is irrelevant.
             outside_pocket_len=length-((p.pocket_width/2)-pad_width-(0.5*p.pad_width-pad_width))
             if outside_pocket_len>0:
                 pocket=draw.rectangle(outside_pocket_len, cpw_width + 2 * pc.cpw_gap,
