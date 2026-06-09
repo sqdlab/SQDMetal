@@ -1963,7 +1963,7 @@ class TransmonTapered2(TransmonTaperedInsets):
 
         #add pins
         port_line_cord1=list(draw.shapely.geometry.shape(port_line1).coords)
-        self.add_pin('exo_fluxline1', port_line_cord1, cpw_width)
+        self.add_pin('exo_fluxline1', port_line_cord1[::-1], cpw_width)
 
         port_line_cord2=list(draw.shapely.geometry.shape(port_line2).coords)
         self.add_pin('exo_fluxline2', port_line_cord2, cpw_width)
