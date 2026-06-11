@@ -5,6 +5,7 @@ import pyvista as pv
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+from SQDMetal.Utilities.PlotUtilities import HistogramEqualisation
 
 class PVDVTU_Slice:
     def __init__(self, pv_slice, units):
@@ -17,26 +18,31 @@ class PVDVTU_Slice:
     def get_data(self, param_name):
         return self.slc[param_name]
     
-    def plot(self, values, cmap='viridis', equalise_histogram=False, fig=None, ax=None):
+    def plot(self, values, cmap='viridis', equalise_histogram=True, equal_pos_neg=True, fig=None, ax=None):
         #Values must be a N-array - basically use get_data() and mathematically manipulate it to be a scalar array
 
         zMin, zMax = np.min(values), np.max(values)
+        if equal_pos_neg:
+            zMag = max(np.abs(zMin),np.abs(zMax))
         if equalise_histogram:
-            quantileStops = np.linspace(0,1,64)
-            leQuantiles = np.quantile(values, quantileStops)
-            zinterpInv = lambda x: np.interp(x, quantileStops, leQuantiles) # noqa: E731
-            zinterp = lambda x: np.interp(x, leQuantiles, quantileStops) # noqa: E731
-            cMapNorm = matplotlib.colors.FuncNorm((zinterp,zinterpInv), vmin=zMin, vmax=zMax)
-            cBarTicks = np.quantile(values, np.linspace(0,1,5))
+            histeq = HistogramEqualisation(values, equal_pos_neg)
+            cMapNorm = histeq.cmap()
+            cBarTicks = histeq.cTicks(5)
         else:
             cMapNorm = None
-            cBarTicks = np.linspace(zMin, zMax, 3)
+            if equal_pos_neg:
+                cBarTicks = np.linspace(-zMag, zMag, 3)
+            else:
+                cBarTicks = np.linspace(zMin, zMax, 3)
 
         pts = self.slc.points
         tri = self.slc.faces.reshape((-1,4))[:, 1:]
         if fig is None:
             fig, ax = plt.subplots(1)
-        pcm = ax.tripcolor(pts[:,0]*self._units, pts[:,1]*self._units, tri, values, norm=cMapNorm, cmap=cmap)
+        if equal_pos_neg and not equalise_histogram:
+            pcm = ax.tripcolor(pts[:,0]*self._units, pts[:,1]*self._units, tri, values, norm=cMapNorm, cmap=cmap, vmin=-zMag, vmax=zMag)
+        else:
+            pcm = ax.tripcolor(pts[:,0]*self._units, pts[:,1]*self._units, tri, values, norm=cMapNorm, cmap=cmap)
         ax.set_xlabel('x position (m)')
         ax.set_ylabel('y position (m)')
         self._colbar_obj = fig.colorbar(pcm, shrink=0.6, ticks=cBarTicks)
