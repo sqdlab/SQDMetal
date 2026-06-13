@@ -1402,16 +1402,16 @@ class TransmonTapered2(TransmonTaperedInsets):
         pocket_rise = pc.pocket_rise
         pocket_extent = pc.pocket_extent
         pocket_height=p.pocket_height
-
-        assert (
-            pad_width_fillet >= 0
-        ), f"Error: pad_width {pad_width} is too small for the fillet radius {r}. Either increase the width or decrease the fillet radius of the connection pads."
-        assert (
-            pad_height_fillet >= 0
-        ), f"Error: pad_height {pad_height} is too small for the fillet radius {r}. Either increase the height or decrease the fillet radius of the connection pads."
-        assert (
-            pad_width / 2 - cpw_width / 2 - r >= r_outer
-        ), f"Error: fillet_radius_outer {r_outer} is too large for the pad_width {pad_width} and cpw_width {cpw_width}. Either decrease the fillet_radius_outer or increase the pad_width."
+        if r != 0 and r_outer != 0:
+            assert (
+                pad_width_fillet >= 0
+            ), f"Error: pad_width {pad_width} is too small for the fillet radius {r}. Either increase the width or decrease the fillet radius of the connection pads."
+            assert (
+                pad_height_fillet >= 0
+            ), f"Error: pad_height {pad_height} is too small for the fillet radius {r}. Either increase the height or decrease the fillet radius of the connection pads."
+            assert (
+                pad_width / 2 - cpw_width / 2 - r >= r_outer
+            ), f"Error: fillet_radius_outer {r_outer} is too large for the pad_width {pad_width} and cpw_width {cpw_width}. Either decrease the fillet_radius_outer or increase the pad_width."
 
         loc_W = float(pc.loc_W)
         loc_W, loc_H = float(pc.loc_W), float(pc.loc_H)
