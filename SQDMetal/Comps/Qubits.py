@@ -1301,7 +1301,19 @@ class TransmonTapered2(TransmonTaperedInsets):
             * fbl_height: '50um' -- The height of the flux bias line along the y-axis
             * cpw_width: 'cpw_width' -- The width of the flux bias line
             * cpw_gap: 'cpw_gap' -- The dielectric gap width of the flux bias line
-            * mirror: False -- Boolean to mirror flux line across y-axis"""
+            * mirror: False -- Boolean to mirror flux line across y-axis
+            
+    Connector lines:
+        * pad_gap        - space between the connector pad and the charge island it is
+          nearest to
+        * cpw_width      - center trace width of the CPW line
+        * cpw_gap        - dielectric gap width of the CPW line
+        * cpw_extend     - length of CPW outside the pocket
+        * pocket_extent  - distance of end of CPW from the middle of the qubit. Can be negative if needed
+        * pocket_rise    - How far up or down relative to the center of the transmon should we
+          elevate the cpw connection point on the ground plane
+        * loc_W / H      - which 'quadrant' of the pocket the connector is set to, +/- 1 (check
+          if diagram is correct)"""
 
     default_options = Dict(
         TransmonTaperedInsets.default_options,
@@ -1360,7 +1372,19 @@ class TransmonTapered2(TransmonTaperedInsets):
                                 flush_to_pocket=False,
                                 marker_prefix='placeholder',
                                 qubit_prefix=True
-                            )
+                            ),
+
+        _default_connection_pads=Dict(
+            pad_gap="100um",
+            cpw_width="cpw_width",
+            cpw_gap="cpw_gap",
+            cpw_extend="200um",
+            pocket_extent="0um",
+            loc_W="0",  # width location  only +-1 or 0,
+            loc_H="1",  # height location  only +-1 or 0
+        ),
+
+
     )
     def make(self):   
         self.make_pocket()
@@ -1389,30 +1413,13 @@ class TransmonTapered2(TransmonTaperedInsets):
         pc = self.p.connection_pads[name]  # parser on connector options
 
         # define commonly used variables once
-        r = pc.fillet_radius_inner
-        r_outer = pc.fillet_radius_outer
         cpw_width = pc.cpw_width
         cpw_gap= pc.cpw_gap
         cpw_extend = pc.cpw_extend
-        pad_width_fillet = pc.pad_width - 2 * r
-        pad_height_fillet = pc.pad_height - 2 * r
-        pad_width = pc.pad_width
-        pad_height = pc.pad_height
-        pad_cpw_shift = pc.pad_cpw_shift
-        pocket_rise = pc.pocket_rise
         pocket_extent = pc.pocket_extent
         pocket_height=p.pocket_height
-        if r != 0 and r_outer != 0:
-            assert (
-                pad_width_fillet >= 0
-            ), f"Error: pad_width {pad_width} is too small for the fillet radius {r}. Either increase the width or decrease the fillet radius of the connection pads."
-            assert (
-                pad_height_fillet >= 0
-            ), f"Error: pad_height {pad_height} is too small for the fillet radius {r}. Either increase the height or decrease the fillet radius of the connection pads."
-            assert (
-                pad_width / 2 - cpw_width / 2 - r >= r_outer
-            ), f"Error: fillet_radius_outer {r_outer} is too large for the pad_width {pad_width} and cpw_width {cpw_width}. Either decrease the fillet_radius_outer or increase the pad_width."
-
+        pocket_width=p.pocket_width
+        
         loc_W = float(pc.loc_W)
         loc_W, loc_H = float(pc.loc_W), float(pc.loc_H)
         if float(loc_W) not in [-1.0, +1.0, 0] or float(loc_H) not in [-1.0, +1.0]:
@@ -1424,38 +1431,30 @@ class TransmonTapered2(TransmonTaperedInsets):
         # Define the geometry
         # Connector pad
         if float(loc_W) != 0:
-            connector_pad = draw.rectangle(
-                pad_width_fillet, pad_height_fillet, -pad_width / 2, pad_height / 2
-            )
-            connector_pad = connector_pad.buffer(
-                r,
-                cap_style=1,
-                join_style=1,
-                mitre_limit=2.0,
-                quad_segs=pc.fillet_resolution,
-            )
-            # add corners
-            if r_outer > 0:
-                print("Skipping: connector pad rounding not yet implemented for W != 0")
-
             # Connector CPW wire
-            connector_wire_path=draw.LineString(
-                [
-                    [0, (cpw_width/2)],
-                    [
-                        cpw_extend,
-                        (cpw_width/2),
-                    ],
-                ]
+            connector_wire=draw.rectangle(
+                (pocket_width/2)-(cpw_width/2)-pocket_extent,
+                cpw_width,
+                ((pocket_width+cpw_width)/4)+(pocket_extent/2),
+                0
             )
-            # connector_wire_path = draw.wkt.loads(
-            #     f"""LINESTRING (\
-            #     0 {pad_cpw_shift+cpw_width/2}, \
-            #     {pc.pad_cpw_extent}                           {pad_cpw_shift+cpw_width/2}, \
-            #     {(p.pocket_width-p.pad_width)/2-pocket_extent} {pad_cpw_shift+cpw_width/2+pocket_rise}, \
-            #     {(p.pocket_width-p.pad_width)/2+cpw_extend}    {pad_cpw_shift+cpw_width/2+pocket_rise}\
-            #                                 )"""
-            # )
+            connector_wire_extend=draw.rectangle(
+                cpw_extend,
+                cpw_width,
+                (pocket_width+cpw_extend)/2,
+                0
+            )
+            connector_wire_extend_pocket=draw.rectangle(
+                cpw_extend,
+                cpw_width+(2*cpw_gap),
+                (pocket_width+cpw_extend)/2,
+                0
+            )
+            connector_wire_circle=draw.Point((cpw_width/2)+pocket_extent, 0).buffer(cpw_width/2)
+            connector_wire=draw.union(connector_wire, connector_wire_extend, connector_wire_circle)
+            port_line=draw.LineString([[(pocket_width/2)+cpw_extend, (cpw_width/2)], [(pocket_width/2)+cpw_extend, -(cpw_width/2)]])#goes downwards
+            fake_port_line=draw.LineString([[(cpw_width/2)+pocket_extent, -(cpw_width/2)], [(cpw_width/2)+pocket_extent, (cpw_width/2)]])#goes_upwards
+
         else:
             readout_line = draw.rectangle(cpw_width,
                                           ((pocket_height-p.pad_gap)/2)-p.pad_height-pc.pad_gap, 
@@ -1538,39 +1537,20 @@ class TransmonTapered2(TransmonTaperedInsets):
         )"""
         if float(loc_W) != 0:
             # Position the connector, rotate and translate
-            objects = [connector_pad, connector_wire_path]
+            objects = [connector_wire, connector_wire_extend_pocket, port_line, fake_port_line]
+            objects = draw.translate(objects, 0, (p.pad_gap/2)+p.pad_height+pc.pad_gap+(cpw_width/2))#move upwards
 
-            if loc_W == 0:
-                loc_Woff = 1
-            else:
-                loc_Woff = loc_W
 
-            objects = draw.scale(objects, loc_Woff, loc_H, origin=(0, 0))
-            objects = draw.translate(
-                objects,
-                loc_W * (p.pad_width) / 2.0,
-                loc_H * (p.pad_height + p.pad_gap / 2 + pc.pad_gap),
-            )
+            objects = draw.scale(objects, loc_W, loc_H, origin=(0, 0))
             objects = draw.rotate_position(objects, p.orientation, [p.pos_x, p.pos_y])
-            [connector_pad, connector_wire_path] = objects
+            [connector_wire, connector_wire_extend_pocket, port_line, fake_port_line] = objects
         
-            self.add_qgeometry("poly", {f"{name}_connector_pad": connector_pad})
+            self.add_qgeometry("poly", {f"{name}_connector_wire": connector_wire})
             self.add_qgeometry(
-                "path", {f"{name}_wire": connector_wire_path}, width=cpw_width
+                "poly",
+                {f"{name}_wire_sub": connector_wire_extend_pocket},
+                subtract=True,
             )
-            length=QUtilities.calc_points_on_path([0], self.design, component_name=self.name, trace_name=f"{name}_wire")[-1]#in terms of calclating dists, the first input is irrelevant.
-            outside_pocket_len=length-((p.pocket_width/2)-pad_width-(0.5*p.pad_width-pad_width))
-            if outside_pocket_len>0:
-                pocket=draw.rectangle(outside_pocket_len, cpw_width + 2 * pc.cpw_gap,
-                                    (p.pocket_width+outside_pocket_len)/2,
-                                    ((cpw_width + 2 * pc.cpw_gap)/2)+(p.pad_height + p.pad_gap / 2 + pc.pad_gap)-pc.cpw_gap)
-                pocket=draw.scale(pocket, loc_Woff, loc_H, origin=(0,0))
-                pocket=draw.rotate_position(pocket, p.orientation, [p.pos_x, p.pos_y])
-                self.add_qgeometry(
-                    "poly",
-                    {f"{name}_wire_sub": pocket},
-                    subtract=True,
-                )
 
         else: 
             objects = [readout_line, port_line, readout_line_extend_pocket]
@@ -1587,17 +1567,23 @@ class TransmonTapered2(TransmonTaperedInsets):
         ############################################################
 
         # add pins
-        if float(loc_W) != 0:
-            points = np.array(connector_wire_path.coords)
-            self.add_pin(name, points=points[-2:], width=cpw_width, input_as_norm=True)
+        # if float(loc_W) != 0:
+        #     points = list(draw.shapely.geometry.shape(port_line).coords)
+        #     self.add_pin(name, points=points[-2:], width=cpw_width, input_as_norm=True)
 
-        else:
-            # add pins
-            port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
-            port_line_cords = port_line_cords if loc_H==-1 else port_line_cords[::-1]
-            points = list(port_line_cords)
-            self.add_pin(name,
-                        points, cpw_width)
+        # else:
+        # add pins
+        port_line_cords = list(draw.shapely.geometry.shape(port_line).coords)
+        port_line_cords = port_line_cords if loc_H==-1 else port_line_cords[::-1]
+        port_line_cords = port_line_cords if loc_W==-1 else port_line_cords[::-1]
+        self.add_pin(name,
+                    port_line_cords, cpw_width)
+        if float(loc_W) != 0:
+            fake_port_line_cords=list(draw.shapely.geometry.shape(fake_port_line).coords)
+            fake_port_line_cords = fake_port_line_cords if loc_H==-1 else fake_port_line_cords[::-1]
+            fake_port_line_cords = fake_port_line_cords if loc_W==-1 else fake_port_line_cords[::-1]
+            self.add_pin('fake_'+name,
+                         fake_port_line_cords, cpw_width)
         
 
     def make_flux_bias_line(self):
