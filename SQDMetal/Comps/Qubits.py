@@ -1479,62 +1479,6 @@ class TransmonTapered2(TransmonTaperedInsets):
 
         ############################################################
 
-        
-
-        """connector_pad = draw.Point(
-            pad_width_fillet, pad_height_fillet, 0, pad_height / 2
-        ).buffer(cpw_width/2)
-        connector_pad = connector_pad.buffer(
-            r,
-            cap_style=1,
-            join_style=1,
-            mitre_limit=2.0,
-            quad_segs=pc.fillet_resolution,
-        )
-        # add corners
-        if r_outer > 0:
-            # --- Add the small corner box first ---
-            connector_pad_corners_sq = draw.rectangle(
-                r_outer,
-                r_outer,
-                -(cpw_width / 2) - (r_outer / 2),
-                pad_height + (r_outer / 2),
-            )
-            # --- Create a quarter circle to cut the outer corner ---
-            corner_circle = draw.Point(
-                -(cpw_width / 2) - (r_outer), pad_height + r_outer
-            ).buffer(r_outer, resolution=32)
-            corner_subtract_l = draw.subtract(
-                connector_pad_corners_sq, corner_circle
-            )
-            # repeat on right side
-            connector_pad_corners_sq = draw.rectangle(
-                r_outer,
-                r_outer,
-                (cpw_width / 2) + (r_outer / 2),
-                pad_height + (r_outer / 2),
-            )
-            corner_circle = draw.Point(
-                (cpw_width / 2) + (r_outer), pad_height + r_outer
-            ).buffer(r_outer, resolution=32)
-            corner_subtract_r = draw.subtract(
-                connector_pad_corners_sq, corner_circle
-            )
-            # Union the corners
-            connector_pad = draw.union(
-                [connector_pad, corner_subtract_l, corner_subtract_r]
-            )
-        # CPW path
-        connector_wire_path = draw.LineString(
-            [
-                [0, pad_height],
-                [
-                    0,
-                    (p.pocket_width / 2 - p.pad_height - p.pad_gap / 2 - pc.pad_gap)
-                    + cpw_extend,
-                ],
-            ]
-        )"""
         if float(loc_W) != 0:
             # Position the connector, rotate and translate
             objects = [connector_wire, connector_wire_extend_pocket, port_line, fake_port_line]
@@ -1585,6 +1529,28 @@ class TransmonTapered2(TransmonTaperedInsets):
             self.add_pin('fake_'+name,
                          fake_port_line_cords, cpw_width)
         
+    def connection_pad_length(self, name):
+        """Returns a string of the length of the connection pad in mm"""
+        # self.p allows us to directly access parsed values (string -> numbers) form the user option
+        p = self.p
+        pc = self.p.connection_pads[name]  # parser on connector options
+
+        # define commonly used variables once
+        cpw_width = pc.cpw_width
+        cpw_extend = pc.cpw_extend
+        pocket_extent = pc.pocket_extent
+        pocket_width=p.pocket_width
+        pocket_height=p.pocket_height
+        pad_gap=p.pad_gap
+        pad_height=p.pad_height
+        loc_W = float(pc.loc_W)
+        assert(not name in self.options.connection_pads,
+               "connection pad does not exist")
+        if float(loc_W) != 0:
+            length=(pocket_width/2)-(cpw_width/2)-pocket_extent+cpw_extend
+        else:
+            length=((pocket_height-pad_gap)/2)-pad_height-pc.pad_gap+cpw_extend
+        return str(length)+"mm"
 
     def make_flux_bias_line(self):
         """ Adds flux bias line to fluxonium pocket."""
