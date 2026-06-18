@@ -1469,8 +1469,8 @@ class TransmonTapered2(TransmonTaperedInsets):
                                             cpw_extend,
                                             0,
                                             (pocket_height+cpw_extend)/2)
-            port_line = draw.LineString([(cpw_width/2, (pocket_height/2)+cpw_extend),
-                                     (-cpw_width/2, (pocket_height/2)+cpw_extend)])
+            port_line = draw.LineString([(-cpw_width/2, (pocket_height/2)+cpw_extend),
+                                     (cpw_width/2, (pocket_height/2)+cpw_extend)])
             readout_line_circle=draw.Point(0, (p.pad_gap/2)+p.pad_height+pc.pad_gap).buffer(cpw_width/2)
             readout_line=draw.union(readout_line, readout_line_extend, readout_line_circle)
             
