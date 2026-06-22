@@ -14,17 +14,22 @@ class HistogramEqualisation:
             v_neg = values[values < 0]
             if v_pos.size > 0:
                 self._q_pos = np.quantile(v_pos, self._quantileStops)
-            else:
-                self._q_pos = np.array([0.0])
             if v_neg.size > 0:
                 self._q_neg = np.quantile(v_neg, self._quantileStops)
-            else:
-                self._q_neg = np.array([0.0])
 
-            self._zinterpInv_pos = lambda x: np.interp(x, self._quantileStops/2+0.5, self._q_pos)
-            self._zinterp_pos = lambda x: np.interp(x, self._q_pos, self._quantileStops/2+0.5)
-            self._zinterpInv_neg = lambda x: np.interp(x, self._quantileStops/2, self._q_neg)
-            self._zinterp_neg = lambda x: np.interp(x, self._q_neg, self._quantileStops/2)
+            if v_pos.size > 0:
+                self._zinterpInv_pos = lambda x: np.interp(x, self._quantileStops/2+0.5, self._q_pos)
+                self._zinterp_pos = lambda x: np.interp(x, self._q_pos, self._quantileStops/2+0.5)
+            else:
+                self._zinterpInv_pos = lambda x: 0.0
+                self._zinterp_pos = lambda x: 0.5
+            #
+            if v_neg.size > 0:
+                self._zinterpInv_neg = lambda x: np.interp(x, self._quantileStops/2, self._q_neg)
+                self._zinterp_neg = lambda x: np.interp(x, self._q_neg, self._quantileStops/2)
+            else:
+                self._zinterpInv_neg = lambda x: 0.0
+                self._zinterp_neg = lambda x: 0.5
         else:
             self._q = np.quantile(values, self._quantileStops)
             self._zinterpInv = lambda x: np.interp(x, self._quantileStops, self._q)
