@@ -1915,11 +1915,16 @@ class TransmonTapered2(TransmonTaperedInsets):
 
         #add pins
         port_line_cord1=list(draw.shapely.geometry.shape(port_line1).coords)
-        self.add_pin('exo_fluxline1', port_line_cord1[::-1], cpw_width)
+        if make_left:
+            self.add_pin('exo_fluxline1', port_line_cord1[::-1], cpw_width)
+        else:
+            self.add_pin('exo_fluxline1', port_line_cord1, cpw_width)
 
         port_line_cord2=list(draw.shapely.geometry.shape(port_line2).coords)
-        self.add_pin('exo_fluxline2', port_line_cord2, cpw_width)
-
+        if make_left:
+            self.add_pin('exo_fluxline2', port_line_cord2, cpw_width)
+        else:
+            self.add_pin('exo_fluxline2', port_line_cord2[::-1], cpw_width)
     def make_markers(self):
         """Makes 6 alignment markers outside the 4 corners of the pocket. Intended for 2
         layers of lithography, 3 alignment markers for each layer. Markers going veritcally
