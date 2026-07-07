@@ -29,6 +29,7 @@ class PALACE_Model_Base:
 
     default_user_options_parent = {
         "dielectric_material": "silicon",
+        "topping_material": "vacuum",
         "fillet_resolution": 12,
         "mesh_min": 10e-6,
         "mesh_max": 100e-6,

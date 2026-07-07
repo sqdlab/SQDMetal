@@ -147,6 +147,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
         #get material parameters
         dielectric = Material(self.user_options["dielectric_material"])
+        air_material = Material(self.user_options["topping_material"])
 
         
         #Define python dictionary to convert to json file
@@ -175,10 +176,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
                         "Materials":
                         [
                             {
-                                "Attributes": material_air,  # Air
-                                "Permeability": 1.0,
-                                "Permittivity": 1.0,
-                                "LossTan": 0.0
+                                "Attributes": material_air,  # Air/Vacuum (or any capping material)
+                                "Permeability": air_material.permeability,
+                                "Permittivity": air_material.permittivity,
+                                "LossTan": air_material.loss_tangent
                             },
                             {
                                 "Attributes": material_dielectric,  # Dielectric
