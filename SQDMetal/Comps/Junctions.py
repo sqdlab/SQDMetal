@@ -1371,6 +1371,8 @@ def get_square_JJ_width(J_C_uA_um2, bottom_layer_thickness_nm=None, configuratio
     width_JJ_um = width_JJ_nm * 1e-3
     width_JJ_um = width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
     area_JJ_um2 = A_m2 * 1e12
+    if rounding:
+        area_JJ_um2 = np.array([round(i / 0.001) * 0.001 for i in area_JJ_um2])
     return width_JJ_um, area_JJ_um2
 
 

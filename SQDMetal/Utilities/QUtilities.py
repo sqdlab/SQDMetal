@@ -1924,3 +1924,29 @@ class QUtilities:
         else:
             l = l_full
         return l
+
+    @staticmethod
+    def crop_design(design, border_mm=0.4, center_mm=None, dimensions_mm=None, rebuild=True):
+        if center_mm==None and dimensions_mm==None:
+            print("Cropping around all components in 'design.components.keys()'.")
+            (min_x, min_y, max_x, max_y) = QUtilities.get_comp_bounds(design, design.components.keys())
+            x_total = max_x - min_x + (2 * border_mm)
+            y_total = max_y - min_y + (2 * border_mm)
+            new_chip_centre = [(min_x + max_x)/2, (min_y + max_y)/2]
+        elif center_mm==None:
+            assert dimensions_mm==None, "If supplying 'dimensions_mm', you must also supply 'center_mm'."
+        elif dimensions_mm==None:
+            assert center_mm==None, "If supplying 'center_mm', you must also supply 'dimensions_mm'."
+        elif center_mm!=None and dimensions_mm!=None:
+            assert len(center_mm)==2 and len(dimensions_mm)==2, "Supply 'center_mm' and 'dimensions_mm' as a tuple or list [x,y] in units of mm."
+            x_total, y_total = dimensions_mm
+            new_chip_centre = center_mm
+        print(f"\n  New x-y chip centre : {new_chip_centre[0]:6.2f}, {new_chip_centre[1]:6.2f} [mm]")
+        print(f"  New x-y dimensions  : {x_total:6.2f}, {y_total:6.2f} [mm]\n")
+        if rebuild:
+            print('\nCropping chip...')
+            design.chips.main.size.center_x = f"{new_chip_centre[0]}mm"
+            design.chips.main.size.center_y = f"{new_chip_centre[1]}mm"
+            design.chips.main.size.size_x = f"{x_total}mm"
+            design.chips.main.size.size_y = f"{y_total}mm"
+            design.rebuild()
