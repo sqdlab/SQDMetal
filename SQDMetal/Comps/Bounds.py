@@ -97,7 +97,7 @@ class BoundGroundShield(QComponent):
     def make(self):
         p = self.p
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=p.curve_resolution)
         filt = gsdf#.loc[gsdf['subtract'] == True]
 
@@ -194,7 +194,7 @@ class BoundGroundShieldScaleGap(QComponent):
     def make(self):
         p = self.p
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=p.curve_resolution)
         filt = gsdf#.loc[gsdf['subtract'] == True]
 

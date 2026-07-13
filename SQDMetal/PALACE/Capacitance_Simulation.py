@@ -37,7 +37,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                                     view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
@@ -47,7 +46,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         self.create_files = create_files
         self._cur_cap_terminals = []
         self.cap_matrix = None
-        super().__init__(meshing, mode, user_options, **kwargs)
+        super().__init__(sim_parent_directory, meshing, mode, user_options, **kwargs)
 
     def _create_directory(self, directory_name):
         '''create a directory to hold the simulation files'''
@@ -148,6 +147,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
         #get material parameters
         dielectric = Material(self.user_options["dielectric_material"])
+        air_material = Material(self.user_options["topping_material"])
 
         
         #Define python dictionary to convert to json file
@@ -176,10 +176,10 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
                         "Materials":
                         [
                             {
-                                "Attributes": material_air,  # Air
-                                "Permeability": 1.0,
-                                "Permittivity": 1.0,
-                                "LossTan": 0.0
+                                "Attributes": material_air,  # Air/Vacuum (or any capping material)
+                                "Permeability": air_material.permeability,
+                                "Permittivity": air_material.permittivity,
+                                "LossTan": air_material.loss_tangent
                             },
                             {
                                 "Attributes": material_dielectric,  # Dielectric

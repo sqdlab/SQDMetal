@@ -73,7 +73,7 @@ class PVD_Shadows:
         return unit_conv, unit_conv_name
 
     def plot_all_layers(self, mode='separate', plot_overlap = False ,**kwargs):
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
         unit_conv, unit_conv_name = self.get_units()
         
@@ -137,7 +137,7 @@ class PVD_Shadows:
         ax.set_ylabel('Position (m)')
 
     def plot_layer(self, layer_id, mode='separate', **kwargs):
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
         filt = gsdf.loc[(gsdf['layer'] == layer_id) & (~gsdf['subtract'])]
@@ -171,7 +171,7 @@ class PVD_Shadows:
     def get_shadows_for_component(self, qObj_name, mode='separate', **kwargs):
         comp_id = self.design.components[qObj_name].id
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
         filt = gsdf.loc[(gsdf['component'] == comp_id) & (~gsdf['subtract'])]
@@ -511,7 +511,7 @@ class PVD_Shadows:
 
             comp_id = self.design.components[qObj_name].id
 
-            qmpl = QiskitShapelyRenderer(None, self.design, None)
+            qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
             gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
             filt = gsdf.loc[(gsdf['component'] == comp_id) & (~gsdf['subtract'])]
@@ -532,7 +532,7 @@ class PVD_Shadows:
 
         elif layer_id is not None:
 
-            qmpl = QiskitShapelyRenderer(None, self.design, None)
+            qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
             gsdf = qmpl.get_net_coordinates(kwargs.get('resolution',4))
 
             filt = gsdf.loc[(gsdf['layer'] == layer_id) & (~gsdf['subtract'])]

@@ -106,7 +106,7 @@ class HoleBorders(QComponent):
         p = self.p
         #########################################################
 
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates()
         gsdf = gsdf[gsdf['layer'].isin(p.border_layers)]
         if p.exclude_gaps:
