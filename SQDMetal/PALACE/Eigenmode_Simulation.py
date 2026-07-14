@@ -661,18 +661,23 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         #TODO: Strongly consider refactoring these keys/values...
         return {'f_modes_GHz': freq_df, 'f_norms_GHz': freq_renorm_df, 'EPR': ratios_df, 'Chi': chi_anharm_df, 'Lamb': lamb_shift_df, 'Detuning': delta_df}
     
-    def plot_fields_with_data(self, save=True, columns=4, skip_postprocessing=False):
-        return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, columns=columns, skip_postprocessing=skip_postprocessing)
+    def plot_fields_with_data(self, save=True, skip_postprocessing=False):
+        return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, skip_postprocessing=skip_postprocessing)
 
     @staticmethod
-    def plot_fields_with_data_from_files(directory, save=True, columns=4, skip_postprocessing=False):
+    def plot_fields_with_data_from_files(directory, save=True, skip_postprocessing=False):
+        """
+        Plot eigenmode field magnitude images in a 2-row grid, with the
+        frequency/Q/kappa/participation data overlaid directly on each image.
+        """
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
         if not skip_postprocessing:
             try:
                 participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(
-                    json_sim_config=directory+r"/config.json", output_directory=directory)
-            except:
+                    json_sim_config=directory + r"/config.json", output_directory=directory)
+            except Exception:
                 skip_postprocessing = True
+
         # collect png files
         r = re.compile(r"eig(\d+)_ErealMag\.png")
         png_files = []
@@ -680,51 +685,60 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             m = r.match(filename)
             if m:
                 png_files.append((int(m.group(1)), filename))
-        # sort by eigenmode index
         png_files.sort(key=lambda x: x[0])
-        n_modes = len(png_files)
-        # plotting
-        fig = plt.figure(figsize=(8, 3 * n_modes))
+
+        if skip_postprocessing:
+            n_modes = len(png_files)
+        else:
+            n_modes = min(len(png_files), len(participations))
+
+        n_rows = 2 if n_modes > 1 else 1
+        n_cols = int(np.ceil(n_modes / n_rows))
+
+        fig = plt.figure(figsize=(4.2 * n_cols, 4.4 * n_rows))
         path = os.path.normpath(directory)
         parts = path.split(os.sep)
         last_two = os.path.join(parts[-2], parts[-1])
-        fig.suptitle(str(last_two))
-        gs = GridSpec(n_modes, 2, width_ratios=[2, 1], figure=fig)
+        fig.suptitle(str(last_two), fontsize=14, fontweight="bold", y=0.995)
+
+        gs = GridSpec(n_rows, n_cols, figure=fig, hspace=0.08, wspace=0.05,
+                    top=0.93, bottom=0.01, left=0.01, right=0.99)
+
         for i, (eig_num, filename) in enumerate(png_files):
+            if i >= n_modes:
+                break
+            row, col = divmod(i, n_cols)
+            cell = gs[row, col].subgridspec(2, 1, height_ratios=[4, 1], hspace=0.03)
+
+            ax_img = fig.add_subplot(cell[0])
             img = mpimg.imread(os.path.join(directory, filename))
-            # add image
-            ax_img = fig.add_subplot(gs[i, 0])
             ax_img.imshow(img)
             ax_img.axis("off")
-            # add text
-            ax_txt = fig.add_subplot(gs[i, 1])
+            #
+            ax_txt = fig.add_subplot(cell[1])
             ax_txt.axis("off")
+            f_ghz = mode_dict['eigenfrequencies'][eig_num].real * 1e-9
             if skip_postprocessing:
-                ax_txt.text(
-                    0, 0.8,
-                    f"Mode {eig_num+1}\n\n"
-                    f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
-                    f"Q = {mode_dict['loaded_Q'][eig_num]}"
-                )
+                q_val = mode_dict['loaded_Q'][eig_num]
+                q_str = f"{q_val:.0f}" if isinstance(q_val, (int, float, np.floating)) else str(q_val)
+                lines = [f"f = {f_ghz:.3f} GHz    Q = {q_str}"]
             else:
-                ax_txt.text(
-                    0, 0.8,
-                    f"Mode {eig_num+1}\n\n"
-                    f"f = {mode_dict['eigenfrequencies'][eig_num].real * 1e-9:.3f} GHz\n"
-                    f"Q = {participations[eig_num]['Q']:.0f}\n"
-                    # f"kappa = {2*np.pi*mode_dict['eigenfrequencies'][eig_num].real/participations[eig_num]['Q'] * 1e-6:.3f} MHz\n"
-                    f"kappa = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz\n"
-                    f"p_MS = {participations[eig_num]['MS']['p']:.2e}\n"
-                    f"p_MA = {participations[eig_num]['MA']['p']:.2e}\n"
-                    f"p_SA = {participations[eig_num]['SA']['p']:.2e}\n",
-                    fontsize=10,
-                    va="top"
-                )
-        plt.tight_layout()
+                p = participations[eig_num]
+                lines = [
+                    rf"f = {f_ghz:.3f} GHz   Q = {p['Q']:.0f}   $\kappa$ = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz",
+                    rf"$p_{{MS}}$ = {p['MS']['p']:.2e}   $p_{{MA}}$ = {p['MA']['p']:.2e}   $p_{{SA}}$ = {p['SA']['p']:.2e}",
+                ]
+            text = "\n".join(lines)
+            ax_txt.text(0.5, 0.92, f"Mode {eig_num + 1}",transform=ax_txt.transAxes, ha="center", va="top",fontsize=12)
+            ax_txt.text(0.5, 0.55, text, transform=ax_txt.transAxes, ha="center", va="top", fontsize=9, family="monospace")
+            # ax_txt.add_patch(plt.Rectangle((0, 0), 1, 1, transform=ax_txt.transAxes,facecolor="none", edgecolor="black", linewidth=0.8, clip_on=False,))
+
         if save:
-            plt.savefig(directory + r"/eigenmodes.png")
-            print(f"Plot saved: {directory}/eigenmodes.png")
+            out_path = os.path.join(directory, "eigenmodes.png")
+            plt.savefig(out_path, dpi=200, bbox_inches="tight")
+            print(f"Plot saved: {out_path}")
         plt.show()
+
         if skip_postprocessing:
             return {'mode_dict': mode_dict}
         else:
