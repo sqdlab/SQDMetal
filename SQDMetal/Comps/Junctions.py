@@ -25,11 +25,27 @@ class jj_manhattan(jj_manhattan):
     # Creation Date: 2025
     # Description: Class to draw Manhattan junctions. Inherits jj_manhattan native to Qiskit Metal
     #only difference is that it can rotate with the orientation parameter
+    #also, now you can make the lengths of the arms different
+
+    default_options = Dict(
+        jj_manhattan.default_options,
+        finger_upper_height=None,
+        JJ_pad_upper_height=None,
+        finger_upper_width=None,
+        JJ_pad_upper_width=None,
+    )
     def make(self):
         """Qiskit Metal JJ"""
 
         p = self.parse_options()  # Parse the string options into numbers
-
+        if p.finger_upper_height is None:
+            p.finger_upper_height=p.finger_lower_height
+        if p.JJ_pad_upper_height is None:
+            p.JJ_pad_upper_height=p.JJ_pad_lower_height
+        if p.finger_upper_width is None:
+            p.finger_upper_width=p.finger_lower_width
+        if p.JJ_pad_upper_width is None:
+            p.JJ_pad_upper_width=p.JJ_pad_lower_width
         # draw the lower pad as a rectangle
         JJ_pad_lower = draw.rectangle(p.JJ_pad_lower_width,
                                       p.JJ_pad_lower_height,
@@ -46,13 +62,28 @@ class jj_manhattan(jj_manhattan):
         # merge the lower pad and the finger into a single object
         design = draw.union(JJ_pad_lower, finger_lower)
 
+        JJ_pad_upper = draw.rectangle(p.JJ_pad_upper_width,
+                                      p.JJ_pad_upper_height,
+                                      p.JJ_pad_lower_pos_x,
+                                      p.JJ_pad_lower_pos_y)
+
+        finger_upper = draw.rectangle(
+            p.finger_upper_width, p.finger_upper_height, p.JJ_pad_lower_pos_x,
+            0.5 * (p.JJ_pad_upper_height + p.finger_upper_height))
+
+        # fudge factor to merge the two options
+        finger_upper = draw.translate(finger_upper, 0.0, -0.0001)
+
+        # merge the lower pad and the finger into a single object
+        design2 = draw.union(JJ_pad_upper, finger_upper)
+
         # copy the pad/finger and rotate it by 90 degrees
-        design2 = draw.rotate(design, 90.0)
+        design2 = draw.rotate(design2, 90.0)
 
         # translate the second pad/finger to achieve the desired extension
         design2 = draw.translate(
-            design2, 0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
-            0.5 * p.finger_lower_width - p.extension,
+            design2, 0.5 * (p.JJ_pad_upper_height + p.finger_upper_height) -
+            0.5 * p.finger_upper_width - p.extension,
             0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
             0.5 * p.finger_lower_width - p.extension)
 
