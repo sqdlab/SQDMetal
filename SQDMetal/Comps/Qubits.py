@@ -1318,6 +1318,18 @@ class TransmonTapered2(TransmonTaperedInsets):
     default_options = Dict(
         TransmonTaperedInsets.default_options,
         fillet_radius_gap='0um',#HAS TO be 0 for the flux line to work
+        finger_top_options=Dict(
+            make_finger=False,
+            x_offset='0.0um',
+            finger_height='0.012mm',
+            finger_width='0.0034mm',
+        ),
+        finger_bot_options=Dict(
+            make_finger=False,
+            x_offset='0.0um',
+            finger_height='0.012mm',
+            finger_width='0.0034mm',
+        ),
         flux_bias_line_options=Dict(
             make_fbl=False,
             fbl_sep='170um',
@@ -1399,6 +1411,446 @@ class TransmonTapered2(TransmonTaperedInsets):
             self.make_exo_flux_bias_lineRight()
         if self.p.alignment_markers_options.make_markers:
             self.make_markers()
+
+    def make_pocket(self):
+
+        # self.p allows us to directly access parsed values (string -> numbers) from the user option
+        p = self.p
+        pft = self.p.finger_top_options
+        pfb = self.p.finger_bot_options
+
+        make_finger_t=pft.make_finger
+        x_offset_t=pft.x_offset
+        finger_height_t=pft.finger_height
+        finger_width_t=pft.finger_width
+        make_finger_b=pfb.make_finger
+        x_offset_b=pfb.x_offset
+        finger_height_b=pfb.finger_height
+        finger_width_b=pfb.finger_width
+        #  pcop = self.p.coupled_pads[name]  # parser on connector options
+
+        # since we will reuse these options, parse them once and define them as variables
+        pad_width = p.pad_width
+        pad_height = p.pad_height
+        pad_gap = p.pad_gap
+        coupled_pad_height = p.coupled_pad_height
+        coupled_pad_width = p.coupled_pad_width
+        coupled_pad_gap = p.coupled_pad_gap
+        if p.junction_centered is False:
+            taper_x_offset = p.pad_width / 2 - p.taper_width_base / 2 + p.junction_x_offset
+        elif p.junction_centered == 'left':
+            taper_x_offset = -p.pad_width / 2 + p.taper_width_base / 2 - p.junction_x_offset
+        else:
+            taper_x_offset = 0
+
+        # TOP PAD
+        # make the pads as rectangles (shapely polygons)
+        pad = draw.rectangle(pad_width, pad_height)
+        pad_top = draw.translate(pad, 0, +(pad_height + pad_gap) / 2.0)
+        # Here, you make your pads round. Not sharp shape on the left and right sides and also this should be the same for the bottom pad as the top pad.
+        circ_left_top = draw.Point(
+            -pad_width / 2.0, +(pad_height + pad_gap) / 2.0
+        ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
+        circ_right_top = draw.Point(
+            pad_width / 2.0, +(pad_height + pad_gap) / 2.0
+        ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
+        pad_top_tmp1 = draw.union([circ_left_top, pad_top, circ_right_top])
+        # TAPER - Add trapezoid to the top pad
+        if p.taper_height > 0:
+            trapezoid_top = self.create_trapezoid(
+                0,
+                p.taper_width_top,
+                p.taper_width_base,
+                p.taper_height,
+                (pad_gap / 2) - float(p.taper_height),
+                p.taper_fillet_radius,
+                p.pad_width / 2 ,
+            )
+            if make_finger_t:
+                finger=draw.rectangle(finger_width_t, 2*finger_height_t, x_offset_t, p.taper_height+((pad_gap / 2)- float(p.taper_height)))#half of it will be inside the capacitor so double the height
+                cap=draw.Point(x_offset_t, p.taper_height+((pad_gap / 2)- float(p.taper_height))+(finger_height_t)).buffer(finger_width_t/2)
+                trapezoid_top=draw.union([trapezoid_top, finger, cap])
+
+            trapezoid_top = draw.translate(trapezoid_top, -taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
+            # pad_top_tmp = draw.union(pad_top_tmp1, trapezoid_top)
+            trapezoid_top_rotated = draw.rotate(
+                trapezoid_top,
+                180,
+                origin=(0, pad_gap / 4 + (pad_gap / 2 - float(p.taper_height)) / 2),
+            )  # Rotate trapezoid by 180 degrees
+            # create union
+            pad_top_tmp = draw.union(
+                pad_top_tmp1.buffer(0), trapezoid_top_rotated.buffer(0)
+            )
+        else:
+            pad_top_tmp = pad_top_tmp1
+
+        # COUPLER REGION - TOP PAD
+        # In here you create the teeth part and then you union them as one with the pad. Teeth only belong to top pad.
+        coupled_pad = draw.rectangle(coupled_pad_width, coupled_pad_height + pad_height)
+        coupler_pad_round = draw.Point(
+            0.0, (coupled_pad_height + pad_height) / 2
+        ).buffer(coupled_pad_width / 2, resolution=16, cap_style=CAP_STYLE.round)
+        coupled_pad = draw.union(coupled_pad, coupler_pad_round)
+        coupled_pad_left = draw.translate(
+            coupled_pad,
+            -(coupled_pad_width / 2.0 + coupled_pad_gap / 2.0),
+            +coupled_pad_height / 2.0 + pad_height + pad_gap / 2.0 - pad_height / 2,
+        )
+        coupled_pad_right = draw.translate(
+            coupled_pad,
+            (coupled_pad_width / 2.0 + coupled_pad_gap / 2.0),
+            +coupled_pad_height / 2.0 + pad_height + pad_gap / 2.0 - pad_height / 2,
+        )
+        # The coupler pads are only created if low_W=0 and low_H=+1
+        for name in self.options.connection_pads:
+            if (
+                self.options.connection_pads[name]["loc_W"] == 0
+                and self.options.connection_pads[name]["loc_H"] == +1
+            ):
+                pad_top_tmp = draw.union(
+                    [
+                        circ_left_top,
+                        coupled_pad_left,
+                        pad_top_tmp,
+                        coupled_pad_right,
+                        circ_right_top,
+                    ]
+                )
+        pad_top = pad_top_tmp
+        # Curving the edges of the teeth where it joins the pad
+        # outer corners
+        pad_top = pad_top.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(
+            -p.fillet_radius,
+            cap_style=1,
+            join_style=1,
+            mitre_limit=2.0,
+            quad_segs=p.fillet_resolution,
+        )
+        # inner corners
+        pad_top = pad_top.buffer(-p.fillet_radius, join_style=2, cap_style=3).buffer(
+            p.fillet_radius,
+            cap_style=1,
+            join_style=1,
+            mitre_limit=2.0,
+            quad_segs=p.fillet_resolution,
+        )
+
+        # BOTTOM PAD
+        # Round part for the bottom pad. And again you should unite all of them.
+        pad_bot = draw.translate(pad, 0, -(pad_height + pad_gap) / 2.0)
+        circ_left_bot = draw.Point(
+            -pad_width / 2, -(pad_height + pad_gap) / 2.0
+        ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
+        circ_right_bot = draw.Point(
+            pad_width / 2, -(pad_height + pad_gap) / 2.0
+        ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
+        pad_bot = draw.union([pad_bot, circ_left_bot, circ_right_bot])
+        # TAPER - Add trapezoid to the bottom pad
+        if p.taper_height > 0:
+            trapezoid_bot = self.create_trapezoid(
+                center_x=0,
+                top_width=p.taper_width_top,
+                base_width=p.taper_width_base,
+                height=p.taper_height,
+                y_offset=-(pad_gap / 2),
+                rfillet=p.taper_fillet_radius,
+                startx=p.pad_width / 2,
+            )
+            if make_finger_b:
+                finger=draw.rectangle(finger_width_b, 2*finger_height_b, x_offset_b, p.taper_height-(pad_gap / 2))#half of it will be inside the capacitor so double the height
+                cap=draw.Point(x_offset_b, p.taper_height-(pad_gap / 2)+(finger_height_b)).buffer(finger_width_b/2)
+                trapezoid_bot=draw.union([trapezoid_bot, finger, cap])
+
+            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
+            pad_bot = draw.union(pad_bot, trapezoid_bot)
+
+        # outer corners
+        pad_bot = pad_bot.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(
+            -p.fillet_radius,
+            cap_style=1,
+            join_style=1,
+            mitre_limit=2.0,
+            quad_segs=p.fillet_resolution,
+        )
+        # inner corners
+        pad_bot = pad_bot.buffer(-p.fillet_radius, join_style=2, cap_style=3).buffer(
+            p.fillet_radius,
+            cap_style=1,
+            join_style=1,
+            mitre_limit=2.0,
+            quad_segs=p.fillet_resolution,
+        )
+        # pad_bot = pad_bot.buffer(p.fillet_radius, join_style=1).buffer(-p.fillet_radius, join_style=1)
+
+        ###############################################################################################
+        # INSETS - cut into the pads for additional coupling
+        # define trapezoid
+        if p.inset_depth != 0 and p.inset_width != 0:
+            inset = draw.rectangle(
+                p.inset_depth - (2 * p.inset_fillet_radius),
+                p.inset_width - (2 * p.inset_fillet_radius),
+            )
+            inset_rounded = inset.buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=9,
+            )
+            inset = inset_rounded
+            # define x and y locations for insets
+            inset_y_top = (pad_gap / 2) + (p.pad_height / 2)
+            inset_y_bot = -inset_y_top
+            inset_x_left = (
+                -(pad_width / 2)
+                - (pad_height / 2)
+                + (p.inset_depth / 2)
+                - p.inset_fillet_radius
+            )
+            inset_x_right = -inset_x_left
+            # position trapezoids
+            inset_left_top = draw.translate(inset, inset_x_left, inset_y_top)
+            inset_right_top = draw.translate(inset, inset_x_right, inset_y_top)
+            inset_left_bot = draw.translate(inset, inset_x_left, inset_y_bot)
+            inset_right_bot = draw.translate(inset, inset_x_right, inset_y_bot)
+            # Subtract the insets from the pads
+            pad_top_tmp1 = draw.subtract(pad_top, inset_left_top)
+            pad_top_tmp2 = draw.subtract(pad_top_tmp1, inset_right_top)
+            pad_top = pad_top_tmp2
+            pad_bot_tmp1 = draw.subtract(pad_bot, inset_left_bot)
+            pad_bot_tmp2 = draw.subtract(pad_bot_tmp1, inset_right_bot)
+            pad_bot = pad_bot_tmp2
+            # re-round the new pads (inner corners only)
+            pad_bot = pad_bot.buffer(
+                -p.inset_fillet_radius, join_style=2, cap_style=3
+            ).buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=p.fillet_resolution * 3,
+            )
+            pad_top = pad_top.buffer(
+                -p.inset_fillet_radius, join_style=2, cap_style=3
+            ).buffer(
+                p.inset_fillet_radius,
+                cap_style=1,
+                join_style=1,
+                mitre_limit=2.0,
+                quad_segs=p.fillet_resolution * 3,
+            )
+            pad_bot = pad_bot.buffer(0)
+            pad_top = pad_top.buffer(0)
+
+        ###############################################################################################
+        # Pins from the center of the qubit pads
+        # Coordinates for the center of the pin
+        taper_width_top = p.taper_width_top
+        if p.taper_height == 0:
+            pin_route_l = 1e-6
+        else:
+            pin_route_l = p.taper_height
+        top_pin = LineString(
+            [
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset],
+                [taper_x_offset, pad_gap / 2 + p.junction_pin_inset - pin_route_l / 2],
+                # Extend outward
+            ]
+        )
+        bottom_pin = LineString(
+            [
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset],
+                [taper_x_offset, -pad_gap / 2 - p.junction_pin_inset + pin_route_l / 2],  # Start from pad bottom edge
+                # Extend outward
+            ]
+        )
+        if make_finger_b:
+            bottom_pin = LineString(
+                [
+                    [taper_x_offset+x_offset_b-(finger_width_b/2), (-pad_gap / 2)+finger_height_b+p.taper_height],
+                    [taper_x_offset+x_offset_b+(finger_width_b/2), (-pad_gap / 2)+finger_height_b+p.taper_height],  # Start from pad bottom edge
+                    # Extend outward
+                ]
+            )
+
+        ###############################################################################################
+        # Pins outside the qubit pocket
+        # Define the pin positions relative to (0,0)
+        # 4 pins, 2 on each side, aligned with the qubit pads and taper, and starting from the edge of the pocket.
+        top_right_pocket_pin = LineString(
+            [
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_right_pocket_pin = LineString(
+            [
+                [p.pocket_width / 2 + p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    p.pocket_width / 2 + p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, p.pad_gap/2 + p.pad_height/2 + pin_route_l /2 + p.chrgln_pin_x_offset],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    p.pad_gap/2 + p.pad_height/2 - pin_route_l / 2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_left_pocket_pin = LineString(
+            [
+                [-p.pocket_width / 2 - p.chrgln_pin_y_offset, -p.pad_gap/2 - p.pad_height/2 - pin_route_l + p.chrgln_pin_x_offset ],  # Start point (near pocket)
+                [
+                    -p.pocket_width / 2 - p.chrgln_pin_y_offset,
+                    -p.pad_gap/2 - p.pad_height/2 + p.chrgln_pin_x_offset,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        top_pocket_pin = LineString(
+            [
+                [0 , p.pocket_height/2 + pin_route_l/2],  # Start point (near pocket)
+                [
+                    0,
+                    p.pocket_height/2 - pin_route_l/2,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+
+        bottom_pocket_pin = LineString(
+            [
+                [0 , -p.pocket_height/2 - pin_route_l/2],  # Start point (near pocket)
+                [
+                    0,
+                    -p.pocket_height/2 + pin_route_l/2,
+                ],  # Start point (near pocket)
+                # Extend outward
+            ]
+        )
+           
+
+        ###############################################################################################
+        # Josephson Junction
+        # print(top_pin)
+        # print(top_pin.coords[0][0])
+        rect_jj = draw.LineString(
+            [(top_pin.coords[0][0], -p.inductor_height / 2), (top_pin.coords[0][0], p.inductor_height / 2)]
+        )
+
+        # Pocket
+        rect_pk = draw.rectangle(
+            p.pocket_width - 2 * p.fillet_radius_gap,
+            p.pocket_height - p.pocket_lower_tighten - 2 * p.fillet_radius_gap,
+            yoff=p.pocket_lower_tighten / 2,
+        )
+
+        # to curve the edges of the qubit pocket
+        rect_pk = rect_pk.buffer(
+            p.fillet_radius_gap,
+            cap_style=1,
+            join_style=1,
+            mitre_limit=2.0,
+            quad_segs=p.fillet_resolution,
+        )
+
+        # Rotate and translate all qgeometry as needed.
+        polys = [
+            rect_jj,
+            pad_top,
+            pad_bot,
+            rect_pk,
+            top_pin,
+            bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
+            top_pocket_pin,
+            bottom_pocket_pin,
+        ]
+        polys = draw.rotate(polys, p.orientation, origin=(0, 0))
+        polys = draw.translate(polys, p.pos_x, p.pos_y)
+        [
+            rect_jj,
+            pad_top,
+            pad_bot,
+            rect_pk,
+            top_pin,
+            bottom_pin,
+            top_right_pocket_pin,
+            bottom_right_pocket_pin,
+            top_left_pocket_pin,
+            bottom_left_pocket_pin,
+            top_pocket_pin,
+            bottom_pocket_pin,
+
+        ] = polys
+
+        # Add shapes as qiskit geometries
+        self.add_qgeometry("poly", dict(pad_top=pad_top, pad_bot=pad_bot))
+        self.add_qgeometry("poly", dict(rect_pk=rect_pk), subtract=True)
+        self.add_qgeometry("junction", dict(rect_jj=rect_jj), width=p.inductor_width)
+
+        # Pins from the center of the qubit pads
+        self.add_pin(
+            "pin_island",
+            points=list(top_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        if not make_finger_b:
+            self.add_pin(
+                "pin_reservoir",
+                points=list(bottom_pin.coords),
+                width=taper_width_top,
+                input_as_norm=True,
+            )
+        else:
+            bottom_pin_cords = list(draw.shapely.geometry.shape(bottom_pin).coords)
+            self.add_pin('pin_reservoir',
+                        bottom_pin_cords, taper_width_top)
+
+        # Add pins to the component
+        self.add_pin(
+            "top_right_pin", points=list(top_right_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_right_pin",
+            points=list(bottom_right_pocket_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        self.add_pin(
+            "top_left_pin", points=list(top_left_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_left_pin",
+            points=list(bottom_left_pocket_pin.coords),
+            width=taper_width_top,
+            input_as_norm=True,
+        )
+        self.add_pin(
+            "top_pocket_pin", points=list(top_pocket_pin.coords), width=taper_width_top
+        )
+        self.add_pin(
+            "bottom_pocket_pin", points=list(bottom_pocket_pin.coords), width=taper_width_top
+        )
 
     def make_connection_pad(self, name: str):
         # """Makes n individual connector. changed the center connector with teeth to have a different
