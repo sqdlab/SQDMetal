@@ -298,7 +298,7 @@ class MarkerSquarePocket(QComponent):
 
 
         square = draw.rectangle(p.square_width, p.square_height, 0, 0)
-        pocket = draw.rectangle(p.square_width+p.pocket_distance, p.square_width+p.pocket_distance, 0, 0)
+        pocket = draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, 0, 0)
 
         polys = [square, pocket]
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
