@@ -1353,59 +1353,6 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
-def get_square_JJ_width(J_C_uA_um2, bottom_layer_thickness_nm=None, configuration='single', target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
-    """
-    Function to calculate the dimensions for a Josephson junction fabricated with a
-    certain critical current density (J_C), where I_C = J_C * A. The critical current 
-    density must be supplied in units of micro-Amperes per square micro-metre (uA/um^2).
-    A target Josephson inductance (L_J, units of nH) or Josephson energy (E_J, units of GHz)
-    must be given. Accepts a list of values, or a single value.
-    Returns width = height in um of the required JJ area. 
-    Return area of the JJ.
-    """
-    assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
-    assert isinstance(J_C_uA_um2, (float, int))
-    phi_0 = 2.067833848 * 1e-15  # Wb
-    h = 6.62607015 * 1e-34       # J s
-    J_C_A_m2 = J_C_uA_um2 * 1e6
-    # Calculate total areas for supplied LJ values
-    if target_LJ_nH is not None:
-        if not isinstance(target_LJ_nH, np.ndarray):
-            target_LJ_nH = np.atleast_1d(np.array(target_LJ_nH, dtype=float))
-        target_LJ_H = target_LJ_nH * 1e-9
-        A_m2_total = np.array([phi_0 / (2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
-    # Calculate total areas for supplied EJ values
-    elif target_EJ_GHz is not None:
-        if not isinstance(target_EJ_GHz, np.ndarray):
-            target_EJ_GHz = np.atleast_1d(np.array(target_EJ_GHz, dtype=float))
-        target_EJ_Hz = target_EJ_GHz * 1e9
-        A_m2_total = np.array([(i * h * 2 * np.pi) / (phi_0 * J_C_A_m2) for i in target_EJ_Hz])
-    else:
-        raise ValueError("No areas were calculated since no target values were supplied.")
-    # Correct for junction configuration (split area for SQUID/double)
-    if configuration == 'single':
-        A_m2 = A_m2_total
-    elif configuration in ('double', 'squid', 'SQUID'):
-        A_m2 = A_m2_total / 2
-    else:
-        raise ValueError("Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'.")
-    # Solve for lithographic width, accounting for sidewall contribution
-    # Total area: A = w^2 + 2*h_sidewall*w  =>  w = -h_sidewall + sqrt(h_sidewall^2 + A)
-    if bottom_layer_thickness_nm is not None:
-        h_sidewall = bottom_layer_thickness_nm * 1e-9  # convert to m
-        width_JJ_m = -h_sidewall + np.sqrt(h_sidewall**2 + A_m2)
-    else:
-        width_JJ_m = np.sqrt(A_m2)
-    width_JJ_nm = width_JJ_m * 1e9
-    if rounding:
-        width_JJ_nm = np.array([round(i / 1.0) * 1 for i in width_JJ_nm])
-    width_JJ_um = width_JJ_nm * 1e-3
-    width_JJ_um = width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
-    area_JJ_um2 = A_m2 * 1e12
-    if rounding:
-        area_JJ_um2 = np.array([round(i / 0.001) * 0.001 for i in area_JJ_um2])
-    return width_JJ_um, area_JJ_um2
-
 
 class JJ_arrayManhattan(QComponent):
     # Author: Alexander Nguyen
@@ -1614,3 +1561,245 @@ class JJ_arrayManhattan(QComponent):
         return [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]
 
             
+def get_square_JJ_width(J_C_uA_um2, bottom_layer_thickness_nm=None, configuration='single', target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+    """
+    Function to calculate the dimensions for a Josephson junction fabricated with a
+    certain critical current density (J_C), where I_C = J_C * A. The critical current 
+    density must be supplied in units of micro-Amperes per square micro-metre (uA/um^2).
+    A target Josephson inductance (L_J, units of nH) or Josephson energy (E_J, units of GHz)
+    must be given. Accepts a list of values, or a single value.
+    Returns width = height in um of the required JJ area. 
+    Return area of the JJ.
+    """
+    assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
+    assert isinstance(J_C_uA_um2, (float, int, np.floating))
+    phi_0 = 2.067833848 * 1e-15  # Wb
+    h = 6.62607015 * 1e-34       # J s
+    J_C_A_m2 = J_C_uA_um2 * 1e6
+    # Calculate total areas for supplied LJ values
+    if target_LJ_nH is not None:
+        if not isinstance(target_LJ_nH, np.ndarray):
+            target_LJ_nH = np.atleast_1d(np.array(target_LJ_nH, dtype=float))
+        target_LJ_H = target_LJ_nH * 1e-9
+        A_m2_total = np.array([phi_0 / (2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
+    # Calculate total areas for supplied EJ values
+    elif target_EJ_GHz is not None:
+        if not isinstance(target_EJ_GHz, np.ndarray):
+            target_EJ_GHz = np.atleast_1d(np.array(target_EJ_GHz, dtype=float))
+        target_EJ_Hz = target_EJ_GHz * 1e9
+        A_m2_total = np.array([(i * h * 2 * np.pi) / (phi_0 * J_C_A_m2) for i in target_EJ_Hz])
+    else:
+        raise ValueError("No areas were calculated since no target values were supplied.")
+    # Correct for junction configuration (split area for SQUID/double)
+    if configuration == 'single':
+        A_m2 = A_m2_total
+    elif configuration in ('double', 'squid', 'SQUID'):
+        A_m2 = A_m2_total / 2
+    else:
+        raise ValueError("Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'.")
+    # Solve for lithographic width, accounting for sidewall contribution
+    # Total area: A = w^2 + 2*h_sidewall*w  =>  w = -h_sidewall + sqrt(h_sidewall^2 + A)
+    if bottom_layer_thickness_nm is not None:
+        h_sidewall = bottom_layer_thickness_nm * 1e-9  # convert to m
+        width_JJ_m = -h_sidewall + np.sqrt(h_sidewall**2 + A_m2)
+    else:
+        width_JJ_m = np.sqrt(A_m2)
+    width_JJ_nm = width_JJ_m * 1e9
+    if rounding:
+        width_JJ_nm = np.array([round(i / 1.0) * 1 for i in width_JJ_nm])
+    width_JJ_um = width_JJ_nm * 1e-3
+    width_JJ_um = width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+    area_JJ_um2 = A_m2 * 1e12
+    if rounding:
+        area_JJ_um2 = np.array([round(i / 0.001) * 0.001 for i in area_JJ_um2])
+    return width_JJ_um, area_JJ_um2
+
+def get_JJ_params_from_width(width_JJ_um, J_C_uA_um2, bottom_layer_thickness_nm=None,
+                              configuration='single', gap_Delta_ueV=200.0,
+                              calc_resistance=True, E_C_GHz=None, rounding=True):
+    """
+    Inverse of get_square_JJ_width: given a lithographic (square) JJ width,
+    calculate the resulting critical current, Josephson inductance (L_J),
+    Josephson energy (E_J), and (optionally) normal-state resistance (R_N)
+    for a junction fabricated at critical current density J_C.
+
+    Parameters
+    ----------
+    width_JJ_um : float or list
+        Lithographic width (= height) of the square JJ, in micrometres.
+        For 'double'/'squid' configurations, this is the width of EACH
+        (assumed identical) arm.
+    J_C_uA_um2 : float or int
+        Critical current density in uA/um^2.
+    bottom_layer_thickness_nm : float, optional
+        If supplied, corrects the litho width to true junction area using
+        the same A = w^2 + 2*h_sidewall*w model used in get_square_JJ_width.
+        If None, area is simply w^2 (no sidewall contribution).
+    configuration : {'single', 'double', 'squid', 'SQUID'}
+        Whether this is a single junction, or two identical junctions in
+        parallel (SQUID / double-junction loop), whose critical currents add.
+    gap_Delta_ueV : float, optional
+        Superconducting energy gap Delta, in micro-eV, used with the
+        Ambegaokar-Baratoff relation (I_C R_N = pi*Delta / 2e) to estimate
+        normal-state resistance. Default 200 ueV is a typical thin-film Al
+        value - override for other materials. Ignored if calc_resistance=False.
+    calc_resistance : bool
+        If True (default), also compute R_N via Ambegaokar-Baratoff.
+        Set False if you don't want to rely on the assumed gap value.
+    E_C_GHz : float, optional
+        Charging energy of the qubit circuit, in GHz (i.e. E_C/h). If
+        supplied, also computes the transmon 0->1 qubit frequency via the
+        standard asymptotic approximation
+            f_01 = sqrt(8 * E_J * E_C) - E_C
+        This is only valid in the transmon regime (E_J/E_C >> 1, typically
+        >~ 20-50) - it is NOT exact, and E_C itself is a capacitance-derived
+        quantity that this function cannot compute from J_C/width alone, so
+        you must supply it (e.g. from a separate capacitance simulation).
+        If None (default), f_01 is not computed.
+    rounding : bool
+        If True, round outputs (L_J to 0.001 nH, E_J to 0.001 GHz,
+        R_N to 0.1 Ohm, area to 0.001 um^2, I_C to 0.001 nA, f_01 to 0.001 GHz).
+
+    Returns
+    -------
+    dict with keys 'I_C_nA', 'area_JJ_um2', 'L_J_nH', 'E_J_GHz', 'R_N_ohm',
+    'f_01_GHz'. Each value is a float for scalar input, or np.ndarray for
+    array input. 'R_N_ohm' is None if calc_resistance=False. 'f_01_GHz' is
+    None if E_C_GHz is not supplied.
+    """
+    assert isinstance(J_C_uA_um2, (float, int, np.floating)), "J_C_uA_um2 must be a scalar."
+    if E_C_GHz is not None:
+        assert isinstance(E_C_GHz, (float, int, np.floating)), "E_C_GHz must be a scalar."
+    phi_0 = 2.067833848e-15     # Wb
+    h = 6.62607015e-34          # J s
+    e_charge = 1.602176634e-19  # C
+
+    J_C_A_m2 = J_C_uA_um2 * 1e6
+
+    scalar_input = not isinstance(width_JJ_um, (np.ndarray, list, tuple))
+    width_JJ_um_arr = np.atleast_1d(np.array(width_JJ_um, dtype=float))
+    width_JJ_m = width_JJ_um_arr * 1e-6
+
+    # Litho width -> true per-junction area (inverse of the quadratic used
+    # in get_square_JJ_width: there, A = w^2 + 2*h*w was solved for w;
+    # here we go the other way, straight from w to A)
+    if bottom_layer_thickness_nm is not None:
+        h_sidewall = bottom_layer_thickness_nm * 1e-9  # m
+        A_junction_m2 = width_JJ_m**2 + 2 * h_sidewall * width_JJ_m
+    else:
+        A_junction_m2 = width_JJ_m**2
+
+    # Effective area/critical current for the configuration (mirrors the
+    # /2 in get_square_JJ_width, just inverted: two identical arms in
+    # parallel means critical currents add)
+    if configuration == 'single':
+        A_eff_m2 = A_junction_m2
+    elif configuration in ('double', 'squid', 'SQUID'):
+        A_eff_m2 = 2 * A_junction_m2
+    else:
+        raise ValueError("Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'.")
+
+    I_C_A = J_C_A_m2 * A_eff_m2
+
+    L_J_nH = (phi_0 / (2 * np.pi * I_C_A)) * 1e9
+    E_J_GHz = (phi_0 * I_C_A / (2 * np.pi * h)) * 1e-9
+
+    if calc_resistance:
+        Delta_J = gap_Delta_ueV * 1e-6 * e_charge  # ueV -> J
+        R_N_ohm = (np.pi * Delta_J) / (2 * e_charge * I_C_A)
+    else:
+        R_N_ohm = None
+
+    if E_C_GHz is not None:
+        f_01_GHz = np.sqrt(8 * E_J_GHz * E_C_GHz) - E_C_GHz
+    else:
+        f_01_GHz = None
+
+    I_C_nA = I_C_A * 1e9
+    area_JJ_um2 = A_junction_m2 * 1e12  # per-junction litho area, not the effective/total one
+
+    if rounding:
+        I_C_nA = np.round(I_C_nA, 3)
+        area_JJ_um2 = np.round(area_JJ_um2, 3)
+        L_J_nH = np.round(L_J_nH, 3)
+        E_J_GHz = np.round(E_J_GHz, 3)
+        if calc_resistance:
+            R_N_ohm = np.round(R_N_ohm, 1)
+        if E_C_GHz is not None:
+            f_01_GHz = np.round(f_01_GHz, 3)
+
+    if scalar_input:
+        I_C_nA = I_C_nA.item()
+        area_JJ_um2 = area_JJ_um2.item()
+        L_J_nH = L_J_nH.item()
+        E_J_GHz = E_J_GHz.item()
+        if calc_resistance:
+            R_N_ohm = R_N_ohm.item()
+        if E_C_GHz is not None:
+            f_01_GHz = f_01_GHz.item()
+
+    return {
+        'I_C_nA': I_C_nA,
+        'area_JJ_um2': area_JJ_um2,
+        'width_JJ_um': width_JJ_um_arr,
+        'L_J_nH': L_J_nH,
+        'E_J_GHz': E_J_GHz,
+        'R_N_ohm': R_N_ohm,
+        'f_01_GHz': f_01_GHz,
+    }
+
+def calc_mask_for_shadow_evap(target_width_um, angle_deg, top_resist_thickness_um, rounding=True):
+    """
+    Calculate the lithographic mask width required to produce a target JJ
+    width after shadow evaporation, given the evaporation angle and top
+    resist thickness.
+
+    During (single-angle) shadow evaporation, the deposited metal is offset
+    laterally from the mask opening due to evaporating at a non-normal
+    incidence through a resist stack of finite thickness:
+
+        actual_width = mask_width - top_resist_thickness_um * tan(angle_deg)
+
+    This function inverts that relationship to solve for the mask width
+    needed to hit a given target/actual JJ width:
+
+        mask_width = target_width + top_resist_thickness_um * tan(angle_deg)
+
+    Parameters
+    ----------
+    target_width_um : float, int, list, or np.ndarray
+        Desired final JJ width(s) after evaporation, in micrometres.
+    angle_deg : float or int
+        Shadow evaporation angle, in degrees from normal incidence.
+    top_resist_thickness_um : float or int
+        Thickness of the top resist layer, in micrometres.
+    rounding : bool
+        If True (default), round the mask width to the nearest 0.001 um.
+
+    Returns
+    -------
+    mask_width_um : float or np.ndarray
+        Required lithographic mask width(s), in micrometres. Float for
+        scalar input, np.ndarray for list/array input.
+    """
+    assert isinstance(angle_deg, (float, int, np.floating)), "angle_deg must be scalar."
+    assert isinstance(top_resist_thickness_um, (float, int, np.floating)), \
+        "top_resist_thickness_um must be scalar."
+
+    scalar_input = not isinstance(target_width_um, (np.ndarray, list, tuple))
+    target_width_um_arr = np.atleast_1d(np.array(target_width_um, dtype=float))
+
+    shadow_offset_um = top_resist_thickness_um * np.tan(np.deg2rad(angle_deg))
+    mask_width_um = target_width_um_arr + shadow_offset_um
+
+    if np.any(mask_width_um <= 0):
+        raise ValueError(
+            "Computed mask width is <= 0 um for at least one target width - "
+            "the target is smaller than the shadow-evaporation offset itself. "
+            "Check angle_deg / top_resist_thickness_um."
+        )
+
+    if rounding:
+        mask_width_um = np.round(mask_width_um, 3)
+
+    return mask_width_um.item() if scalar_input else mask_width_um
