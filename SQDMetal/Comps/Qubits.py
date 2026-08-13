@@ -1665,6 +1665,16 @@ class TransmonTapered2(TransmonTaperedInsets):
                 # Extend outward
             ]
         )
+        if make_finger_t:
+            top_pin_finger = LineString(
+                [
+                    [taper_x_offset-x_offset_t-(finger_width_t/2), (pad_gap / 2)-finger_height_t-p.taper_height],
+                    [taper_x_offset-x_offset_t+(finger_width_t/2), (pad_gap / 2)-finger_height_t-p.taper_height],  # Start from pad bottom edge
+                    # Extend outward
+                ]
+            )#top_pin was also used to map out the transparent JJ box for simulations. to not mess things up set the coords for the actual pin to be another variable
+        else:
+            top_pin_finger=top_pin
         if make_finger_b:
             bottom_pin = LineString(
                 [
@@ -1776,6 +1786,7 @@ class TransmonTapered2(TransmonTaperedInsets):
             pad_bot,
             rect_pk,
             top_pin,
+            top_pin_finger,
             bottom_pin,
             top_right_pocket_pin,
             bottom_right_pocket_pin,
@@ -1792,6 +1803,7 @@ class TransmonTapered2(TransmonTaperedInsets):
             pad_bot,
             rect_pk,
             top_pin,
+            top_pin_finger,
             bottom_pin,
             top_right_pocket_pin,
             bottom_right_pocket_pin,
@@ -1808,12 +1820,17 @@ class TransmonTapered2(TransmonTaperedInsets):
         self.add_qgeometry("junction", dict(rect_jj=rect_jj), width=p.inductor_width)
 
         # Pins from the center of the qubit pads
-        self.add_pin(
-            "pin_island",
-            points=list(top_pin.coords),
-            width=taper_width_top,
-            input_as_norm=True,
-        )
+        if not make_finger_t:
+            self.add_pin(
+                "pin_island",
+                points=list(top_pin_finger.coords),
+                width=taper_width_top,
+                input_as_norm=True,
+            )
+        else:
+            top_pin_cords=list(draw.shapely.geometry.shape(top_pin_finger).coords)
+            self.add_pin("pin_island",
+                         top_pin_cords[::-1], taper_width_top)
         if not make_finger_b:
             self.add_pin(
                 "pin_reservoir",
@@ -3161,6 +3178,7 @@ class FluxoniumPocket(_FluxoniumPocket):
                            bot_wire_center_y='-0.0097mm',
                            bot_wire_height='0.015mm',
                            bot_wire_width='0.0039mm',
+                           shift_JJ=False,#This will move the x-position of transparent box of JJ to be where it would be if fingers are present
                            flux_bias_line_options=Dict(
                                _FluxoniumPocket.default_options.flux_bias_line_options,
                                mirror=False,#mirrors the flux bias line across x-axis
@@ -3371,7 +3389,11 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         # Draw the junction
         jj_o = float(p.jj_orientation) # one can change the JJ orientation. Fab related detail.
-        rect_jj = draw.LineString([(0, -pad_gap/2*jj_o), (0, +pad_gap/2*jj_o)])
+        if p.shift_JJ:
+            center_x=(p.bot_wire_center_x+p.top_wire_center_x)/2#trying to find the center between
+        else:
+            center_x=0
+        rect_jj = draw.LineString([(center_x, -pad_gap/2*jj_o), (center_x, +pad_gap/2*jj_o)])
 
         if p.top_wire_connector & p.bot_wire_connector:
             center_x=(p.bot_wire_center_x+p.top_wire_center_x)/2#trying to find the center between
