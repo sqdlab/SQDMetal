@@ -54,7 +54,7 @@ class jj_manhattan(jj_manhattan):
 
         finger_lower = draw.rectangle(
             p.finger_lower_width, p.finger_lower_height, p.JJ_pad_lower_pos_x,
-            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height))
+            p.JJ_pad_lower_pos_y+(0.5 * (p.JJ_pad_lower_height + p.finger_lower_height)))
 
         # fudge factor to merge the two options
         finger_lower = draw.translate(finger_lower, 0.0, -0.0001)
@@ -62,30 +62,27 @@ class jj_manhattan(jj_manhattan):
         # merge the lower pad and the finger into a single object
         design = draw.union(JJ_pad_lower, finger_lower)
 
-        JJ_pad_upper = draw.rectangle(p.JJ_pad_upper_width,
-                                      p.JJ_pad_upper_height,
-                                      p.JJ_pad_lower_pos_x,
-                                      p.JJ_pad_lower_pos_y)
+        JJ_pad_upper = draw.rectangle(p.JJ_pad_upper_height,#height and width are swapped because it is sideways
+                                      p.JJ_pad_upper_width,
+                                      p.JJ_pad_lower_pos_x+p.finger_upper_height+((p.JJ_pad_upper_height+p.finger_lower_width)/2),
+                                      p.JJ_pad_lower_pos_y+((p.JJ_pad_lower_height+p.finger_upper_width)/2)+p.finger_lower_height)
 
         finger_upper = draw.rectangle(
-            p.finger_upper_width, p.finger_upper_height, p.JJ_pad_lower_pos_x,
-            0.5 * (p.JJ_pad_upper_height + p.finger_upper_height))
+            p.finger_upper_height, p.finger_upper_width,#height and width are swapped because it is sideways
+            p.JJ_pad_lower_pos_x+((p.finger_upper_height+p.finger_lower_width)/2),
+            p.JJ_pad_lower_pos_y+(0.5 * (p.JJ_pad_lower_height+p.finger_upper_width))+ p.finger_lower_height)
 
         # fudge factor to merge the two options
-        finger_upper = draw.translate(finger_upper, 0.0, -0.0001)
+        JJ_pad_upper = draw.translate(JJ_pad_upper, -0.0001, 0.0)
 
         # merge the lower pad and the finger into a single object
         design2 = draw.union(JJ_pad_upper, finger_upper)
 
-        # copy the pad/finger and rotate it by 90 degrees
-        design2 = draw.rotate(design2, 90.0)
 
         # translate the second pad/finger to achieve the desired extension
         design2 = draw.translate(
-            design2, 0.5 * (p.JJ_pad_upper_height + p.finger_upper_height) -
-            0.5 * p.finger_upper_width - p.extension,
-            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
-            0.5 * p.finger_lower_width - p.extension)
+            design2, -p.extension,
+             -p.extension)#extension may be slightly smaller than stated due to junction width
 
         final_design = draw.union(design, design2)
 
@@ -95,7 +92,7 @@ class jj_manhattan(jj_manhattan):
                                       0.5 * p.JJ_pad_lower_height)
         
         #rotate final design around the origin (bottom left hand corner...)
-        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))#only new line of code
+        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))
 
         # now translate so that the design is centered on the
         # user-defined coordinates (pos_x, pos_y)
@@ -1357,7 +1354,8 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
 class JJ_arrayManhattan(QComponent):
     # Author: Alexander Nguyen
     # Creation Date: 2026
-    """An array of JJ's intended to be used with FluxoniumPocket.
+    """There's a glitch where to total geometry changes slightly between the fused and unfused version.
+    An array of JJ's intended to be used with FluxoniumPocket.
     Each JJ will consist of 2 orthogonal rectangles with the following geometry.
     Note that in the picture height goes left to right.
     Sketch:

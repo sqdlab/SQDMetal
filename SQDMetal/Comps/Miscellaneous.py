@@ -5,125 +5,145 @@ import shapely
 from qiskit_metal.toolbox_python.attr_dict import Dict
 from SQDMetal.Utilities.QUtilities import QUtilities
 
-class HallBar(QComponent):
-    """
-    A Hall Bar component consisting of 8 probe pads for resistance measurements.
+class BacklessLaunchpad(QComponent):
+    r"""Launch pad to feed/read signals to/from the chip. Almost identical to the one built into quantum metal except
+    the pocket at the opposite end of the pin is intentionally small. Intended for when the pad is at the edge of the coupon
+    and a majority of the pocket will be diced off anyways
 
-    Inherits QComponent class.
+    .. meta::
+        :description: Launchpad Wirebond
 
-    Probe Pad geometry:
-        * pad_width     - Width (x) of probe pads
-        * pad_height    - Height (y) of probe pads
-        * pocket_width  - Width (x) of ground plane cutout
-        * pocket_height - Height (x) of ground plane cutout
+    Creates a 50 ohm launch pad with a ground pocket cutout.
+    Limited but expandable parameters to control the launchpad polygons.
+    The (0,0) point is the center of the necking of the launch tip.
+    The pin attaches directly to the built in lead length at its midpoint
 
-    Hall Bar geometry:
-        * trace_width   - Width of the main conductor
-        * T_height      - Height of the T-bars (along y)
-        * num_sq_short  - Number of squares along the conductor between the two inner probe pads
-        * num_sq_long   - Number of squares along the conductor between the two outer probe pads
+    Pocket and pad:
+        Pocket and launch pad geometries are currently fixed.
+        (0,0) point is the midpoint of the necking of the launch tip.
+        Pocket is a negative shape that is cut out of the ground plane
 
-    Positioning:
-        * pos_x         - X position
-        * pos_y         - Y position
-        * layer         - layer number
-
-    Pins:
-        There are no pins.
+    Values (unless noted) are strings with units included, (e.g., '30um')
 
     Sketch:
-        Below is a sketch of the Hall bar
-
-        Total width determined by num_sq_long (default 100).
-
-        <-----NSL*TW----->          NSS : num_sq_short
-         _   _      _   _           NSL : num_sq_short
-        |_| |_|    |_| |_|     TH   TH  : T_height
-        |     |    |     |     TH   TW  : trace_width       
-        |_____|____|_____|     TH   PW  : pad_width   
-        |     |    |     |     TH   PH  : pad_height  
-        |_   _|    |_   _|     TH
-        |_| |_|    |_| |_| PH  TH   y
-               <-->     PW          |
-               NSS                  --- x
+        Below is a sketch of the launch
         ::
-            
+
+            -----------
+            |          \
+            |      ---------\\
+            |      |    0    |    (0,0) pin at midpoint of necking, before the lead
+            |      ---------//
+            |          /
+            -----------
+
+            y
+            ^
+            |
+            |------> x
+
+    .. image::
+        LaunchpadWirebond.png
+
+    Default Options:
+        * trace_width: 'cpw_width' -- Width of the transmission line attached to the launch pad
+        * trace_gap: 'cpw_gap' -- Gap of the transmission line
+        * lead_length: '25um' -- Length of the transmission line attached to the launch pad
+        * pad_width: '80um' -- Width of the launch pad
+        * pad_height: '80um' -- Height of the launch pad
+        * pad_gap: '58um' -- Gap of the launch pad
+        * taper_height: '122um' -- Height of the taper from the launch pad to the transmission line
+        * back_gap: '5um' -- The gap at the back of the launchpad
     """
-    default_options = Dict(pos_x="0mm",
-                           pos_y="0mm",
-                           trace_width='10um',
-                           num_sq_short=10,
-                           num_sq_long=100,
-                           pad_width="150um",
-                           pad_height="100um",
-                           pocket_width="1.4mm",
-                           pocket_height="1.0mm",
-                           T_height="500um",
-                           fillet_radius="20um",
-                           layer=0,
-                           pocket=True
-                        )
-    
-    def __init__(self, design,
-                    name: str = None,
-                    options: Dict = None,
-                    type: str = "CPW",
-                    **kwargs):
-        super().__init__(design, name, options, **kwargs)
-    
+
+    default_options = Dict(
+        trace_width="cpw_width",
+        trace_gap="cpw_gap",
+        lead_length="25um",
+        pad_width="80um",
+        pad_height="80um",
+        pad_gap="58um",
+        taper_height="122um",
+        back_gap="5um"
+    )
+    """Default options"""
+
+    TOOLTIP = """Launch pad to feed/read signals to/from the chip."""
+
     def make(self):
         """This is executed by the user to generate the qgeometry for the
         component."""
+
         p = self.p
-        trace_short = p.num_sq_short * p.trace_width
-        trace_long = p.num_sq_long * p.trace_width
 
-        # draw
-        main_trace = draw.rectangle(trace_long, p.trace_width)
-        pocket = draw.rectangle(p.pocket_width, p.pocket_height)
-        far_T_L = draw.rectangle(p.trace_width, p.T_height,  xoff=-0.5*trace_long)
-        far_T_R = draw.rectangle(p.trace_width, p.T_height,  xoff=0.5*trace_long)
-        near_T_L = draw.rectangle(p.trace_width, p.T_height, xoff=-0.5*trace_short)
-        near_T_R = draw.rectangle(p.trace_width, p.T_height, xoff=0.5*trace_short)
-        pad_U_L = draw.rectangle(p.pad_width, p.pad_height,  xoff=-0.5*trace_long+0.5*p.pad_width-0.5*p.trace_width,  yoff=0.5*p.T_height)
-        pad_U_ML = draw.rectangle(p.pad_width, p.pad_height, xoff=-0.5*trace_short-0.5*p.pad_width+0.5*p.trace_width, yoff=0.5*p.T_height)
-        pad_U_MR = draw.rectangle(p.pad_width, p.pad_height, xoff=0.5*trace_short+0.5*p.pad_width-0.5*p.trace_width,  yoff=0.5*p.T_height)
-        pad_U_R = draw.rectangle(p.pad_width, p.pad_height,  xoff=0.5*trace_long-0.5*p.pad_width+0.5*p.trace_width,  yoff=0.5*p.T_height)
-        pad_L_L = draw.rectangle(p.pad_width, p.pad_height,  xoff=-0.5*trace_long+0.5*p.pad_width-0.5*p.trace_width,  yoff=-0.5*p.T_height)
-        pad_L_ML = draw.rectangle(p.pad_width, p.pad_height, xoff=-0.5*trace_short-0.5*p.pad_width+0.5*p.trace_width, yoff=-0.5*p.T_height)
-        pad_L_MR = draw.rectangle(p.pad_width, p.pad_height, xoff=0.5*trace_short+0.5*p.pad_width-0.5*p.trace_width,  yoff=-0.5*p.T_height)
-        pad_L_R = draw.rectangle(p.pad_width, p.pad_height,  xoff=0.5*trace_long-0.5*p.pad_width+0.5*p.trace_width,  yoff=-0.5*p.T_height)
+        pad_width = p.pad_width
+        pad_height = p.pad_height
+        pad_gap = p.pad_gap
+        trace_width = p.trace_width
+        trace_width_half = trace_width / 2.0
+        pad_width_half = pad_width / 2.0
+        lead_length = p.lead_length
+        taper_height = p.taper_height
+        trace_gap = p.trace_gap
+        back_gap=p.back_gap
 
-        # merge 
-        T_ends = shapely.ops.unary_union([far_T_L, far_T_R])
-        T_mids = shapely.ops.unary_union([near_T_L, near_T_R])
-        pads_L = shapely.ops.unary_union([pad_L_L, pad_L_ML, pad_L_MR, pad_L_R])
-        pads_U = shapely.ops.unary_union([pad_U_L, pad_U_ML, pad_U_MR, pad_U_R])
-        # merge all pads and T's
-        pads_and_Ts = shapely.ops.unary_union([T_ends, T_mids, pads_L, pads_U])
-        pads_and_Ts = pads_and_Ts.buffer(p.fillet_radius).buffer(-p.fillet_radius)
-        pads_and_Ts = pads_and_Ts.buffer(-0.48*p.trace_width).buffer(0.48*p.trace_width)
+        pad_gap = p.pad_gap
+        #########################################################
 
-        # rotate and translate
-        polys = [main_trace, pocket, pads_and_Ts]
-        polys = draw.rotate(polys, p.orientation, origin=(0, 0))
-        polys = draw.translate(polys, p.pos_x, p.pos_y)
-        [main_trace, pocket, pads_and_Ts] = polys
+        # Geometry of main launch structure
+        # The shape is a polygon and we prepare this point as orientation is 0 degree
+        launch_pad = draw.Polygon(
+            [
+                (0, trace_width_half),
+                (-taper_height, pad_width_half),
+                (-(pad_height + taper_height), pad_width_half),
+                (-(pad_height + taper_height), -pad_width_half),
+                (-taper_height, -pad_width_half),
+                (0, -trace_width_half),
+                (lead_length, -trace_width_half),
+                (lead_length, trace_width_half),
+                (0, trace_width_half),
+            ]
+        )
 
-        # subtract pocket
-        if p.pocket:
-            self.add_qgeometry('poly', 
-                            dict(pocket=pocket), 
-                            subtract=True,
-                            layer=p.layer)
+        # Geometry pocket (gap)
+        # Same way applied for pocket
+        pocket = draw.Polygon(
+            [
+                (0, trace_width_half + trace_gap),
+                (-taper_height, pad_width_half + pad_gap),
+                (-(pad_height + taper_height + back_gap), pad_width_half + pad_gap),
+                (-(pad_height + taper_height + back_gap), -(pad_width_half + pad_gap)),
+                (-taper_height, -(pad_width_half + pad_gap)),
+                (0, -(trace_width_half + trace_gap)),
+                (lead_length, -(trace_width_half + trace_gap)),
+                (lead_length, trace_width_half + trace_gap),
+                (0, trace_width_half + trace_gap),
+            ]
+        )
 
-        # add metals
-        self.add_qgeometry('poly', 
-                           dict(trace=main_trace, 
-                                pads=pads_and_Ts
-                                ), 
-                           subtract=False,
-                           layer=p.layer)
+        # These variables are used to graphically locate the pin locations
+        main_pin_line = draw.LineString(
+            [(lead_length, trace_width_half), (lead_length, -trace_width_half)]
+        )
+
+        # Create polygon object list
+        polys1 = [main_pin_line, launch_pad, pocket]
+
+        # Rotates and translates all the objects as requested. Uses package functions in
+        # 'draw_utility' for easy rotation/translation
+        polys1 = draw.rotate(polys1, p.orientation, origin=(0, 0))
+        polys1 = draw.translate(polys1, xoff=p.pos_x, yoff=p.pos_y)
+        [main_pin_line, launch_pad, pocket] = polys1
+
+        # Adds the object to the qgeometry table
+        self.add_qgeometry("poly", dict(launch_pad=launch_pad), layer=p.layer)
+
+        # Subtracts out ground plane on the layer its on
+        self.add_qgeometry("poly", dict(pocket=pocket), subtract=True, layer=p.layer)
+
+        # Generates the pins
+        self.add_pin("tie", main_pin_line.coords, trace_width)
         
 class FourProbeJJ(QComponent):
 

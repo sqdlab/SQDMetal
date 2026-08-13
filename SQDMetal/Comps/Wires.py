@@ -829,7 +829,7 @@ class Lollipop(QComponent):
     """
 
     default_options=Dict(pos_x='0um', pos_y='0um', orientation=0,
-                         length = '100um', cpw_width='cpw_width', cpw_gap='cpw_gap', radius='cpw_width')
+                         length = '100um', cpw_width='cpw_width', cpw_gap='cpw_gap', radius='cpw_width', make_pocket=True)
     
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -842,6 +842,7 @@ class Lollipop(QComponent):
         cpw_width=p.cpw_width
         cpw_gap=p.cpw_gap
         radius=p.radius
+        make_pocket=p.make_pocket
 
 
     # Define the geometry
@@ -870,7 +871,8 @@ class Lollipop(QComponent):
         [charge_line, charge_line_gap, port_line] = objects
 
         self.add_qgeometry('poly', {'charge_line': charge_line})
-        self.add_qgeometry('poly', {'charge_line_gap': charge_line_gap}, subtract=True)
+        if make_pocket:
+            self.add_qgeometry('poly', {'charge_line_gap': charge_line_gap}, subtract=True)
 
         ############################################################
 
