@@ -3528,8 +3528,8 @@ class FluxoniumPocket(_FluxoniumPocket):
         ])
         circle_bot = draw.subtract(circle_bot, cut_ply2)
         flux_bias_linebot = draw.Polygon([
-            (d+fbl_sep/2, -fbl_height/2),   # point i
-            (d+fbl_sep/2, -fbl_height/2-cpw_width),    # point k
+            (d+fbl_lead, -fbl_height/2),   # point i
+            (d+fbl_lead, -fbl_height/2-cpw_width),    # point k
             (fbl_sep, -fbl_height/2-cpw_width),   # point l
             (fbl_sep, -fbl_height/2),   # point m
         ])
@@ -3538,7 +3538,7 @@ class FluxoniumPocket(_FluxoniumPocket):
 
         # Flux Bias line's gap part, inside the GND
         flux_bias_line_gap = draw.rectangle(
-            fbl_lead, cpw_width+cpw_gap*2, d+fbl_sep/4, -fbl_height/2-cpw_width/2)
+            fbl_lead, cpw_width+cpw_gap*2, d+fbl_lead/2, -fbl_height/2-cpw_width/2)
 
         # Flux-Bias Line CPW wire
         port_line = draw.LineString([((d+fbl_lead), 0),
