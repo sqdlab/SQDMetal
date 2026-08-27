@@ -231,7 +231,7 @@ sudo<span class="w"> </span>flatpak<span class="w"> </span>install<span class="w
 </div>
 <p>In the case of a Jupyter Notebook (i.e. running the commands in <em>SQDMetal</em>), add this to the initialisation cell:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;PMIX_MCA_gds&quot;</span><span class="p">]</span><span class="o">=</span><span class="s2">&quot;hash&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"PMIX_MCA_gds"</span><span class="p">]</span><span class="o">=</span><span class="s2">"hash"</span>
 </pre></div>
 </div>
 <p>If it throws an error for <cite>libCEED</cite> (see <a class="reference external" href="https://github.com/awslabs/palace/issues/257">here</a> for details) or an error like <cite>SUNDIALS: Core: *** NOT FOUND ***</cite>, first open the file:</p>
@@ -252,7 +252,7 @@ As of 18 Feb, 2024, Palace v0.13 is not available by default to install in <cite
 </pre></div>
 </div>
 <p>Add the following line (where the Palace versions are listed) to add v0.13.0 to available installs:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>version<span class="o">(</span><span class="s2">&quot;0.13.0&quot;</span>,<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="s2">&quot;v0.13.0&quot;</span>,<span class="w"> </span><span class="nv">commit</span><span class="o">=</span><span class="s2">&quot;a61c8cbe0cacf496cde3c62e93085fae0d6299ac&quot;</span><span class="o">)</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>version<span class="o">(</span><span class="s2">"0.13.0"</span>,<span class="w"> </span><span class="nv">tag</span><span class="o">=</span><span class="s2">"v0.13.0"</span>,<span class="w"> </span><span class="nv">commit</span><span class="o">=</span><span class="s2">"a61c8cbe0cacf496cde3c62e93085fae0d6299ac"</span><span class="o">)</span>
 </pre></div>
 </div>
 <p>Save the package.py file for the Palace install, and then run</p>

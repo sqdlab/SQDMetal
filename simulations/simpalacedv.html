@@ -93,7 +93,7 @@
 <p>The Palace simulation API produces <code class="docutils literal notranslate"><span class="pre">.pvd</span></code> and <code class="docutils literal notranslate"><span class="pre">.vtu</span></code> files corresponding to the field data. This can be viewed via <em>Paraview</em> or the in-built utility as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.PALACE.PVDVTU_Viewer</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVDVTU_Viewer</span>
 
-<span class="n">data_path</span> <span class="o">=</span> <span class="s1">&#39;output_example/paraview/eigenmode/eigenmode.pvd&#39;</span>
+<span class="n">data_path</span> <span class="o">=</span> <span class="s1">'output_example/paraview/eigenmode/eigenmode.pvd'</span>
 
 <span class="c1">#Create the viewer object from the generated datasets</span>
 <span class="n">leView</span> <span class="o">=</span> <span class="n">PVDVTU_Viewer</span><span class="p">(</span><span class="n">data_path</span><span class="p">)</span>
@@ -102,12 +102,12 @@
 <span class="n">leSlice</span> <span class="o">=</span> <span class="n">leView</span><span class="o">.</span><span class="n">get_data_slice</span><span class="p">(</span><span class="n">data_set_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">slice_plane_normal</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span> <span class="n">slice_plane_origin</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]))</span>
 
 <span class="c1">#Gather and plot the magnitude of the z-component of the electric field: E_z</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;E_real&#39;</span><span class="p">)[:,</span><span class="mi">2</span><span class="p">]</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;coolwarm&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="s1">'E_real'</span><span class="p">)[:,</span><span class="mi">2</span><span class="p">]</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">'coolwarm'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
 <span class="c1">#Gather and plot the magnitude of the electric field: |E|</span>
-<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">leSlice</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="s1">&#39;E_real&#39;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">fig</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">&#39;coolwarm&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">leSlice</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="s1">'E_real'</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">leSlice</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s1">'coolwarm'</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>

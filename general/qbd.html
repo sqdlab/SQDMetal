@@ -176,11 +176,11 @@
 
 <span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="mf">10.5e9</span><span class="p">)</span>
 <span class="n">XmonDesigner</span><span class="p">(</span><span class="n">resonator</span><span class="p">)</span><span class="o">.</span><span class="n">optimise</span><span class="p">({</span>
-    <span class="s1">&#39;fQubit&#39;</span><span class="p">:</span><span class="mf">9.5e9</span><span class="p">,</span>
-    <span class="s1">&#39;C_g&#39;</span><span class="p">:(</span><span class="mf">0.1e-15</span><span class="p">,</span><span class="mf">10e-15</span><span class="p">),</span>
-    <span class="s1">&#39;C_J&#39;</span><span class="p">:(</span><span class="mf">10e-15</span><span class="p">,</span><span class="mf">150e-15</span><span class="p">),</span>
-    <span class="s1">&#39;chi&#39;</span><span class="p">:(</span><span class="o">-</span><span class="mf">10e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.1e6</span><span class="p">),</span>
-    <span class="s1">&#39;Ej/Ec&#39;</span><span class="p">:(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">)})</span>
+    <span class="s1">'fQubit'</span><span class="p">:</span><span class="mf">9.5e9</span><span class="p">,</span>
+    <span class="s1">'C_g'</span><span class="p">:(</span><span class="mf">0.1e-15</span><span class="p">,</span><span class="mf">10e-15</span><span class="p">),</span>
+    <span class="s1">'C_J'</span><span class="p">:(</span><span class="mf">10e-15</span><span class="p">,</span><span class="mf">150e-15</span><span class="p">),</span>
+    <span class="s1">'chi'</span><span class="p">:(</span><span class="o">-</span><span class="mf">10e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.1e6</span><span class="p">),</span>
+    <span class="s1">'Ej/Ec'</span><span class="p">:(</span><span class="mi">1</span><span class="p">,</span><span class="mi">100</span><span class="p">)})</span>
 </pre></div>
 </div>
 </section>
@@ -190,14 +190,14 @@
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">SQDMetal.Utilities.QubitDesigner</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResonatorHalfWave</span><span class="p">,</span> <span class="n">FloatingTransmonDesigner</span>
 
 <span class="n">resonator</span> <span class="o">=</span> <span class="n">ResonatorHalfWave</span><span class="p">(</span><span class="mf">10.5e9</span><span class="p">)</span>
-<span class="n">FloatingTransmonDesigner</span><span class="p">(</span><span class="n">resonator</span><span class="p">)</span><span class="o">.</span><span class="n">optimise</span><span class="p">({</span><span class="s1">&#39;fQubit&#39;</span><span class="p">:(</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">),</span>
-                                            <span class="s1">&#39;C_q1&#39;</span><span class="p">:(</span><span class="mf">30.862e-15</span><span class="p">),</span>
-                                            <span class="s1">&#39;C_q2&#39;</span><span class="p">:(</span><span class="mf">31.974e-15</span><span class="p">),</span>
-                                            <span class="s1">&#39;C_g1&#39;</span><span class="p">:(</span><span class="mf">10.910e-15</span><span class="p">),</span>
-                                            <span class="s1">&#39;C_g2&#39;</span><span class="p">:(</span><span class="mf">0.916e-15</span><span class="p">),</span>
-                                            <span class="s1">&#39;C_J&#39;</span><span class="p">:(</span><span class="mf">42.461e-15</span><span class="p">,</span> <span class="mf">55e-15</span><span class="p">),</span>
-                                            <span class="s1">&#39;chi&#39;</span><span class="p">:(</span><span class="o">-</span><span class="mf">0.9e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.2e6</span><span class="p">),</span>
-                                            <span class="s1">&#39;Ej/Ec&#39;</span><span class="p">:</span><span class="mi">20</span><span class="p">})</span>
+<span class="n">FloatingTransmonDesigner</span><span class="p">(</span><span class="n">resonator</span><span class="p">)</span><span class="o">.</span><span class="n">optimise</span><span class="p">({</span><span class="s1">'fQubit'</span><span class="p">:(</span><span class="mf">1e9</span><span class="p">,</span> <span class="mf">10e9</span><span class="p">),</span>
+                                            <span class="s1">'C_q1'</span><span class="p">:(</span><span class="mf">30.862e-15</span><span class="p">),</span>
+                                            <span class="s1">'C_q2'</span><span class="p">:(</span><span class="mf">31.974e-15</span><span class="p">),</span>
+                                            <span class="s1">'C_g1'</span><span class="p">:(</span><span class="mf">10.910e-15</span><span class="p">),</span>
+                                            <span class="s1">'C_g2'</span><span class="p">:(</span><span class="mf">0.916e-15</span><span class="p">),</span>
+                                            <span class="s1">'C_J'</span><span class="p">:(</span><span class="mf">42.461e-15</span><span class="p">,</span> <span class="mf">55e-15</span><span class="p">),</span>
+                                            <span class="s1">'chi'</span><span class="p">:(</span><span class="o">-</span><span class="mf">0.9e6</span><span class="p">,</span><span class="o">-</span><span class="mf">0.2e6</span><span class="p">),</span>
+                                            <span class="s1">'Ej/Ec'</span><span class="p">:</span><span class="mi">20</span><span class="p">})</span>
 </pre></div>
 </div>
 </section>

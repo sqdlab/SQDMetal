@@ -115,18 +115,18 @@
 <span class="n">COMSOL_Model</span><span class="o">.</span><span class="n">init_engine</span><span class="p">()</span>
 
 <span class="c1">#Instantiate a COMSOL model</span>
-<span class="n">cmsl</span> <span class="o">=</span> <span class="n">COMSOL_Model</span><span class="p">(</span><span class="s1">&#39;leModel&#39;</span><span class="p">)</span>
+<span class="n">cmsl</span> <span class="o">=</span> <span class="n">COMSOL_Model</span><span class="p">(</span><span class="s1">'leModel'</span><span class="p">)</span>
 
 <span class="c1">#Create simulations to setup - in this case capacitance matrix and RF s-parameter</span>
 <span class="n">sim_capMats</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_CapMats</span><span class="p">(</span><span class="n">cmsl</span><span class="p">)</span>
-<span class="n">sim_sParams</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_RFsParameters</span><span class="p">(</span><span class="n">cmsl</span><span class="p">,</span> <span class="n">adaptive</span><span class="o">=</span><span class="s1">&#39;Multiple&#39;</span><span class="p">,</span> <span class="n">modal_min_freq_num_eigs</span><span class="o">=</span><span class="p">(</span><span class="mf">5.2e9</span><span class="p">,</span><span class="mi">25</span><span class="p">))</span>
+<span class="n">sim_sParams</span> <span class="o">=</span> <span class="n">COMSOL_Simulation_RFsParameters</span><span class="p">(</span><span class="n">cmsl</span><span class="p">,</span> <span class="n">adaptive</span><span class="o">=</span><span class="s1">'Multiple'</span><span class="p">,</span> <span class="n">modal_min_freq_num_eigs</span><span class="o">=</span><span class="p">(</span><span class="mf">5.2e9</span><span class="p">,</span><span class="mi">25</span><span class="p">))</span>
 
 <span class="c1">#(A) - Initialise model from Qiskit-Metal design object: design</span>
 <span class="n">cmsl</span><span class="o">.</span><span class="n">initialize_model</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="p">[</span><span class="n">sim_capMats</span><span class="p">,</span> <span class="n">sim_sParams</span><span class="p">],</span> <span class="n">bottom_grounded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="c1">#(B) - Add metallic layers (use 0 if selecting ground plane)</span>
 <span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span> <span class="n">fuse_threshold</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">)</span>
-<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">evap_mode</span><span class="o">=</span><span class="s1">&#39;separate_delete_intersections&#39;</span><span class="p">,</span> <span class="n">group_by_evaporations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">evap_mode</span><span class="o">=</span><span class="s1">'separate_delete_intersections'</span><span class="p">,</span> <span class="n">group_by_evaporations</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="c1">#Alternative syntax to combine multiple layers (via a list) in one go. In doing so, smooth_radius can be used to round off the corners</span>
 <span class="n">cmsl</span><span class="o">.</span><span class="n">add_metallic</span><span class="p">([</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">],</span> <span class="n">threshold</span><span class="o">=</span><span class="mf">2e-9</span><span class="p">,</span> <span class="n">fuse_threshold</span><span class="o">=</span><span class="mf">2e-9</span><span class="p">,</span> <span class="n">smooth_radius</span><span class="o">=</span><span class="mf">0.5e-6</span><span class="p">,</span> <span class="n">multilayer_fuse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
@@ -137,7 +137,7 @@
 <span class="n">cmsl</span><span class="o">.</span><span class="n">fuse_all_metals</span><span class="p">()</span>
 
 <span class="c1">#(E) - OPTIONAL: Fix the indices of the different electrodes via components on those electrodes</span>
-<span class="n">cmsl</span><span class="o">.</span><span class="n">reorder_conds_by_comps</span><span class="p">([</span><span class="s1">&#39;block0&#39;</span><span class="p">,</span> <span class="s1">&#39;launch0&#39;</span><span class="p">,</span> <span class="s1">&#39;launch1&#39;</span><span class="p">,</span> <span class="s1">&#39;launch2&#39;</span><span class="p">])</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">reorder_conds_by_comps</span><span class="p">([</span><span class="s1">'block0'</span><span class="p">,</span> <span class="s1">'launch0'</span><span class="p">,</span> <span class="s1">'launch1'</span><span class="p">,</span> <span class="s1">'launch2'</span><span class="p">])</span>
 
 <span class="c1">#(F) - OPTIONAL: Set everything within a rectangle to be finely meshed</span>
 <span class="n">cmsl</span><span class="o">.</span><span class="n">fine_mesh_in_rectangle</span><span class="p">(</span><span class="o">-</span><span class="mf">3e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">140e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.9e-3</span><span class="p">,</span> <span class="mf">167e-6</span><span class="p">,</span> <span class="mf">2e-7</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">)</span>
@@ -145,13 +145,13 @@
 <span class="n">cmsl</span><span class="o">.</span><span class="n">fine_mesh_conductors_in_rectangle</span><span class="p">(</span><span class="o">-</span><span class="mf">2.86e-3</span><span class="p">,</span> <span class="o">-</span><span class="mf">145e-6</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.53e-3</span><span class="p">,</span> <span class="mf">167e-6</span><span class="p">,</span> <span class="mf">2e-7</span><span class="p">,</span> <span class="mf">5e-6</span><span class="p">)</span>
 
 <span class="c1">#(H) - Build model</span>
-<span class="n">cmsl</span><span class="o">.</span><span class="n">build_geom_mater_elec_mesh</span><span class="p">(</span><span class="n">skip_meshing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mesh_structure</span><span class="o">=</span><span class="s1">&#39;Fine&#39;</span><span class="p">)</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">build_geom_mater_elec_mesh</span><span class="p">(</span><span class="n">skip_meshing</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mesh_structure</span><span class="o">=</span><span class="s1">'Fine'</span><span class="p">)</span>
 
 <span class="c1">#(I) - Plot model</span>
 <span class="n">cmsl</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 
 <span class="c1">#(J) - Save model to file</span>
-<span class="n">cmsl</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">&#39;Test&#39;</span><span class="p">)</span>
+<span class="n">cmsl</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">'Test'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The simulation treats the electrodes as 2D planar objects that live on top of a 3D block representing the dielectric subtrate chip. The chip is enclosed by a rectangular prism that represents the exterior boundaries of the simulation. The simulation automatically accounts for changes in the device geometry due to [shadow evaporations](PVD.md).</p>
@@ -328,8 +328,8 @@
 </ul>
 <p><strong>Before running `build_geom_mater_elec_mesh`</strong>, one must define the ports via any of the <cite>create_port_</cite> commands:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#(A) - Create ports on LaunchpadWirebond objects</span>
-<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;launch1&#39;</span><span class="p">)</span>
-<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">&#39;launch2&#39;</span><span class="p">)</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">'launch1'</span><span class="p">)</span>
+<span class="n">sim_sParams</span><span class="o">.</span><span class="n">create_port_CPW_on_Launcher</span><span class="p">(</span><span class="s1">'launch2'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The supported <cite>create_port_</cite> commands work as follows:
@@ -361,14 +361,14 @@
 <h2>Magnetic field simulations<a class="headerlink" href="#magnetic-field-simulations" title="Link to this heading"></a></h2>
 <p>Given a COMSOL model, a magnetic field simulation can be done via the <cite>COMSOL_Simulation_MagneticField</cite> class. This simulation is specifically designed to send in a DC current, observe the resulting magnetic field and subsequently calculate the net flux through some unit area (e.g. a SQUID loop).</p>
 <p><strong>Before running `build_geom_mater_elec_mesh`</strong>, one must define the following:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sim_BField</span><span class="o">.</span><span class="n">set_current_feed_on_CPW_on_Route</span><span class="p">(</span><span class="s1">&#39;flux_line&#39;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sim_BField</span><span class="o">.</span><span class="n">set_current_feed_on_CPW_on_Route</span><span class="p">(</span><span class="s1">'flux_line'</span><span class="p">)</span>
 <span class="n">sim_BField</span><span class="o">.</span><span class="n">set_Bfield_integration_area</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The first command attaches a CPW-friendly current feeder (i.e. feeds the centre line while grounding both adjacent ground-planes simultaneously). The second command defines an area to which the $B_z$ component of the field is integrated. Note that a handy function in the <cite>PVD_Shadows</cite> class can be used to find the coordinates of the largest interior (i.e. hole) in a SQUID loop after shadow evaporation calculations:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pvd</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
 <span class="c1"># pvd.plot_layer(2)</span>
-<span class="n">coords</span><span class="p">,</span> <span class="n">poly</span> <span class="o">=</span> <span class="n">pvd</span><span class="o">.</span><span class="n">get_shadow_largest_interior_for_component</span><span class="p">(</span><span class="s1">&#39;jj_qubit&#39;</span><span class="p">)</span>
+<span class="n">coords</span><span class="p">,</span> <span class="n">poly</span> <span class="o">=</span> <span class="n">pvd</span><span class="o">.</span><span class="n">get_shadow_largest_interior_for_component</span><span class="p">(</span><span class="s1">'jj_qubit'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>To get the flux, simply run:</p>

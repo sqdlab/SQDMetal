@@ -121,20 +121,20 @@
 <section id="defining-pvd-parameters-in-the-qiskit-metal-design-object">
 <h2>Defining PVD parameters in the <em>Qiskit-Metal</em> design object<a class="headerlink" href="#defining-pvd-parameters-in-the-qiskit-metal-design-object" title="Link to this heading"></a></h2>
 <p>Before using the <cite>PVD_Shadows</cite> class, the <em>Qiskit-Metal</em> design object must have evaporation options defined as follows:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="p">[</span><span class="s1">&#39;main&#39;</span><span class="p">][</span><span class="s1">&#39;evaporations&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">design</span><span class="o">.</span><span class="n">chips</span><span class="p">[</span><span class="s1">'main'</span><span class="p">][</span><span class="s1">'evaporations'</span><span class="p">]</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
     <span class="n">layer2</span><span class="o">=</span><span class="n">Dict</span><span class="p">(</span>
-        <span class="n">bottom_layer</span><span class="o">=</span><span class="s1">&#39;414nm&#39;</span><span class="p">,</span>
-        <span class="n">top_layer</span><span class="o">=</span><span class="s1">&#39;500nm&#39;</span><span class="p">,</span>
-        <span class="n">undercut</span><span class="o">=</span><span class="s1">&#39;200nm&#39;</span><span class="p">,</span>
+        <span class="n">bottom_layer</span><span class="o">=</span><span class="s1">'414nm'</span><span class="p">,</span>
+        <span class="n">top_layer</span><span class="o">=</span><span class="s1">'500nm'</span><span class="p">,</span>
+        <span class="n">undercut</span><span class="o">=</span><span class="s1">'200nm'</span><span class="p">,</span>
         <span class="n">pvd1</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
-        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;-90&#39;</span><span class="p">,</span>
-        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span><span class="p">,</span>
-        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;10nm&#39;</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">'-90'</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">'45'</span><span class="p">,</span>
+        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">'10nm'</span>
         <span class="p">),</span>
         <span class="n">pvd2</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">(</span>
-        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span><span class="p">,</span>
-        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">&#39;45&#39;</span><span class="p">,</span>
-        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">&#39;100nm&#39;</span>
+        <span class="n">angle_phi</span> <span class="o">=</span> <span class="s1">'0'</span><span class="p">,</span>
+        <span class="n">angle_theta</span> <span class="o">=</span> <span class="s1">'45'</span><span class="p">,</span>
+        <span class="n">metal_thickness</span> <span class="o">=</span> <span class="s1">'100nm'</span>
         <span class="p">)</span>
     <span class="p">)</span>
 <span class="p">)</span>
@@ -167,22 +167,22 @@
 <span class="n">pvdSh</span> <span class="o">=</span> <span class="n">PVD_Shadows</span><span class="p">(</span><span class="n">design</span><span class="p">)</span>
 
 <span class="c1">#Plot Layer 2 showing each angled evaporation step separately and do not plot mask</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate&#39;</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'separate'</span><span class="p">,</span> <span class="n">plot_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="c1">#Plot all layers showing each angled evaporation step separately, but show the mask</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_all_layers</span><span class="p">(</span><span class="s1">&#39;separate&#39;</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_all_layers</span><span class="p">(</span><span class="s1">'separate'</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Note that when plotting all layers, the mask is the union of all layers’ mask shapes.</p>
 <p>Typically there is an oxidation step in between angled evaporation steps. Thus, when simulating multiple angled evaporations, the regions that overlap need to be separated. The <cite>PVD_Shadows</cite> class facilitates this via different options to help separate the metals from different angled evaporations.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1">#Merge all angled evaporation steps in a given layer via a union:</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;merge&#39;</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'merge'</span><span class="p">)</span>
 
 <span class="c1">#Plot all angled evaporations separately in a given layer while deleting all intersections (along with a trimming boundary)</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate_delete_intersections&#39;</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'separate_delete_intersections'</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
 
 <span class="c1">#Plot all angled evaporations separately in a given layer while deleting all intersections in the first angled evaporations (along with a trimming boundary)</span>
-<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">&#39;separate_delete_below&#39;</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
+<span class="n">pvdSh</span><span class="o">.</span><span class="n">plot_layer</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="s1">'separate_delete_below'</span><span class="p">,</span> <span class="n">layer_trim_length</span><span class="o">=</span><span class="mf">20e-9</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Note that the function <cite>plot_all_layers</cite> accepts the same options outlined above. The option <cite>layer_trim_length</cite> is given in metres. The resulting patterns from the given options are shown below:</p>
