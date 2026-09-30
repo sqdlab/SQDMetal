@@ -165,7 +165,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                         "Attributes": material_dielectric,  # Dielectric
                         "Permeability": dielectric.permeability,
                         "Permittivity": dielectric.permittivity,
-                        "LossTan": 1.2e-5
+                        "LossTan": dielectric.loss_tangent
                     }
                 ]
             },
