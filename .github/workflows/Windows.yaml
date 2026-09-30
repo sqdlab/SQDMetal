@@ -34,7 +34,7 @@ jobs:
       - name: Create fresh Conda environment
         shell: bash -el {0}
         run: |
-          conda env create -n sqdmetal_env -f env_windows.yml
+          conda env create -n sqdmetal_env python==3.11
           conda activate sqdmetal_env
           python --version
           conda info --envs
