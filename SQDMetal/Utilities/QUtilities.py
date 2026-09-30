@@ -492,6 +492,8 @@ class QUtilities:
                     Defaults to 'separate_delete_below'. These are the methods upon which 
                     to separate or merge overlapping elements across multiple evaporation steps. 
                     See documentation on PVD_Shadows for more details on the available options.
+                    If set to ``None``, then the plain mask/metallic region is taken with no regard
+                    to the PVD profiles.
                 group_by_evaporations (optional): 
                     Defaults to False. If set to True, if elements on a 
                     particular evaporation step are separated due to the given evap_mode, they will still 
@@ -524,7 +526,7 @@ class QUtilities:
         thresh = kwargs.get("threshold", -1)
         resolution = kwargs.get("resolution", 4)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
         if not isinstance(layer_id, (list, tuple)):
@@ -576,7 +578,7 @@ class QUtilities:
             # Calculate the individual evaporated elements if required
             evap_mode = kwargs.get("evap_mode", "separate_delete_below")
             group_by_evaporations = kwargs.get("group_by_evaporations", False)
-            if group_by_evaporations and evap_mode != "merge":
+            if group_by_evaporations and evap_mode != "merge" and evap_mode != None:
                 metal_evap_polys_separate = pvd_shadows.get_all_shadows(
                     metal_polys, cur_layer_id, "separate"
                 )
@@ -585,11 +587,11 @@ class QUtilities:
                     metal_evap_polys_separate = [metal_evap_polys_separate]
             # Calculate evaporated shadows
             evap_trim = kwargs.get("evap_trim", 20e-9)
-            metal_evap_polys += [
-                pvd_shadows.get_all_shadows(
-                    metal_polys, cur_layer_id, evap_mode, layer_trim_length=evap_trim
-                )
-            ]
+            if evap_mode != None:
+                cur_evap_shadows = shapely.unary_union( pvd_shadows.get_all_shadows(metal_polys, cur_layer_id, evap_mode, layer_trim_length=evap_trim) )
+            else:
+                cur_evap_shadows = shapely.unary_union( metal_polys )
+            metal_evap_polys += ShapelyEx.shapely_to_list(cur_evap_shadows)
         if len(metal_evap_polys) == 0:
             return
         if kwargs.get("multilayer_fuse", False):
@@ -622,7 +624,7 @@ class QUtilities:
                 metal_polys_all += temp_cur_metals
                 num_polys = 1
 
-            if group_by_evaporations and evap_mode != "merge":
+            if group_by_evaporations and evap_mode != "merge" and evap_mode != None:
                 # Collect the separate polygons that live in the current evaporation layer
                 cur_polys_separate = metal_evap_polys_separate[m]
                 if isinstance(
@@ -686,7 +688,7 @@ class QUtilities:
             - Metal geometries are plotted in blue; the ground plane is plotted in the same color but rendered separately.
             - The chip dimensions and center coordinates are taken from ``design.chips['main']['size']`` and converted to consistent units.
         """
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
         
         qm_units = QUtilities.get_units(design)
@@ -767,7 +769,7 @@ class QUtilities:
         arrow_width = kwargs.get('arrow_width', 0.001)
         push_to_back = kwargs.get('push_to_back', False)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution=kwargs.get('resolution',4))
         # gsdf = gsdf[gsdf['layer'].isin(p.layers_obj_avoid)]
         # obstacles = shapely.unary_union(gsdf['geometry'])
@@ -842,7 +844,7 @@ class QUtilities:
         thresh = kwargs.get("threshold", -1)  # noqa: F841 # abhishekchak52: unused variable thresh
         resolution = kwargs.get("resolution", 4)
 
-        qmpl = QiskitShapelyRenderer(None, design, None)
+        qmpl = QiskitShapelyRenderer(design=design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(resolution)
 
         ids = []
@@ -1922,3 +1924,29 @@ class QUtilities:
         else:
             l = l_full
         return l
+
+    @staticmethod
+    def crop_design(design, border_mm=0.4, center_mm=None, dimensions_mm=None, rebuild=True):
+        if center_mm==None and dimensions_mm==None:
+            print("Cropping around all components in 'design.components.keys()'.")
+            (min_x, min_y, max_x, max_y) = QUtilities.get_comp_bounds(design, design.components.keys())
+            x_total = max_x - min_x + (2 * border_mm)
+            y_total = max_y - min_y + (2 * border_mm)
+            new_chip_centre = [(min_x + max_x)/2, (min_y + max_y)/2]
+        elif center_mm==None:
+            assert dimensions_mm==None, "If supplying 'dimensions_mm', you must also supply 'center_mm'."
+        elif dimensions_mm==None:
+            assert center_mm==None, "If supplying 'center_mm', you must also supply 'dimensions_mm'."
+        elif center_mm!=None and dimensions_mm!=None:
+            assert len(center_mm)==2 and len(dimensions_mm)==2, "Supply 'center_mm' and 'dimensions_mm' as a tuple or list [x,y] in units of mm."
+            x_total, y_total = dimensions_mm
+            new_chip_centre = center_mm
+        print(f"\n  New x-y chip centre : {new_chip_centre[0]:6.2f}, {new_chip_centre[1]:6.2f} [mm]")
+        print(f"  New x-y dimensions  : {x_total:6.2f}, {y_total:6.2f} [mm]\n")
+        if rebuild:
+            print('\nCropping chip...')
+            design.chips.main.size.center_x = f"{new_chip_centre[0]}mm"
+            design.chips.main.size.center_y = f"{new_chip_centre[1]}mm"
+            design.chips.main.size.size_x = f"{x_total}mm"
+            design.chips.main.size.size_y = f"{y_total}mm"
+            design.rebuild()

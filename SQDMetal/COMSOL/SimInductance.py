@@ -75,7 +75,7 @@ class COMSOL_Simulation_Inductance(COMSOL_Simulation_Base):
         sel_feed_rad = kwargs.get('feed_edge_min_size', 1e-9)
 
         #Presumes that it is simply-closed polygon
-        qmpl = QiskitShapelyRenderer(None, self.model.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.model.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates()
         comp_id = self.model.design.components[qObjName].id
         metal_polys_all = gsdf.loc[(gsdf["component"] == comp_id) & (~gsdf["subtract"])]['geometry'].iloc[0]

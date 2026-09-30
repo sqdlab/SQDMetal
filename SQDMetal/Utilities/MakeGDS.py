@@ -99,7 +99,7 @@ class MakeGDS:
             print(f"Exporting layers {self.export_layers}") if self.print_statements else 0
 
         # Parse geometry and update metadata before rebuilding geometry
-        qmpl = QiskitShapelyRenderer(None, self._design, None)
+        qmpl = QiskitShapelyRenderer(design=self._design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(self.curve_resolution)
         leUnits = QUtilities.get_units(self._design)
         self.unit_conv = leUnits / self.gds_units

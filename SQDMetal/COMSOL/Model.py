@@ -251,7 +251,7 @@ class COMSOL_Model:
         self._conds = new_conds
 
     def reorder_conds_by_comps(self, comp_list):
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(self._resolution)
         pvdSh = PVD_Shadows(self.design)
         unit_conv = QUtilities.get_units(self.design)
@@ -309,7 +309,7 @@ class COMSOL_Model:
         return select_3D_name
 
     def _get_gnd_plane_gaps(self, fuse_threshold):
-        qmpl = QiskitShapelyRenderer(None, self.design, None)
+        qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
         gsdf = qmpl.get_net_coordinates(self._resolution)
 
         filt = gsdf.loc[gsdf['subtract']]

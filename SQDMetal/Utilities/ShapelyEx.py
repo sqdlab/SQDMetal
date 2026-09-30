@@ -5,6 +5,7 @@ import shapely
 import numpy as np
 import geopandas as gpd
 import matplotlib.pyplot as plt
+from svgpathtools import svg2paths2
 
 class ShapelyEx:
     @staticmethod
@@ -530,3 +531,103 @@ class ShapelyEx:
             gdf.plot(ax=ax, color=['blue'] + ['red']*(len(skeletons)) + ['green']*(len(bridge_rays)))
 
         return shapely.unary_union(skeletons+bridge_rays)
+    
+    @staticmethod
+    def svg_to_shapely(svg_file, n_samples=300):
+        """
+        Convert an SVG file to a Shapely geometry, correctly handling arbitrary holes.
+        Builds a containment hierarchy rather than relying on winding direction.
+        """
+
+        paths, _, _ = svg2paths2(svg_file)
+
+        # Collect all rings as simple polygons
+        rings = []
+        for path in paths:
+            for subpath in path.continuous_subpaths():
+                coords = [(subpath.point(t / n_samples).real,
+                        subpath.point(t / n_samples).imag)
+                        for t in range(n_samples + 1)]
+                if len(coords) < 3:
+                    continue
+                ring = shapely.Polygon(coords)
+                if not ring.is_valid:
+                    ring = ring.buffer(0)
+                if not ring.is_empty:
+                    rings.append(ring)
+
+        # Build containment hierarchy:
+        # For each ring, count how many other rings contain it.
+        # depth 0 (contained by nobody) = exterior
+        # depth 1 (contained by one)    = hole
+        # depth 2 (contained by two)    = exterior island inside a hole
+        # depth 3                        = hole inside that island, etc.
+        depths = []
+        for i, ring in enumerate(rings):
+            depth = sum(
+                1 for j, other in enumerate(rings)
+                if i != j and other.contains(ring)
+            )
+            depths.append(depth)
+
+        # Even depth = exterior, odd depth = hole
+        exteriors = [r for r, d in zip(rings, depths) if d % 2 == 0]
+        holes     = [r for r, d in zip(rings, depths) if d % 2 == 1]
+
+        # For each exterior, subtract all holes that are direct children
+        # (i.e. holes contained by this exterior but not by a deeper exterior)
+        polygons = []
+        for ext in exteriors:
+            # Direct children: holes inside this exterior
+            child_holes = [h for h in holes if ext.contains(h)]
+            poly = ext
+            for hole in child_holes:
+                poly = poly.difference(hole)
+            if not poly.is_empty:
+                polygons.append(poly)
+
+        result = shapely.unary_union(polygons)
+        return shapely.affinity.scale(result, yfact=-1, origin=(0, 0))
+
+
+    # def svg_to_shapely(svg_file, n_samples=300):
+    #     """
+    #     Convert an SVG file to a Shapely geometry, correctly handling holes.
+    #     Uses winding direction to distinguish exteriors from interiors.
+    #     """
+
+    #     paths, _, _ = svg2paths2(svg_file)
+
+    #     exteriors = []
+    #     holes = []
+
+    #     for path in paths:
+    #         for subpath in path.continuous_subpaths():
+    #             coords = [(subpath.point(t / n_samples).real,
+    #                     subpath.point(t / n_samples).imag)
+    #                     for t in range(n_samples + 1)]
+    #             if len(coords) < 3:
+    #                 continue
+
+    #             # Shoelace formula: CW = hole in SVG (Y-axis down)
+    #             signed_area = sum(
+    #                 (coords[i][0] - coords[i-1][0]) * (coords[i][1] + coords[i-1][1])
+    #                 for i in range(len(coords))
+    #             ) / 2
+    #             (holes if signed_area > 0 else exteriors).append(coords)
+
+    #     polygons = []
+    #     for ext in exteriors:
+    #         ext_poly = shapely.Polygon(ext)
+    #         if not ext_poly.is_valid:
+    #             ext_poly = ext_poly.buffer(0)
+
+    #         inner_rings = [h for h in holes if ext_poly.contains(shapely.Polygon(h).centroid)]
+
+    #         poly = shapely.Polygon(ext, inner_rings)
+    #         if not poly.is_valid:
+    #             poly = poly.buffer(0)
+    #         if not poly.is_empty:
+    #             polygons.append(poly)
+
+    #     return shapely.affinity.scale(shapely.unary_union(polygons), yfact=-1, origin=(0, 0))

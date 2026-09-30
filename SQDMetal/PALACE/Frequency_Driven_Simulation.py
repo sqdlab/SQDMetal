@@ -3,6 +3,7 @@
 
 from SQDMetal.PALACE.Model import PALACE_Model_Base_RF
 from SQDMetal.Utilities.Materials import Material
+from SQDMetal.PALACE.PVDVTU_DataReader import PVDVTU_DataReader
 import matplotlib.pyplot as plt
 import numpy as np
 import json
@@ -18,6 +19,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                  "solver_order": 2,
                  "solver_tol": 1.0e-8,
                  "solver_maxits": 300,
+                 "solver_initial_guess": True,
                  "HPC_Parameters_JSON": ""
                 }
 
@@ -25,7 +27,6 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
     def __init__(self, name, sim_parent_directory, mode, meshing, user_options = {}, 
                  view_design_gmsh_gui = False, create_files = False, **kwargs):
         self.name = name
-        self.sim_parent_directory = sim_parent_directory
         self.mode = mode
         self.meshing = meshing
         self.user_options = {}
@@ -36,7 +37,8 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         self.view_design_gmsh_gui = view_design_gmsh_gui
         self.create_files = create_files
         self._ports = []
-        super().__init__(meshing, mode, user_options, **kwargs)
+        self._dipole_sources = []
+        super().__init__(sim_parent_directory, meshing, mode, user_options, **kwargs)
         self.freqs = None
         self._current_sources = []
         self._rf_port_excitation = -1
@@ -103,6 +105,7 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
         #get material parameters
         dielectric = Material(self.user_options["dielectric_material"])
+        air_material = Material(self.user_options["topping_material"])
 
         #Select first resistive port if excitation is not explicitly set
         if self._rf_port_excitation == -1:
@@ -153,10 +156,10 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                 "Materials":
                 [
                     {
-                        "Attributes": material_air,  # Air
-                        "Permeability": 1.0,
-                        "Permittivity": 1.0,
-                        "LossTan": 0.0
+                        "Attributes": material_air,  # Air/Vacuum (or any capping material)
+                        "Permeability": air_material.permeability,
+                        "Permittivity": air_material.permittivity,
+                        "LossTan": air_material.loss_tangent
                     },
                     {
                         "Attributes": material_dielectric,  # Dielectric
@@ -190,10 +193,20 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                     "Type": "SuperLU",
                     "KSPType": "FGMRES",
                     "Tol": self.user_options["solver_tol"],
-                    "MaxIts": self.user_options["solver_maxits"]
+                    "MaxIts": self.user_options["solver_maxits"],
+                    "InitialGuess": self.user_options["solver_initial_guess"]
                 }
             }
         }
+
+        if len(self._dipole_sources) > 0:
+            config['Domains']['CurrentDipole'] = [{'Index':m+1, 'Moment': x['moment'], 'Center':x['position'], 'Direction':x['direction']} for m,x in enumerate(self._dipole_sources)]
+        
+        #If kinetic inductance is incorporated change metals from PEC to Impedance boundary condition. This is done before processing
+        # the farfield. 
+        if self._use_KI:
+            self._setup_kinetic_inductance(config, PEC_metals)
+
         if self.meshing == 'GMSH':
             self._setup_EPR_boundaries(config, dielectric_gaps, PEC_metals)
         self._process_farfield(config, far_field)
@@ -250,6 +263,10 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         assert direction == -1 or direction == 1, "Direction must be either 1 or -1 for +z or -z"
         self._current_sources.append(('region', region, direction))
 
+    def add_current_dipole_source(self, x,y,z, dir_x,dir_y,dir_z, moment):
+        leDipole = {'moment': moment, 'position': [x,y,z], 'direction': [dir_x,dir_y,dir_z]}
+        self._dipole_sources.append(leDipole)
+
     def set_port_excitation(self, port_index: int):
         '''
         Sets the port that will be excited in the driven simulation.
@@ -270,16 +287,16 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
 
     def set_freq_values(self, freq_start: float, freq_end: float, freq_step: float):
         '''
-        Sets the starting frequency (GHz), the end frequency (GHz) and the frequency step size (GHz) for a driven simulation.
+        Sets the starting frequency (Hz), the end frequency (Hz) and the frequency step size (Hz) for a driven simulation.
 
         Parameters
         ----------
         freq_start : float 
-            Starting frequency in GHz for the driven simulation.
+            Starting frequency in Hz for the driven simulation.
         freq_end : float 
-            End frequency in GHz for the driven simulation.
+            End frequency in Hz for the driven simulation.
         freq_step : float
-            Frequency step size in GHz for the driven simulation.
+            Frequency step size in Hz for the driven simulation.
 
         Returns
         -------
@@ -365,6 +382,9 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
         headers = raw_data.columns
         raw_data = raw_data.to_numpy().T
         num_s_params = int((raw_data.shape[0]-1)/2)
+
+        if num_s_params < 2:
+            return
 
         fig, axs = plt.subplots(ncols=num_s_params)
         fig.set_figwidth(8*num_s_params)
@@ -474,3 +494,6 @@ class PALACE_Driven_Simulation(PALACE_Model_Base_RF):
                 ret_data.append([cur_freq] + lines_with_k.pop(0))
 
         return ret_data
+
+    def get_data_reader(self):
+        return PVDVTU_DataReader(self._output_data_dir + '/paraview/driven/driven.pvd')

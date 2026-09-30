@@ -19,17 +19,33 @@ from qiskit_metal.qlibrary.qubits.JJ_Manhattan import jj_manhattan
 
 
 
-class JunctionManhattan(jj_manhattan):
+class jj_manhattan(jj_manhattan):
     # -*- coding: utf-8 -*-
     # Author: Alexander Nguyen
     # Creation Date: 2025
     # Description: Class to draw Manhattan junctions. Inherits jj_manhattan native to Qiskit Metal
     #only difference is that it can rotate with the orientation parameter
+    #also, now you can make the lengths of the arms different
+
+    default_options = Dict(
+        jj_manhattan.default_options,
+        finger_upper_height=None,
+        JJ_pad_upper_height=None,
+        finger_upper_width=None,
+        JJ_pad_upper_width=None,
+    )
     def make(self):
         """Qiskit Metal JJ"""
 
         p = self.parse_options()  # Parse the string options into numbers
-
+        if p.finger_upper_height is None:
+            p.finger_upper_height=p.finger_lower_height
+        if p.JJ_pad_upper_height is None:
+            p.JJ_pad_upper_height=p.JJ_pad_lower_height
+        if p.finger_upper_width is None:
+            p.finger_upper_width=p.finger_lower_width
+        if p.JJ_pad_upper_width is None:
+            p.JJ_pad_upper_width=p.JJ_pad_lower_width
         # draw the lower pad as a rectangle
         JJ_pad_lower = draw.rectangle(p.JJ_pad_lower_width,
                                       p.JJ_pad_lower_height,
@@ -38,7 +54,7 @@ class JunctionManhattan(jj_manhattan):
 
         finger_lower = draw.rectangle(
             p.finger_lower_width, p.finger_lower_height, p.JJ_pad_lower_pos_x,
-            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height))
+            p.JJ_pad_lower_pos_y+(0.5 * (p.JJ_pad_lower_height + p.finger_lower_height)))
 
         # fudge factor to merge the two options
         finger_lower = draw.translate(finger_lower, 0.0, -0.0001)
@@ -46,15 +62,27 @@ class JunctionManhattan(jj_manhattan):
         # merge the lower pad and the finger into a single object
         design = draw.union(JJ_pad_lower, finger_lower)
 
-        # copy the pad/finger and rotate it by 90 degrees
-        design2 = draw.rotate(design, 90.0)
+        JJ_pad_upper = draw.rectangle(p.JJ_pad_upper_height,#height and width are swapped because it is sideways
+                                      p.JJ_pad_upper_width,
+                                      p.JJ_pad_lower_pos_x+p.finger_upper_height+((p.JJ_pad_upper_height+p.finger_lower_width)/2),
+                                      p.JJ_pad_lower_pos_y+((p.JJ_pad_lower_height+p.finger_upper_width)/2)+p.finger_lower_height)
+
+        finger_upper = draw.rectangle(
+            p.finger_upper_height, p.finger_upper_width,#height and width are swapped because it is sideways
+            p.JJ_pad_lower_pos_x+((p.finger_upper_height+p.finger_lower_width)/2),
+            p.JJ_pad_lower_pos_y+(0.5 * (p.JJ_pad_lower_height+p.finger_upper_width))+ p.finger_lower_height)
+
+        # fudge factor to merge the two options
+        JJ_pad_upper = draw.translate(JJ_pad_upper, -0.0001, 0.0)
+
+        # merge the lower pad and the finger into a single object
+        design2 = draw.union(JJ_pad_upper, finger_upper)
+
 
         # translate the second pad/finger to achieve the desired extension
         design2 = draw.translate(
-            design2, 0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
-            0.5 * p.finger_lower_width - p.extension,
-            0.5 * (p.JJ_pad_lower_height + p.finger_lower_height) -
-            0.5 * p.finger_lower_width - p.extension)
+            design2, -p.extension,
+             -p.extension)#extension may be slightly smaller than stated due to junction width
 
         final_design = draw.union(design, design2)
 
@@ -64,7 +92,7 @@ class JunctionManhattan(jj_manhattan):
                                       0.5 * p.JJ_pad_lower_height)
         
         #rotate final design around the origin (bottom left hand corner...)
-        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))#only new line of code
+        final_design = draw.rotate(final_design, p.orientation, origin=(0, 0))
 
         # now translate so that the design is centered on the
         # user-defined coordinates (pos_x, pos_y)
@@ -564,6 +592,7 @@ class JunctionSingleDolanPinStretch(QComponent):
         p.end_y = endPt[1]
 
         pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionSingleDolan.draw_junction(p)
+        
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -609,6 +638,7 @@ class JunctionDolanPinStretch(QComponent):
     The positioning can be done dynamically via:
         * pin_inputs=Dict(start_pin=Dict(component=f'...',pin='...')) - Specifying start position via a component pin
         * dist_extend - Distance upon to stretch away from the start pin.
+        * dist_x_offset - Additional distance to stretch in the x direction (relative to the direction of the junction) away from the start pin. Default is 0.
     The resulting Josephson junction is right in the centre. This class ignores pos_x, pos_y and orientation...
         
     Pins:
@@ -660,6 +690,7 @@ class JunctionDolanPinStretch(QComponent):
         * t_pad_length= '3um'
         * fork_pad_size='0.5um'
         * t_pad_extra='0.0um'
+        * dist_x_offset='0um'
     """
 
     default_options = Dict(dist_extend='40um',
@@ -675,7 +706,8 @@ class JunctionDolanPinStretch(QComponent):
                            t_pad_length='3um',
                            fork_pad_size='0.5um',
                            t_pad_extra='0.0um',
-                           reverse=False)
+                           reverse=False,
+                           dist_x_offset='0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -683,7 +715,7 @@ class JunctionDolanPinStretch(QComponent):
         p = self.p
         #########################################################
 
-        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        '''start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
         startPt = start_point['middle']
         norm = start_point['normal']
         p.pos_x = startPt[0]
@@ -693,6 +725,12 @@ class JunctionDolanPinStretch(QComponent):
         p.end_y = endPt[1]
 
         pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
+
+        pad_T = draw.translate(pad_T, p.dist_x_offset, 0)
+        pad_Fork = draw.translate(pad_Fork, p.dist_x_offset, 0)
+        pin1 = draw.translate(pin1, p.dist_x_offset, 0)
+        pin2 = draw.translate(pin2, p.dist_x_offset, 0)
+        sim_JJ = draw.translate(sim_JJ, p.dist_x_offset, 0)
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',
@@ -713,7 +751,78 @@ class JunctionDolanPinStretch(QComponent):
 
         # Generates its own pins
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
+        self.add_pin('f', pin2.coords[::-1], width=p.stem_width)'''
+        #print(self.design.components[self.name].options.pin_inputs.start_pin.pin)
+        pin_name_qubit = self.design.components[self.name].options.pin_inputs.start_pin.pin
+        start_point = self.design.components[self.options.pin_inputs.start_pin.component].pins[self.options.pin_inputs.start_pin.pin]
+        startPt = start_point['middle']
+        norm = start_point['normal']
+        p.pos_x = startPt[0]
+        p.pos_y = startPt[1]
+        endPt = startPt + norm*p.dist_extend
+        p.end_x = endPt[0]
+        p.end_y = endPt[1]
+
+        pad_T, pad_Fork, pin1, pin2, sim_JJ = JunctionDolan.draw_junction(p)
+
+        pad_T = draw.translate(pad_T, p.dist_x_offset, 0)
+        pad_Fork = draw.translate(pad_Fork, p.dist_x_offset, 0)
+        pin1 = draw.translate(pin1, p.dist_x_offset, 0)
+        pin2 = draw.translate(pin2, p.dist_x_offset, 0)
+        sim_JJ = draw.translate(sim_JJ, p.dist_x_offset, 0)
+
+        # connector width
+        half_w = 0.5 * p.stem_width
+
+        # actual junction pin centers
+        pin1_coords = np.array(pin1.coords, dtype=float)
+        pin2_coords = np.array(pin2.coords, dtype=float)
+        pin1_center = 0.5 * (pin1_coords[0] + pin1_coords[1])
+        pin2_center = 0.5 * (pin2_coords[0] + pin2_coords[1])
+
+        # external start/end pin centers
+        start_center = startPt
+        end_center = endPt
+
+        # straight connector centerlines
+        if pin_name_qubit == 'pin_island':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+        elif pin_name_qubit == 'pin_reservoir':
+            if p.dist_x_offset >= 0:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center + half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center + half_w)])
+            else:
+               connect_start_path = shapely.LineString([tuple(start_center),tuple(pin1_center - half_w)])
+               connect_end_path = shapely.LineString([tuple(end_center),tuple(pin2_center - half_w)])
+        if pin_name_qubit== 'pin_island' or pin_name_qubit=='pin_reservoir':
+            # rectangular connectors
+            connect_start = connect_start_path.buffer(half_w, cap_style=2, join_style=2)
+            connect_end = connect_end_path.buffer(half_w, cap_style=2, join_style=2)
+            # robust unions
+            pad_T = pad_T.union(connect_start)
+            pad_Fork = pad_Fork.union(connect_end)
+
+        if pad_T.geom_type == 'MultiPolygon':
+           pad_T = max(pad_T.geoms, key=lambda g: g.area)
+        if pad_Fork.geom_type == 'MultiPolygon':
+           pad_Fork = max(pad_Fork.geoms, key=lambda g: g.area)
+
+        pad_T = pad_T.buffer(0)
+        pad_Fork = pad_Fork.buffer(0)
+
+        self.add_qgeometry('poly',dict(pad1=pad_T, pad_Fork=pad_Fork),layer=p.layer)
+        self.add_qgeometry('junction',{'design': sim_JJ},layer=p.layer,subtract=False,width=p.squid_width + 2 * p.t_pad_extra)
+
+        self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
+        
+
+
 
 # -*- coding: utf-8 -*-
 # Author: Pradeep
@@ -1241,40 +1350,454 @@ class JunctionDolanAsymmetricPinStretch(QComponent):
         self.add_pin('t', pin1.coords[::-1], width=p.stem_width)
         self.add_pin('f', pin2.coords[::-1], width=p.stem_width)
 
-def get_square_JJ_width(J_C_uA_um2, target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
+
+class JJ_arrayManhattan(QComponent):
+    # Author: Alexander Nguyen
+    # Creation Date: 2026
+    """There's a glitch where to total geometry changes slightly between the fused and unfused version.
+    An array of JJ's intended to be used with FluxoniumPocket.
+    Each JJ will consist of 2 orthogonal rectangles with the following geometry.
+    Note that in the picture height goes left to right.
+    Sketch:
+        Below is a sketch of the solitary square marker
+        ::
+
+                 <----l---->    
+             ___________________
+            |                   |  /|\    l = slider_length
+            |         X         |   |W    W = width
+            |___________________|  \|/    X = (pos_x, pos_y)
+            <----------H-------->         H = chain_link_height
+    
+    Each rectangle is referred to as a chain link with the following properties
+        * x_start - the x coordinate of the first (vertical) chain link
+        * y_start - the y coordinate of where the pin ON THE QUBIT to start the array will be
+        * slider_length - Length indicating the area where vertical chain links will connect. l<=H
+        * chain_link_height - Length of one of the sides of a chain link. l<=H
+        * width - Length of other side of chain link
+        * start_waves - number of "waves" at the start of JJ array, see class method waves
+        * JJ_total - total number of JJs in array. It is suggested that you make this smaller than what you really want and manually add the remaining ones. 
+        * union - if True, will union all chain links into 1 shape
+    
+    Atypical of the standard documentation of Quantum Metal components, the documentation of this component will be dispersed at the beginning of different methods. 
+    """
+
+    default_options = Dict(x_start='0mm', y_start='0mm', orientation='0',
+                           chain_link_height='7000nm', width='422.7nm',
+                           slider_length='0.0044mm',
+                           start_waves=3,
+                           JJ_total=94,
+                           union=True
+    )
+    def make(self):
+        [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]=self.waves()
+        if n<self.p.JJ_total:
+            [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]=self.waves2stairs(polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal)
+        if n<self.p.JJ_total:
+            [polys, jj_array, n]=self.stairs(polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal)
+
+        if not self.p.union:
+            polys = draw.rotate(polys, self.p.orientation, origin=(self.p.x_start, self.p.y_start))
+            polys = draw.translate(polys, self.p.pos_x, self.p.pos_y)
+        else:
+            jj_array = draw.rotate(jj_array, self.p.orientation, origin=(self.p.x_start, self.p.y_start))
+            jj_array = draw.translate(jj_array, self.p.pos_x, self.p.pos_y)
+
+
+        polys_dict={}
+        if self.p.union:
+            polys_dict=dict(jj_array=jj_array)
+        else:
+            for index in np.arange(n-1):
+                polys_dict.update({'chainlink'+str(index): polys[index]})
+        print(self.name+": "+str(n)+" JJs were made")
+        self.add_qgeometry('poly',
+                           polys_dict,
+                           layer=self.p.layer,
+                           subtract=False)
+        
+    def stairs(self, polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal):
+        """The remainder of the JJ chain will be in this formation
+        ____|_________________________________________________
+            |
+        ____|_____________________|___________________________
+            |                     |
+        __________________________|___________________|_______
+                                  |                   |
+        ______________|_______________________________|_______
+                      |                               |
+        ______________|_____________________|_________________
+                      |                     |
+        ____________________________________|_________________
+                                            |
+
+        Repeated over and over... The horizontal chain links will be TWICE as long
+        """
+        x_horizontal=x_horizontal+(0.5*self.p.chain_link_height)
+        n_vertical=0
+        x_vertical_trio=x_vertical
+        x_vertical_duo=x_vertical+(self.p.slider_length*0.5)
+        while n<=self.p.JJ_total:
+            if (n_vertical%5)<3:
+                #make vertical chain link on the left
+                chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical_trio, y_vertical)
+                polys.append(chain_link)
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+                n=n+1
+                n_vertical=n_vertical+1
+                x_vertical_trio=x_vertical_trio+(1.25*self.p.slider_length)#move to the right
+                y_vertical=y_vertical-self.p.slider_length
+            else:
+                chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical_duo, y_vertical)
+                polys.append(chain_link)
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+                n=n+1
+                n_vertical=n_vertical+1
+                x_vertical_duo=x_vertical_duo+(1.25*self.p.slider_length)#move to the right
+                y_vertical=y_vertical-self.p.slider_length
+                if (n_vertical%5)==0:#reset at the end of the end
+                    x_vertical_trio=x_vertical
+                    x_vertical_duo=x_vertical+(self.p.slider_length*0.5)
+            chain_link=draw.rectangle(self.p.chain_link_height*2, self.p.width, x_horizontal, y_horizontal)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            n=n+1
+            y_horizontal=y_horizontal-self.p.slider_length
+        return [polys, jj_array, n]
+    def waves2stairs(self, polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal):
+        #make vertical chain link on the left
+        chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical, y_vertical)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_vertical=x_vertical+self.p.slider_length#move to the right
+        y_vertical=y_vertical+self.p.slider_length
+        #horizontal chain link
+        chain_link=draw.rectangle(self.p.chain_link_height, self.p.width, x_horizontal, y_horizontal)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_horizontal=x_horizontal+self.p.slider_length+(0.5*self.p.chain_link_height)#move it to the right now
+        y_horizontal=y_horizontal+self.p.slider_length
+        #make LAST vertical chain link on the right
+        chain_link=draw.rectangle(self.p.width, self.p.chain_link_height, x_vertical, y_vertical)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_vertical=x_vertical+self.p.slider_length+self.p.chain_link_height#move to the right
+        #end it on horizontal chain link to the right
+        chain_link=draw.rectangle(self.p.chain_link_height*2, self.p.width, x_horizontal, y_horizontal)
+        polys.append(chain_link)
+        if self.p.union:
+            jj_array=draw.union(jj_array, chain_link)
+        n=n+1
+        x_horizontal=x_horizontal+self.p.slider_length+(0.5*self.p.chain_link_height)#move it to the right again
+        y_horizontal=y_horizontal-self.p.slider_length#moving DOWN now
+        return [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]
+
+    def waves(self):
+        p=self.p
+
+        x_start=p.x_start
+        y_start=p.y_start
+        chain_link_height=p.chain_link_height
+        width=p.width
+        slider_length=p.slider_length
+        start_waves=p.start_waves
+        JJ_total=p.JJ_total
+
+        polys=[]
+        x_vertical=x_start
+        y_vertical=y_start+(slider_length/2)
+        x_horizontal=x_start+(slider_length/2)
+        y_horizontal=y_start+slider_length
+        for n_cycle in np.arange(start_waves):
+            #start with vertical chain link
+            chain_link=draw.rectangle(width, chain_link_height, x_vertical, y_vertical)
+            polys.append(chain_link)
+            if n_cycle==0:
+                n=0
+            else:
+                n=n+1
+                if self.p.union:
+                    jj_array=draw.union(jj_array, chain_link)
+            x_vertical=x_vertical+slider_length#move to the right
+            y_vertical=y_vertical+slider_length
+            #horizontal chain link
+            chain_link2=draw.rectangle(chain_link_height, width, x_horizontal, y_horizontal)
+            polys.append(chain_link2)
+            if n_cycle==0 and self.p.union:
+                jj_array=draw.union(chain_link, chain_link2)
+            elif self.p.union:
+                jj_array=draw.union(jj_array, chain_link2)
+            y_horizontal=y_horizontal+slider_length
+            n=n+1
+            #vertical chain link
+            chain_link=draw.rectangle(width, chain_link_height, x_vertical, y_vertical)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            x_vertical=x_vertical-slider_length#move it to the left
+            y_vertical=y_vertical+slider_length
+            n=n+1
+            #horizontal chain_link
+            chain_link=draw.rectangle(chain_link_height, width, x_horizontal, y_horizontal)
+            polys.append(chain_link)
+            if self.p.union:
+                jj_array=draw.union(jj_array, chain_link)
+            y_horizontal=y_horizontal+slider_length
+            n=n+1
+        
+        if not self.p.union:
+            jj_array=draw.Point(0, 0)#make it a worthless point at the origin if not uniting chainlinks
+        return [polys, jj_array, n, x_vertical, y_vertical, x_horizontal, y_horizontal]
+
+            
+def get_square_JJ_width(J_C_uA_um2, bottom_layer_thickness_nm=None, configuration='single', target_EJ_GHz=None, target_LJ_nH=None, rounding=True):
     """
     Function to calculate the dimensions for a Josephson junction fabricated with a
     certain critical current density (J_C), where I_C = J_C * A. The critical current 
     density must be supplied in units of micro-Amperes per square micro-metre (uA/um^2).
-
-    A target Josephson inductance (L_J, unbits of nH) or Josephson energy (E_J, units of GHz)
+    A target Josephson inductance (L_J, units of nH) or Josephson energy (E_J, units of GHz)
     must be given. Accepts a list of values, or a single value.
-
     Returns width = height in um of the required JJ area. 
+    Return area of the JJ.
     """
-    #assert (target_EJ_GHz is not None) or (target_LJ_nH is not None), "Must supply target EJ or LJ."
     assert not ((target_LJ_nH is not None) and (target_EJ_GHz is not None)), "Only supply either EJ or LJ, not both."
-    assert isinstance(J_C_uA_um2, (float, int))
-    phi_0 = 2.067833848 * 1e-15 # Wb
-    h = 6.62607015 * 1e-34 # J s
+    assert isinstance(J_C_uA_um2, (float, int, np.floating))
+    phi_0 = 2.067833848 * 1e-15  # Wb
+    h = 6.62607015 * 1e-34       # J s
     J_C_A_m2 = J_C_uA_um2 * 1e6
-    # calculate areas for supplied LJ values
+    # Calculate total areas for supplied LJ values
     if target_LJ_nH is not None:
         if not isinstance(target_LJ_nH, np.ndarray):
             target_LJ_nH = np.atleast_1d(np.array(target_LJ_nH, dtype=float))
-        target_LJ_H = target_LJ_nH * 1e-9 # convert to H
-        A_m2 = np.array([phi_0/(2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
-    # calculate areas for supplied EJ values
+        target_LJ_H = target_LJ_nH * 1e-9
+        A_m2_total = np.array([phi_0 / (2 * np.pi * J_C_A_m2 * i) for i in target_LJ_H])
+    # Calculate total areas for supplied EJ values
     elif target_EJ_GHz is not None:
         if not isinstance(target_EJ_GHz, np.ndarray):
             target_EJ_GHz = np.atleast_1d(np.array(target_EJ_GHz, dtype=float))
         target_EJ_Hz = target_EJ_GHz * 1e9
-        A_m2 = np.array([(i * h * 2 * np.pi)/(phi_0 * J_C_A_m2) for i in target_EJ_Hz])
+        A_m2_total = np.array([(i * h * 2 * np.pi) / (phi_0 * J_C_A_m2) for i in target_EJ_Hz])
     else:
         raise ValueError("No areas were calculated since no target values were supplied.")
-    width_JJ_nm = np.sqrt(A_m2) * 1e9
+    # Correct for junction configuration (split area for SQUID/double)
+    if configuration == 'single':
+        A_m2 = A_m2_total
+    elif configuration in ('double', 'squid', 'SQUID'):
+        A_m2 = A_m2_total / 2
+    else:
+        raise ValueError("Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'.")
+    # Solve for lithographic width, accounting for sidewall contribution
+    # Total area: A = w^2 + 2*h_sidewall*w  =>  w = -h_sidewall + sqrt(h_sidewall^2 + A)
+    if bottom_layer_thickness_nm is not None:
+        h_sidewall = bottom_layer_thickness_nm * 1e-9  # convert to m
+        width_JJ_m = -h_sidewall + np.sqrt(h_sidewall**2 + A_m2)
+    else:
+        width_JJ_m = np.sqrt(A_m2)
+    width_JJ_nm = width_JJ_m * 1e9
     if rounding:
-        width_JJ_nm = np.array([(round(i / 1.0) * 1) for i in width_JJ_nm])
+        width_JJ_nm = np.array([round(i / 1.0) * 1 for i in width_JJ_nm])
     width_JJ_um = width_JJ_nm * 1e-3
-    return width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+    width_JJ_um = width_JJ_um.item() if width_JJ_um.size == 1 else width_JJ_um
+    area_JJ_um2 = A_m2 * 1e12
+    if rounding:
+        area_JJ_um2 = np.array([round(i / 0.001) * 0.001 for i in area_JJ_um2])
+    return width_JJ_um, area_JJ_um2
 
+def get_JJ_params_from_width(width_JJ_um, J_C_uA_um2, bottom_layer_thickness_nm=None,
+                              configuration='single', gap_Delta_ueV=200.0,
+                              calc_resistance=True, E_C_GHz=None, rounding=True):
+    """
+    Inverse of get_square_JJ_width: given a lithographic (square) JJ width,
+    calculate the resulting critical current, Josephson inductance (L_J),
+    Josephson energy (E_J), and (optionally) normal-state resistance (R_N)
+    for a junction fabricated at critical current density J_C.
+
+    Parameters
+    ----------
+    width_JJ_um : float or list
+        Lithographic width (= height) of the square JJ, in micrometres.
+        For 'double'/'squid' configurations, this is the width of EACH
+        (assumed identical) arm.
+    J_C_uA_um2 : float or int
+        Critical current density in uA/um^2.
+    bottom_layer_thickness_nm : float, optional
+        If supplied, corrects the litho width to true junction area using
+        the same A = w^2 + 2*h_sidewall*w model used in get_square_JJ_width.
+        If None, area is simply w^2 (no sidewall contribution).
+    configuration : {'single', 'double', 'squid', 'SQUID'}
+        Whether this is a single junction, or two identical junctions in
+        parallel (SQUID / double-junction loop), whose critical currents add.
+    gap_Delta_ueV : float, optional
+        Superconducting energy gap Delta, in micro-eV, used with the
+        Ambegaokar-Baratoff relation (I_C R_N = pi*Delta / 2e) to estimate
+        normal-state resistance. Default 200 ueV is a typical thin-film Al
+        value - override for other materials. Ignored if calc_resistance=False.
+    calc_resistance : bool
+        If True (default), also compute R_N via Ambegaokar-Baratoff.
+        Set False if you don't want to rely on the assumed gap value.
+    E_C_GHz : float, optional
+        Charging energy of the qubit circuit, in GHz (i.e. E_C/h). If
+        supplied, also computes the transmon 0->1 qubit frequency via the
+        standard asymptotic approximation
+            f_01 = sqrt(8 * E_J * E_C) - E_C
+        This is only valid in the transmon regime (E_J/E_C >> 1, typically
+        >~ 20-50) - it is NOT exact, and E_C itself is a capacitance-derived
+        quantity that this function cannot compute from J_C/width alone, so
+        you must supply it (e.g. from a separate capacitance simulation).
+        If None (default), f_01 is not computed.
+    rounding : bool
+        If True, round outputs (L_J to 0.001 nH, E_J to 0.001 GHz,
+        R_N to 0.1 Ohm, area to 0.001 um^2, I_C to 0.001 nA, f_01 to 0.001 GHz).
+
+    Returns
+    -------
+    dict with keys 'I_C_nA', 'area_JJ_um2', 'L_J_nH', 'E_J_GHz', 'R_N_ohm',
+    'f_01_GHz'. Each value is a float for scalar input, or np.ndarray for
+    array input. 'R_N_ohm' is None if calc_resistance=False. 'f_01_GHz' is
+    None if E_C_GHz is not supplied.
+    """
+    assert isinstance(J_C_uA_um2, (float, int, np.floating)), "J_C_uA_um2 must be a scalar."
+    if E_C_GHz is not None:
+        assert isinstance(E_C_GHz, (float, int, np.floating)), "E_C_GHz must be a scalar."
+    phi_0 = 2.067833848e-15     # Wb
+    h = 6.62607015e-34          # J s
+    e_charge = 1.602176634e-19  # C
+
+    J_C_A_m2 = J_C_uA_um2 * 1e6
+
+    scalar_input = not isinstance(width_JJ_um, (np.ndarray, list, tuple))
+    width_JJ_um_arr = np.atleast_1d(np.array(width_JJ_um, dtype=float))
+    width_JJ_m = width_JJ_um_arr * 1e-6
+
+    # Litho width -> true per-junction area (inverse of the quadratic used
+    # in get_square_JJ_width: there, A = w^2 + 2*h*w was solved for w;
+    # here we go the other way, straight from w to A)
+    if bottom_layer_thickness_nm is not None:
+        h_sidewall = bottom_layer_thickness_nm * 1e-9  # m
+        A_junction_m2 = width_JJ_m**2 + 2 * h_sidewall * width_JJ_m
+    else:
+        A_junction_m2 = width_JJ_m**2
+
+    # Effective area/critical current for the configuration (mirrors the
+    # /2 in get_square_JJ_width, just inverted: two identical arms in
+    # parallel means critical currents add)
+    if configuration == 'single':
+        A_eff_m2 = A_junction_m2
+    elif configuration in ('double', 'squid', 'SQUID'):
+        A_eff_m2 = 2 * A_junction_m2
+    else:
+        raise ValueError("Invalid configuration supplied. Must be 'single', 'double', 'squid' or 'SQUID'.")
+
+    I_C_A = J_C_A_m2 * A_eff_m2
+
+    L_J_nH = (phi_0 / (2 * np.pi * I_C_A)) * 1e9
+    E_J_GHz = (phi_0 * I_C_A / (2 * np.pi * h)) * 1e-9
+
+    if calc_resistance:
+        Delta_J = gap_Delta_ueV * 1e-6 * e_charge  # ueV -> J
+        R_N_ohm = (np.pi * Delta_J) / (2 * e_charge * I_C_A)
+    else:
+        R_N_ohm = None
+
+    if E_C_GHz is not None:
+        f_01_GHz = np.sqrt(8 * E_J_GHz * E_C_GHz) - E_C_GHz
+    else:
+        f_01_GHz = None
+
+    I_C_nA = I_C_A * 1e9
+    area_JJ_um2 = A_junction_m2 * 1e12  # per-junction litho area, not the effective/total one
+
+    if rounding:
+        I_C_nA = np.round(I_C_nA, 3)
+        area_JJ_um2 = np.round(area_JJ_um2, 3)
+        L_J_nH = np.round(L_J_nH, 3)
+        E_J_GHz = np.round(E_J_GHz, 3)
+        if calc_resistance:
+            R_N_ohm = np.round(R_N_ohm, 1)
+        if E_C_GHz is not None:
+            f_01_GHz = np.round(f_01_GHz, 3)
+
+    if scalar_input:
+        I_C_nA = I_C_nA.item()
+        area_JJ_um2 = area_JJ_um2.item()
+        L_J_nH = L_J_nH.item()
+        E_J_GHz = E_J_GHz.item()
+        if calc_resistance:
+            R_N_ohm = R_N_ohm.item()
+        if E_C_GHz is not None:
+            f_01_GHz = f_01_GHz.item()
+
+    return {
+        'I_C_nA': I_C_nA,
+        'area_JJ_um2': area_JJ_um2,
+        'width_JJ_um': width_JJ_um_arr,
+        'L_J_nH': L_J_nH,
+        'E_J_GHz': E_J_GHz,
+        'R_N_ohm': R_N_ohm,
+        'f_01_GHz': f_01_GHz,
+    }
+
+def calc_mask_for_shadow_evap(target_width_um, angle_deg, top_resist_thickness_um, rounding=True):
+    """
+    Calculate the lithographic mask width required to produce a target JJ
+    width after shadow evaporation, given the evaporation angle and top
+    resist thickness.
+
+    During (single-angle) shadow evaporation, the deposited metal is offset
+    laterally from the mask opening due to evaporating at a non-normal
+    incidence through a resist stack of finite thickness:
+
+        actual_width = mask_width - top_resist_thickness_um * tan(angle_deg)
+
+    This function inverts that relationship to solve for the mask width
+    needed to hit a given target/actual JJ width:
+
+        mask_width = target_width + top_resist_thickness_um * tan(angle_deg)
+
+    Parameters
+    ----------
+    target_width_um : float, int, list, or np.ndarray
+        Desired final JJ width(s) after evaporation, in micrometres.
+    angle_deg : float or int
+        Shadow evaporation angle, in degrees from normal incidence.
+    top_resist_thickness_um : float or int
+        Thickness of the top resist layer, in micrometres.
+    rounding : bool
+        If True (default), round the mask width to the nearest 0.001 um.
+
+    Returns
+    -------
+    mask_width_um : float or np.ndarray
+        Required lithographic mask width(s), in micrometres. Float for
+        scalar input, np.ndarray for list/array input.
+    """
+    assert isinstance(angle_deg, (float, int, np.floating)), "angle_deg must be scalar."
+    assert isinstance(top_resist_thickness_um, (float, int, np.floating)), \
+        "top_resist_thickness_um must be scalar."
+
+    scalar_input = not isinstance(target_width_um, (np.ndarray, list, tuple))
+    target_width_um_arr = np.atleast_1d(np.array(target_width_um, dtype=float))
+
+    shadow_offset_um = top_resist_thickness_um * np.tan(np.deg2rad(angle_deg))
+    mask_width_um = target_width_um_arr + shadow_offset_um
+
+    if np.any(mask_width_um <= 0):
+        raise ValueError(
+            "Computed mask width is <= 0 um for at least one target width - "
+            "the target is smaller than the shadow-evaporation offset itself. "
+            "Check angle_deg / top_resist_thickness_um."
+        )
+
+    if rounding:
+        mask_width_um = np.round(mask_width_um, 3)
+
+    return mask_width_um.item() if scalar_input else mask_width_um

@@ -48,3 +48,15 @@ To run RF frequency driven simulations:
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+To run magnetostatic/inductance simulations:
+
+.. code-block:: python
+
+   from SQDMetal.PALACE.Inductance_Simulation import PALACE_Inductance_Simulation
+
+.. autoclass:: SQDMetal.PALACE.Inductance_Simulation.PALACE_Inductance_Simulation
+   :members:
+   :undoc-members:
+   :show-inheritance:

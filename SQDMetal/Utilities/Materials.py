@@ -50,11 +50,19 @@ class Material:
             # FAKE ULTRA-LOW-LOSS MATERIAL (SILICON-LIKE)
             # Uses the permittivity of silicon, used for studying losses arising not from the bulk substrate.
             #
-            # References: https://indico.fnal.gov/event/4162/attachments/54289/64791/SapphireAndOtherMaterialsAt_100K.pdf
             elif name == "ultralowlosssilicon" or name == "lowlosssilicon" or name == "fakesilicon":
                 self.permittivity = 11.7
                 self.permeability = 1
                 self.loss_tangent = 1.0e-10
+            ################################
+            #
+            # VACUUM
+            # It's vacuum
+            #
+            elif name == "vacuum":
+                self.permittivity = 1.0
+                self.permeability = 1.0
+                self.loss_tangent = 0.0
             ################################
             else:
                 assert False, f"Material \"{orig_name}\" unrecognised."

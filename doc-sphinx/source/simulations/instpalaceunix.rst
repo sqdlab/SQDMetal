@@ -32,35 +32,17 @@ Update spack compilers:
     spack compiler find
 
 
-Ensure that it says gcc is at least above version 11.
-
-Clone palace and `install using spack <https://github.com/awslabs/palace/issues/360#issuecomment-2874057931>`__:
-
-.. code-block:: bash
-
-    git clone https://github.com/awslabs/palace.git
-
-From here, we go through the Palace installation process for :ref:`Ubuntu` and :ref:`Mac` separately, before covering the :ref:`installation of Paraview and Pyvista <Recommended add-ons>`.
+Ensure that it says gcc is at least above version 11. From here, we go through the Palace installation process for :ref:`Ubuntu` and :ref:`Mac` separately, before covering the :ref:`installation of Paraview and Pyvista <Recommended add-ons>`.
 
 Ubuntu
 ------
 
-Now the idea is that we create a local virtual environment in spack called `spack-env`, add local palace install as a repo in it and concretize+install. Note that you can skip the creation and activation of the environment, but you may run into issues due to dependecies if you have used spack previously. This is done via:
+The latest version of Palace successfully runs off spack via:
 
 .. code-block:: bash
 
     source ./spack/share/spack/setup-env.sh
-    spack repo add ./palace/spack_repo/local
-    spack env create spack-env
-    spack env activate spack-env
-    spack add local.palace@develop
-
-Now concretize+install via:
-
-.. code-block:: bash
-
-    spack concretize -f
-    spack install --only-concrete
+    spack install palace@develop
     find -name palace*
 
 The second command will find the path of the Palace binary. Basically it's somewhere like (remember to add the `~/` for the full absolute path):

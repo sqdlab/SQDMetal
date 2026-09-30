@@ -5,10 +5,10 @@
 
 Tools to aid in simulating and fabricating superconducting quantum devices. The tools are an extension of [~~Qiskit~~Quantum-Metal](https://github.com/Qiskit/qiskit-metal) to provide additional support for:
 
-- Extra components with more flexible user-friendly options (see [gallery](https://nbviewer.org/github/sqdlab/SQDMetal/blob/main/docs/User/Comps_All.ipynb))
+- Extra components with more flexible user-friendly options (see [gallery](https://sqdlab.github.io/SQDMetal/comps/Comps_All.html))
 - Visualising and simulating effects of shadow evaporation techniques used to fabricate qubits
 - RF and DC simulations using **COMSOL** (including calculation of capacitance matrices, inductance ~~matrices~~ and RF s-parameters)
-- RF and DC simulations using cluster-friendly **AWS PALACE** (including **meshing via either COMSOL or Gmsh**)
+- RF and DC simulations using cluster-friendly **AWS PALACE** (including **meshing via either COMSOL or Gmsh**) with full support for RF-frequency-driven RF-frequency-eigenmode, DC-capacitance, and DC-magnetostatic simulation types.
 - GDS export and manipulation techniques to help with fabrication setup for multi-die wafers, arrayed structures, and more
 
 There are two classes of documentation provided for this stack:
@@ -28,7 +28,7 @@ git clone https://github.com/sqdlab/SQDMetal.git
 Now run (changing `sqdmetal_env` to any other desired name for the virtual environment):
 
 ```bash
-conda create -n sqdmetal_env python==3.12
+conda create -n sqdmetal_env python==3.11
 ```
 
 Now activate the environment and install Qiskit-Metal:

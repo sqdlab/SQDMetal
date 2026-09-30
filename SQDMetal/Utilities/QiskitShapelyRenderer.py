@@ -40,7 +40,7 @@ class QiskitShapelyRenderer(QMplRenderer):
 
     @staticmethod
     def get_rendered_path_poly(design, path_coords, path_width, fillet_radius, resolution=4):
-        mplRend = QMplRenderer(None, design, None)
+        mplRend = QMplRenderer(design=design, canvas=None, logger=None)
         lePath = mplRend.fillet_path({
             'geometry': shapely.LineString(path_coords.tolist() if isinstance(path_coords, np.ndarray) else path_coords),
             'fillet': fillet_radius,

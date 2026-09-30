@@ -61,7 +61,7 @@ class GeomQiskitMetal(GeomBase):
         metal_polys = []
         #Handle the ground plane...
         if not ground_plane['omit']:
-            qmpl = QiskitShapelyRenderer(None, self.design, None)
+            qmpl = QiskitShapelyRenderer(design=self.design, canvas=None, logger=None)
             gsdf = qmpl.get_net_coordinates(fillet_resolution)
             filt = gsdf.loc[gsdf['subtract']]
             #TODO: It should only take stuff from the metallic layers specified when calculating spaces???
