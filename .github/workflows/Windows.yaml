@@ -28,22 +28,24 @@ jobs:
           python-version: "3.11"
           use-mamba: true
           auto-update-conda: true
-          environment-file: # If you have a yml file, point to it here, e.g., env_windows.yml
+          environment-file: env_windows.yml # Uncomment if you use this file
 
-      # Optional: Add caching if you have heavy dependencies in a YML file
-      - name: Cache Conda environment
+      - name: Cache Conda packages
         uses: actions/cache@v4
         with:
-          path: ~/miniconda/envs/sqdmetal_env
-          key: conda-\({{ runner.os }}-\){{ hashFiles('env_windows.yml') }}-${{ env.date }}
-        if: hashFiles('env_windows.yml') != ''
+          path: |
+            ~/miniconda/pkgs
+            C:\Miniconda3\pkgs
+          key: conda-\({{ runner.os }}-\){{ hashFiles('env_windows.yml') }}
+          restore-keys: |
+            conda-${{ runner.os }}-
 
       - name: Install the package in editable mode
-        shell: bash
+        shell: bash -el {0}  # <--- -el {0} ensures the conda environment is active
         run: |
-          conda run -n sqdmetal_env python -m pip install -e .
+          python -m pip install -e .
 
       - name: Run unittest tests
-        shell: bash
+        shell: bash -el {0}  # <--- -el {0} ensures the conda environment is active
         run: |
-          conda run -n sqdmetal_env python -m unittest discover -s UnitTests
+          python -m unittest discover -s UnitTests
