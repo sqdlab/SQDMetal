@@ -8,7 +8,11 @@
 
 class Material:
     def __init__(self, name="", **kwargs):
-        if name == "":
+        if isinstance(name, Material):
+            self.permittivity = name.permittivity
+            self.permeability = name.permeability
+            self.loss_tangent = name.loss_tangent
+        elif name == "":
             self.permittivity = kwargs.pop('permittivity', 1)   #Relative Permittivity
             self.permeability = kwargs.pop('permeability', 1)   #Relative Permeability
             self.loss_tangent = kwargs.pop('loss_tangent', 0)   #Dielectric Loss Tangent
