@@ -28,7 +28,7 @@ jobs:
           python-version: "3.11"
           use-mamba: true
           auto-update-conda: true
-          environment-file: env_windows.yml # Uncomment if you use this file
+          environment-file: # Uncomment if you use this file
 
       - name: Cache Conda packages
         uses: actions/cache@v4
