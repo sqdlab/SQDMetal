@@ -4,49 +4,46 @@ on: [pull_request, push, workflow_dispatch]
 
 jobs:
   test:
-    name: Windows
-    runs-on: windows-latest
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
 
-    # XXX Workaround for Windows runners redirecting the output of commands to files.
-    # See: https://github.com/databrickslabs/dbx/issues/455#issuecomment-1312770919
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest]
+
     env:
-      PYTHONIOENCODING: utf-8
+      PYTHONIOENCODING: "utf8"
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Miniconda
+      - name: Setup Mamba & Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: latest
           auto-activate-base: false
+          miniconda-version: "latest"
+          activate-environment: sqdmetal_env
+          python-version: "3.11"
+          use-mamba: true
+          auto-update-conda: true
+          environment-file: # If you have a yml file, point to it here, e.g., env_windows.yml
 
-      - name: Cache Conda packages
+      # Optional: Add caching if you have heavy dependencies in a YML file
+      - name: Cache Conda environment
         uses: actions/cache@v4
         with:
-          path: |
-            C:\Miniconda3\pkgs
-          key: conda-windows-${{ hashFiles('env_windows.yml') }}
-          restore-keys: |
-            conda-windows-
+          path: ~/miniconda/envs/sqdmetal_env
+          key: conda-\({{ runner.os }}-\){{ hashFiles('env_windows.yml') }}-${{ env.date }}
+        if: hashFiles('env_windows.yml') != ''
 
-      - name: Create fresh Conda environment
-        shell: bash -el {0}
+      - name: Install the package in editable mode
+        shell: bash
         run: |
-          conda env create -n sqdmetal_env python==3.11
-          conda activate sqdmetal_env
-          python --version
-          conda info --envs
-
-      - name: Install package
-        shell: bash -el {0}
-        run: |
-          conda activate sqdmetal_env
           python -m pip install -e .
 
       - name: Run unittest tests
-        shell: bash -el {0}
+        shell: bash
         run: |
-          conda activate sqdmetal_env
           python -m unittest discover -s UnitTests
