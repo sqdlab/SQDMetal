@@ -41,9 +41,9 @@ jobs:
       - name: Install the package in editable mode
         shell: bash
         run: |
-          python -m pip install -e .
+          C:/Miniconda3/envs/sqdmetal_env/python.exe -m pip install -e .
 
       - name: Run unittest tests
         shell: bash
         run: |
-          python -m unittest discover -s UnitTests
+          C:/Miniconda3/envs/sqdmetal_env/python.exe -m unittest discover -s UnitTests
