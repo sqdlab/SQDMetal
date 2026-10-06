@@ -321,8 +321,8 @@ class Pam(QComponent):
     Inherits QComponent class.
 
     Square marker either has a Metal (with a pocket) or ground cutout Geometry as specified by is_ground_cutout:
-        * array_x - number of squares along x axis
-        * array_y - number of squares along y axis
+        * array_x - number of squares along x axis, must be an odd integer
+        * array_y - number of squares along y axis, must be an odd integer
         * square_spacing_x - Initial spacing of the squares along the x-axis (from centre to centre of the squares)
         * square_spacing_y - Initial spacing of the 4 squares along the y-axis (from centre to centre of the squares)
         * square_width  - Width of each individual square along x-axis
@@ -341,18 +341,18 @@ class Pam(QComponent):
         Below is a sketch of the 4-square marker
         ::
 
-             <--W-->    
-             _______             _______       _______
-            |       |  /|\      |       |     |       | W = square_width
-            |       |   |H      |       |  /|\|       | H = square_height
-            |_______|  \|/      |_______|   | |_______| X = (pos_x, pos_y)
-                                            |           w = square_spacing_x
-                          X                 h           h = square_spacing_y
-             _______             _______    |  _______  l = inc_x
-            |       |           |       |   | |       |
-            |       |           |       |  \|/|       |
-            |_______|           |_______|     |_______|
-                <---------w---------><----(w-l)--->
+                           <--W-->    
+     _______               _______           _______                   _______
+    |       |             |       |  /|\    |       |                 |       | W = square_width
+    |       |             |       |   |H    |       |              /|\|       | H = square_height
+    |_______|             |_______|  \|/    |_______|               | |_______| X = (pos_x, pos_y)
+                                                                    |           w = square_spacing_x
+                                                                    h           h = square_spacing_y
+     _______               _______           _______                |  _______  l = inc_x
+    |       |             |       |         |       |               | |       |
+    |       |             |   X   |         |       |              \|/|       |
+    |_______|             |_______|         |_______|                 |_______|
+         <--------(w)--------><--------w--------><----------(w+l)--------->
 
 
     Default Options:
@@ -386,6 +386,7 @@ class Pam(QComponent):
             self.logger.info(
                 'Warning: You are making pocket inside a pocket. Are you sure you want to do this?'
             )
+        assert p.array_x%2==1 or p.array_y%2==1, "number of columns and rows must be an odd integer."
         polys=[]#fill with squares of the Pam
         pockets=[]
         polys_dict=dict()
@@ -393,22 +394,48 @@ class Pam(QComponent):
         y=0#start with top left square at origin. translate to center Pam at origin later
         names=[]
         names_pocket=[]
-        for row in np.arange(p.array_y):#do first row then move to next row
+        for row in np.arange(np.ceil(p.array_y/2.0)):#do first row then move to next row
             x=0#start with left square at x=0. translate to center Pam at origin later
-            for column in np.arange(p.array_x):
-               name='square'+str(row)+'_'+str(column)#name of the square
-               name_pocket='pocket_'+name
-               names.append(name)
-               names_pocket.append(name_pocket)
-               locals().update({name: draw.rectangle(p.square_width, p.square_height, x, y)})
-               exec('polys.append('+name+')')
-               pocket=draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, x, y)
-               pockets.append(pocket)
-               x=x+p.square_spacing_x-(p.inc_x*column) 
-            y=y-p.square_spacing_y+(p.inc_y*row)
+            for column in np.arange(np.ceil(p.array_x/2.0)):
+                name='square'+str(int(row))+'_'+str(int(column))#name of the square
+                name_pocket='pocket_'+name
+                names.append(name)
+                names_pocket.append(name_pocket)
+                locals().update({name: draw.rectangle(p.square_width, p.square_height, x, y)})#creates a variable named name that is a "rectangle object"
+                exec('polys.append('+name+')')#append to the polys list the polygon defined in line above
+                pocket=draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, x, y)
+                pockets.append(pocket)
+                if x!=0 or y!=0:
+                    name='squareNEG'+str(int(row))+'_NEG'+str(int(column))#name of the square
+                    name_pocket='pocket_'+name
+                    names.append(name)
+                    names_pocket.append(name_pocket)
+                    locals().update({name: draw.rectangle(p.square_width, p.square_height, -1*x, -1*y)})
+                    exec('polys.append('+name+')')
+                    pocket=draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, -1*x, -1*y)
+                    pockets.append(pocket)
+                    if x!=0 and y!=0:#if both x and y aren't 0 we need to duplicate the square in the other 2 quadrants
+                        name='square'+str(int(row))+'_NEG'+str(int(column))#name of the square
+                        name_pocket='pocket_'+name
+                        names.append(name)
+                        names_pocket.append(name_pocket)
+                        locals().update({name: draw.rectangle(p.square_width, p.square_height, -1*x, y)})
+                        exec('polys.append('+name+')')
+                        pocket=draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, -1*x, y)
+                        pockets.append(pocket)
+                        name='squareNEG'+str(int(row))+'_'+str(int(column))#name of the square
+                        name_pocket='pocket_'+name
+                        names.append(name)
+                        names_pocket.append(name_pocket)
+                        locals().update({name: draw.rectangle(p.square_width, p.square_height, x, -1*y)})
+                        exec('polys.append('+name+')')
+                        pocket=draw.rectangle(p.square_width+p.pocket_distance, p.square_height+p.pocket_distance, x, -1*y)
+                        pockets.append(pocket)
+                x=x+p.square_spacing_x+(p.inc_x*column) 
+            y=y-p.square_spacing_y-(p.inc_y*row)
 
 
-        polys = draw.translate(polys, -(x/2), -y/2)
+        #polys = draw.translate(polys, -(x/2), -y/2)
         polys = draw.rotate(polys, p.orientation, origin=(0, 0))
         polys = draw.translate(polys, p.pos_x, p.pos_y)
 
