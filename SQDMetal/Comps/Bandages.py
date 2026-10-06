@@ -116,7 +116,7 @@ class BandageTaperedPin(QComponent):
         Square marker either has a Metal or ground cutout Geometry as specified by is_ground_cutout:
             * taper_width_top  - top width of tapered bandage
             * taper_width_base - bottom width of tapered bandage
-            * taper_height     - hieght of tapered bandage
+            * taper_height     - height of tapered bandage
             * fillet_radius    - fillet radius to curve edges
             * fillet_resolution- number of points used to calculate the fillet/curve
             * offset_distance      - distance to attach the bandage away from the target component
@@ -182,7 +182,8 @@ class BandageTaperedPin(QComponent):
                            fillet_resolution=4,
                            offset_distance='0um',
                            offset_direction=0,
-                           ignore_slope_check=False
+                           ignore_slope_check=False,
+                           align_to_pin = False
                            )
 
     def __init__(self, design,
@@ -210,6 +211,7 @@ class BandageTaperedPin(QComponent):
         start_point = self.design.components[self.options.target_comp].pins[self.options.target_pin]
         startPt = start_point['middle']+(p.offset_distance*np.cos(p.offset_direction/180*np.pi),p.offset_distance*np.sin(p.offset_direction/180*np.pi))
 
+
         bandaid = [(p.taper_width_base/2, 0),
                    (p.taper_width_top/2, p.taper_height),
                    (-p.taper_width_top/2, p.taper_height),
@@ -222,11 +224,20 @@ class BandageTaperedPin(QComponent):
         
         bandaid = bandaid.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(-p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
         bandaid = bandaid.buffer(-p.fillet_radius, join_style=2, cap_style=3).buffer(p.fillet_radius, cap_style=1, join_style=1, mitre_limit=2.0, quad_segs=p.fillet_resolution)
+
+        if p.align_to_pin:
+            normal = -start_point['normal']
+            rot_angle = np.arctan2(normal[1], normal[0])
+            polys = [bandaid]
+            polys = draw.rotate(polys, rot_angle, origin=(0, 0), use_radians=True)
+            polys = draw.translate(polys, *startPt)
+            [bandaid] = polys
         
-        polys = [bandaid]
-        polys = draw.rotate(polys,p.orientation-90, origin=(0, 0), use_radians=False)
-        polys = draw.translate(polys, *startPt)
-        [bandaid] = polys
+        else:
+            polys = [bandaid]
+            polys = draw.rotate(polys,p.orientation-90, origin=(0, 0), use_radians=False)
+            polys = draw.translate(polys, *startPt)
+            [bandaid] = polys
 
         # Adds the object to the qgeometry table
         self.add_qgeometry('poly',

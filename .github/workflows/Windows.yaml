@@ -12,49 +12,40 @@ jobs:
       matrix:
         os: [windows-latest]
 
-    # XXX Workaround for Windows runners redirecting the output of commands to files.
-    # See: https://github.com/databrickslabs/dbx/issues/455#issuecomment-1312770919
     env:
       PYTHONIOENCODING: "utf8"
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Set up Miniconda
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setup Mamba & Conda Environment
+        uses: conda-incubator/setup-miniconda@v3
         with:
-          miniconda-version: "latest"   # Ensure the latest version is installed
-          auto-activate-base: true      # Automatically activate base environment
-          activate-environment: false  # Don't activate environment yet
-          
-      - name: Initialize Conda for PowerShell (if using pwsh)
-        run: |
-          powershell -command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
-          # conda init
-          # Verify conda is available and initialized
-          conda --version
+          auto-activate-base: false
+          miniconda-version: "latest"
+          activate-environment: sqdmetal_env
+          python-version: "3.11"
+          use-mamba: true
+          auto-update-conda: true
+          environment-file: # Uncomment if you use this file
 
-      - name: Create environment from yml
-        run: |
-          # conda activate base      # Activate base environment
-          conda init powershell
-          conda create -n sqdmetal_env python=3.11  # Force Python 3.12
-          conda info --envs
-          # conda env update -n sqdmetal_env --file env_windows.yml
-          # conda activate sqdmetal_env  # Activate the environment
+      - name: Cache Conda packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/miniconda/pkgs
+            C:\Miniconda3\pkgs
+          key: conda-\({{ runner.os }}-\){{ hashFiles('env_windows.yml') }}
+          restore-keys: |
+            conda-${{ runner.os }}-
 
       - name: Install the package in editable mode
+        shell: bash -el {0}  # <--- -el {0} ensures the conda environment is active
         run: |
-          powershell -command "Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser"
-          powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe -m pip install -e ."
+          python -m pip install -e .
 
-      # - name: Pre-build Matplotlib font cache
-      #   run: C:/Miniconda3/envs/sqdmetal_env/python.exe -c "import matplotlib.pyplot as plt; plt.figure()"
-
-      # - name: Run tests
-      #   run: |
-      #     powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe UnitTests/testBasicQiskitMetal.py"
-          
       - name: Run unittest tests
-        run: powershell -command "C:/Miniconda3/envs/sqdmetal_env/python.exe -m unittest discover -s UnitTests"
+        shell: bash -el {0}  # <--- -el {0} ensures the conda environment is active
+        run: |
+          python -m unittest discover -s UnitTests

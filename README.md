@@ -38,6 +38,6 @@ activate sqdmetal_env
 pip install -e SQDMetal
 ```
 
-This should install Qiskit-Metal and SQDMetal.
+This should install Quantum-Metal and SQDMetal.
 
 
