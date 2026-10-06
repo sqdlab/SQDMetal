@@ -1461,7 +1461,7 @@ class TransmonTapered2(TransmonTaperedInsets):
                 0,
                 p.taper_width_top,
                 p.taper_width_base,
-                p.taper_height,
+                p.taper_height*1.05,#fudge factor for the trapezoid
                 (pad_gap / 2) - float(p.taper_height),
                 p.taper_fillet_radius,
                 p.pad_width / 2 ,
@@ -1478,6 +1478,7 @@ class TransmonTapered2(TransmonTaperedInsets):
                 180,
                 origin=(0, pad_gap / 4 + (pad_gap / 2 - float(p.taper_height)) / 2),
             )  # Rotate trapezoid by 180 degrees
+            trapezoid_top_rotated=draw.translate(trapezoid_top_rotated, 0, p.taper_height*0.05)#fudge factor added to the trapezoid is inside the pad
             # create union
             pad_top_tmp = draw.union(
                 pad_top_tmp1.buffer(0), trapezoid_top_rotated.buffer(0)
@@ -1552,7 +1553,7 @@ class TransmonTapered2(TransmonTaperedInsets):
                 center_x=0,
                 top_width=p.taper_width_top,
                 base_width=p.taper_width_base,
-                height=p.taper_height,
+                height=p.taper_height*1.05,
                 y_offset=-(pad_gap / 2),
                 rfillet=p.taper_fillet_radius,
                 startx=p.pad_width / 2,
@@ -1562,7 +1563,7 @@ class TransmonTapered2(TransmonTaperedInsets):
                 cap=draw.Point(x_offset_b, p.taper_height-(pad_gap / 2)+(finger_height_b)).buffer(finger_width_b/2)
                 trapezoid_bot=draw.union([trapezoid_bot, finger, cap])
 
-            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, 0)  # Shift trapezoid left or right based on junction_centered option
+            trapezoid_bot = draw.translate(trapezoid_bot, taper_x_offset, -p.taper_height*0.05)  # Shift trapezoid left or right based on junction_centered option
             pad_bot = draw.union(pad_bot, trapezoid_bot)
 
         # outer corners
