@@ -20,6 +20,11 @@ Palace Simulation Examples
     Capacitance and Eigenmode simulation of floating transmon coupled to resonator <Palace_Eigenmode_FloatingTransmon.ipynb>
     Magnetostatic simulation of a flux line (Gmsh) <Palace_Magnetostatic_Example.ipynb>
 
+.. toctree::
+   :maxdepth: 2
+
+    Introducing thickness and trenching <examples3D>
+
 COMSOL Simulation Examples
 --------------------------
 

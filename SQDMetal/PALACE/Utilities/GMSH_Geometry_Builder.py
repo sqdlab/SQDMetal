@@ -194,7 +194,7 @@ class GMSH_Geometry_Builder:
 
             gap_entities = []
             for cur_gap in gap_names:
-                gap_entities += gap_names[cur_gap]
+                gap_entities += dict_all_entities[cur_gap]
             trenches = gmsh.model.occ.extrude(gap_entities, 0, 0, -trench_depth)
             self._gmsh_sync()
             dict_all_entities['temp_trenches'] = [x for x in trenches if x[0] == 3]

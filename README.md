@@ -34,7 +34,7 @@ conda create -n sqdmetal_env python==3.11
 Now activate the environment and install Qiskit-Metal:
 
 ```bash
-activate sqdmetal_env
+conda activate sqdmetal_env
 pip install -e SQDMetal
 ```
 
