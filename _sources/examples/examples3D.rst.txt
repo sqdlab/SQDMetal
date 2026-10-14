@@ -9,3 +9,4 @@ Idea is to physically simulate a finite thickness on the metal and trenching in 
    :maxdepth: 1
 
     Eigenmode simulation of side-coupled resonator **(trenching only)** <Palace_Eigenmode_Res_Gmsh_Trenched.ipynb>
+    Eigenmode simulation of side-coupled resonator **(metal thickness only)** <Palace_Eigenmode_Res_Gmsh_Thicknessed.ipynb>
