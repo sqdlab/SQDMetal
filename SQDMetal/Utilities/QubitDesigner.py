@@ -177,10 +177,15 @@ class TransmonBase:
         return -(Ec/(4*h) * g_hertz**2) / (delta * (delta - Ec/(4*h)))
 
     def EJonEC(self, CJeff, fQubitHertz):
+        """Return EJ/EC in the leading-order transmon approximation.
+
+        Invert h*f01 = sqrt(8*EJ*EC) - EC with EC = e**2/(2*CJeff).
+        This is not an exact charge-basis Hamiltonian solution.
+        """
         elem = 1.60217663e-19
         h = 6.62607015e-34
         Ec = (elem)**2 / (2*CJeff)
-        return fQubitHertz / (Ec/h)
+        return (h*fQubitHertz/Ec + 1)**2 / 8
 
     def _anharmonicity_hertz(self, C_g, C_J, C_r):
         elem = 1.60217663e-19
