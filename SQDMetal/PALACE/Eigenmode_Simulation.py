@@ -338,6 +338,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             A dictionary containing the following data for each mode included in the comparison:
                 - mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.
                 - eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.
+                - kappa (np.array): total port-coupling linewidth in Hz, or NaN when unavailable.
         '''
         return PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(self._output_data_dir)
 
@@ -462,7 +463,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
                 - mat_mode_port (np.array): returns matrix where the EPRs for the modes are on the rows and ports are on the columns.
                 - eigenfrequencies (np.array): returns the resonant frequencies from the simulation returned in Hz.
                 - loaded_Q (np.array): returns the loaded Q factors of the resonant modes.
-                - kappa (np.array): returns the linewidths due to port couplings in Hz.
+                - kappa (np.array): total absolute port-coupling linewidth converted from Palace GHz to Hz,
+                  or NaN when no linewidth columns are available.
         '''
    
         try:
@@ -485,11 +487,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
                 i for i, h in enumerate(headers)
                 if h.strip().startswith('κ') or h.strip().lower().startswith('kappa')
             ]
-            if len(col_kappa) < 2: 
-                raise ValueError("Fewer than two kappa columns found.")
+            if not col_kappa:
+                raise ValueError("No kappa columns found.")
             raw_dataPort = raw_dataPort.to_numpy()
             kappa_vals = raw_dataPort[:, col_kappa]
-            kappa_sum = np.sum(np.abs(kappa_vals), axis=1)
+            kappa_sum = np.sum(np.abs(kappa_vals), axis=1) * 1e9
         except Exception as e:
             kappa_sum = np.full(len(raw_dataE), np.nan)
 
@@ -725,7 +727,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             else:
                 p = participations[eig_num]
                 lines = [
-                    rf"f = {f_ghz:.3f} GHz   Q = {p['Q']:.0f}   $\kappa$ = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz",
+                    rf"f = {f_ghz:.3f} GHz   Q = {p['Q']:.0f}   $\kappa$ = {mode_dict['kappa'][eig_num] * 1e-6:.3f} MHz",
                     rf"$p_{{MS}}$ = {p['MS']['p']:.2e}   $p_{{MA}}$ = {p['MA']['p']:.2e}   $p_{{SA}}$ = {p['SA']['p']:.2e}",
                 ]
             text = "\n".join(lines)
