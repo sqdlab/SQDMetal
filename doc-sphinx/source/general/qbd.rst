@@ -63,6 +63,8 @@ This represents a simple parallel LC circuit. The class can be instantiated by p
     resonator2 = ResonatorLC(f0=7.25e9, C=1e-12)
     resonator3 = ResonatorLC(L=1e-9, C=1e-12)
 
+Because the circuit is a parallel LC, ``get_res_capacitance()`` returns the stored capacitance :math:`C` and ``get_res_inductance()`` returns the stored inductance :math:`L`; ``get_res_impedance()`` returns the characteristic impedance :math:`\sqrt{L/C}`. If all three parameters are supplied they must satisfy :math:`2\pi f_0 = 1/\sqrt{LC}` (relative tolerance :math:`10^{-12}`), otherwise an assertion is raised.
+
 
 Qubit types
 -----------

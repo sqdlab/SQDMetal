@@ -89,6 +89,19 @@ class ResonatorQuarterWave(ResonatorBase):
         return self.shorted
 
 class ResonatorLC(ResonatorBase):
+    '''
+    Lumped-element parallel LC resonator.
+
+    Supply any two of the resonant frequency ``f0`` (in Hertz), the inductance
+    ``L`` (in Henry) and the capacitance ``C`` (in Farad); the third is derived
+    from ``f0 = 1/(2*pi*sqrt(L*C))``. The equivalent circuit is a parallel LC,
+    so the reported capacitance and inductance are the stored ``C`` and ``L``.
+
+    Args:
+        f0 (float, optional): Resonant frequency in Hertz.
+        L (float, optional): Inductance in Henry.
+        C (float, optional): Capacitance in Farad.
+    '''
     def __init__(self, f0=None, L=None, C=None):
         if f0 is None:
             assert L is not None and C is not None, "Must supply L and C if omitting f0."
@@ -106,25 +119,21 @@ class ResonatorLC(ResonatorBase):
             self.L = L
             self.C = 1/((2*np.pi*f0)**2 * L)
         else:
-            assert np.abs(2*np.pi*f0 - 1/np.sqrt(L*C)) < 1e-9, "System overconstrained. Just supply 2 of L, C and F0..."
+            assert np.isclose(2*np.pi*f0, 1/np.sqrt(L*C), rtol=1e-12, atol=0), "System overconstrained. Just supply 2 of L, C and F0..."
+            self.f0 = f0
+            self.L = L
+            self.C = C
     
     def get_res_capacitance(self):
-        if self.shorted:
-            #Equivalent to a PARALLEL RLC
-            return np.pi/(4 * self.Zr * 2*np.pi*self.f0)
-        else:
-            #Equivalent to a SERIES RLC
-            return 4/(np.pi * self.Zr * 2*np.pi*self.f0)
+        #Parallel LC: the equivalent capacitance is the stored capacitance
+        return self.C
     
     def get_res_inductance(self):
-        if self.shorted:
-            #Equivalent to a PARALLEL RLC
-            return (4*self.Zr)/(np.pi * 2*np.pi*self.f0)
-        else:
-            #Equivalent to a SERIES RLC
-            return (self.Zr*np.pi)/(4 * 2*np.pi*self.f0)
+        #Parallel LC: the equivalent inductance is the stored inductance
+        return self.L
     
     def get_res_impedance(self):
+        #Characteristic impedance of the parallel LC tank
         return np.sqrt(self.L/self.C)
     
     def get_res_frequency(self):
