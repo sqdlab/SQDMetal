@@ -6,6 +6,7 @@ The Palace simulation API produces ``.pvd`` and ``.vtu`` files corresponding to 
 .. code-block:: python
 
     from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
+    import numpy as np
 
     data_path = 'output_example/paraview/eigenmode/eigenmode.pvd'
 
