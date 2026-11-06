@@ -240,7 +240,7 @@ class XmonDesigner(TransmonBase):
             return abs(self._chi_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], fres, Cres, Lres) / x[mps['chi']] - 1) + abs(self.EJonEC(self._eff_CJ(x[mps['C_J']],x[mps['C_g']], Cres), x[mps['fQubit']]) / x[mps['Ej/Ec']] - 1)
 
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='TNC', tol=1e-5)
-        x = sol.x
+        x = sol.x.copy()
 
 
         g = self._g_hertz(x[mps['C_g']], x[mps['C_J']], x[mps['fQubit']], Cres, Lres)
@@ -252,7 +252,7 @@ class XmonDesigner(TransmonBase):
 
         sigfigs = 5
 
-        print(f"Cost Function Error: {func(x)/2*100}%")
+        print(f"Cost Function Error: {sol.fun/2*100}%")
         self.resonator.print()
         print("Qubit:")
         print(f"\tFrequency: {GenUtilities.add_units(sol.x[0],sigfigs)}Hz")
@@ -309,7 +309,7 @@ class FloatingTransmonDesigner(TransmonBase):
         x0[mps['C_sigma']] = self._Csigma(*x0[1:6])
         x0[mps['beta']] = self._beta(*x0[1:6])
         sol = scipy.optimize.minimize(func, x0, bounds=constrs, method='Nelder-Mead')
-        x = sol.x
+        x = sol.x.copy()
 
         g = self._g_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], Cres, Lres)
         chi = self._chi_hertz(self._eff_Cg(*sol.x[1:5]), self._eff_Cq(*sol.x[1:5])+sol.x[5], sol.x[0], fres, Cres, Lres)
@@ -320,7 +320,7 @@ class FloatingTransmonDesigner(TransmonBase):
         x[mps['Ej/Ec']] = self.EJonEC(self._eff_CJ(self._eff_Cq(*x[1:5])+x[5], self._eff_Cg(*x[1:5]), Cres), x[mps['fQubit']])
 
         sigfigs = 5
-        cost_err = func(sol.x)/2*100
+        cost_err = sol.fun/2*100
         if print_results:
             print(f"Cost Function Error: {cost_err}%")
             self.resonator.print()
@@ -340,7 +340,7 @@ class FloatingTransmonDesigner(TransmonBase):
             print(f"\tbeta: {GenUtilities.add_units(x[mps['beta']],sigfigs, True)}" + self.chk_constr_resp('beta', x,constrs,mps))
 
         results = {
-            "cost_error_%": {cost_err},
+            "cost_error_%": cost_err,
             "fQubit_Hz": x[mps["fQubit"]],
             "anh_Hz": anh,
             "g_Hz": g,
