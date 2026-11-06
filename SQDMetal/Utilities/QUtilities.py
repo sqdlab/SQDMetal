@@ -72,6 +72,10 @@ class QUtilities:
             - fm → 1e-15 m
             - m  → 1 m (base unit)
 
+        The single-character ``m`` suffix is only accepted when the text left
+        after removing it is numeric: ``"5m"`` is 5 metres, whereas an
+        unsupported unit such as ``"5cm"`` is returned unchanged.
+
         Parameters
         ----------
             strVal : str | float | int
@@ -105,7 +109,10 @@ class QUtilities:
         elif strVal[-2:] == "fm":
             return float(strVal[:-2] + "e-15")
         elif strVal[-1:] == "m":
-            return float(strVal[:-2])
+            try:
+                return float(strVal[:-1])
+            except ValueError:
+                return strVal
         else:
             assert len(strVal) > 1, f"Length '{strVal}' is invalid."
             return strVal
