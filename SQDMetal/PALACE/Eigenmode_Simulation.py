@@ -354,7 +354,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         Parameters
         ----------
         modes_to_compare : list 
-            Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].
+            One-based modes to report, in the requested order; empty selects all modes.
+            Lamb shifts retain contributions from all simulated modes.
         print_output : bool 
             (defaults to True) print out the results of the EPR calculations.
 
@@ -511,7 +512,8 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         config_json_path : str 
             Path for the json configuration file e.g. ``'C:\Two_Transmon\Two_Transmon.json'``.
         modes_to_compare : list 
-            Choose the modes which are to be compared, e.g. modes_to_compare = [1,3].
+            One-based modes to report, in the requested order; empty selects all modes.
+            Lamb shifts retain contributions from all simulated modes.
         print_output : bool 
             (defaults to True) print out the results of the EPR calculations.
 
@@ -555,25 +557,16 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         modes_to_compare = np.array(modes_to_compare) #cast to array
         if modes_to_compare.size == 0:
             modes_to_compare = modes
-        modes_to_delete = np.setdiff1d(modes, modes_to_compare)
-
-        #update number of modes left for comparison
-        num_of_modes = num_of_modes - modes_to_delete.size
-
         #create labels for the modes
         dataframe_label_mode = []
-        for i, mode in enumerate(modes_to_compare):
+        for i, mode in enumerate(modes):
             dataframe_label_mode.append("mode_" + str(mode))
+        selected_labels = ["mode_" + str(mode) for mode in modes_to_compare]
 
         dataframe_label_junc = []
         for i in range(num_of_junctions):
             dataframe_label_junc.append("jj_" + str(i+1))
 
-        #delete modes not wanted from participation ratio and frequency vectors
-        if modes_to_delete.size > 0:
-            for i,mode in enumerate(modes_to_delete):
-                participation_ratios = np.delete(participation_ratios, (modes_to_delete[i] - (i+1)), axis=0)
-                frequencies = np.delete(frequencies, (modes_to_delete[i] - (i+1)), axis=0)
 
         #participation ratio matrix - dimension (num_of_modes, num_of_junctions)
         P = np.matrix(np.abs(participation_ratios))
@@ -626,12 +619,12 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             print(*args, **kwargs)             # normal notebook output
             print(*args, **kwargs, file=output_buffer)  # captured copy
 
-        freq_df = pd.DataFrame(frequencies / 1e9, dataframe_label_mode, ['Freq (GHz)'])
-        freq_renorm_df = pd.DataFrame(renormalised_freqs, dataframe_label_mode, ['Freq (GHz)'])
-        ratios_df = pd.DataFrame(np.abs(participation_ratios), dataframe_label_mode, dataframe_label_junc)
-        chi_anharm_df = pd.DataFrame(chi_anharm, dataframe_label_mode, dataframe_label_mode)
-        lamb_shift_df = pd.DataFrame(lamb_shift_freq, dataframe_label_mode, ['Lamb Shift (MHz)'])
-        delta_df = pd.DataFrame(delta_freq, dataframe_label_mode, dataframe_label_mode)
+        freq_df = pd.DataFrame(frequencies / 1e9, dataframe_label_mode, ['Freq (GHz)']).loc[selected_labels]
+        freq_renorm_df = pd.DataFrame(renormalised_freqs, dataframe_label_mode, ['Freq (GHz)']).loc[selected_labels]
+        ratios_df = pd.DataFrame(np.abs(participation_ratios), dataframe_label_mode, dataframe_label_junc).loc[selected_labels]
+        chi_anharm_df = pd.DataFrame(chi_anharm, dataframe_label_mode, dataframe_label_mode).loc[selected_labels, selected_labels]
+        lamb_shift_df = pd.DataFrame(lamb_shift_freq, dataframe_label_mode, ['Lamb Shift (MHz)']).loc[selected_labels]
+        delta_df = pd.DataFrame(delta_freq, dataframe_label_mode, dataframe_label_mode).loc[selected_labels, selected_labels]
         if print_output:
             dual_print('Simulation Mode Frequencies:')
             dual_print(freq_df)
