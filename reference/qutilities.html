@@ -697,6 +697,9 @@ factor. It returns the length expressed in meters.</p>
 </ul>
 </dd>
 </dl>
+<p>The single-character <code class="docutils literal notranslate"><span class="pre">m</span></code> suffix is only accepted when the text left
+after removing it is numeric: <code class="docutils literal notranslate"><span class="pre">&quot;5m&quot;</span></code> is 5 metres, whereas an
+unsupported unit such as <code class="docutils literal notranslate"><span class="pre">&quot;5cm&quot;</span></code> is returned unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>strVal</strong> (<em>str</em><em> | </em><em>float</em><em> | </em><em>int</em>) – Length value to parse. May be a string with units or a raw numeric value.</p>
