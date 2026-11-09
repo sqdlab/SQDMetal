@@ -242,6 +242,20 @@
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ResonatorLC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#SQDMetal.Utilities.QubitDesigner.ResonatorBase" title="SQDMetal.Utilities.QubitDesigner.ResonatorBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResonatorBase</span></code></a></p>
+<p>Lumped-element parallel LC resonator.</p>
+<p>Supply any two of the resonant frequency <code class="docutils literal notranslate"><span class="pre">f0</span></code> (in Hertz), the inductance
+<code class="docutils literal notranslate"><span class="pre">L</span></code> (in Henry) and the capacitance <code class="docutils literal notranslate"><span class="pre">C</span></code> (in Farad); the third is derived
+from <code class="docutils literal notranslate"><span class="pre">f0</span> <span class="pre">=</span> <span class="pre">1/(2*pi*sqrt(L*C))</span></code>. The equivalent circuit is a parallel LC,
+so the reported capacitance and inductance are the stored <code class="docutils literal notranslate"><span class="pre">C</span></code> and <code class="docutils literal notranslate"><span class="pre">L</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>f0</strong> (<em>float</em><em>, </em><em>optional</em>) – Resonant frequency in Hertz.</p></li>
+<li><p><strong>L</strong> (<em>float</em><em>, </em><em>optional</em>) – Inductance in Henry.</p></li>
+<li><p><strong>C</strong> (<em>float</em><em>, </em><em>optional</em>) – Capacitance in Farad.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_capacitance">
 <span class="sig-name descname"><span class="pre">get_res_capacitance</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.ResonatorLC.get_res_capacitance" title="Link to this definition"></a></dt>
