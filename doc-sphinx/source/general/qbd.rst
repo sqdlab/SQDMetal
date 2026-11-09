@@ -77,6 +77,8 @@ The qubit designer classes all implement an ``optimise`` function:
 
 The function prints a list of the qubit parameters (e.g. :math:`g`, :math:`\chi`, anharmonicity etc.).
 
+The reported cost evaluates the original optimisation targets, not the derived values substituted into the human-readable report. Fully fixed designs are supported even when the optimiser returns a read-only solution array. ``FloatingTransmonDesigner.optimise`` also returns a dictionary of numeric results; ``cost_error_%`` is a scalar percentage, and ``print_results=False`` disables its report without changing those results.
+
 XmonDesigner
 ~~~~~~~~~~~~
 
