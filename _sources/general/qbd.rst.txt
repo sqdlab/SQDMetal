@@ -69,6 +69,13 @@ Because the circuit is a parallel LC, ``get_res_capacitance()`` returns the stor
 Qubit types
 -----------
 
+The ``Ej/Ec`` constraint and reported ratio refer to Josephson energy divided by
+charging energy, with :math:`E_C=e^2/(2C_\mathrm{eff})`. They use the leading-order
+transmon relation :math:`hf_{01}=\sqrt{8E_JE_C}-E_C`, inverted as
+:math:`E_J/E_C=(hf_{01}/E_C+1)^2/8`. This approximation is intended for the
+transmon regime :math:`E_J/E_C\gg1`, not an exact charge-basis Hamiltonian solution.
+See `Koch et al. (2007) <https://arxiv.org/abs/cond-mat/0703002>`_.
+
 The qubit designer classes all implement an ``optimise`` function:
 
 - The function takes up a dictionary of parameters pertaining to that qubit type

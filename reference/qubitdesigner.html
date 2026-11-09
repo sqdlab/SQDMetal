@@ -321,7 +321,10 @@ so the reported capacitance and inductance are the stored <code class="docutils 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.EJonEC">
 <span class="sig-name descname"><span class="pre">EJonEC</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">CJeff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fQubitHertz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QubitDesigner.TransmonBase.EJonEC" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Return EJ/EC in the leading-order transmon approximation.</p>
+<p>Invert h*f01 = sqrt(8*EJ*EC) - EC with EC = e**2/(2*CJeff).
+This is not an exact charge-basis Hamiltonian solution.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QubitDesigner.TransmonBase.chk_constr_resp">
