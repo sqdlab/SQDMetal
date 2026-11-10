@@ -565,7 +565,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         # Compute charging energy E_C
         E_C_J = e**2 / (2 * C_sigma)
         E_C_GHz = E_C_J / h / 1e9
-        if (res is not None) and (num_conductors >= 4):
+        if res is not None and num_conductors >= 4:
             f_r_Hz = res.get_res_frequency()
             Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
         else:
