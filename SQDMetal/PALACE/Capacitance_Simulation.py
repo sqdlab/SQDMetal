@@ -421,8 +421,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         res : SQDMetal.Utilities.QubitDesigner.ResonatorBase
             (Defaults to None) A resonator object (:class:`~SQDMetal.Utilities.QubitDesigner.ResonatorBase`) is used 
             for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).
-        capacitance_matrix : np.ndarray
+        capacitance_matrix : np.ndarray or pd.DataFrame
             (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.
+            A leading Palace terminal-index column is accepted.
         conductor_indeces : dict
             (Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix. 
                 If None, the defaults are set to: ``{ 'ground': 0, 'pad1': 1, 'pad2': 2, 'res': 3, 'feed': 4 }``
@@ -437,6 +438,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         -------
         params : dict
             Dictionary containing calculated parameters. Some entries may be "N/A" for the provided capacitance matrix.
+            The returned ``f_q_GHz`` is None when no qubit frequency is supplied;
+            ``kappa_MHz`` and ``T1,p_ms`` are None when a readout and qubit
+            frequency are supplied without a feedline.
             The dictionary is of the form:
 
             Energies and key circuit parameters:
@@ -500,7 +504,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         if capacitance_matrix is None:
             raw_data = pd.read_csv(directory + '/terminal-C.csv')
             capacitance_matrix = raw_data
-        capMat = capacitance_matrix.values
+        capMat = np.asarray(capacitance_matrix)
         if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
             capMat = capMat[:, 1:]
         # detect number of conductors
@@ -561,6 +565,14 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         # Compute charging energy E_C
         E_C_J = e**2 / (2 * C_sigma)
         E_C_GHz = E_C_J / h / 1e9
+        if res is not None and num_conductors >= 4:
+            f_r_Hz = res.get_res_frequency()
+            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
+        else:
+            Cres, Lres = 0, 0
+        if num_conductors >= 5:
+            C_c = C_rf  # res-feedline mutual capacitance
+
         # Calculate qubit parameters (if possible)
         if (res is not None) and (num_conductors >= 4) and (qubit_freq is not None):
             # Use qubit calculator for chi, g, Delta etc.
@@ -582,12 +594,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             chi_MHz = -params['chi_Hz'] * 1e-6
             Delta_GHz = params['Delta_Hz'] * 1e-9
             anh_MHz = params['anh_Hz'] * 1e-6
-            f_r_Hz = res.get_res_frequency() # Hz
-            Cres, Lres = res.get_res_capacitance(), res.get_res_inductance()
             # Calculate kappa, Purcell decay (if applicable)
             if num_conductors >= 5:
                 C_r = C_rg + C_rp1 + C_rp2 # res capacitance (except feedline)
-                C_c = C_rf # res-feedline mutual capacitance
                 # External quality factor and linewidth (frequency units)
                 Q_c = C_r / (2 * np.pi * f_r_Hz * Z0_feedline * C_c**2)
                 kappa_MHz = f_r_Hz / Q_c * 1e-6
@@ -601,8 +610,6 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             chi_MHz = 0
             Delta_GHz = 0
             anh_MHz = 0
-            Cres = 0
-            Lres = 0
             kappa_MHz = 0
             T1p_ms = 0
         
@@ -648,7 +655,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
         print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
-        if kappa_MHz != 'N/A':
+        if kappa_MHz is not None:
             print(f"{'kappa':<16s} = {kappa_MHz:>10.3f} MHz")
             print(f"{'T_1,P':<16s} = {T1p_ms:>10.3f} ms")
         print()
@@ -669,7 +676,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
             "chi_MHz": chi_MHz,
             "Delta_GHz": Delta_GHz,
             "anh_MHz": anh_MHz,
-            "f_q_GHz": qubit_freq * 1e-9,
+            "f_q_GHz": qubit_freq * 1e-9 if qubit_freq is not None else None,
             "kappa_MHz": kappa_MHz,
             "T1,p_ms": T1p_ms,
 
@@ -727,8 +734,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         res : SQDMetal.Utilities.QubitDesigner.ResonatorBase
             (Defaults to None) A resonator object (:class:`~SQDMetal.Utilities.QubitDesigner.ResonatorBase`) is used 
             for the calculation of resonator-related parameters (resonator linewidth, dispersive shift, detuning etc.).
-        capacitance_matrix : np.ndarray
+        capacitance_matrix : np.ndarray or pd.DataFrame
             (Defaults to None) Simulated capacitance matrix. If None, fetches from the supplied directory.
+            A leading Palace terminal-index column is accepted.
         conductor_indeces : dict
             (Defaults to None) Dictionary containing indeces for the conductors corresponding to each index in the capacitance_matrix. 
                 If None, the defaults are set to: ``{ 'ground': 0, 'pad1': 1, 'pad2': 2, 'pad 3': 3, 'pad 4': 4 }``
@@ -827,7 +835,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         if capacitance_matrix is None:
             raw_data = pd.read_csv(directory + '/terminal-C.csv')
             capacitance_matrix = raw_data
-        capMat = capacitance_matrix.values
+        capMat = np.asarray(capacitance_matrix)
         if np.allclose(capMat[:,0], np.arange(1, capMat.shape[0]+1)):
             capMat = capMat[:, 1:]
         # detect number of conductors
