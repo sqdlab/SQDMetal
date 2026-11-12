@@ -571,7 +571,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         else:
             Cres, Lres = 0, 0
         if num_conductors >= 5:
-            C_c = C_rf
+            C_c = C_rf  # res-feedline mutual capacitance
 
         # Calculate qubit parameters (if possible)
         if (res is not None) and (num_conductors >= 4) and (qubit_freq is not None):
