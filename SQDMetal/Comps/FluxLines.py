@@ -70,7 +70,8 @@ class FluxLineTPin(QComponent):
                            trace_gap='20um',
                            pin_align_right=True,
                            orientation=0,
-                           offset_y_pin = '0um')
+                           offset_y_pin = '0um',
+                           offset_x_pin = '0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -129,7 +130,7 @@ class FluxLineTPin(QComponent):
         polys = [pad_T, pad_gap, pin, pin2]
         polys = draw.rotate(polys, rot_angle, origin=(0, 0), use_radians=True)
         polys = draw.translate(polys, *ptJoint)
-        polys = draw.translate(polys, xoff=0, yoff=p.offset_y_pin)
+        polys = draw.translate(polys, xoff=p.offset_x_pin, yoff=p.offset_y_pin)
         [pad_T, pad_gap, pin, pin2] = polys
 
 
