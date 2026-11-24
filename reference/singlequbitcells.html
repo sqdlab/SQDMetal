@@ -1,0 +1,442 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Single Qubit Cells &mdash; SQDMetal  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Qubit Designer" href="qubitdesigner.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            SQDMetal
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Simulations</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Worked examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simpalace.html">Simulations using Palace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../simulations/simcomsol.html">Simulations using COMSOL</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Helper utility modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../general/pvd.html">Accounting for shadow evaporation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/gds.html">GDS Exporter and Manipulator</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/qbd.html">Qubit Designer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../general/fcm.html">Full Chip Maker</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Custom components</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../comps/Comps_All.html">Component gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../comps/convention.html">Component naming convention</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">API reference</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#components-from-sqdmetal">Components from SQDMetal</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#simulations-using-aws-palace">Simulations using AWS Palace</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#useful-utilities">Useful Utilities</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="qutilities.html">QUtilities</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utilitygds.html">MakeGDS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="utilitymgds.html">ManipulateGDS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="qubitdesigner.html">Qubit Designer</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Single Qubit Cells</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells"><code class="docutils literal notranslate"><span class="pre">SingleQubitCells</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.DEFAULT_MESH"><code class="docutils literal notranslate"><span class="pre">DEFAULT_MESH</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_COLOURS"><code class="docutils literal notranslate"><span class="pre">ROLE_COLOURS</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_LABELS"><code class="docutils literal notranslate"><span class="pre">ROLE_LABELS</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.cell"><code class="docutils literal notranslate"><span class="pre">cell()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.check_geometry"><code class="docutils literal notranslate"><span class="pre">check_geometry()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.components"><code class="docutils literal notranslate"><span class="pre">components()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.corrected_design_frequency"><code class="docutils literal notranslate"><span class="pre">corrected_design_frequency()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.design_from_notebook"><code class="docutils literal notranslate"><span class="pre">design_from_notebook()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode"><code class="docutils literal notranslate"><span class="pre">eigenmode()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode_results"><code class="docutils literal notranslate"><span class="pre">eigenmode_results()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fingerprint"><code class="docutils literal notranslate"><span class="pre">fingerprint()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fit_resonator_capacitance"><code class="docutils literal notranslate"><span class="pre">fit_resonator_capacitance()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fitted_capacitance_fF"><code class="docutils literal notranslate"><span class="pre">fitted_capacitance_fF()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ground_contact"><code class="docutils literal notranslate"><span class="pre">ground_contact()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.identify_conductors"><code class="docutils literal notranslate"><span class="pre">identify_conductors()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.junction_for"><code class="docutils literal notranslate"><span class="pre">junction_for()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.metal_geom"><code class="docutils literal notranslate"><span class="pre">metal_geom()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.params"><code class="docutils literal notranslate"><span class="pre">params()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.plot_conductors"><code class="docutils literal notranslate"><span class="pre">plot_conductors()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.predict_resonator"><code class="docutils literal notranslate"><span class="pre">predict_resonator()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_names"><code class="docutils literal notranslate"><span class="pre">qubit_names()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_pull_GHz"><code class="docutils literal notranslate"><span class="pre">qubit_pull_GHz()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_calibration"><code class="docutils literal notranslate"><span class="pre">resonator_calibration()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_capacitance_fF"><code class="docutils literal notranslate"><span class="pre">resonator_capacitance_fF()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_for"><code class="docutils literal notranslate"><span class="pre">resonator_length_for()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_mm"><code class="docutils literal notranslate"><span class="pre">resonator_length_mm()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.simulate"><code class="docutils literal notranslate"><span class="pre">simulate()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.to_catalogue"><code class="docutils literal notranslate"><span class="pre">to_catalogue()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.transmon_levels"><code class="docutils literal notranslate"><span class="pre">transmon_levels()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">SQDMetal</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">API Reference</a></li>
+      <li class="breadcrumb-item active">Single Qubit Cells</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/reference/singlequbitcells.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-SQDMetal.Utilities.SingleQubitCells">
+<span id="single-qubit-cells"></span><span id="utilities-sqcells"></span><h1>Single Qubit Cells<a class="headerlink" href="#module-SQDMetal.Utilities.SingleQubitCells" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">SingleQubitCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feedline|LP_'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feedline_stub</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'500um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_margin_mm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cell'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Single-qubit capacitance simulations built from a full chip design.</p>
+<p>For each qubit, every component linked to it through <code class="docutils literal notranslate"><span class="pre">pin_inputs</span></code> (e.g. readout meander and coupling tee)
+is copied into a small design with the same class and a deep copy of the chip’s options, so the cell
+cannot drift from the chip. Open-ended feedline stubs are added to coupling tees
+(<code class="docutils literal notranslate"><span class="pre">CoupledLineTee</span></code>), and the copied geometry is checked against the chip.</p>
+<p>Capacitance-matrix conductors are identified by geometry (ground / pad1 / pad2 / res / feed), because
+the order Palace receives depends on where the shapes sit rather than on the order components were
+created. Each simulation saves <code class="docutils literal notranslate"><span class="pre">conductors.png</span></code> showing the mapping.</p>
+<p>Typical use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cells</span> <span class="o">=</span> <span class="n">SingleQubitCells</span><span class="p">(</span><span class="n">design</span><span class="p">,</span> <span class="s2">"sims"</span><span class="p">,</span> <span class="n">user_options</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">palace_dir</span><span class="o">=</span><span class="s2">"..."</span><span class="p">,</span> <span class="n">num_cpus</span><span class="o">=</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">rec</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="s2">"Q1"</span><span class="p">)</span>                       <span class="c1"># meshes, runs Palace (cached), saves conductors.png</span>
+<span class="n">p</span> <span class="o">=</span> <span class="n">cells</span><span class="o">.</span><span class="n">params</span><span class="p">(</span><span class="s2">"Q1"</span><span class="p">,</span> <span class="n">f_q_GHz</span><span class="o">=</span><span class="mf">5.0</span><span class="p">,</span> <span class="n">f_r_GHz</span><span class="o">=</span><span class="mf">7.0</span><span class="p">)</span> <span class="c1"># calc_params_floating_Transmon_from_files output</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>design</strong> (<em>QDesign</em>) – The full chip design (already built).</p></li>
+<li><p><strong>sim_dir</strong> (<em>str</em><em> or </em><em>Path</em>) – Folder holding one sub-folder per simulated cell.</p></li>
+<li><p><strong>user_options</strong> (<em>dict</em>) – Palace <code class="docutils literal notranslate"><span class="pre">user_options</span></code> (palace_dir, num_cpus, solver_order, …).</p></li>
+<li><p><strong>mesh</strong> (<em>dict</em><em>, </em><em>optional</em>) – Keyword arguments for <code class="docutils literal notranslate"><span class="pre">fine_mesh_components</span></code> (min_size, max_size, …), in metres.</p></li>
+<li><p><strong>exclude</strong> (<em>str</em>) – Regex of component names never pulled into a cell (e.g. a feedline shared by all qubits).</p></li>
+<li><p><strong>feedline_stub</strong> (<em>str</em>) – Length of the open-ended feedline kept either side of each coupling tee.</p></li>
+<li><p><strong>chip_margin_mm</strong> (<em>float</em>) – Substrate margin around the cell.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Prefix for simulation folder names (<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;label&gt;_cap</span></code>).</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – If False, build/meshing printouts are suppressed (Palace’s own output is not).</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.DEFAULT_MESH">
+<span class="sig-name descname"><span class="pre">DEFAULT_MESH</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'max_size':</span> <span class="pre">0.00025,</span> <span class="pre">'mesh_sampling':</span> <span class="pre">160,</span> <span class="pre">'min_size':</span> <span class="pre">1e-05,</span> <span class="pre">'taper_dist_max':</span> <span class="pre">0.00025,</span> <span class="pre">'taper_dist_min':</span> <span class="pre">1.2e-05}</span></span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.DEFAULT_MESH" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_COLOURS">
+<span class="sig-name descname"><span class="pre">ROLE_COLOURS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'feed':</span> <span class="pre">'#30638e',</span> <span class="pre">'ground':</span> <span class="pre">'#c9d3e0',</span> <span class="pre">'pad1':</span> <span class="pre">'#d1495b',</span> <span class="pre">'pad2':</span> <span class="pre">'#edae49',</span> <span class="pre">'res':</span> <span class="pre">'#00798c'}</span></span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_COLOURS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_LABELS">
+<span class="sig-name descname"><span class="pre">ROLE_LABELS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'feed':</span> <span class="pre">'feedline',</span> <span class="pre">'ground':</span> <span class="pre">'ground',</span> <span class="pre">'pad1':</span> <span class="pre">'pad</span> <span class="pre">1</span> <span class="pre">(readout</span> <span class="pre">side)',</span> <span class="pre">'pad2':</span> <span class="pre">'pad</span> <span class="pre">2',</span> <span class="pre">'res':</span> <span class="pre">'readout</span> <span class="pre">resonator'}</span></span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ROLE_LABELS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.cell">
+<span class="sig-name descname"><span class="pre">cell</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.cell" title="Link to this definition"></a></dt>
+<dd><p>The cell for <code class="docutils literal notranslate"><span class="pre">qubit</span></code>: Dict(design, components, stubs, geometry_difference_mm2). Built once and
+checked against the full chip (raises if any copied component’s geometry differs).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.check_geometry">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">check_geometry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol_mm2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-09</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.check_geometry" title="Link to this definition"></a></dt>
+<dd><p>Largest symmetric-difference area (design units^2) between <code class="docutils literal notranslate"><span class="pre">full</span></code> and <code class="docutils literal notranslate"><span class="pre">sub</span></code> for each of
+<code class="docutils literal notranslate"><span class="pre">names</span></code> (metal and cut-outs). Raises AssertionError above <code class="docutils literal notranslate"><span class="pre">tol_mm2</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.components">
+<span class="sig-name descname"><span class="pre">components</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.components" title="Link to this definition"></a></dt>
+<dd><p>Components linked to <code class="docutils literal notranslate"><span class="pre">qubit</span></code> through <code class="docutils literal notranslate"><span class="pre">pin_inputs</span></code> (either direction) on <code class="docutils literal notranslate"><span class="pre">layer</span></code>, in the
+design’s creation order. Raises if the cell reaches another qubit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.corrected_design_frequency">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">corrected_design_frequency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_target_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_design_used_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_predicted_GHz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.corrected_design_frequency" title="Link to this definition"></a></dt>
+<dd><p>Frequency to pass to the chip builder so the resonator lands on <code class="docutils literal notranslate"><span class="pre">f_target_GHz</span></code>: the builder’s length
+scales as 1 / f_design and f_predicted ~ f_design locally, so
+f_design_new = f_target * f_design_used / f_predicted (one step is exact to first order; re-simulate
+the capacitance once to confirm).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.design_from_notebook">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">design_from_notebook</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stop_marker</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.design_from_notebook" title="Link to this definition"></a></dt>
+<dd><p>Runs a design notebook’s code cells (lines starting with % or ! skipped) up to and including the
+first cell containing <code class="docutils literal notranslate"><span class="pre">stop_marker</span></code>, in the notebook’s folder, and returns its namespace (e.g.
+<code class="docutils literal notranslate"><span class="pre">ns['design']</span></code>). Keeps the chip notebook as the single source of truth for its options.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode">
+<span class="sig-name descname"><span class="pre">eigenmode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L_J_nH</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kinetic_inductance_pH_sq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_freq_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_J_fF</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_r_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epr_interfaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_rerun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode" title="Link to this definition"></a></dt>
+<dd><p>Eigenmode simulation of the cell of <code class="docutils literal notranslate"><span class="pre">qubit</span></code> with the junction as a lumped inductor <code class="docutils literal notranslate"><span class="pre">L_J_nH</span></code>,
+50 Ohm ports at the ends of the feedline stubs (so the resonator and qubit are loaded as on the
+chip) and, if <code class="docutils literal notranslate"><span class="pre">kinetic_inductance_pH_sq</span></code> &gt; 0, a kinetic sheet inductance (pH/square) on all metal.
+Results are reused when the cell, junction, kinetic inductance and solver settings are unchanged.</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>start_freq_GHz, n_modes - the solver finds <code class="docutils literal notranslate"><span class="pre">n_modes</span></code> modes above <code class="docutils literal notranslate"><span class="pre">start_freq_GHz</span></code></p></li>
+<li><p>f_r_GHz        - expected (bare) resonator frequency, used only to pick the resonator mode</p></li>
+<li><p>epr_interfaces - also compute surface participations (Si-vacuum, Si-Al, Al-vacuum)</p></li>
+<li><p>mesh, user_options - override this object’s mesh / Palace settings for this run</p></li>
+</ul>
+</dd>
+</dl>
+<p>Returns a dict: modes (DataFrame: f_GHz, Q, kappa_MHz, EPR_JJ per mode), qubit_mode / resonator_mode
+(1-based), summary (dressed f_q and f_r, anharmonicity, cross-Kerr chi_qr, kappa_r, T1 limits),
+epr (the full output of calculate_hamiltonian_parameters_EPR), output_dir and status.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode_results">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">eigenmode_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_r_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.eigenmode_results" title="Link to this definition"></a></dt>
+<dd><p>Reads an eigenmode simulation folder (made by eigenmode()): mode table, EPR Hamiltonian
+parameters and a summary for the qubit mode (largest junction participation unless given) and the
+resonator mode (nearest <code class="docutils literal notranslate"><span class="pre">f_r_GHz</span></code> if given, else the other mode with the most junction
+participation).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fingerprint">
+<span class="sig-name descname"><span class="pre">fingerprint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fingerprint" title="Link to this definition"></a></dt>
+<dd><p>Short hash of the layer-1 geometry that sets <code class="docutils literal notranslate"><span class="pre">qubit</span></code>’s capacitances: the class and options
+of every component in its cell (the junction, on another layer, is not included). Store it with
+simulation results to tell later whether the chip’s geometry has changed since.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fit_resonator_capacitance">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fit_resonator_capacitance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">length_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_res_fF</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fit_resonator_capacitance" title="Link to this definition"></a></dt>
+<dd><p>Straight-line fit C = C’ l + C_0 of simulated resonator capacitances against resonator length.</p>
+<p>The capacitance of one meshed resonator scatters by about 1 % from mesh to mesh (enough to move its
+frequency by tens of MHz), while C’ (the line) and C_0 (end loading, nearly the same for every resonator
+of a chip) are smooth. Fitting all simulated resonators averages the mesh scatter out. Returns a dict with
+<code class="docutils literal notranslate"><span class="pre">C_per_mm_fF</span></code>, <code class="docutils literal notranslate"><span class="pre">C0_fF</span></code>, <code class="docutils literal notranslate"><span class="pre">rms_pct</span></code> (scatter of the points about the fit) and <code class="docutils literal notranslate"><span class="pre">n</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fitted_capacitance_fF">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">fitted_capacitance_fF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_mm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.fitted_capacitance_fF" title="Link to this definition"></a></dt>
+<dd><p>Resonator capacitance (fF) at <code class="docutils literal notranslate"><span class="pre">length_mm</span></code> from a <code class="docutils literal notranslate"><span class="pre">fit_resonator_capacitance</span></code> fit.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ground_contact">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ground_contact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">component</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillet_resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">12</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.ground_contact" title="Link to this definition"></a></dt>
+<dd><p>Point (x, y) where <code class="docutils literal notranslate"><span class="pre">component</span></code>’s rendered (filleted) metal touches the ground plane, or None.
+The ground plane is the chip minus every rendered cut-out, as built for simulation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.identify_conductors">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">identify_conductors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stubs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">terminals</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.identify_conductors" title="Link to this definition"></a></dt>
+<dd><p>Maps capacitance-matrix indices (order of <code class="docutils literal notranslate"><span class="pre">terminals</span></code>, i.e. <code class="docutils literal notranslate"><span class="pre">sim._cur_cap_terminals</span></code>) to
+roles by geometry: ground (largest), res (nearest the <code class="docutils literal notranslate"><span class="pre">resonator</span></code> component), feed (nearest the
+first feedline stub) and pad1/pad2 (the remaining conductors touching the qubit; pad1 is nearer
+the qubit’s ‘readout’ pin). <code class="docutils literal notranslate"><span class="pre">resonator</span></code> / <code class="docutils literal notranslate"><span class="pre">stubs</span></code> may be None / empty for cells without them.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.junction_for">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">junction_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f01_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E_C_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.junction_for" title="Link to this definition"></a></dt>
+<dd><p>Junction giving a transmon with charging energy <code class="docutils literal notranslate"><span class="pre">E_C_GHz</span></code> the transition frequency
+<code class="docutils literal notranslate"><span class="pre">f01_GHz</span></code>, solved numerically (charge basis, see transmon_levels) rather than with the
+asymptotic sqrt(8 E_J E_C) - E_C. Returns dict(E_J_GHz, L_J_nH, E_J_over_E_C, f01_GHz, alpha_MHz).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.metal_geom">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">metal_geom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subtract</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.metal_geom" title="Link to this definition"></a></dt>
+<dd><p>Union of a component’s geometry on <code class="docutils literal notranslate"><span class="pre">layer</span></code> (paths buffered to their width); <code class="docutils literal notranslate"><span class="pre">subtract=True</span></code>
+gives its ground-plane cut-outs instead.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.params">
+<span class="sig-name descname"><span class="pre">params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_q_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_r_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_J_fF</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_all_capacitances</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.params" title="Link to this definition"></a></dt>
+<dd><p>Circuit parameters from the simulated cell, via
+<code class="docutils literal notranslate"><span class="pre">PALACE_Capacitance_Simulation.calc_params_floating_Transmon_from_files</span></code> with the detected
+conductor indices. The resonator is <code class="docutils literal notranslate"><span class="pre">res</span></code> if given, else a half-wave resonator at <code class="docutils literal notranslate"><span class="pre">f_r_GHz</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.plot_conductors">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">plot_conductors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">terminals</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.plot_conductors" title="Link to this definition"></a></dt>
+<dd><p>Draws each conductor coloured by role, marked with its 0-based capacitance-matrix index.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.predict_resonator">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">predict_resonator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_res_fF</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pull_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.predict_resonator" title="Link to this definition"></a></dt>
+<dd><p>Resonator frequency (GHz, linear mode incl. the qubit’s pull) predicted from a
+<code class="docutils literal notranslate"><span class="pre">resonator_calibration</span></code> for a resonator of length <code class="docutils literal notranslate"><span class="pre">length_mm</span></code> and capacitance <code class="docutils literal notranslate"><span class="pre">C_res_fF</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_names">
+<span class="sig-name descname"><span class="pre">qubit_names</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_names" title="Link to this definition"></a></dt>
+<dd><p>Names of every qubit component (<code class="docutils literal notranslate"><span class="pre">BaseQubit</span></code> subclasses) in the design.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_pull_GHz">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">qubit_pull_GHz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_r_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_q_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g_MHz</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.qubit_pull_GHz" title="Link to this definition"></a></dt>
+<dd><p>Linear (normal-mode) pull of the resonator by the qubit, g^2 / (f_r - f_q), in GHz (positive when the
+resonator is above the qubit). This is the shift a linear eigenmode solve already contains.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_calibration">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">resonator_calibration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_r_eig_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_res_fF</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pull_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">info</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_calibration" title="Link to this definition"></a></dt>
+<dd><p>Calibration of all resonators of a chip from one eigenmode simulation. A lambda/2 CPW resonator of
+inductive length l and total capacitance C (line + end loading) sits at
+f = 1 / (2 sqrt(L’ l C)) = K / sqrt(l C), with K = 1 / (2 sqrt(L’)). L’ is the inductance per length
+(geometric + kinetic), the same for every resonator with this CPW and film. K is fixed from the resonator mode of an eigenmode run, with the qubit’s
+linear pull removed. Returns a dict (JSON-serialisable) with K and the inputs; extra <code class="docutils literal notranslate"><span class="pre">info</span></code> is kept.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_capacitance_fF">
+<span class="sig-name descname"><span class="pre">resonator_capacitance_fF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_capacitance_fF" title="Link to this definition"></a></dt>
+<dd><p>Total (Maxwell self-) capacitance of the resonator conductor of <code class="docutils literal notranslate"><span class="pre">qubit</span></code> from its capacitance
+simulation, in fF: the line’s capacitance to ground plus its end loading (the qubit pad and the
+feedline coupler).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_for">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">resonator_length_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">calibration</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_GHz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pull_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_for" title="Link to this definition"></a></dt>
+<dd><p>Resonator length (mm) that puts the resonator at <code class="docutils literal notranslate"><span class="pre">f_GHz</span></code> (linear mode incl. the qubit’s pull):
+the positive root of K / sqrt(l (C’ l + C_0)) + pull = f, i.e. C’ l^2 + C_0 l - (K / (f - pull))^2 = 0.
+<code class="docutils literal notranslate"><span class="pre">calibration</span></code> must have been made with the fitted capacitance (see <code class="docutils literal notranslate"><span class="pre">fitted_capacitance_fF</span></code>).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_mm">
+<span class="sig-name descname"><span class="pre">resonator_length_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.resonator_length_mm" title="Link to this definition"></a></dt>
+<dd><p>Centre-line length (mm) of the readout resonator of <code class="docutils literal notranslate"><span class="pre">qubit</span></code>: the routed resonator(s) in its cell,
+plus the coupled arm of each CoupledLineTee (trace <code class="docutils literal notranslate"><span class="pre">second_cpw</span></code>, along its fillet) and the qubit’s readout
+wire (<code class="docutils literal notranslate"><span class="pre">get_resonator_length_mm</span></code>) where those exist.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.simulate">
+<span class="sig-name descname"><span class="pre">simulate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_rerun</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.simulate" title="Link to this definition"></a></dt>
+<dd><p>Meshes and (if <code class="docutils literal notranslate"><span class="pre">run</span></code>) simulates the cell of <code class="docutils literal notranslate"><span class="pre">qubit</span></code> with Palace. Results are reused when the
+cell geometry and physics settings are unchanged (unless <code class="docutils literal notranslate"><span class="pre">force_rerun</span></code>). Saves conductors.png
+(matrix index -&gt; conductor) in the simulation folder.</p>
+<p>Returns a dict: key, qubit, components, conductor_indices, output_dir, plot, created and status
+(‘simulated’, ‘cached’ or ‘prepared’).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.to_catalogue">
+<span class="sig-name descname"><span class="pre">to_catalogue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">catalogue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qubit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_q_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f_r_GHz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_J_fF</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.to_catalogue" title="Link to this definition"></a></dt>
+<dd><p>Saves the simulated cell of <code class="docutils literal notranslate"><span class="pre">qubit</span></code> as an entry of a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">QubitCatalogue</span></code> (see <code class="docutils literal notranslate"><span class="pre">QubitCatalogue.add_simulation</span></code>):
+the qubit’s full options from the chip, the cell / mesh / solver settings, the conductor mapping
+and the small result files. If <code class="docutils literal notranslate"><span class="pre">f_q_GHz</span></code> and a resonator (<code class="docutils literal notranslate"><span class="pre">f_r_GHz</span></code> or <code class="docutils literal notranslate"><span class="pre">res</span></code>) are given,
+g, chi, Delta, anharmonicity, kappa and the Purcell limit are stored too (as result.* columns).
+Returns the catalogue key.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.transmon_levels">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">transmon_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">EJ</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">EC</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ng</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ncut</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.SingleQubitCells.SingleQubitCells.transmon_levels" title="Link to this definition"></a></dt>
+<dd><p>Lowest transmon energy levels (relative to the ground state, units of EJ/EC) from
+H = 4EC(n - ng)^2 - EJ cos(phi) in the charge basis.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="qubitdesigner.html" class="btn btn-neutral float-left" title="Qubit Designer" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright .</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -93,6 +93,7 @@
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_transmission_line_from_launchpads"><code class="docutils literal notranslate"><span class="pre">place_transmission_line_from_launchpads()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_all_components"><code class="docutils literal notranslate"><span class="pre">plot_all_components()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.plot_highlight_component"><code class="docutils literal notranslate"><span class="pre">plot_highlight_component()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.QUtilities.QUtilities.round_shapely_polygon"><code class="docutils literal notranslate"><span class="pre">round_shapely_polygon()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -100,6 +101,7 @@
 <li class="toctree-l3"><a class="reference internal" href="utilitygds.html">MakeGDS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="utilitymgds.html">ManipulateGDS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="qubitdesigner.html">Qubit Designer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="singlequbitcells.html">Single Qubit Cells</a></li>
 </ul>
 </li>
 </ul>
@@ -160,19 +162,20 @@ Sorted, ascending up each column from bottom left to top right.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_filleted_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path" title="Link to this definition"></a></dt>
-<dd><p>Returns the coordinates of a given path after filleting (like in Qiskit-Metal).</p>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_filleted_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_filleted_path" title="Link to this definition"></a></dt>
+<dd><p>Returns the coordinates of a given path after filleting.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>points</strong> – Numpy array of points given as (x,y) on every row.</p></li>
-<li><p><strong>rFillet</strong> – Radius of fillets on every corner.</p></li>
-<li><p><strong>precision</strong> – The numeric precision in which to calculate bad fillets
-taken usually as design.template_options.PRECISION</p></li>
+<li><p><strong>rFillet</strong> – Requested radius of fillets on every corner.</p></li>
+<li><p><strong>precision</strong> – Numeric precision (usually design.template_options.PRECISION).</p></li>
+<li><p><strong>resolution</strong> – Number of points sampled on each fillet arc.</p></li>
+<li><p><strong>rMin</strong> – Optional minimum radius; warns if any corner falls below it.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>List of points (x,y) for the points defining the filleted path.</p>
+<dd class="field-even"><p>Numpy array of points (x,y) defining the filleted path.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -199,45 +202,37 @@ called ‘trace’ in normal wiring/routing objects) is selected.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_lines_and_fillets_on_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">calc_lines_and_fillets_on_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rFillet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rMin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.calc_lines_and_fillets_on_path" title="Link to this definition"></a></dt>
 <dd><p>Returns the line segments and curved fillets on a given path of points.</p>
+<p>Unlike the original (Qiskit-Metal style) version, corners that are too
+close together are NOT left sharp. Instead the fillet radius is reduced
+locally so that neighbouring fillets never overlap. Where there is room,
+the requested radius rFillet is used unchanged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>points</strong> – Numpy array of points given as (x,y) on every row.</p></li>
-<li><p><strong>rFillet</strong> – Radius of fillets on every corner.</p></li>
-<li><p><strong>precision</strong> – The numeric precision in which to calculate bad fillets taken
-usually as design.template_options.PRECISION.</p></li>
+<li><p><strong>rFillet</strong> – Requested radius of fillets on every corner.</p></li>
+<li><p><strong>precision</strong> – Number of decimal places treated as significant
+(usually design.template_options.PRECISION). Used as a tolerance.</p></li>
+<li><p><strong>rMin</strong> – Optional. If given, a warning is raised for any corner whose
+radius had to be reduced below this value.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><p>The function returns list of segments each represented as dictionaries.</p>
-<dl class="simple">
-<dt>Straight segments have the keys:</dt><dd><ul class="simple">
-<li><p>’start’ - Starting point of line segment</p></li>
-<li><p>’end’   - Ending point of line segment</p></li>
-<li><p>’dir’   - Unit-vector of the direction of the line segment</p></li>
-<li><p>’dist’  - Length of the line segment</p></li>
-</ul>
-</dd>
-<dt>Curved segments (i.e. ones with fillets) have the keys:</dt><dd><ul class="simple">
-<li><p>’start’  - Starting point of line segment</p></li>
-<li><p>’end’    - Ending point of line segment</p></li>
-<li><p>’centre’ - Centre of the circle drawing the fillet arc</p></li>
-<li><dl class="simple">
-<dt>’angleStart’ - Starting angle (on Cartesian plane) of the fillet arc</dt><dd><p>(in radians) on the corner (not from the centre)</p>
+<dd class="field-even"><p><p>List of segment dictionaries, with the same keys as before.</p>
+<p>Straight segments: ‘start’, ‘end’, ‘dir’, ‘dist’</p>
+<dl>
+<dt>Curved segments: ‘start’, ‘end’, ‘centre’, ‘angleStart’,</dt><dd><p>’angleDelta’, ‘dist’, plus a new key:
+* ‘radius’ - The actual radius used for this fillet</p>
+<blockquote>
+<div><p>(&lt;= rFillet).</p>
+</div></blockquote>
 </dd>
 </dl>
-</li>
-<li><dl class="simple">
-<dt>’angleDelta’ - Angle traversed by the fillet arc (in radians)</dt><dd><p>using the typical polar angle direction convention in R2</p>
-</dd>
-</dl>
-</li>
-<li><p>’dist’   - Arclength of the fillet</p></li>
-</ul>
-</dd>
-</dl>
+<p>Note: ‘angleDelta’ keeps the original convention, i.e. it is the
+signed INTERIOR angle at the corner (+ for left turns, - for right
+turns). The swept arc angle is sign(angleDelta)*(pi - <a href="#id3"><span class="problematic" id="id4">|angleDelta|</span></a>).</p>
 </p>
 </dd>
 </dl>
@@ -766,7 +761,7 @@ print_checks: flag if user wants to print statements after launchpads are writte
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">place_resonators_hanger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_resonators</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feedline_upscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">film_thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100nm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'20um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_line_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_to_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'300um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_shift_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'225um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_res_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'150um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_vertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1500um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LC_calculations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_statements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'85um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meander_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qiskit_metal'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">place_resonators_hanger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">design</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_resonators</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequencies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_dimension</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">die_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_extent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feedline_upscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">film_thickness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100nm'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coupling_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'20um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transmission_line_y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'0um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchpad_to_res</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'300um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_shift_x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'225um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_res_gap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'150um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">res_vertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1500um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'main'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">LC_calculations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_statements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'85um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'100um'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meander_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'qiskit_metal'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resonator_side</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'below'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.place_resonators_hanger" title="Link to this definition"></a></dt>
 <dd><p>Place multiple hanger-mode quarter-wavelength resonators on a multi-die chip.</p>
 <p>Resonators are capacitively coupled to a shared transmission line with a 10 µm ground pocket.
 Lengths, start and end positions are automatically calculated based on frequencies, number of dies,
@@ -795,6 +790,10 @@ number of resonators, and launchpad properties. Optional capacitance and inducta
 <li><p><strong>LC_calculation</strong> (<em>bool</em><em>, </em><em>optional</em>) – Calculate capacitance/inductance. Defaults to True.</p></li>
 <li><p><strong>print_statements</strong> (<em>bool</em><em>, </em><em>optional</em>) – Print resonator info. Defaults to True.</p></li>
 <li><p><strong>fillet</strong> (<em>str</em><em>, </em><em>optional</em>) – Fillet size (e.g., “100um”). Defaults to “100um”.</p></li>
+<li><p><strong>resonator_side</strong> (<em>str</em><em> or </em><em>list</em><em> of </em><em>str</em><em>, </em><em>optional</em>) – Which side of the feedline the resonators hang from.
+“below” (default), “above”, “alternate” (first resonator below, then above, below, …), or a list of
+“above”/”below” with one entry per resonator. Resonators on opposite sides do not clash, so
+“alternate” allows roughly twice as many resonators along the same feedline length.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -928,6 +927,12 @@ behind the highlighted ones. Default to False.</p></li>
 <li><p>Pin arrows are drawn in red with text labels centered along the arrow.</p></li>
 </ul>
 </div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.QUtilities.QUtilities.round_shapely_polygon">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">round_shapely_polygon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quad_segs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.QUtilities.QUtilities.round_shapely_polygon" title="Link to this definition"></a></dt>
+<dd><p>Round all corners (convex and concave) of a polygon with radius r.</p>
 </dd></dl>
 
 </dd></dl>

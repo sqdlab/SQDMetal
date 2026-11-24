@@ -69,10 +69,16 @@
 <li class="toctree-l3 current"><a class="reference internal" href="palace.html">Palace Simulations</a><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="#">Palace Simulation Base classes</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base"><code class="docutils literal notranslate"><span class="pre">PALACE_Model_Base</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridge"><code class="docutils literal notranslate"><span class="pre">add_airbridge()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridges_from_design"><code class="docutils literal notranslate"><span class="pre">add_airbridges_from_design()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_ground_plane"><code class="docutils literal notranslate"><span class="pre">add_ground_plane()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_metallic"><code class="docutils literal notranslate"><span class="pre">add_metallic()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebond"><code class="docutils literal notranslate"><span class="pre">add_wirebond()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebonds_from_design"><code class="docutils literal notranslate"><span class="pre">add_wirebonds_from_design()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.create_batch_file"><code class="docutils literal notranslate"><span class="pre">create_batch_file()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_airbridge_options"><code class="docutils literal notranslate"><span class="pre">default_airbridge_options</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_user_options_parent"><code class="docutils literal notranslate"><span class="pre">default_user_options_parent</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_wirebond_options"><code class="docutils literal notranslate"><span class="pre">default_wirebond_options</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.enable_mesh_refinement"><code class="docutils literal notranslate"><span class="pre">enable_mesh_refinement()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.enforce_full_3D_simulation"><code class="docutils literal notranslate"><span class="pre">enforce_full_3D_simulation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.fine_mesh_along_path"><code class="docutils literal notranslate"><span class="pre">fine_mesh_along_path()</span></code></a></li>
@@ -80,13 +86,16 @@
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.fine_mesh_components"><code class="docutils literal notranslate"><span class="pre">fine_mesh_components()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.fine_mesh_features"><code class="docutils literal notranslate"><span class="pre">fine_mesh_features()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.fine_mesh_in_rectangle"><code class="docutils literal notranslate"><span class="pre">fine_mesh_in_rectangle()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.get_wirebond_summary"><code class="docutils literal notranslate"><span class="pre">get_wirebond_summary()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.open_mesh_gmsh"><code class="docutils literal notranslate"><span class="pre">open_mesh_gmsh()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.retrieve_simulation_sizes"><code class="docutils literal notranslate"><span class="pre">retrieve_simulation_sizes()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.retrieve_simulation_sizes_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_simulation_sizes_from_file()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_airbridge_defaults"><code class="docutils literal notranslate"><span class="pre">set_airbridge_defaults()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_local_output_subdir"><code class="docutils literal notranslate"><span class="pre">set_local_output_subdir()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_wirebond_defaults"><code class="docutils literal notranslate"><span class="pre">set_wirebond_defaults()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_xBoundary_as_absolute"><code class="docutils literal notranslate"><span class="pre">set_xBoundary_as_absolute()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_xBoundary_as_proportion"><code class="docutils literal notranslate"><span class="pre">set_xBoundary_as_proportion()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_yBoundary_as_absolute"><code class="docutils literal notranslate"><span class="pre">set_yBoundary_as_absolute()</span></code></a></li>
@@ -290,6 +299,50 @@ are: Can be: ‘Extremely fine’, ‘Extra fine’, ‘Finer’, ‘Fine’, �
 </dd>
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridge">
+<span class="sig-name descname"><span class="pre">add_airbridge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridge" title="Link to this definition"></a></dt>
+<dd><p>Adds a 3D air-bridge whose feet are centred on the two given points (e.g. either side of a CPW). The landing
+conductors are detected automatically (as with wire-bonds) and conductors joined by air-bridges are treated as a
+single conductor. Supported in the RF (eigenmode/driven) and capacitance simulations when meshing with GMSH.</p>
+<p>Note: do not also pass the 2D air-bridge layers (e.g. the I-bar layer of
+<code class="xref py py-class docutils literal notranslate"><span class="pre">AirBridgeCPW</span></code>) to add_metallic, as they would be flattened onto the chip.</p>
+<p>This function must be run before calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pos_start</strong> (<em>list</em><em>|</em><em>np.ndarray</em><em>|</em><em>tuple</em>) – (x,y) centres of the two feet in metres. Both must lie on the chip.</p></li>
+<li><p><strong>pos_end</strong> (<em>list</em><em>|</em><em>np.ndarray</em><em>|</em><em>tuple</em>) – (x,y) centres of the two feet in metres. Both must lie on the chip.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name used for the physical group. Defaults to ‘ab_&lt;index&gt;’.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Any air-bridge option (see <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_airbridge_defaults" title="SQDMetal.PALACE.Model.PALACE_Model_Base.set_airbridge_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_airbridge_defaults()</span></code></a>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridges_from_design">
+<span class="sig-name descname"><span class="pre">add_airbridges_from_design</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridges_from_design" title="Link to this definition"></a></dt>
+<dd><p><em>Applies Qiskit-Metal designs only</em></p>
+<p>Adds 3D air-bridges for every air-bridge component in the design (e.g. <code class="xref py py-class docutils literal notranslate"><span class="pre">AirBridgeCPW</span></code>)
+- i.e. any component providing a <code class="docutils literal notranslate"><span class="pre">get_airbridge_specs()</span></code> method. The deck width and foot sizes are taken from the
+component’s I-bar; the height, thickness, profile etc. come from the simulation defaults or <code class="docutils literal notranslate"><span class="pre">kwargs</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_names</strong> (<em>list</em>) – Optional list of component names to restrict the search. Defaults to None (i.e. all components).</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Air-bridge options overriding those given in the components and the simulation defaults.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>num_added</strong> – Number of air-bridges added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.add_ground_plane">
 <span class="sig-name descname"><span class="pre">add_ground_plane</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_ground_plane" title="Link to this definition"></a></dt>
 <dd><p><em>Applies Qiskit-Metal designs only</em></p>
@@ -381,13 +434,67 @@ See documentation on PVD_Shadows for more details on its definition.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebond">
+<span class="sig-name descname"><span class="pre">add_wirebond</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pos_end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebond" title="Link to this definition"></a></dt>
+<dd><p>Adds a 3D wire-bond between two points on (or off) the chip. Its type (ground stitch, CPW trace bond, off-chip
+bond etc.) is detected automatically from the conductors under the feet when the simulation is prepared. The
+conductors joined by wire-bonds are treated as a single conductor (e.g. a single terminal in capacitance
+simulations); conductors bonded to the enclosure (<code class="docutils literal notranslate"><span class="pre">offchip_termination='floor'</span></code>) become part of the ground.
+Supported in the RF (eigenmode/driven) and capacitance simulations when meshing with GMSH.</p>
+<p>This function must be run before calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pos_start</strong> (<em>list</em><em>|</em><em>np.ndarray</em><em>|</em><em>tuple</em>) – (x,y) position of the first foot in metres.</p></li>
+<li><p><strong>pos_end</strong> (<em>list</em><em>|</em><em>np.ndarray</em><em>|</em><em>tuple</em>) – (x,y) position of the second foot in metres. It may be off-chip (see <code class="docutils literal notranslate"><span class="pre">offchip_termination</span></code>).</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Optional name used for the physical group. Defaults to ‘wb_&lt;index&gt;’.</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Any wire-bond option (see <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_wirebond_defaults" title="SQDMetal.PALACE.Model.PALACE_Model_Base.set_wirebond_defaults"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_wirebond_defaults()</span></code></a>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebonds_from_design">
+<span class="sig-name descname"><span class="pre">add_wirebonds_from_design</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">component_names</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebonds_from_design" title="Link to this definition"></a></dt>
+<dd><p><em>Applies Qiskit-Metal designs only</em></p>
+<p>Adds all wire-bonds defined in the design via wire-bond components (e.g. <code class="xref py py-class docutils literal notranslate"><span class="pre">WireBond</span></code>
+or <code class="xref py py-class docutils literal notranslate"><span class="pre">WireBondsCPW</span></code>) - i.e. any component providing a <code class="docutils literal notranslate"><span class="pre">get_wirebond_specs()</span></code>
+method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>component_names</strong> (<em>list</em>) – Optional list of component names to restrict the search. Defaults to None (i.e. all components).</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – Wire-bond options overriding those given in the components and the simulation defaults.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>num_added</strong> – Number of wire-bonds added.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.create_batch_file">
 <span class="sig-name descname"><span class="pre">create_batch_file</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.create_batch_file" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.default_airbridge_options">
+<span class="sig-name descname"><span class="pre">default_airbridge_options</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'bond_type':</span> <span class="pre">'auto',</span> <span class="pre">'boundary':</span> <span class="pre">'auto',</span> <span class="pre">'cross_section':</span> <span class="pre">'solid',</span> <span class="pre">'epr_metal_air':</span> <span class="pre">True,</span> <span class="pre">'fine_mesh':</span> <span class="pre">True,</span> <span class="pre">'foot_length':</span> <span class="pre">None,</span> <span class="pre">'foot_width':</span> <span class="pre">None,</span> <span class="pre">'height':</span> <span class="pre">3e-06,</span> <span class="pre">'material':</span> <span class="pre">'Al',</span> <span class="pre">'mesh_max':</span> <span class="pre">None,</span> <span class="pre">'mesh_min':</span> <span class="pre">None,</span> <span class="pre">'num_path_points':</span> <span class="pre">41,</span> <span class="pre">'profile':</span> <span class="pre">'arch',</span> <span class="pre">'profile_params':</span> <span class="pre">{},</span> <span class="pre">'taper_dist_max':</span> <span class="pre">None,</span> <span class="pre">'taper_dist_min':</span> <span class="pre">None,</span> <span class="pre">'thickness':</span> <span class="pre">1e-06,</span> <span class="pre">'width':</span> <span class="pre">8e-06}</span></span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_airbridge_options" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.default_user_options_parent">
 <span class="sig-name descname"><span class="pre">default_user_options_parent</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'comsol_meshing':</span> <span class="pre">'Extremely</span> <span class="pre">fine',</span> <span class="pre">'dielectric_material':</span> <span class="pre">'silicon',</span> <span class="pre">'fillet_resolution':</span> <span class="pre">12,</span> <span class="pre">'fuse_threshold':</span> <span class="pre">1e-09,</span> <span class="pre">'gmsh_dist_func_discretisation':</span> <span class="pre">120,</span> <span class="pre">'gmsh_verbosity':</span> <span class="pre">1,</span> <span class="pre">'mesh_max':</span> <span class="pre">0.0001,</span> <span class="pre">'mesh_min':</span> <span class="pre">1e-05,</span> <span class="pre">'palace_dir':</span> <span class="pre">'',</span> <span class="pre">'palace_mode':</span> <span class="pre">'local',</span> <span class="pre">'palace_wsl_spack_repo_directory':</span> <span class="pre">'~/repo',</span> <span class="pre">'simplify_edge_min_angle_deg':</span> <span class="pre">-1,</span> <span class="pre">'taper_dist_max':</span> <span class="pre">0.0002,</span> <span class="pre">'taper_dist_min':</span> <span class="pre">3e-05,</span> <span class="pre">'threshold':</span> <span class="pre">1e-09,</span> <span class="pre">'topping_material':</span> <span class="pre">'vacuum'}</span></span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_user_options_parent" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.default_wirebond_options">
+<span class="sig-name descname"><span class="pre">default_wirebond_options</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'bond_type':</span> <span class="pre">'auto',</span> <span class="pre">'boundary':</span> <span class="pre">'auto',</span> <span class="pre">'cross_section':</span> <span class="pre">'round',</span> <span class="pre">'epr_metal_air':</span> <span class="pre">True,</span> <span class="pre">'fine_mesh':</span> <span class="pre">True,</span> <span class="pre">'foot_length':</span> <span class="pre">None,</span> <span class="pre">'foot_thickness':</span> <span class="pre">None,</span> <span class="pre">'foot_width':</span> <span class="pre">None,</span> <span class="pre">'height':</span> <span class="pre">0.0001,</span> <span class="pre">'include_feet':</span> <span class="pre">True,</span> <span class="pre">'material':</span> <span class="pre">'Al',</span> <span class="pre">'mesh_max':</span> <span class="pre">None,</span> <span class="pre">'mesh_min':</span> <span class="pre">None,</span> <span class="pre">'num_path_points':</span> <span class="pre">41,</span> <span class="pre">'offchip_pad_size':</span> <span class="pre">(0.0001,</span> <span class="pre">0.0001),</span> <span class="pre">'offchip_termination':</span> <span class="pre">'pad',</span> <span class="pre">'offchip_z':</span> <span class="pre">0.0,</span> <span class="pre">'profile':</span> <span class="pre">'arc',</span> <span class="pre">'profile_params':</span> <span class="pre">{},</span> <span class="pre">'taper_dist_max':</span> <span class="pre">None,</span> <span class="pre">'taper_dist_min':</span> <span class="pre">None,</span> <span class="pre">'thickness':</span> <span class="pre">1.25e-05,</span> <span class="pre">'trihedron':</span> <span class="pre">'DiscreteTrihedron',</span> <span class="pre">'width':</span> <span class="pre">2.5e-05}</span></span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.default_wirebond_options" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -650,6 +757,25 @@ it is not supplied, the default value from the user options will be taken.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.get_wirebond_summary">
+<span class="sig-name descname"><span class="pre">get_wirebond_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">print_summary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.get_wirebond_summary" title="Link to this definition"></a></dt>
+<dd><p>Returns (and optionally prints) the automatically detected wire-bond classifications. Only valid after
+calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation" title="SQDMetal.PALACE.Model.PALACE_Model_Base.prepare_simulation"><code class="xref py py-func docutils literal notranslate"><span class="pre">prepare_simulation()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>summary</strong> – One dictionary per wire-bond with keys: ‘name’, ‘category’ (‘ground’, ‘cpw_trace’ or ‘floating’),
+‘bond_type’, ‘landing’ (location of each foot), ‘landing_metals’ (metal indices under each foot), ‘crosses’
+(metal indices crossed by the span), ‘span’ (metres), ‘boundary’, ‘physical_group’,
+‘conductor_index’ (all metals joined by wire-bonds form a single conductor - e.g. one capacitance terminal),
+‘grounds_to_enclosure’ and ‘issues’.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list[dict]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.open_mesh_gmsh">
 <span class="sig-name descname"><span class="pre">open_mesh_gmsh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.open_mesh_gmsh" title="Link to this definition"></a></dt>
 <dd><p>Note that if this is used in a Notebook environment, it’ll be a blocking function until the Gmsh GUI is closed…</p>
@@ -741,6 +867,73 @@ must override this function to actually retrieve and return data relevant to the
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.set_airbridge_defaults">
+<span class="sig-name descname"><span class="pre">set_airbridge_defaults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_airbridge_defaults" title="Link to this definition"></a></dt>
+<dd><p>Sets the default options used for every 3D air-bridge in this simulation (options given explicitly to
+<a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridge" title="SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridge"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_airbridge()</span></code></a> or via
+<a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridges_from_design" title="SQDMetal.PALACE.Model.PALACE_Model_Base.add_airbridges_from_design"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_airbridges_from_design()</span></code></a> take precedence). All lengths are in metres.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>dict</em>) – <p>Any of the keys in <code class="docutils literal notranslate"><span class="pre">PALACE_Model_Base.default_airbridge_options</span></code>:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'cross_section'</span></code> (<cite>str</cite>):</dt><dd><p>’solid’ (finite-thickness film; default) or ‘sheet’ (zero-thickness conductor - much cheaper to mesh).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'width'</span></code> (<cite>float</cite>):</dt><dd><p>Width of the deck (i.e. the stem of the I-bar crossing the CPW). Defaults to 8e-6.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'thickness'</span></code> (<cite>float</cite>):</dt><dd><p>Film thickness. Defaults to 1e-6. For curved profiles it is measured vertically.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'height'</span></code> (<cite>float</cite>):</dt><dd><p>Clearance between the landing surface (top of the planar metal) and the underside of the deck apex.
+Defaults to 3e-6.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'profile'</span></code> (<cite>str</cite>, callable or array):</dt><dd><p>’arch’ (default; circular arc as obtained by reflowing the resist), ‘flat’ (vertical posts filling the
+feet up to a flat deck - two-layer resist pedestal), ‘trapezoid’ (sloped side-walls; profile_params
+rise_fraction and corner_radius), ‘elliptical’ or ‘parabolic’. Alternatively supply a callable f(t)
+returning the height in metres for t in [0,1] along the inner span, or an Nx2 array of
+(span-fraction, height).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'foot_length'</span></code>, <code class="docutils literal notranslate"><span class="pre">'foot_width'</span></code> (<cite>float</cite>):</dt><dd><p>Size of each foot (landing pad) along/across the bridge. Defaults to the deck width. Feet wider than the
+deck give the I-bar shape.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'material'</span></code>, <code class="docutils literal notranslate"><span class="pre">'boundary'</span></code>:</dt><dd><p>As with wire-bonds (superconductors -&gt; PEC, normal metals -&gt; finite conductivity).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fine_mesh'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code>, <code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code>:</dt><dd><p>Automatic mesh refinement around the bridge surfaces.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'epr_metal_air'</span></code> (<cite>bool</cite>):</dt><dd><p>Include the bridge surfaces in the metal-air EPR interface. Defaults to True.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.set_local_output_subdir">
 <span class="sig-name descname"><span class="pre">set_local_output_subdir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_local_output_subdir" title="Link to this definition"></a></dt>
 <dd><p>Sets a subdirectory within the simulation directory so that when <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>
@@ -751,6 +944,95 @@ when calling <a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_M
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>name</strong> (<em>str</em>) – Name of the subdirectory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Model.PALACE_Model_Base.set_wirebond_defaults">
+<span class="sig-name descname"><span class="pre">set_wirebond_defaults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.set_wirebond_defaults" title="Link to this definition"></a></dt>
+<dd><p>Sets the default options used for every wire-bond in this simulation (options given explicitly to
+<a class="reference internal" href="#SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebond" title="SQDMetal.PALACE.Model.PALACE_Model_Base.add_wirebond"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_wirebond()</span></code></a> or in the design’s wire-bond components take
+precedence). All lengths are in metres.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>kwargs</strong> (<em>dict</em>) – <p>Any of the keys in <code class="docutils literal notranslate"><span class="pre">PALACE_Model_Base.default_wirebond_options</span></code>:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'cross_section'</span></code> (<cite>str</cite>):</dt><dd><p>’round’ (circular wire of diameter <code class="docutils literal notranslate"><span class="pre">width</span></code>), ‘ribbon’ (rectangular <code class="docutils literal notranslate"><span class="pre">width</span></code> x <code class="docutils literal notranslate"><span class="pre">thickness</span></code>) or
+‘sheet’ (zero-thickness conductor of width <code class="docutils literal notranslate"><span class="pre">width</span></code> - cheapest to mesh). Defaults to ‘round’.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'width'</span></code> (<cite>float</cite>):</dt><dd><p>Wire diameter (round) or ribbon/sheet width. Defaults to 25e-6.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'thickness'</span></code> (<cite>float</cite>):</dt><dd><p>Film/ribbon thickness (only used for ‘ribbon’). Defaults to 12.5e-6.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'material'</span></code> (<cite>str</cite> or <cite>MaterialConductor</cite>):</dt><dd><p>Defaults to ‘Al’. Superconductors (Al, Nb, In, …) are treated as PEC while normal metals (e.g. ‘Au’,
+‘Cu’) use a finite conductivity boundary in Palace.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'boundary'</span></code> (<cite>str</cite>):</dt><dd><p>’auto’ (default), ‘pec’ or ‘conductivity’.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'height'</span></code> (<cite>float</cite>):</dt><dd><p>Apex height of the wire centreline above the landing surface. Defaults to 100e-6. Ignored for the
+‘semicircle’ profile (where it is half the span).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'profile'</span></code> (<cite>str</cite>, callable or array):</dt><dd><p>Bridge profile: ‘semicircle’, ‘arc’ (circular arc through the apex - shallow if height &lt; span/2),
+‘elliptical’ (vertical take-off at the feet), ‘parabolic’, ‘trapezoid’ (square loop), ‘ball_wedge’
+(vertical neck at the first bond with a sloping descent to the wedge). Alternatively supply a callable
+f(t) returning height in metres for t in [0,1] along the span, or an Nx2 array of (span-fraction, height).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'profile_params'</span></code> (<cite>dict</cite>):</dt><dd><p>’trapezoid’: rise_fraction (0.15), corner_radius; ‘ball_wedge’: peak_position (0.2), neck_fraction
+(0.75), corner_radius.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'include_feet'</span></code>, <code class="docutils literal notranslate"><span class="pre">'foot_length'</span></code>, <code class="docutils literal notranslate"><span class="pre">'foot_width'</span></code>, <code class="docutils literal notranslate"><span class="pre">'foot_thickness'</span></code>:</dt><dd><p>Flattened bond feet at the landing sites (auto-sized from the wire width if None).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'offchip_termination'</span></code> (<cite>str</cite>):</dt><dd><p>How bonds that leave the chip terminate: ‘pad’ (floating landing pad of size <code class="docutils literal notranslate"><span class="pre">offchip_pad_size</span></code>),
+‘floor’ (lands on the air-box floor - i.e. grounded when the z_neg far-field is PEC) or ‘open’.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'offchip_z'</span></code> (<cite>float</cite>):</dt><dd><p>Height of the off-chip landing plane relative to the chip surface.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'fine_mesh'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mesh_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'mesh_max'</span></code>, <code class="docutils literal notranslate"><span class="pre">'taper_dist_min'</span></code>, <code class="docutils literal notranslate"><span class="pre">'taper_dist_max'</span></code>:</dt><dd><p>Automatic mesh refinement around the bond surfaces.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">'epr_metal_air'</span></code> (<cite>bool</cite>):</dt><dd><p>Include the bond surfaces in the metal-air EPR interface. Defaults to True.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</p>
 </dd>
 </dl>
 </dd></dl>

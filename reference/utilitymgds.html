@@ -71,13 +71,21 @@
 <li class="toctree-l3"><a class="reference internal" href="utilitygds.html">MakeGDS</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">ManipulateGDS</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS"><code class="docutils literal notranslate"><span class="pre">ManipulateGDS</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.export"><code class="docutils literal notranslate"><span class="pre">export()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.flatten_cells"><code class="docutils literal notranslate"><span class="pre">flatten_cells()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.make_array_onChip"><code class="docutils literal notranslate"><span class="pre">make_array_onChip()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_gds"><code class="docutils literal notranslate"><span class="pre">merge_gds()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_overlaps"><code class="docutils literal notranslate"><span class="pre">merge_overlaps()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.preview"><code class="docutils literal notranslate"><span class="pre">preview()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remap_layers"><code class="docutils literal notranslate"><span class="pre">remap_layers()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remove_layers"><code class="docutils literal notranslate"><span class="pre">remove_layers()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.report"><code class="docutils literal notranslate"><span class="pre">report()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="qubitdesigner.html">Qubit Designer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="singlequbitcells.html">Single Qubit Cells</a></li>
 </ul>
 </li>
 </ul>
@@ -119,18 +127,36 @@
 <dl class="simple">
 <dt>Inputs:</dt><dd><p>import_path_gds - Path to GDS file for import
 export_path_gds - Path to export GDS
-import_cells - (Optional) Cells to import (must be cells present in the passed GDS), defaults to all
-origin - (Defaults to (0,0)) Tuple containing relative origin to import the design</p>
+import_cells - (Optional) Cells to import (must be cells present in the passed GDS), defaults to all top-level cells
+origin - (Defaults to (0,0)) Tuple containing relative origin (in um) to import the design</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.flatten_cells">
-<span class="sig-name descname"><span class="pre">flatten_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.flatten_cells" title="Link to this definition"></a></dt>
-<dd><p>Takes <cite>cell_keys</cite> (or all cells by default) from a GdsLibrary object and flattens them as seperate layers to a single cell export object.</p>
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.export">
+<span class="sig-name descname"><span class="pre">export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.export" title="Link to this definition"></a></dt>
+<dd><p>Writes the current working cell to GDS.</p>
 <dl class="simple">
 <dt>Inputs:</dt><dd><ul class="simple">
-<li><p>cell_keys - (Optional) List of cell names to extract from the passed GDS file</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.flatten_cells">
+<span class="sig-name descname"><span class="pre">flatten_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell_keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.flatten_cells" title="Link to this definition"></a></dt>
+<dd><p>Takes <cite>cell_keys</cite> (or all top-level cells by default) from the imported GDS and flattens them,
+including any sub-cell references, into a single cell. Original layers/datatypes are preserved.</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>cell_keys - (Optional) Cell name or list of cell names to extract from the passed GDS file</p></li>
 <li><p>export - (Defaults to False) Choose whether to export the generated file, or just to operate on the design (default)</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>cell_flattened - gdstk cell containing the flattened design</p></li>
 </ul>
 </dd>
 </dl>
@@ -138,25 +164,156 @@ origin - (Defaults to (0,0)) Tuple containing relative origin to import the desi
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.make_array_onChip">
-<span class="sig-name descname"><span class="pre">make_array_onChip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('50um',</span> <span class="pre">'50um')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('20mm',</span> <span class="pre">'20mm')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.make_array_onChip" title="Link to this definition"></a></dt>
-<dd><p>Makes an array of a design input and exports it as a new GDS. Labels each arrayed structure.</p>
+<span class="sig-name descname"><span class="pre">make_array_onChip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rows</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('50um',</span> <span class="pre">'50um')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chip_dimension</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('20mm',</span> <span class="pre">'20mm')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_string</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_layer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.make_array_onChip" title="Link to this definition"></a></dt>
+<dd><p>Makes an array of a design input and exports it as a new GDS. Optionally labels each arrayed structure.</p>
 <dl class="simple">
 <dt>Inputs:</dt><dd><ul class="simple">
 <li><p>columns - number of columns in the array</p></li>
 <li><p>rows - number of rows in the array</p></li>
-<li><p>spacing - (Defaults to (“50um”, “50um”)) Tuple containing x- and y-spacing of the array as strings with units</p></li>
+<li><p>spacing - (Defaults to (“50um”, “50um”)) Tuple containing x- and y-pitch of the array (origin-to-origin) as strings with units</p></li>
 <li><p>chip_dimension - (Defaults to (“20mm”, “20mm”)) Dimension of the chip on which to array the structure (WIP)</p></li>
 <li><p>export - (Defaults to True) Choose whether to export the generated file (default), or just to operate on the design</p></li>
 <li><p>export_path - (Optional) Export path (if different from self)</p></li>
 <li><p>use_cells - (Optional) List of cells from the input GDS to include in the arrayed structure</p></li>
-<li><p>add_label - (Defaults to False) Add a label beneath each arrayed structure (WIP)</p></li>
-<li><p>label_string - (Optional) If None, defaults to R1C1, R1C2 etc. (R{row_index}C{column_index}). Otherwise, if a single string is passed, this will be printed with an incrementing number. Otherwise, a list corresponding in length to the total number of arrayed structures can be passed and will be printed along row 1 from left to right, then row 2 etc.</p></li>
-<li><p>label_offset - (Optional) Describes how far beneath the origin for each array point the label is. Defaults to half of spacing in y. Can be passed as a string with units (e.g. 300um).</p></li>
-<li><p>label_size - (Defaults to 50) Text size for the printed labels</p></li>
+<li><p>add_labels - (Defaults to False) Add a label beneath each arrayed structure</p></li>
+<li><p>label_string - (Optional) If None, defaults to R1C1, R1C2 etc. (R{row_index}C{column_index}). If a single string is passed, it is printed with an incrementing number. If a list (length rows * columns) is passed, labels go along row 1 from left to right, then row 2 etc.</p></li>
+<li><p>label_offset - (Optional) Distance beneath each array origin for the label. Defaults to half of the y-spacing. Can be passed as a string with units (e.g. “300um”).</p></li>
+<li><p>label_size - (Defaults to 50) Text height in um</p></li>
+<li><p>label_layer - (Defaults to 100) GDS layer for the labels</p></li>
 </ul>
 </dd>
 <dt>Output:</dt><dd><ul class="simple">
-<li><p>cell_array - gdspy cell array containing arrayed structures</p></li>
+<li><p>cell_array - gdstk cell containing the arrayed structures</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_gds">
+<span class="sig-name descname"><span class="pre">merge_gds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merge_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0,</span> <span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merge_cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_gds" title="Link to this definition"></a></dt>
+<dd><p>Merges one or more GDS files into the current working cell. Each file is flattened and its
+polygons are added on their original layers/datatypes, overlaid at the origin (or shifted by <cite>offset</cite>).</p>
+<p>If no working cell exists yet, the imported design is flattened first (using <cite>import_cells</cite> from init).</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>merge_paths - Path (or list of paths) to GDS files to merge in</p></li>
+<li><dl class="simple">
+<dt>offset - (Defaults to (0, 0)) (x, y) shift applied to the merged geometry. Either numbers in um,</dt><dd><p>or strings with units (e.g. (“1mm”, “-200um”)). A list of offsets (one per file) can also be passed.</p>
+</dd>
+</dl>
+</li>
+<li><p>merge_cells - (Optional) Cell name(s) to take from the merged file(s); defaults to all top-level cells</p></li>
+<li><p>export - (Defaults to True) Export the merged design</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>cell_flattened - gdstk cell containing the merged design</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_overlaps">
+<span class="sig-name descname"><span class="pre">merge_overlaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">precision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.merge_overlaps" title="Link to this definition"></a></dt>
+<dd><p>Fuses overlapping/touching polygons into single polygons, separately for each layer/datatype
+(shapes on different layers are never merged together).</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>layers - (Optional) layer number, (layer, datatype) tuple, or list of these to merge. Defaults to all layers.</p></li>
+<li><p>precision - (Defaults to 1e-3) Boolean operation precision in um</p></li>
+<li><p>export - (Defaults to False) Export the result</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>counts - dict of {(layer, datatype): (polygons before, polygons after)}</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.preview">
+<span class="sig-name descname"><span class="pre">preview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#222222'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.preview" title="Link to this definition"></a></dt>
+<dd><p>Saves an SVG preview of the current working cell (open it in any browser).</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>path - (Optional) Output .svg path. Defaults to the export path with a .svg extension.</p></li>
+<li><p>scaling - (Defaults to 1) SVG pixels per um. Lower this for large chips.</p></li>
+<li><p>background - (Defaults to “#222222”) Background colour, or None for transparent</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>path - the path the SVG was written to</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remap_layers">
+<span class="sig-name descname"><span class="pre">remap_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layer_map</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remap_layers" title="Link to this definition"></a></dt>
+<dd><p>Moves shapes from one layer/datatype to another in the current working cell.</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>layer_map - dict of {source: target}. Each key/value is either a layer number (int) or a</dt><dd><p>(layer, datatype) tuple. An int source matches all datatypes on that layer; an int
+target keeps each shape’s datatype. E.g. {1: 10, (2, 0): (20, 5)}</p>
+</dd>
+</dl>
+</li>
+<li><p>export - (Defaults to False) Export the result</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>counts - dict of {source: number of shapes moved}</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remove_layers">
+<span class="sig-name descname"><span class="pre">remove_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">export_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.remove_layers" title="Link to this definition"></a></dt>
+<dd><p>Deletes all shapes on the given layers from the current working cell.</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>layers - layer number (int), (layer, datatype) tuple, or a list of these.</dt><dd><p>An int removes every datatype on that layer.</p>
+</dd>
+</dl>
+</li>
+<li><p>export - (Defaults to False) Export the result</p></li>
+<li><p>export_path - (Optional) Export path (if different from self)</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><p>n_removed - number of shapes removed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.report">
+<span class="sig-name descname"><span class="pre">report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.Utilities.ManipulateGDS.ManipulateGDS.report" title="Link to this definition"></a></dt>
+<dd><p>Summarises the current working cell: overall bounding box and size, plus polygon count,
+vertex count, area and bounding box for every layer/datatype.</p>
+<dl class="simple">
+<dt>Inputs:</dt><dd><ul class="simple">
+<li><p>verbose - (Defaults to True) Print the report</p></li>
+</ul>
+</dd>
+<dt>Output:</dt><dd><ul class="simple">
+<li><dl class="simple">
+<dt>info - dict with keys ‘cell’, ‘bounding_box’, ‘size’, ‘n_polygons’, ‘n_labels’, ‘layers’</dt><dd><p>(‘layers’ maps (layer, datatype) to a dict of polygons, vertices, area_um2, bounding_box)</p>
+</dd>
+</dl>
+</li>
 </ul>
 </dd>
 </dl>

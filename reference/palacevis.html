@@ -141,11 +141,21 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equalise_histogram</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equal_pos_neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">association</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equalise_histogram</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">equal_pos_neg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">association</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'point'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gouraud'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_degenerate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.PVDVTU_Viewer.PVDVTU_Slice.plot" title="Link to this definition"></a></dt>
 <dd><p>Plot a scalar field on an arbitrarily oriented planar slice.</p>
-<dl class="simple">
+<dl>
 <dt>association:</dt><dd><p>‘point’ -&gt; one scalar per mesh vertex
 ‘cell’  -&gt; one scalar per triangle</p>
+</dd>
+<dt>shading:</dt><dd><p>‘gouraud’ (default for point data) -&gt; smooth interpolation between vertices
+‘flat’ -&gt; one colour per triangle (point data are averaged over each triangle’s vertices). This avoids</p>
+<blockquote>
+<div><p>matplotlib’s Gouraud renderer entirely - use it if spurious lines/streaks appear.</p>
+</div></blockquote>
+</dd>
+<dt>remove_degenerate:</dt><dd><p>Drop zero-area/collinear triangles (and any with non-finite coordinates) before plotting. Slicing exactly
+through mesh faces (e.g. at z=0 where the metals and substrate surface lie) can create such triangles, which
+break the Gouraud interpolation and show up as stray lines.</p>
 </dd>
 </dl>
 </dd></dl>

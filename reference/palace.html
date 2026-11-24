@@ -89,7 +89,10 @@
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.default_user_options"><code class="docutils literal notranslate"><span class="pre">default_user_options</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data"><code class="docutils literal notranslate"><span class="pre">plot_fields_with_data()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files"><code class="docutils literal notranslate"><span class="pre">plot_fields_with_data_from_files()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table"><code class="docutils literal notranslate"><span class="pre">print_results_table()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table_from_files"><code class="docutils literal notranslate"><span class="pre">print_results_table_from_files()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data"><code class="docutils literal notranslate"><span class="pre">retrieve_data()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data_from_files"><code class="docutils literal notranslate"><span class="pre">retrieve_data_from_files()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_field_plots"><code class="docutils literal notranslate"><span class="pre">retrieve_field_plots()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data"><code class="docutils literal notranslate"><span class="pre">retrieve_interface_EPR_data()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file"><code class="docutils literal notranslate"><span class="pre">retrieve_interface_EPR_data_from_file()</span></code></a></li>
@@ -829,9 +832,61 @@ The differnce in frequency between the modes.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">plot_fields_with_data_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_postprocessing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">plot_fields_with_data_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip_postprocessing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_json_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files" title="Link to this definition"></a></dt>
 <dd><p>Plot eigenmode field magnitude images in a 2-row grid, with the
 frequency/Q/kappa/participation data overlaid directly on each image.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table">
+<span class="sig-name descname"><span class="pre">print_results_table</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table" title="Link to this definition"></a></dt>
+<dd><p>Prints a markdown table of the eigenmode results with one row per mode: frequency, total Q, coupling Q (Q_c),
+estimated internal Q (Q_i), coupling linewidth (kappa), the surface-interface participation ratios and the
+junction (port) participation ratios - whichever of these the simulation produced.</p>
+<p>This function must be run after calling <a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>save</strong> (<em>bool</em>) – (Defaults to True) Also writes the table to ‘results.md’ in the output directory.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>table</strong> – The (unformatted) numerical results; the markdown string is in <code class="docutils literal notranslate"><span class="pre">table.attrs['markdown']</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table_from_files">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">print_results_table_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_json_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">print_table</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table_from_files" title="Link to this definition"></a></dt>
+<dd><p>Prints a markdown table of the eigenmode results stored in a Palace output directory (see
+<a class="reference internal" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table" title="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table"><code class="xref py py-func docutils literal notranslate"><span class="pre">print_results_table()</span></code></a>).</p>
+<p>Columns (included only when the corresponding Palace output exists):</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">Mode</span></code>, <code class="docutils literal notranslate"><span class="pre">f</span> <span class="pre">(GHz)</span></code>, <code class="docutils literal notranslate"><span class="pre">Q</span></code> : from eig.csv (Q is the total/loaded quality factor).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Q_c</span></code>, <code class="docutils literal notranslate"><span class="pre">Q_i</span> <span class="pre">(est.)</span></code>, <code class="docutils literal notranslate"><span class="pre">κ</span> <span class="pre">(MHz)</span></code> : from port-Q.csv (ports with a resistance). Q_c = 1/Σ(1/Q_ext) over the
+ports, κ = Σ|κ_ext| (ordinary frequency, not angular) and Q_i = 1/(1/Q - 1/Q_c) is the Q from all other losses.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_SA</span></code>, <code class="docutils literal notranslate"><span class="pre">p_MS</span></code>, <code class="docutils literal notranslate"><span class="pre">p_MA</span></code> (and <code class="docutils literal notranslate"><span class="pre">Q_SA</span></code> etc.) : interface participation ratios from surface-Q.csv.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">p_J[i]</span></code> : junction/inductive-port participation ratios from port-EPR.csv.</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>directory</strong> (<em>str</em>) – The Palace output directory (containing eig.csv).</p></li>
+<li><p><strong>config_json_path</strong> (<em>str</em>) – Path to the Palace JSON configuration (used to label the interfaces). Defaults to the copy that
+<a class="reference internal" href="palacebase.html#SQDMetal.PALACE.Model.PALACE_Model_Base.run" title="SQDMetal.PALACE.Model.PALACE_Model_Base.run"><code class="xref py py-func docutils literal notranslate"><span class="pre">run()</span></code></a> stores in the output directory (config.json).</p></li>
+<li><p><strong>save</strong> (<em>bool</em>) – (Defaults to True) Also writes the table to ‘results.md’ in the output directory.</p></li>
+<li><p><strong>print_table</strong> (<em>bool</em>) – (Defaults to True) Prints the markdown table.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>table</strong> – The (unformatted) numerical results; the markdown string is in <code class="docutils literal notranslate"><span class="pre">table.attrs['markdown']</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -841,6 +896,24 @@ frequency/Q/kappa/participation data overlaid directly on each image.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>None</strong> – This function does not take any arguments.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pandas dataframe containing the data from the output of the eigenmode simulation inlcuding the real and imaginary
+components of the eigenfrequency and the quality factor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data_from_files">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">retrieve_data_from_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'flat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_degenerate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.retrieve_data_from_files" title="Link to this definition"></a></dt>
+<dd><p>Retrieves data from a given directory produced from the eigenmode simulation and creates plots of the electric fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>directory</strong> (<em>str</em>) – The directory containing the eigenmode simulation output files.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>A pandas dataframe containing the data from the output of the eigenmode simulation inlcuding the real and imaginary
