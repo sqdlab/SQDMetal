@@ -173,7 +173,11 @@ cython_debug/
 Thumbs.db
 Desktop.ini
 
-# 
+# test files
 outputFiles/
 /docs/User/WorkedExamples/GMSH_eigen_test
 docs/User/WorkedExamples/temp.sh
+PALACE_wirebonds_example.py
+UnitTests/gds_test_outputs/
+wirebond_example/
+UnitTests/wirebond_test_outputs/

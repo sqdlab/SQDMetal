@@ -238,6 +238,39 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             with open(self._sim_config, "w") as f:
                 json.dump(config_json, f, indent=2)
 
+    @staticmethod
+    def retrieve_data_from_files(directory: str, shading="flat", remove_degenerate=True):
+        '''
+        Retrieves data from a given directory produced from the eigenmode simulation and creates plots of the electric fields.
+
+        Parameters
+        ----------
+        directory : str
+            The directory containing the eigenmode simulation output files.
+
+        Returns
+        -------
+        Dataframe 
+            A pandas dataframe containing the data from the output of the eigenmode simulation inlcuding the real and imaginary
+            components of the eigenfrequency and the quality factor.
+        '''  
+        raw_data = pd.read_csv(directory + '/eig.csv')
+        headers = raw_data.columns # noqa: F841 # abhishekchak52: headers is not used
+        raw_data = raw_data.to_numpy()
+
+        lePlots = directory + '/paraview/eigenmode/eigenmode.pvd'
+        if os.path.exists(lePlots):
+            leView = PVDVTU_Viewer(lePlots)
+            for m in range(leView.num_datasets):
+                try: 
+                    leSlice = leView.get_data_slice(m)
+                    fig = leSlice.plot(np.linalg.norm(leSlice.get_data('E_real'), axis=1), 'coolwarm', True, shading=shading, remove_degenerate=remove_degenerate)
+                    fig.savefig(directory + f'/eig{m}_ErealMag.png')
+                    plt.close(fig)
+                except Exception as e:
+                    print(f"Error in plotting: {e}")        
+        return raw_data
+
     def retrieve_data(self) -> pd.DataFrame:
         '''
         Retrieves data from the files produced from the eigenmode simulation and creates plots of the electric fields.
@@ -665,7 +698,7 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         return PALACE_Eigenmode_Simulation.plot_fields_with_data_from_files(self._output_data_dir, save=save, skip_postprocessing=skip_postprocessing)
 
     @staticmethod
-    def plot_fields_with_data_from_files(directory, save=True, skip_postprocessing=False):
+    def plot_fields_with_data_from_files(directory, save=True, skip_postprocessing=False, config_json_path=None):
         """
         Plot eigenmode field magnitude images in a 2-row grid, with the
         frequency/Q/kappa/participation data overlaid directly on each image.
@@ -673,9 +706,15 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         mode_dict = PALACE_Eigenmode_Simulation.retrieve_mode_port_EPR_from_file(directory)
         if not skip_postprocessing:
             try:
-                participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(
-                    json_sim_config=directory + r"/config.json", output_directory=directory)
-            except Exception:
+                if config_json_path is None:
+                    participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(
+                        json_sim_config=directory + r"/config.json", output_directory=directory)
+                else:
+                    assert os.path.exists(config_json_path), f"Configuration file not found: {config_json_path}"
+                    participations = PALACE_Eigenmode_Simulation.retrieve_interface_EPR_data_from_file(
+                        json_sim_config=config_json_path, output_directory=directory)
+            except Exception as e:
+                print(f"Skipping the participation data: {e}")
                 skip_postprocessing = True
 
         # collect png files
@@ -692,8 +731,10 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         else:
             n_modes = min(len(png_files), len(participations))
 
-        n_rows = 2 if n_modes > 1 else 1
-        n_cols = int(np.ceil(n_modes / n_rows))
+        n_cols = 4 if n_modes > 4 else n_modes
+        n_rows = int(np.ceil(n_modes / n_cols))
+        # n_rows = 2 if n_modes > 1 else 1
+        # n_cols = int(np.ceil(n_modes / n_rows))
 
         fig = plt.figure(figsize=(4.2 * n_cols, 4.4 * n_rows))
         path = os.path.normpath(directory)
@@ -721,11 +762,11 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
             if skip_postprocessing:
                 q_val = mode_dict['loaded_Q'][eig_num]
                 q_str = f"{q_val:.0f}" if isinstance(q_val, (int, float, np.floating)) else str(q_val)
-                lines = [f"f = {f_ghz:.3f} GHz    Q = {q_str}"]
+                lines = [f"$f$ = {f_ghz:.3f} GHz    $Q_L$ = {q_str}"]
             else:
                 p = participations[eig_num]
                 lines = [
-                    rf"f = {f_ghz:.3f} GHz   Q = {p['Q']:.0f}   $\kappa$ = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz",
+                    rf"$f$ = {f_ghz:.3f} GHz   $Q_L$ = {p['Q']:.0f}   $\kappa$ = {mode_dict['kappa'][eig_num] * 1e3:.3f} MHz",
                     rf"$p_{{MS}}$ = {p['MS']['p']:.2e}   $p_{{MA}}$ = {p['MA']['p']:.2e}   $p_{{SA}}$ = {p['SA']['p']:.2e}",
                 ]
             text = "\n".join(lines)
@@ -744,3 +785,132 @@ class PALACE_Eigenmode_Simulation(PALACE_Model_Base_RF):
         else:
             return {'mode_dict': mode_dict, 'participations': participations}
 
+    def print_results_table(self, save=True):
+        '''
+        Prints a markdown table of the eigenmode results with one row per mode: frequency, total Q, coupling Q (Q_c),
+        estimated internal Q (Q_i), coupling linewidth (kappa), the surface-interface participation ratios and the
+        junction (port) participation ratios - whichever of these the simulation produced.
+
+        This function must be run after calling :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run`.
+
+        Parameters
+        ----------
+        save : bool
+            (Defaults to True) Also writes the table to 'results.md' in the output directory.
+
+        Returns
+        -------
+        table : pd.DataFrame
+            The (unformatted) numerical results; the markdown string is in ``table.attrs['markdown']``.
+        '''
+        return PALACE_Eigenmode_Simulation.print_results_table_from_files(self._output_data_dir, self._sim_config, save=save)
+
+    @staticmethod
+    def print_results_table_from_files(directory: str, config_json_path: str = None, save=True, print_table=True) -> pd.DataFrame:
+        '''
+        Prints a markdown table of the eigenmode results stored in a Palace output directory (see
+        :func:`~SQDMetal.PALACE.Eigenmode_Simulation.PALACE_Eigenmode_Simulation.print_results_table`).
+
+        Columns (included only when the corresponding Palace output exists):
+
+        *   ``Mode``, ``f (GHz)``, ``Q`` : from eig.csv (Q is the total/loaded quality factor).
+        *   ``Q_c``, ``Q_i (est.)``, ``κ (MHz)`` : from port-Q.csv (ports with a resistance). Q_c = 1/Σ(1/Q_ext) over the
+            ports, κ = Σ|κ_ext| (ordinary frequency, not angular) and Q_i = 1/(1/Q - 1/Q_c) is the Q from all other losses.
+        *   ``p_SA``, ``p_MS``, ``p_MA`` (and ``Q_SA`` etc.) : interface participation ratios from surface-Q.csv.
+        *   ``p_J[i]`` : junction/inductive-port participation ratios from port-EPR.csv.
+
+        Parameters
+        ----------
+        directory : str
+            The Palace output directory (containing eig.csv).
+        config_json_path : str
+            Path to the Palace JSON configuration (used to label the interfaces). Defaults to the copy that
+            :func:`~SQDMetal.PALACE.Model.PALACE_Model_Base.run` stores in the output directory (config.json).
+        save : bool
+            (Defaults to True) Also writes the table to 'results.md' in the output directory.
+        print_table : bool
+            (Defaults to True) Prints the markdown table.
+
+        Returns
+        -------
+        table : pd.DataFrame
+            The (unformatted) numerical results; the markdown string is in ``table.attrs['markdown']``.
+        '''
+        def read_csv(name):
+            path = os.path.join(directory, name)
+            if not os.path.exists(path):
+                return None
+            df = pd.read_csv(path, dtype=str)
+            df.columns = [c.strip() for c in df.columns]
+            #Numeric conversion that also accepts '+inf'/'-inf' (as written for lossless modes)
+            return df.apply(lambda c: pd.to_numeric(c.str.strip().str.replace(r'^\+', '', regex=True), errors='coerce'))
+        def col(df, prefix):
+            return [c for c in df.columns if c.startswith(prefix)]
+
+        eig = read_csv('eig.csv')
+        assert eig is not None, f"eig.csv not found in {directory}."
+        table = pd.DataFrame({'Mode': eig['m'].astype(int).to_numpy(),
+                              'f (GHz)': eig[col(eig, 'Re{f}')[0]].to_numpy(),
+                              'Q': eig[col(eig, 'Q')[0]].to_numpy()})
+        fmt = {'Mode': '{:d}', 'f (GHz)': '{:.4f}', 'Q': '{:.4g}'}
+
+        #Coupling through resistive ports
+        port_q = read_csv('port-Q.csv')
+        if port_q is not None and len(col(port_q, 'Q_ext')) > 0:
+            q_ext = port_q[col(port_q, 'Q_ext')].to_numpy(dtype=float)
+            kappa = np.abs(port_q[col(port_q, 'κ_ext')].to_numpy(dtype=float))
+            with np.errstate(divide='ignore'):
+                inv_qc = np.sum(1.0/q_ext, axis=1)
+                q_c = np.where(inv_qc > 0, 1.0/inv_qc, np.inf)
+                inv_qi = 1.0/table['Q'].to_numpy() - inv_qc
+                q_i = np.where(inv_qi > 0, 1.0/inv_qi, np.inf)
+            table['$Q_c$'] = q_c
+            table['$Q_i$ (est.)'] = q_i
+            table['$κ$ (MHz)'] = np.sum(kappa, axis=1)*1e3
+            fmt.update({'$Q_c$': '{:.4g}', '$Q_i$ (est.)': '{:.4g}', '$κ$ (MHz)': '{:.4g}'})
+
+        #Interface participation ratios (labelled via the configuration's Dielectric postprocessing indices)
+        surf = read_csv('surface-Q.csv')
+        if os.path.exists(os.path.join(directory, 'config.json')):
+            config_json_path = os.path.join(directory, 'config.json')   #The exact configuration used for this run
+        if surf is not None and config_json_path is not None and os.path.exists(config_json_path):
+            with open(config_json_path, "r") as f:
+                config_json = json.loads(f.read())
+            interfaces = config_json.get('Boundaries', {}).get('Postprocessing', {}).get('Dielectric', [])
+            for cur in interfaces:
+                p_col = [c for c in surf.columns if c.startswith(f"p_surf[{cur['Index']}]")]
+                # q_col = [c for c in surf.columns if c.startswith(f"Q_surf[{cur['Index']}]")]
+                label = cur.get('Type', str(cur['Index']))
+                if len(p_col) > 0:
+                    table[f'$p_{{{label}}}$'] = surf[p_col[0]].to_numpy()
+                    fmt[f'$p_{{{label}}}$'] = '{:.3e}'
+                # if len(q_col) > 0:
+                #     table[f'$Q_{{{label}}}$'] = surf[q_col[0]].to_numpy()
+                #     fmt[f'$Q_{{{label}}}$'] = '{:.3g}'
+
+        #Junction (inductive port) participation ratios
+        port_epr = read_csv('port-EPR.csv')
+        if port_epr is not None:
+            for c in col(port_epr, 'p['):
+                table[f'$p_{{J{c[1:]}}}$'] = port_epr[c].to_numpy()
+                fmt[f'$p_{{J{c[1:]}}}$'] = '{:.4f}'
+
+        def cell(v, f):
+            if isinstance(v, (float, np.floating)):
+                if np.isnan(v):
+                    return '–'
+                if np.isinf(v):
+                    return '∞'
+            return f.format(int(v) if f == '{:d}' else v)
+        header = '| ' + ' | '.join(table.columns) + ' |'
+        sep = '|' + '|'.join(['---:' for _ in table.columns]) + '|'
+        rows = ['| ' + ' | '.join(cell(r[c], fmt[c]) for c in table.columns) + ' |' for _, r in table.iterrows()]
+        markdown = '\n'.join([header, sep] + rows)
+        table.attrs['markdown'] = markdown
+
+        if print_table:
+            print(markdown)
+        if save:
+            with open(os.path.join(directory, 'results.md'), 'w', encoding='utf-8') as f:
+                f.write(markdown + '\n')
+        return table

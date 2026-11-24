@@ -19,6 +19,7 @@ from SQDMetal.PALACE.Utilities.GMSH_Mesh_Builder import GMSH_Mesh_Builder
 from SQDMetal.PALACE.PVDVTU_Viewer import PVDVTU_Viewer
 
 class PALACE_Capacitance_Simulation(PALACE_Model_Base):
+    _supports_wirebonds = True
 
     #Class Variables
     default_user_options = {
@@ -249,7 +250,9 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
                                                                threshold=self.user_options["threshold"],
                                                                simplify_edge_min_angle_deg=self.user_options["simplify_edge_min_angle_deg"],
                                                                full_3D_params = self._full_3D_params,
-                                                               boundary_distances = self._boundary_distances)
+                                                               boundary_distances = self._boundary_distances,
+                                                               wirebonds = self._resolve_wirebonds())
+            self._wirebond_attrs = gmsh_render_attrs.get('wirebonds', [])
             #
             gmb = GMSH_Mesh_Builder(gmsh_render_attrs['fine_mesh_elems'], self.user_options)
             gmb.build_mesh()
@@ -260,6 +263,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
 
                 #create config file
                 self._create_config_file(gmsh_render_attrs = gmsh_render_attrs)
+                self._apply_wirebonds_to_config(gmsh_render_attrs)
 
                 #create batch file
                 # if self.mode == 'HPC':
@@ -648,7 +652,7 @@ class PALACE_Capacitance_Simulation(PALACE_Model_Base):
         print(f"{'chi':<16s} = {chi_MHz if isinstance(chi_MHz, str) else f'{chi_MHz:>10.3f}'} MHz")
         print(f"{'Delta':<16s} = {Delta_GHz if isinstance(Delta_GHz, str) else f'{Delta_GHz:>10.3f}'} GHz")
         print(f"{'Anharmonicity':<16s} = {anh_MHz if isinstance(anh_MHz, str) else f'{anh_MHz:>10.3f}'} MHz")
-        if kappa_MHz != 'N/A':
+        if kappa_MHz  not in (None, 'N/A'):
             print(f"{'kappa':<16s} = {kappa_MHz:>10.3f} MHz")
             print(f"{'T_1,P':<16s} = {T1p_ms:>10.3f} ms")
         print()

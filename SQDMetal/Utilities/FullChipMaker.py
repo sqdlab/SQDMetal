@@ -1,4 +1,4 @@
-# Copyright 2025 Prasanna Pakkiam
+# Copyright 2026 Zachary Degnan
 # SPDX-License-Identifier: Apache-2.0
 
 from qiskit_metal import designs
@@ -6,6 +6,7 @@ from SQDMetal.Utilities.Materials import Material
 from SQDMetal.Utilities.MakeGDS import MakeGDS
 from SQDMetal.Utilities.CpwParams import CpwParams
 from SQDMetal.Utilities.QUtilities import QUtilities
+from qiskit_metal import Dict
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -28,9 +29,10 @@ class MultiDieChip:
     def make_resonator_chip(
         self,
         export_filename=None,
+        export_gds=True,
         export_path="",
         export_type="all",
-        export_threshold=1e-9,
+        # export_threshold=1e-9,
         frequency_range=(6e9, 7e9),
         frequency_list=None,
         num_resonators=5,
@@ -39,6 +41,7 @@ class MultiDieChip:
         coupling_gap="20um",
         tl_y="0um",
         res_vertical="1500um",
+        resonator_side="below",
         lp_to_res="300um",
         lp_inset="0um",
         lp_dimension="600um",
@@ -122,6 +125,13 @@ class MultiDieChip:
         res_vertical : str, optional
             Vertical length of resonator meanders.
             Default is ``"1500um"``.
+
+        resonator_side : str or list of str, optional
+            Side of the feedline the resonators hang from: ``"below"``, ``"above"``,
+            ``"alternate"`` (below, above, below, ...), or a list of ``"above"``/``"below"``
+            with one entry per resonator. Resonators on opposite sides cannot clash, so
+            ``"alternate"`` fits roughly twice as many resonators along the feedline.
+            Default is ``"below"``.
 
         lp_to_res : str, optional
             Minimum distance between the launchpad taper and the coupling length
@@ -215,8 +225,8 @@ class MultiDieChip:
         assert film_material in [
             "aluminium",
             "tantalum",
-            "TiN"
-        ], "Only aluminium and tantalum are supported for the film material currently."
+            "TiN",
+        ], "Only aluminium, TiN and tantalum are supported for the film material currently."
 
         assert (
             self.export_filename is not None or export_filename is not None
@@ -225,6 +235,8 @@ class MultiDieChip:
             self.export_filename = export_filename
         elif export_filename is None:
             export_filename = self.export_filename
+
+        die_num = list(die_num)  # copy, so fill_chip doesn't modify the caller's (or the default) list
 
         if single_circuit_for_simulation:
             print(
@@ -243,7 +255,7 @@ class MultiDieChip:
         assert QUtilities.is_string_or_list_of_strings(coupling_gap), "If you want different coupling_gap per-resonator, pass as a list of strings (e.g. ['5um, '10um', ...])"
         if isinstance(coupling_gap, list):
             assert len(coupling_gap) == num_resonators
-        if len(cpw_width) == 1:
+        if isinstance(cpw_width, list) and len(cpw_width) == 1:
             cpw_width = cpw_width[0]
         scaled_geometry = isinstance(cpw_width, list)
         if scaled_geometry:
@@ -273,7 +285,7 @@ class MultiDieChip:
 
         # initialise and clear design
         design = designs.DesignPlanar(
-            metadata={}, overwrite_enabled=True, enable_renderers=True
+            metadata=Dict(design_name=export_filename), overwrite_enabled=True, enable_renderers=True
         )
         design.delete_all_components()
 
@@ -374,6 +386,29 @@ class MultiDieChip:
             feedline_cpw_width = width_0
             feedline_cpw_gap = gap_0
 
+        # check that the resonators fit vertically on the die on the side(s) they hang from
+        if isinstance(resonator_side, str):
+            if resonator_side.lower() in ("alternate", "both"):
+                sides_used = {"below", "above"} if num_resonators > 1 else {"below"}
+            else:
+                sides_used = {resonator_side.lower()}
+        else:
+            sides_used = {str(sd).lower() for sd in resonator_side}
+        tl_y_val = QUtilities.parse_value_length(tl_y)
+        fl_w = QUtilities.parse_value_length(feedline_cpw_width)
+        fl_g = QUtilities.parse_value_length(feedline_cpw_gap)
+        res_reach = (
+            0.5 * fl_w + fl_g
+            + max(QUtilities.parse_value_length(cg) for cg in (coupling_gap if isinstance(coupling_gap, list) else [coupling_gap]))
+            + 2 * max(QUtilities.parse_value_length(g) for g in (gap if isinstance(gap, list) else [gap]))
+            + max(QUtilities.parse_value_length(w) for w in (cpw_width if isinstance(cpw_width, list) else [cpw_width]))
+            + res_vertical_y
+        )
+        if "above" in sides_used and tl_y_val + res_reach > die_dim_y / 2:
+            print(f"WARNING: resonators above the feedline extend to y = {(tl_y_val + res_reach) * 1e6:.0f} um, beyond the die top edge at {die_dim_y / 2 * 1e6:.0f} um. Reduce res_vertical or lower tl_y.")
+        if "below" in sides_used and tl_y_val - res_reach < -die_dim_y / 2:
+            print(f"WARNING: resonators below the feedline extend to y = {(tl_y_val - res_reach) * 1e6:.0f} um, beyond the die bottom edge at {-die_dim_y / 2 * 1e6:.0f} um. Reduce res_vertical or raise tl_y.")
+
         print(f"Chip Size: {chip_dimension[0]} x {chip_dimension[1]}")
         print(f"Die Size:  {die_dimension[0]} x {die_dimension[1]}\n")
         print("Resonator properties:")
@@ -439,6 +474,7 @@ class MultiDieChip:
                     transmission_line_y=tl_y,
                     launchpad_to_res=lp_to_res,
                     res_vertical=res_vertical,
+                    resonator_side=resonator_side,
                     min_res_gap="50um",
                     LC_calculations=True,
                     print_statements=print_all_infos,
@@ -511,46 +547,47 @@ class MultiDieChip:
             design.chips.main
             design.rebuild()
 
-        # setup GDS export
-        gds_export = MakeGDS(
-            design,
-            export_type=export_type,
-            print_statements=print_all_infos,
-            fuse_threshold=export_threshold,
-            precision=export_threshold,
-        )
+        if export_gds:
+            # setup GDS export
+            gds_export = MakeGDS(
+                design,
+                export_type=export_type,
+                print_statements=print_all_infos,
+                # fuse_threshold=export_threshold,
+                # precision=export_threshold,
+            )
 
-        # add text label
-        if text_label is not None:
-            if text_position is None:
-                gds_export.add_text(
-                    text_label=text_label, size=text_size, position=(0.05, 0.9)
-                )
-            else:
-                gds_export.add_text(
-                    text_label=text_label, size=text_size, position=text_position
-                )
+            # add text label
+            if text_label is not None:
+                if text_position is None:
+                    gds_export.add_text(
+                        text_label=text_label, size=text_size, position=(0.05, 0.9)
+                    )
+                else:
+                    gds_export.add_text(
+                        text_label=text_label, size=text_size, position=text_position
+                    )
 
-    
-        # setup export path based on user inputs
-        if export_path == "":
-            if date_stamp_on_export:
-                full_export_path = os.path.join(f"{export_filename}_{t}.gds")
+        
+            # setup export path based on user inputs
+            if export_path == "":
+                if date_stamp_on_export:
+                    full_export_path = os.path.join(f"{export_filename}_{t}.gds")
+                else:
+                    full_export_path = os.path.join(f"{export_filename}.gds")
             else:
-                full_export_path = os.path.join(f"{export_filename}.gds")
-        else:
-            if date_stamp_on_export:
-                full_export_path = os.path.join(
-                    export_path, f"{export_filename}_{t}.gds"
-                )
-            else:
-                full_export_path = os.path.join(
-                    export_path, f"{export_filename}.gds"
-                )
-        # do export
-        gds_export.export(full_export_path)
-        print(f"Exported at {os.path.abspath(full_export_path)}")
-        print("")
+                if date_stamp_on_export:
+                    full_export_path = os.path.join(
+                        export_path, f"{export_filename}_{t}.gds"
+                    )
+                else:
+                    full_export_path = os.path.join(
+                        export_path, f"{export_filename}.gds"
+                    )
+            # do export
+            gds_export.export(full_export_path)
+            print(f"Exported at {os.path.abspath(full_export_path)}")
+            print("")
 
         # assign self.design
         self.design = design
@@ -579,10 +616,18 @@ class MultiDieChip:
         num_saved_solns=None,
         solver_order=2,
         solver_tol=1.0e-8,
+        kinetic_inductance=None,
+        airbridges=False,
         **kwargs,
     ):
         """
         Setup and run Palace eigenmode simulations on a resonator chip (as per MultiDieChip.make_resonator_chip) Qiskit Metal design object. Automatically handles number of eigenmodes, start frequency, and fine-meshing around transmission line and resonators. Assumes that ports are setup on launchpads.
+
+        Args:
+            airbridges (bool | dict): If True, every air-bridge component in the design (e.g. AirBridgeCPW) is simulated as a
+                3D air-bridge via PALACE_Model_Base.add_airbridges_from_design(). A dict is passed onto
+                PALACE_Model_Base.set_airbridge_defaults() (e.g. dict(height=3e-6, thickness=0.5e-6, cross_section='sheet'))
+                and also enables the air-bridges. The 2D air-bridge layers are never added as planar metals. Defaults to False.
         """
         assert self.design is not None, "Please run make_resonator_chip() first."
         assert (
@@ -594,7 +639,7 @@ class MultiDieChip:
             num_cpus = num_cpus
         elif num_cpus == None:
             physical_cores = psutil.cpu_count(logical=False)
-            num_cpus = physical_cores - leave_free_cpu_num, 
+            num_cpus = physical_cores - leave_free_cpu_num
             # print(f"Number of physical CPU cores: {physical_cores}")
         else:
             num_cpus = num_cpus
@@ -657,8 +702,8 @@ class MultiDieChip:
             "fillet_resolution": 12,  # Number of vertices per quarter turn on a filleted path
             "palace_dir": palace_binary,  # "PATH/TO/PALACE/BINARY",
             "num_cpus": num_cpus,  # number of CPUs to use for simulation
-            "mesh_min": fine_mesh_min_max[0]*1e3,  # minimum mesh size in mm
-            "mesh_max": fine_mesh_min_max[1]*1e3  # maximum mesh size in mm
+            "mesh_min": fine_mesh_min_max[0],  # minimum mesh size in m
+            "mesh_max": fine_mesh_min_max[1]  # maximum mesh size in m
         }
         user_defined_options.update(kwargs) # update any other options based on kwargs
         max_option_length = max(len(str(option)) for option in user_defined_options)
@@ -711,8 +756,23 @@ class MultiDieChip:
                 substrate_air=MaterialInterface("siliconair"),
                 substrate_metal=MaterialInterface("tantalumsilicon"),
             )
+
+        if kinetic_inductance is not None:
+            self.eigen_sim.add_kinetic_inductance(kinetic_inductance)
+
+        if airbridges:
+            if isinstance(airbridges, dict):
+                self.eigen_sim.set_airbridge_defaults(**airbridges)
+            num_bridges = self.eigen_sim.add_airbridges_from_design()
+            assert num_bridges > 0, "airbridges was requested, but the design has no air-bridge components (e.g. AirBridgeCPW)."
+            print(f"\nAdded {num_bridges} 3D air-bridges to the simulation.")
+
         self.eigen_sim.prepare_simulation()
-        print(f"\nGMSH mesh exported at {os.path.abspath(f'{sim_name}.msh')}\n")
+        if airbridges:
+            summary = self.eigen_sim.get_wirebond_summary(print_summary=False)
+            issues = [x for x in summary if len(x['issues']) > 0]
+            print(f"{len(summary)} air-bridges meshed; {len(issues)} with warnings (see eigen_sim.get_wirebond_summary()).")
+        print(f"\nGMSH mesh exported at {os.path.abspath(self.eigen_sim._mesh_path)}\n")
     
     def run_palace_eigenmode_resonator(self):
         self.eigen_sim.run()

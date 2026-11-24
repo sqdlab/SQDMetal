@@ -65,15 +65,22 @@ class PVDVTU_Slice:
             return self.slc.cell_data[param_name]
         raise ValueError("association must be 'point' or 'cell'")
 
-    def plot(self, values, cmap="viridis", equalise_histogram=True, equal_pos_neg=True, association="point", fig=None, ax=None):
+    def plot(self, values, cmap="viridis", equalise_histogram=True, equal_pos_neg=True, association="point", fig=None, ax=None, shading="gouraud", remove_degenerate=True, verbose=True):
         """
         Plot a scalar field on an arbitrarily oriented planar slice.
 
         association:
             'point' -> one scalar per mesh vertex
             'cell'  -> one scalar per triangle
+        shading:
+            'gouraud' (default for point data) -> smooth interpolation between vertices
+            'flat' -> one colour per triangle (point data are averaged over each triangle's vertices). This avoids
+                      matplotlib's Gouraud renderer entirely - use it if spurious lines/streaks appear.
+        remove_degenerate:
+            Drop zero-area/collinear triangles (and any with non-finite coordinates) before plotting. Slicing exactly
+            through mesh faces (e.g. at z=0 where the metals and substrate surface lie) can create such triangles, which
+            break the Gouraud interpolation and show up as stray lines.
         """
-
         values = np.asarray(values)
 
         # This plotting method expects a scalar field.
@@ -86,25 +93,28 @@ class PVDVTU_Slice:
             expected = self.slc.n_cells
         else:
             raise ValueError("association must be 'point' or 'cell'")
+        if shading not in ("gouraud", "flat"):
+            raise ValueError("shading must be 'gouraud' or 'flat'")
 
         if len(values) != expected:
             raise ValueError(f"{association.capitalize()} data has {len(values)} values, but the slice has {expected} {'points' if association == 'point' else 'cells'}.")
 
-        # Complex arrays must be converted to an explicitly chosen
-        # real-valued quantity before plotting.
+        # Complex arrays converted to real-valued quantity before plotting
         if np.iscomplexobj(values):
             raise ValueError("Complex data must be converted to a real scalar, e.g. np.abs(values) or np.real(values).")
 
-        values = values.astype(float, copy=False)
+        values = np.ascontiguousarray(values, dtype=np.float64)
 
         if not np.all(np.isfinite(values)):
             raise ValueError("Field contains NaN or infinite values. Handle these explicitly before plotting.")
 
-        pts = self.slc.points
         x2d, y2d = self.get_2d_coordinates()
+        # Contiguous float64 coordinates (VTK may hand back float32/strided views)
+        x2d = np.ascontiguousarray(x2d * self._units, dtype=np.float64)
+        y2d = np.ascontiguousarray(y2d * self._units, dtype=np.float64)
 
         # triangulate() ensures triangular surface cells.
-        faces = self.slc.faces
+        faces = np.asarray(self.slc.faces)
 
         if len(faces) % 4 != 0:
             raise ValueError("Expected triangular cells after triangulation.")
@@ -114,7 +124,26 @@ class PVDVTU_Slice:
         if not np.all(faces[:, 0] == 3):
             raise ValueError("The slice contains non-triangular faces.")
 
-        triangles = faces[:, 1:]
+        triangles = np.ascontiguousarray(faces[:, 1:], dtype=np.int32)
+        if triangles.size > 0 and (triangles.min() < 0 or triangles.max() >= len(x2d)):
+            raise ValueError("The slice contains triangles referencing non-existent points.")
+
+        # Remove degenerate (zero-area) triangles and triangles with non-finite vertices
+        keep = np.ones(len(triangles), dtype=bool)
+        if remove_degenerate and len(triangles) > 0:
+            xa, xb, xc = x2d[triangles[:, 0]], x2d[triangles[:, 1]], x2d[triangles[:, 2]]
+            ya, yb, yc = y2d[triangles[:, 0]], y2d[triangles[:, 1]], y2d[triangles[:, 2]]
+            area2 = np.abs((xb - xa)*(yc - ya) - (xc - xa)*(yb - ya))
+            finite = np.isfinite(area2)
+            scale = np.median(area2[finite & (area2 > 0)]) if np.any(finite & (area2 > 0)) else 1.0
+            keep = finite & (area2 > 1e-10*scale)
+            num_removed = int(np.sum(~keep))
+            if verbose and num_removed > 0:
+                print(f"PVDVTU_Slice.plot: removed {num_removed} degenerate triangle(s) out of {len(triangles)}.")
+        cell_values = values[keep] if association == "cell" else None
+        triangles = triangles[keep]
+        if len(triangles) == 0:
+            raise ValueError("The slice contains no valid (non-degenerate) triangles.")
 
         if fig is None and ax is None:
             fig, ax = plt.subplots()
@@ -147,10 +176,12 @@ class PVDVTU_Slice:
             cbar_ticks = np.linspace(z_min, z_max, 5)
 
         # Avoid passing both norm and vmin/vmax to tripcolor.
-        if association == "point":
-            pcm = ax.tripcolor( x2d * self._units, y2d * self._units, triangles, values, shading="gouraud", cmap=cmap, norm=cmap_norm )
+        if association == "point" and shading == "gouraud":
+            pcm = ax.tripcolor(x2d, y2d, triangles, values, shading="gouraud", cmap=cmap, norm=cmap_norm)
         else:
-            pcm = ax.tripcolor( x2d * self._units, y2d * self._units, triangles, facecolors=values, shading="flat", cmap=cmap, norm=cmap_norm )
+            face_vals = cell_values if association == "cell" else values[triangles].mean(axis=1)
+            pcm = ax.tripcolor(x2d, y2d, triangles, facecolors=face_vals, shading="flat", cmap=cmap, norm=cmap_norm,
+                               edgecolors="face", linewidth=0)
 
         ax.set_xlabel("In-plane coordinate u (m)")
         ax.set_ylabel("In-plane coordinate v (m)")

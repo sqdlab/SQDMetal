@@ -54,14 +54,19 @@ class GMSH_Mesh_Builder:
             gmsh.model.mesh.field.setNumber(thresh_field_id, "DistMax", cur_fine_mesh['taper_dist_max'])        #how far from the element until the max element size can be implemented 
             
             fields_to_min.append(thresh_field_id)
-        min_field_id = thresh_field_id+1
-        gmsh.model.mesh.field.add("Min", min_field_id)
-        gmsh.model.mesh.field.setNumbers(min_field_id, "FieldsList", fields_to_min)
+        if len(fields_to_min) > 0:
+            min_field_id = 2*len(self._fine_meshes)+1
+            gmsh.model.mesh.field.add("Min", min_field_id)
+            gmsh.model.mesh.field.setNumbers(min_field_id, "FieldsList", fields_to_min)
 
 
         #set mesh algorithm Mesh.Algorithm3D to HXT (option - 10) or Delaunay 3D (option - 1)
         gmsh.option.setNumber("Mesh.Algorithm3D", 10) #HXT seems to be producing less slivers near curvature in the design
-        gmsh.model.mesh.field.setAsBackgroundMesh(min_field_id)
+        if len(fields_to_min) > 0:
+            gmsh.model.mesh.field.setAsBackgroundMesh(min_field_id)
+        elif self.user_options.get('mesh_max', None) is not None:
+            #No fine-mesh regions - the size would otherwise only come from the (very coarse) default; cap it at mesh_max (m -> mm)
+            gmsh.option.setNumber("Mesh.MeshSizeMax", self.user_options['mesh_max']*1e3)
         gmsh.option.setNumber('Mesh.MshFileVersion', 2.2)
         gmsh.model.mesh.generate(3)
 

@@ -805,6 +805,7 @@ class TransmonTaperedInsets(BaseQubit):
                     ]
                 )
         pad_top = pad_top_tmp
+
         # Curving the edges of the teeth where it joins the pad
         # outer corners
         pad_top = pad_top.buffer(p.fillet_radius, join_style=2, cap_style=3).buffer(
@@ -833,6 +834,7 @@ class TransmonTaperedInsets(BaseQubit):
             pad_width / 2, -(pad_height + pad_gap) / 2.0
         ).buffer(pad_height / 2, resolution=16, cap_style=CAP_STYLE.round)
         pad_bot = draw.union([pad_bot, circ_left_bot, circ_right_bot])
+        
         # TAPER - Add trapezoid to the bottom pad
         if p.taper_height > 0:
             trapezoid_bot = self.create_trapezoid(

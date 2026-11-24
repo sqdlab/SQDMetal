@@ -163,10 +163,18 @@ class PVD_Shadows:
             names = [f"Layer {layer_id}"]
         
         gdf = gpd.GeoDataFrame({'names':names}, geometry=plot_polys)
-        fig, ax = plt.subplots(1)
+        figsize = kwargs.get('figsize', (6, 6))
+        fig, ax = plt.subplots(1, figsize=figsize)
         gdf.plot(ax = ax, column='names', cmap='jet', alpha=0.2, categorical=True, legend=True)
         ax.set_xlabel(f'Position ({unit_conv_name})')
         ax.set_ylabel(f'Position ({unit_conv_name})')
+
+        # optional zoom
+        zoom = kwargs.get('zoom', None)
+        if zoom:
+            (xmin, xmax), (ymin, ymax) = zoom
+            ax.set_xlim(xmin, xmax)
+            ax.set_ylim(ymin, ymax)
 
     def get_shadows_for_component(self, qObj_name, mode='separate', **kwargs):
         comp_id = self.design.components[qObj_name].id

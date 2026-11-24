@@ -9,6 +9,7 @@ import shapely
 
 from SQDMetal.Utilities.GeometryProcessors.GeomBase import GeomBase
 from SQDMetal.Utilities.GeometryProcessors.GeomQiskitMetal import GeomQiskitMetal
+from SQDMetal.PALACE.Utilities.GMSH_WireBond_Builder import GMSH_WireBond_Builder
 # import matplotlib.pyplot as plt
 # import geopandas as gpd
 class GMSH_Geometry_Builder:
@@ -19,9 +20,11 @@ class GMSH_Geometry_Builder:
         self._geom_processor = geom_processor
         self.fillet_resolution = fillet_resolution
 
-        # Initialize the GMSH API and name the model
-        gmsh.model.remove()
-        gmsh.finalize()
+        # Initialize the GMSH API (from a clean state) and name the model. Only tear down a running GMSH session: calling
+        # model.remove()/finalize() on a finalised session raises 'Could not get last error' (e.g. on a second
+        # simulation in the same Jupyter kernel).
+        if gmsh.isInitialized():
+            gmsh.finalize()
         gmsh.initialize()
         gmsh.model.add('qiskit_to_gmsh')
         self._verbosity = gmsh_verbosity
@@ -195,12 +198,19 @@ class GMSH_Geometry_Builder:
             gap_entities = []
             for cur_gap in gap_names:
                 gap_entities += dict_all_entities[cur_gap]
+            # preserve ports over trenched regions
+            port_entities = [x for cur_name in sim_construct_names for x in dict_all_entities[cur_name] if x[0] == 2]
+            if len(port_entities) > 0:
+                gap_entities = gap_entities + gmsh.model.occ.copy(port_entities)
             trenches = gmsh.model.occ.extrude(gap_entities, 0, 0, -trench_depth)
             self._gmsh_sync()
             dict_all_entities['temp_trenches'] = [x for x in trenches if x[0] == 3]
 
             self._gmsh_cut_overlapping_parts(dict_all_entities, ['chip'], ['temp_trenches'], remove_tool=True)
         self._gmsh_sync()
+
+        # Build 3D wire-bonds (they sit in the air-box and land on the metals/substrate)
+        wb_names, wb_meta = self._build_wirebonds(kwargs.get('wirebonds', []), metals, ground_plane, full_3D_params, dict_all_entities)
 
         lePortPolys = {}
 
@@ -273,7 +283,11 @@ class GMSH_Geometry_Builder:
         # - The extrusions force remapping of the air-box and its adjacent surfaces - fine...
         # - But it fails to return the remapping of the port unless it's added first - i.e. 1D, then 2D, then 3D?!
         self._gmsh_fragment_make_conformal(dict_all_entities, ['chip'], ['airbox'], filter_tags=True)
-        self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip'],metal_names)
+        # Only the wire-bond solids are fragmented here; their 2D parts (sheets/pads) join in the final fragmentation
+        wb_names_2D = self._split_wirebond_2D_parts(dict_all_entities, wb_names)
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip'],metal_names+wb_names)
+        self._merge_wirebond_2D_parts(dict_all_entities, wb_names)
+        self._filter_wirebond_volumes_from_airbox(dict_all_entities, wb_names)
         if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
             # self._gmsh_fragment_make_conformal(dict_all_entities, ['airbox','chip']+metal_names,ff_names+wave_port_names,[])
             assert len(kwargs.get('integration_areas',[])) == 0, "Integration areas is not supported when using trenching..."
@@ -284,7 +298,11 @@ class GMSH_Geometry_Builder:
                 if com[2] < -0.25*trench_depth and com[2] > -1.25*trench_depth and np.min(np.abs(self._extents.T - np.array(com))) > 1e-6:
                     dict_all_entities['dielectric_gaps'].append((dim, tag))
             gap_names = ['dielectric_gaps']
-        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox']+metal_names,ff_names+gap_names+sim_construct_names+wave_port_names,[])
+        # 2D wire-bond parts (sheets, off-chip pads) go on the tool side (like ports); OCC otherwise drops their mapping
+        wb_names_2D = self._split_wirebond_2D_parts(dict_all_entities, wb_names)
+        self._gmsh_fragment_make_conformal(dict_all_entities, ['chip', 'airbox']+metal_names+wb_names,ff_names+gap_names+sim_construct_names+wave_port_names+wb_names_2D,[])
+        self._merge_wirebond_2D_parts(dict_all_entities, wb_names)
+        self._filter_wirebond_volumes_from_airbox(dict_all_entities, wb_names)
 
         metal_tags_on_boundaries = []
         for metal_name in metal_names:
@@ -305,6 +323,9 @@ class GMSH_Geometry_Builder:
                 else:
                     metal_tags_on_boundaries.append(x[1])
             dict_all_entities[metal_name] = allowed_tags
+
+        # Convert wire-bond solids into their bounding PEC/conductor surfaces (the interior is not meshed)
+        self._finalise_wirebond_surfaces(dict_all_entities, wb_names, metal_names, gap_names, sim_construct_names, wb_meta)
 
         # metal_tags_on_boundaries = [x[1] for x in dict_all_entities['metals_on_boundaries']]
         if len(wave_ports) > 0:
@@ -332,6 +353,23 @@ class GMSH_Geometry_Builder:
                 cur_metal_pieces.append(metal_physical_group)
                 phys_grp_ints[cur_piece] = metal_physical_group
             contiguous_metal_mapping.append(cur_metal_pieces)
+        wirebond_attrs = []
+        for wb_name in wb_names:
+            meta = wb_meta[wb_name]
+            surfs = [x[1] for x in dict_all_entities[wb_name] if x[0] == 2]
+            if len(surfs) == 0:
+                print(f"WARNING: Wire-bond {meta['name']} has no surfaces left after meshing preparation; it is ignored.")
+                continue
+            wb_physgrp = gmsh.model.addPhysicalGroup(2, surfs, name=meta['name'])
+            lemetals_physgrps.append(wb_physgrp)    #So that wire-bond-unaware simulation types still treat it as PEC
+            meta['physical_group'] = wb_physgrp
+            meta['surfaces'] = surfs
+            wirebond_attrs.append(meta)
+        # Conductors joined by wire-bonds become a single conductor (e.g. a single capacitance terminal)
+        metals_conductors = metals
+        conductor_groups = [[m] for m in range(len(metals))]
+        if len(wirebond_attrs) > 0:
+            contiguous_metal_mapping, metals_conductors, conductor_groups = self._merge_wirebonded_conductors(contiguous_metal_mapping, metals, wirebond_attrs)
         leAirBox_entities = []
         chip_entities = [x[1] for x in dict_all_entities['chip']]
         for cur_entity in dict_all_entities['airbox']:
@@ -344,7 +382,7 @@ class GMSH_Geometry_Builder:
 
         ff_physgrps = {}
         for ff_name in ff_names:
-            dict_all_entities[ff_name] = [x for x in dict_all_entities[ff_name] if not (x[0]==2 and (x[1] in metal_tags_on_boundaries or x[1] in waveport_surface_tags))]
+            dict_all_entities[ff_name] = [x for x in dict_all_entities[ff_name] if not (x[0]==2 and (x[1] in metal_tags_on_boundaries or x[1] in waveport_surface_tags or x[1] in self._wb_wall_faces))]
             ff_physgrps[ff_name] = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[ff_name]], name = ff_name)
 
         gmsh.model.occ.removeAllDuplicates()
@@ -354,11 +392,17 @@ class GMSH_Geometry_Builder:
         #TODO: support integration over metals (for superconductors, it's fine as it'll reject B-field anyway)
         #Process Dielectric Gaps
         leDielectricGaps = []
-        for cur_gap in gaps_div:
-            for cur_piece in cur_gap:
-                cur_phys_grp = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_piece]], name=cur_piece)
-                phys_grp_ints[cur_piece] = cur_phys_grp
-                leDielectricGaps.append(cur_phys_grp)
+        if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
+            # With trenching, the z=0 gap surfaces were consumed when cutting the trenches; the substrate-air interface is
+            # now the trench floors and walls (collected in 'dielectric_gaps'). Using the gap pieces here would give empty
+            # physical groups (which Palace reports as 'Unknown boundary postprocessing attributes').
+            leDielectricGaps.append(gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities['dielectric_gaps'] if x[0] == 2], name='dielectric_gaps'))
+        else:
+            for cur_gap in gaps_div:
+                for cur_piece in cur_gap:
+                    cur_phys_grp = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_piece]], name=cur_piece)
+                    phys_grp_ints[cur_piece] = cur_phys_grp
+                    leDielectricGaps.append(cur_phys_grp)
         
         final_int_areas = []
         if 'integration_areas' in kwargs:
@@ -368,11 +412,18 @@ class GMSH_Geometry_Builder:
                     cur_entities.append(phys_grp_ints[cur_piece])
                 final_int_areas.append(cur_entities)
 
+        for meta in wirebond_attrs:
+            fm = meta['fine_mesh']
+            if fm is not None:
+                fine_mesh_elems.append({'region': [(2,x) for x in meta['surfaces']], **fm})
+
         ret_dict = {
+            'wirebonds' : wirebond_attrs,
             'air_box'   : self._conv_to_lists(leAirBox),
             'metals'    : lemetals_physgrps,
             'contiguous_metal_mapping': contiguous_metal_mapping,
-            'metalsShapely'    : metals,
+            'metalsShapely'    : metals_conductors,
+            'conductor_groups': conductor_groups,
             'far_field' : ff_physgrps,
             'ports'     : lePortPolys,
             'dielectric': self._conv_to_lists(leDielectric),
@@ -381,6 +432,175 @@ class GMSH_Geometry_Builder:
             'integration_areas':final_int_areas
         }
         return ret_dict
+
+    def _build_wirebonds(self, wirebonds, metals, ground_plane, full_3D_params, dict_all_entities):
+        '''
+        Classifies and builds the wire-bonds in GMSH. The wire-bond specifications are given in metres (as stored by
+        the PALACE_Model classes) and converted into the GMSH units here.
+        '''
+        if len(wirebonds) == 0:
+            return [], {}
+        uc = self._unit_conv
+        t_metal = full_3D_params['metal_thickness']/uc if (full_3D_params and full_3D_params['metal_thickness'] > 0) else 0.0
+        chip_bnds = (self.center_x-self.size_x/2, self.center_y-self.size_y/2, self.center_x+self.size_x/2, self.center_y+self.size_y/2)
+        wbb = GMSH_WireBond_Builder(metals, chip_bnds, self.center_z, t_metal, self._extents, not ground_plane.get('omit', True))
+        len_keys = ['width', 'thickness', 'height', 'foot_length', 'foot_width', 'foot_thickness', 'offchip_z']
+        mesh_keys = ['mesh_min', 'mesh_max', 'taper_dist_min', 'taper_dist_max']
+        wb_names, wb_meta = [], {}
+        for cur_wb in wirebonds:
+            wb = dict(cur_wb)
+            wb['pos_start'] = np.array(wb['pos_start'][:2], dtype=float)/uc
+            wb['pos_end'] = np.array(wb['pos_end'][:2], dtype=float)/uc
+            for k in len_keys:
+                if wb.get(k, None) is not None:
+                    wb[k] = wb[k]/uc
+            wb['offchip_pad_size'] = [x/uc for x in wb['offchip_pad_size']]
+            wb['profile_params'] = dict(wb['profile_params'])
+            if wb['profile_params'].get('corner_radius', None) is not None:
+                wb['profile_params']['corner_radius'] = wb['profile_params']['corner_radius']/uc
+            if callable(wb['profile']):
+                f = cur_wb['profile']
+                wb['profile'] = lambda t, f=f: f(t)/uc
+            elif isinstance(wb['profile'], (list, tuple, np.ndarray)):
+                arr = np.array(wb['profile'], dtype=float)
+                wb['profile'] = np.c_[arr[:,0], arr[:,1]/uc]
+            #
+            cls = wbb.classify(wb)
+            candidates = wbb.check_footprint_overlap(wb, cls)
+            dim_tags = wbb.build_airbridge(wb, cls) if wb.get('kind') == 'airbridge' else wbb.build(wb, cls)
+            self._gmsh_sync()
+            name = 'wirebond::' + wb['name']   #Namespaced to avoid clashing with the other entity keys (metal_0, x_neg, ports...)
+            assert name not in dict_all_entities, f"Wire-bond name '{wb['name']}' is used more than once."
+            for other in candidates:
+                GMSH_WireBond_Builder.check_3D_intersection(wb['name'], dim_tags, other, dict_all_entities['wirebond::' + other])
+            wb_names.append(name)
+            dict_all_entities[name] = dim_tags
+            #
+            fine_mesh = None
+            if wb['fine_mesh']:
+                fine_mesh = {k: wb[k]/uc for k in mesh_keys}
+            wb_meta[name] = {
+                'name': wb['name'],
+                'kind': wb.get('kind', 'wirebond'),
+                'classification': cls,
+                'category': cls['category'],
+                'bond_type': cls['bond_type'],
+                'boundary': wb['boundary'],
+                'material': wb['material_conductor'],
+                'epr_metal_air': wb['epr_metal_air'],
+                'fine_mesh': fine_mesh,
+                'is_3D': any(x[0] == 3 for x in dim_tags),
+                'pos_start': wb['pos_start'], 'pos_end': wb['pos_end'], 'width': wb['width']
+            }
+        return wb_names, wb_meta
+
+    def _merge_wirebonded_conductors(self, contiguous_metal_mapping, metals, wirebond_attrs):
+        '''
+        Union-find over the metallic conductors joined by wire-bonds. Returns the merged contiguous_metal_mapping (lists of
+        physical groups per conductor, including the wire-bond groups), the merged shapely conductors (in the same order)
+        and the list of original metal indices forming each conductor. Each wire-bond metadata dictionary gets the
+        'conductor_index' key.
+        '''
+        num_metals = len(metals)
+        parent = list(range(num_metals))
+        def find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+        for meta in wirebond_attrs:
+            idx = [f['metal_index'] for f in meta['classification']['feet'] if f['metal_index'] is not None]
+            for i in idx[1:]:
+                ra, rb = find(idx[0]), find(i)
+                if ra != rb:
+                    parent[max(ra, rb)] = min(ra, rb)
+        roots = []
+        for m in range(num_metals):
+            if find(m) not in roots:
+                roots.append(find(m))   #Ordered by the lowest original metal index in each conductor
+        conductor_groups = [[m for m in range(num_metals) if find(m) == r] for r in roots]
+        new_mapping = [sum([contiguous_metal_mapping[m] for m in grp], []) for grp in conductor_groups]
+        new_polys = [metals[grp[0]] if len(grp) == 1 else shapely.unary_union([metals[m] for m in grp]) for grp in conductor_groups]
+        for meta in wirebond_attrs:
+            idx = [f['metal_index'] for f in meta['classification']['feet'] if f['metal_index'] is not None]
+            if len(idx) > 0:
+                c = roots.index(find(idx[0]))
+            else:
+                #A bond touching no conductor (dielectric foot to off-chip) is its own floating conductor
+                new_mapping.append([])
+                new_polys.append(shapely.LineString([meta['pos_start'], meta['pos_end']]).buffer(meta['width']/2))
+                conductor_groups.append([])
+                c = len(new_mapping) - 1
+            new_mapping[c].append(meta['physical_group'])
+            meta['conductor_index'] = c
+        return new_mapping, new_polys, conductor_groups
+
+    def _split_wirebond_2D_parts(self, dict_all_entities, wb_names):
+        names_2D = []
+        for x in wb_names:
+            dict_all_entities[x + '__2D'] = [y for y in dict_all_entities[x] if y[0] == 2]
+            dict_all_entities[x] = [y for y in dict_all_entities[x] if y[0] == 3]
+            names_2D.append(x + '__2D')
+        return names_2D
+
+    def _merge_wirebond_2D_parts(self, dict_all_entities, wb_names):
+        for x in wb_names:
+            dict_all_entities[x] = sorted(dict_all_entities[x] + dict_all_entities.pop(x + '__2D'), key=lambda tup: tup[0])
+
+    def _filter_wirebond_volumes_from_airbox(self, dict_all_entities, wb_names):
+        if len(wb_names) == 0:
+            return
+        wb_vols = set()
+        for x in wb_names:
+            wb_vols.update([y for y in dict_all_entities[x] if y[0] == 3])
+        dict_all_entities['airbox'] = [x for x in dict_all_entities['airbox'] if x not in wb_vols]
+
+    def _finalise_wirebond_surfaces(self, dict_all_entities, wb_names, metal_names, gap_names, sim_construct_names, wb_meta):
+        '''
+        Replaces each wire-bond volume by its boundary surfaces and deletes the volume (leaving a hole in the air-box).
+        Surfaces shared with the planar metals (i.e. the landing faces) stay with the metals, while surfaces on the
+        air-box walls (e.g. bonds terminating on the enclosure floor) stay with the far-field boundaries.
+        '''
+        self._wb_wall_faces = set()
+        if len(wb_names) == 0:
+            return
+        metal_surfs = set()
+        for x in metal_names:
+            metal_surfs.update([y[1] for y in dict_all_entities[x] if y[0] == 2])
+        port_surfs = set()
+        for x in sim_construct_names:
+            port_surfs.update([y[1] for y in dict_all_entities[x] if y[0] == 2])
+        all_wb_surfs = set()
+        for wb_name in wb_names:
+            vols = [x[1] for x in dict_all_entities[wb_name] if x[0] == 3]
+            surfs = [x[1] for x in dict_all_entities[wb_name] if x[0] == 2]
+            for v in vols:
+                surfs += gmsh.model.getAdjacencies(3, v)[1].tolist()
+            if len(vols) > 0:
+                gmsh.model.occ.remove([(3,v) for v in vols], recursive=False)
+            final = []
+            on_port = False
+            wb_meta[wb_name]['grounds_to_enclosure'] = False
+            for s in dict.fromkeys(surfs):
+                if s in metal_surfs:
+                    continue
+                if s in port_surfs:
+                    on_port = True
+                    continue
+                com = gmsh.model.occ.getCenterOfMass(2, s)
+                if np.min(np.abs(self._extents.T - np.array(com))) <= 1e-6:
+                    self._wb_wall_faces.add(s)  #Lies on the air-box wall inside the hollowed bond - i.e. not part of the domain
+                    wb_meta[wb_name]['grounds_to_enclosure'] = True
+                    continue
+                final.append((2,s))
+            if on_port:
+                print(f"WARNING: Wire-bond {wb_meta[wb_name]['name']} lands on a lumped port/junction surface; that surface is left to the port.")
+            dict_all_entities[wb_name] = final
+            all_wb_surfs.update([x[1] for x in final])
+        self._gmsh_sync()
+        #A foot overhanging a dielectric gap leaves its bottom face coincident with the gap surface - it belongs to the bond
+        for gap_name in gap_names:
+            dict_all_entities[gap_name] = [x for x in dict_all_entities[gap_name] if not (x[0] == 2 and x[1] in all_wb_surfs)]
 
     def _conv_to_lists(self, data):
         if isinstance(data, list):

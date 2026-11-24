@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import gmsh
+import os
 import matplotlib.pyplot as plt
 import matplotlib
 from matplotlib import collections  as mc
@@ -9,6 +10,10 @@ import numpy as np
 
 class GMSH_Navigator:
     def __init__(self, mesh_file, units=0.001, gmsh_verbosity=1):
+        #GMSH silently opens an empty model for a missing file (i.e. a blank GUI with no physical groups)
+        if not os.path.isfile(os.path.expanduser(mesh_file)):
+            raise FileNotFoundError(f"Mesh file not found: {mesh_file}")
+        mesh_file = os.path.expanduser(mesh_file)
         gmsh.initialize()
         gmsh.option.setNumber('General.Verbosity', gmsh_verbosity)
         gmsh.option.setNumber("General.Terminal", gmsh_verbosity)

@@ -6,6 +6,7 @@ import shapely
 import numpy as np
 import itertools
 import geopandas as gpd
+import warnings
 from qiskit_metal import Dict
 from qiskit_metal.toolbox_python.utility_functions import bad_fillet_idxs
 from qiskit_metal.qlibrary.terminations.launchpad_wb import LaunchpadWirebond
@@ -323,146 +324,319 @@ class QUtilities:
             final_pts += [new_pt]
         return np.array(final_pts), np.array(normals), width, gap, total_dist
 
+
     @staticmethod
-    def calc_lines_and_fillets_on_path(points, rFillet, precision):
+    def calc_lines_and_fillets_on_path(points, rFillet, precision, rMin=None):
         """
         Returns the line segments and curved fillets on a given path of points.
 
+        Unlike the original (Qiskit-Metal style) version, corners that are too
+        close together are NOT left sharp. Instead the fillet radius is reduced
+        locally so that neighbouring fillets never overlap. Where there is room,
+        the requested radius rFillet is used unchanged.
+
         Args:
             points: Numpy array of points given as (x,y) on every row.
-            rFillet: Radius of fillets on every corner.
-            precision: The numeric precision in which to calculate bad fillets taken 
-                usually as design.template_options.PRECISION.
+            rFillet: Requested radius of fillets on every corner.
+            precision: Number of decimal places treated as significant
+                (usually design.template_options.PRECISION). Used as a tolerance.
+            rMin: Optional. If given, a warning is raised for any corner whose
+                radius had to be reduced below this value.
 
         Returns:
-            The function returns list of segments each represented as dictionaries. 
+            List of segment dictionaries, with the same keys as before.
 
-            Straight segments have the keys:
-                * 'start' - Starting point of line segment
-                * 'end'   - Ending point of line segment
-                * 'dir'   - Unit-vector of the direction of the line segment
-                * 'dist'  - Length of the line segment
+            Straight segments: 'start', 'end', 'dir', 'dist'
 
-            Curved segments (i.e. ones with fillets) have the keys:
-                * 'start'  - Starting point of line segment
-                * 'end'    - Ending point of line segment
-                * 'centre' - Centre of the circle drawing the fillet arc
-                * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc 
-                    (in radians) on the corner (not from the centre)
-                * 'angleDelta' - Angle traversed by the fillet arc (in radians) 
-                    using the typical polar angle direction convention in R2
-                * 'dist'   - Arclength of the fillet
+            Curved segments: 'start', 'end', 'centre', 'angleStart',
+                'angleDelta', 'dist', plus a new key:
+                * 'radius' - The actual radius used for this fillet
+                  (<= rFillet).
 
+            Note: 'angleDelta' keeps the original convention, i.e. it is the
+            signed INTERIOR angle at the corner (+ for left turns, - for right
+            turns). The swept arc angle is sign(angleDelta)*(pi - |angleDelta|).
         """
-        # Get list of vertices that can't be filleted
-        no_fillet = bad_fillet_idxs(points, rFillet, precision)
+        tol = 10.0 ** (-precision)
+        points = np.asarray(points, dtype=float)
+
+        # Remove consecutive duplicate points (zero-length segments break directions)
+        if len(points) > 1:
+            steps = np.linalg.norm(np.diff(points, axis=0), axis=1)
+            points = points[np.r_[True, steps > tol]]
+        n = len(points)
+        if n < 2:
+            return []
+
+        seg_vec = np.diff(points, axis=0)
+        seg_len = np.linalg.norm(seg_vec, axis=1)
+        seg_dir = seg_vec / seg_len[:, None]
+
+        # Interior angle theta at each internal vertex i = 1..n-2 (stored at index i)
+        theta = np.full(n, np.pi)
+        k = np.zeros(n)  # tangent length per unit radius: 1/tan(theta/2)
+        for i in range(1, n - 1):
+            c = np.clip(np.dot(-seg_dir[i - 1], seg_dir[i]), -1.0, 1.0)
+            theta[i] = np.arccos(c)
+            # No fillet for straight-through (theta ~ pi) or full reversal (theta ~ 0)
+            if np.pi - theta[i] > 1e-9 and theta[i] > 1e-9:
+                k[i] = 1.0 / np.tan(theta[i] / 2)
+
+        # Tangent length each corner wants at the full requested radius
+        t_req = rFillet * k
+
+        # Cap each corner's tangent length at its proportional share of each
+        # adjacent segment. Since both ends of a segment are capped at
+        # complementary shares, t_i + t_{i+1} <= L always holds afterwards.
+        t = t_req.copy()
+        for i in range(1, n - 1):
+            if k[i] == 0:
+                continue
+            for s, other in ((i - 1, i - 1), (i, i + 1)):
+                total = t_req[i] + t_req[other]
+                if total > seg_len[s]:
+                    t[i] = min(t[i], seg_len[s] * t_req[i] / total)
+
+        radii = np.zeros(n)
+        mask = k > 0
+        radii[mask] = t[mask] / k[mask]
+
+        if rMin is not None:
+            small = [i for i in range(1, n - 1) if mask[i] and radii[i] < rMin]
+            if small:
+                warnings.warn(f"Fillet radius reduced below rMin={rMin} at vertex indices {small} (radii: {[float(radii[i]) for i in small]}). Consider spacing these corners further apart.")
 
         line_segs = []
         curPt = points[0]
-        for m, (corner, end) in enumerate(zip(points[1:], points[2:])):
-            a = corner - curPt
-            b = end - corner
-            aDist = np.linalg.norm(a)
-            bDist = np.linalg.norm(b)
-            aHat = a / aDist
-            bHat = b / bDist
-            theta = np.arccos(np.dot(-aHat, bHat))
-            if m + 1 in no_fillet or np.abs(theta - np.pi) < 1e-9:
-                line_segs += [
-                    {
-                        "start": curPt,
-                        "end": corner,
-                        "dir": aHat,
-                        "dist": np.linalg.norm(corner - curPt),
-                    }
-                ]
+        for i in range(1, n - 1):
+            corner = points[i]
+            aHat, bHat = seg_dir[i - 1], seg_dir[i]
+            r = radii[i]
+
+            if r <= 0:
+                # Straight-through or reversal: no fillet
+                line_segs.append({
+                    "start": curPt,
+                    "end": corner,
+                    "dir": aHat,
+                    "dist": np.linalg.norm(corner - curPt),
+                })
                 curPt = corner
+                continue
+
+            ptFilletStart = corner - aHat * t[i]
+            ptFilletEnd = corner + bHat * t[i]
+
+            vCentre = bHat - np.dot(aHat, bHat) * aHat
+            vCentre *= r / np.linalg.norm(vCentre)
+            ptCentre = ptFilletStart + vCentre
+
+            v = ptFilletStart - ptCentre
+            angleStart = np.arctan2(v[1], v[0])
+            if aHat[0] * bHat[1] > aHat[1] * bHat[0]:
+                angleDelta = theta[i]
             else:
-                distTangentEdge = rFillet / np.tan(theta / 2)
-                ptFilletStart = corner - aHat * distTangentEdge
-                ptFilletEnd = corner + bHat * distTangentEdge
+                angleDelta = -theta[i]
 
-                vCentre = bHat - np.dot(aHat, bHat) * aHat
-                vCentre *= rFillet / np.linalg.norm(vCentre)
-                ptCentre = ptFilletStart + vCentre
-
-                angleStart = ptFilletStart - ptCentre
-                angleStart = np.arctan2(angleStart[1], angleStart[0])
-                #
-                if aHat[0] * bHat[1] > aHat[1] * bHat[0]:
-                    angleDelta = theta
-                else:
-                    angleDelta = -theta
-
-                line_segs += [
-                    {
-                        "start": curPt,
-                        "end": ptFilletStart,
-                        "dir": aHat,
-                        "dist": np.linalg.norm(ptFilletStart - curPt),
-                    }
-                ]
-                line_segs += [
-                    {
-                        "start": ptFilletStart,
-                        "end": ptFilletEnd,
-                        "centre": ptCentre,
-                        "angleStart": angleStart,
-                        "angleDelta": angleDelta,
-                        "dist": (np.pi - theta) * rFillet,
-                    }
-                ]
-                curPt = ptFilletEnd
-        distLast = np.linalg.norm(points[-1] - curPt)
-        line_segs += [
-            {
+            # May be (numerically) zero-length when fillets touch; kept so the
+            # line/arc alternation of the output is unchanged.
+            line_segs.append({
                 "start": curPt,
-                "end": points[-1],
-                "dir": (points[-1] - curPt) / distLast,
-                "dist": distLast,
-            }
-        ]
+                "end": ptFilletStart,
+                "dir": aHat,
+                "dist": np.linalg.norm(ptFilletStart - curPt),
+            })
+            line_segs.append({
+                "start": ptFilletStart,
+                "end": ptFilletEnd,
+                "centre": ptCentre,
+                "angleStart": angleStart,
+                "angleDelta": angleDelta,
+                "radius": r,
+                "dist": (np.pi - theta[i]) * r,
+            })
+            curPt = ptFilletEnd
 
+        line_segs.append({
+            "start": curPt,
+            "end": points[-1],
+            "dir": seg_dir[-1],  # avoids divide-by-zero if the fillet ends at the endpoint
+            "dist": np.linalg.norm(points[-1] - curPt),
+        })
         return line_segs
 
     @staticmethod
-    def calc_filleted_path(points, rFillet, precision, resolution=4):
+    def calc_filleted_path(points, rFillet, precision, resolution=4, rMin=None):
         """
-        Returns the coordinates of a given path after filleting (like in Qiskit-Metal).
+        Returns the coordinates of a given path after filleting.
 
         Args:
             points: Numpy array of points given as (x,y) on every row.
-            rFillet: Radius of fillets on every corner.
-            precision: The numeric precision in which to calculate bad fillets 
-                taken usually as design.template_options.PRECISION
+            rFillet: Requested radius of fillets on every corner.
+            precision: Numeric precision (usually design.template_options.PRECISION).
+            resolution: Number of points sampled on each fillet arc.
+            rMin: Optional minimum radius; warns if any corner falls below it.
 
         Returns:
-            List of points (x,y) for the points defining the filleted path.
-
+            Numpy array of points (x,y) defining the filleted path.
         """
-        line_segs = QUtilities.calc_lines_and_fillets_on_path(
-            points, rFillet, precision
-        )
-        # print(line_segs)
+        line_segs = QUtilities.calc_lines_and_fillets_on_path(points, rFillet, precision, rMin=rMin)
         final_pts = []
         for cur_seg in line_segs:
             if "centre" in cur_seg:
                 cx, cy = cur_seg["centre"]
+                r = cur_seg.get("radius", rFillet)  # per-corner radius
                 if cur_seg["angleDelta"] > 0:
                     phi = np.pi - cur_seg["angleDelta"]
                 else:
                     phi = -(np.pi + cur_seg["angleDelta"])
-                curv_pts = [
-                    (rFillet * np.cos(angle) + cx, rFillet * np.sin(angle) + cy)
-                    for angle in np.linspace(
-                        cur_seg["angleStart"], cur_seg["angleStart"] + phi, resolution
-                    )
-                ]
-                final_pts += curv_pts
+                final_pts += [(r * np.cos(a) + cx, r * np.sin(a) + cy) for a in np.linspace(cur_seg["angleStart"], cur_seg["angleStart"] + phi, resolution)]
             else:
                 final_pts.append(cur_seg["start"])
                 final_pts.append(cur_seg["end"])
         return np.array(final_pts)
+
+
+    # @staticmethod
+    # def calc_lines_and_fillets_on_path(points, rFillet, precision):
+    #     """
+    #     Returns the line segments and curved fillets on a given path of points.
+
+    #     Args:
+    #         points: Numpy array of points given as (x,y) on every row.
+    #         rFillet: Radius of fillets on every corner.
+    #         precision: The numeric precision in which to calculate bad fillets taken 
+    #             usually as design.template_options.PRECISION.
+
+    #     Returns:
+    #         The function returns list of segments each represented as dictionaries. 
+
+    #         Straight segments have the keys:
+    #             * 'start' - Starting point of line segment
+    #             * 'end'   - Ending point of line segment
+    #             * 'dir'   - Unit-vector of the direction of the line segment
+    #             * 'dist'  - Length of the line segment
+
+    #         Curved segments (i.e. ones with fillets) have the keys:
+    #             * 'start'  - Starting point of line segment
+    #             * 'end'    - Ending point of line segment
+    #             * 'centre' - Centre of the circle drawing the fillet arc
+    #             * 'angleStart' - Starting angle (on Cartesian plane) of the fillet arc 
+    #                 (in radians) on the corner (not from the centre)
+    #             * 'angleDelta' - Angle traversed by the fillet arc (in radians) 
+    #                 using the typical polar angle direction convention in R2
+    #             * 'dist'   - Arclength of the fillet
+
+    #     """
+    #     # Get list of vertices that can't be filleted
+    #     no_fillet = bad_fillet_idxs(points, rFillet, precision)
+
+    #     line_segs = []
+    #     curPt = points[0]
+    #     for m, (corner, end) in enumerate(zip(points[1:], points[2:])):
+    #         a = corner - curPt
+    #         b = end - corner
+    #         aDist = np.linalg.norm(a)
+    #         bDist = np.linalg.norm(b)
+    #         aHat = a / aDist
+    #         bHat = b / bDist
+    #         theta = np.arccos(np.dot(-aHat, bHat))
+    #         if m + 1 in no_fillet or np.abs(theta - np.pi) < 1e-9:
+    #             line_segs += [
+    #                 {
+    #                     "start": curPt,
+    #                     "end": corner,
+    #                     "dir": aHat,
+    #                     "dist": np.linalg.norm(corner - curPt),
+    #                 }
+    #             ]
+    #             curPt = corner
+    #         else:
+    #             distTangentEdge = rFillet / np.tan(theta / 2)
+    #             ptFilletStart = corner - aHat * distTangentEdge
+    #             ptFilletEnd = corner + bHat * distTangentEdge
+
+    #             vCentre = bHat - np.dot(aHat, bHat) * aHat
+    #             vCentre *= rFillet / np.linalg.norm(vCentre)
+    #             ptCentre = ptFilletStart + vCentre
+
+    #             angleStart = ptFilletStart - ptCentre
+    #             angleStart = np.arctan2(angleStart[1], angleStart[0])
+    #             #
+    #             if aHat[0] * bHat[1] > aHat[1] * bHat[0]:
+    #                 angleDelta = theta
+    #             else:
+    #                 angleDelta = -theta
+
+    #             line_segs += [
+    #                 {
+    #                     "start": curPt,
+    #                     "end": ptFilletStart,
+    #                     "dir": aHat,
+    #                     "dist": np.linalg.norm(ptFilletStart - curPt),
+    #                 }
+    #             ]
+    #             line_segs += [
+    #                 {
+    #                     "start": ptFilletStart,
+    #                     "end": ptFilletEnd,
+    #                     "centre": ptCentre,
+    #                     "angleStart": angleStart,
+    #                     "angleDelta": angleDelta,
+    #                     "dist": (np.pi - theta) * rFillet,
+    #                 }
+    #             ]
+    #             curPt = ptFilletEnd
+    #     distLast = np.linalg.norm(points[-1] - curPt)
+    #     line_segs += [
+    #         {
+    #             "start": curPt,
+    #             "end": points[-1],
+    #             "dir": (points[-1] - curPt) / distLast,
+    #             "dist": distLast,
+    #         }
+    #     ]
+
+    #     return line_segs
+
+    # @staticmethod
+    # def calc_filleted_path(points, rFillet, precision, resolution=4):
+    #     """
+    #     Returns the coordinates of a given path after filleting (like in Qiskit-Metal).
+
+    #     Args:
+    #         points: Numpy array of points given as (x,y) on every row.
+    #         rFillet: Radius of fillets on every corner.
+    #         precision: The numeric precision in which to calculate bad fillets 
+    #             taken usually as design.template_options.PRECISION
+
+    #     Returns:
+    #         List of points (x,y) for the points defining the filleted path.
+
+    #     """
+    #     line_segs = QUtilities.calc_lines_and_fillets_on_path(
+    #         points, rFillet, precision
+    #     )
+    #     # print(line_segs)
+    #     final_pts = []
+    #     for cur_seg in line_segs:
+    #         if "centre" in cur_seg:
+    #             cx, cy = cur_seg["centre"]
+    #             if cur_seg["angleDelta"] > 0:
+    #                 phi = np.pi - cur_seg["angleDelta"]
+    #             else:
+    #                 phi = -(np.pi + cur_seg["angleDelta"])
+    #             curv_pts = [
+    #                 (rFillet * np.cos(angle) + cx, rFillet * np.sin(angle) + cy)
+    #                 for angle in np.linspace(
+    #                     cur_seg["angleStart"], cur_seg["angleStart"] + phi, resolution
+    #                 )
+    #             ]
+    #             final_pts += curv_pts
+    #         else:
+    #             final_pts.append(cur_seg["start"])
+    #             final_pts.append(cur_seg["end"])
+    #     return np.array(final_pts)
 
     @staticmethod
     def get_metals_in_layer(design, layer_id, **kwargs):
@@ -1436,15 +1610,16 @@ class QUtilities:
         print_statements=True,
         fillet="85um",
         radius="100um",
-        meander_method="qiskit_metal"
+        meander_method="qiskit_metal",
+        resonator_side="below",
     ):
         """
         Place multiple hanger-mode quarter-wavelength resonators on a multi-die chip.
-
+ 
         Resonators are capacitively coupled to a shared transmission line with a 10 µm ground pocket. 
         Lengths, start and end positions are automatically calculated based on frequencies, number of dies, 
         number of resonators, and launchpad properties. Optional capacitance and inductance calculations can be performed.
-
+ 
         Args:
             design (Qiskit Metal Design): Qiskit Metal design object.
             gap (str or list of str): Transmission line gap (e.g., "5um").
@@ -1467,7 +1642,11 @@ class QUtilities:
             LC_calculation (bool, optional): Calculate capacitance/inductance. Defaults to True.
             print_statements (bool, optional): Print resonator info. Defaults to True.
             fillet (str, optional): Fillet size (e.g., "100um"). Defaults to "100um".
-
+            resonator_side (str or list of str, optional): Which side of the feedline the resonators hang from.
+                "below" (default), "above", "alternate" (first resonator below, then above, below, ...), or a list of
+                "above"/"below" with one entry per resonator. Resonators on opposite sides do not clash, so
+                "alternate" allows roughly twice as many resonators along the same feedline length.
+ 
         Returns:
             tuple: 
                 - resonators (list of QComponents): Generated resonator components.
@@ -1476,10 +1655,10 @@ class QUtilities:
                 - capacitances (list of float, optional): Calculated capacitances (if `LC_calculation` is True).
                 - inductances (list of float, optional): Calculated inductances (if `LC_calculation` is True).
         """
-
+ 
         # Estimate of resonator width along x
         res_width_x = 500e-6
-
+ 
         # check inputs with assertions
         assert num_resonators == len(frequencies)
         assert isinstance(launchpad_extent, (float, int))
@@ -1501,7 +1680,7 @@ class QUtilities:
         if isinstance(gap, list):
             assert isinstance(width, list), "If gap is given as a list (for a scaled geometry), you must also give the widths as a list"
             assert ((len(gap) == num_resonators) and (len(width) == num_resonators))
-
+ 
         # check if width/gap and/or fillet is a list (for scaled)   
         if (isinstance(width, list) or isinstance(gap, list)):
             scaled_geometry = True 
@@ -1518,7 +1697,7 @@ class QUtilities:
             print("Options for scaled curve radius detected.\n") if print_statements else 0
         else:
             scaled_radius = False  # noqa: F841 # abhishekchak52: unused variable scaled_radius
-
+ 
         # calculate x-projected length of useable transmission line [m]
         tl_extent = (
             QUtilities.parse_value_length(die_dimension[0])
@@ -1531,11 +1710,11 @@ class QUtilities:
         resonator_names, resonator_vals = [], []
         if LC_calculations: 
             capacitances, inductances = [], []
-
+ 
         for i in range(num_resonators):
             # name resonators
             resonator_names.append(f"die{die_index}_res{i+1}_{frequencies[i] * 1e-9:.2f}GHz")
-
+ 
         # parse string valued arguments to floats
         h = np.abs(QUtilities.parse_value_length(design.chips[chip_name].size['size_z']))
         ft = QUtilities.parse_value_length(film_thickness)
@@ -1546,50 +1725,71 @@ class QUtilities:
             cg = None
         x0 = QUtilities.parse_value_length(die_origin[0])
         y0 = QUtilities.parse_value_length(die_origin[1])
-
+ 
         # string values for gap/width (unscaled)
         width_cur = width
         gap_cur = gap
         radius_cur = radius
-
+ 
         # Start and end coordinates of the usable transmission line
         tl_start = x0 - tl_extent / 2
         tl_end = x0 + tl_extent / 2
-
+ 
+        # resolve which side of the feedline each resonator sits on
+        if isinstance(resonator_side, str):
+            side_opt = resonator_side.lower()
+            if side_opt in ("below", "above"):
+                sides = [side_opt] * num_resonators
+            elif side_opt in ("alternate", "both"):
+                sides = ["below" if k % 2 == 0 else "above" for k in range(num_resonators)]
+            else:
+                raise ValueError(f"resonator_side must be 'below', 'above', 'alternate' or a list of 'above'/'below', not '{resonator_side}'.")
+        else:
+            sides = [str(sd).lower() for sd in resonator_side]
+            assert len(sides) == num_resonators, "If resonator_side is a list, it must have the same length as num_resonators."
+            assert all(sd in ("above", "below") for sd in sides), "Entries of resonator_side must be 'above' or 'below'."
+ 
         # create resonator positions
         resonator_positions = QUtilities.create_even_spacing_along_line_1d(tl_start, tl_end, num_resonators)
-
-        if num_resonators > 1:
-            assert (resonator_positions[1] - resonator_positions[0]) > res_width_x*1.5, "Resonators are too close together - decrease the number of resonators or increase usable transmission line length."
-
+ 
+        # only resonators on the same side of the feedline can collide with each other
+        for side_cur in ("below", "above"):
+            xs = sorted(x for x, sd in zip(resonator_positions, sides) if sd == side_cur)
+            if len(xs) > 1:
+                assert min(np.diff(xs)) > res_width_x * 1.5, (
+                    "Resonators on the same side of the feedline are too close together - decrease the number of resonators, "
+                    "increase usable transmission line length, or use resonator_side='alternate'."
+                )
+ 
         # draw resonators
         resonators = []
         for i, res in enumerate(resonator_names):
-
+ 
             # set coupling gap based on user options
-            if cg:
+            if cg is not None:
                 cg_cur = cg
-            elif cg is None:
+            else:
                 cg_cur = QUtilities.parse_value_length(coupling_gap[i])
-
+ 
             # setup values for scaled geometry
             if scaled_geometry:
                 # parse strings to float values (width and gap - per resonator)
                 width_cur = width[i]
                 gap_cur = gap[i]
+            if isinstance(radius, list):
                 radius_cur = radius[i]
             
             x_pos_cur = resonator_positions[i]
-
+ 
             # calculate capacitance and inductance if requested
             if LC_calculations:
                 r_cur = ResonatorQuarterWave(f0=frequencies[i], impedance=50)
                 capacitances.append(r_cur.get_res_capacitance())
-                inductances.append(r_cur.get_res_capacitance())
-
+                inductances.append(r_cur.get_res_inductance())
+ 
             w_float = QUtilities.parse_value_length(width_cur)
             g_float = QUtilities.parse_value_length(gap_cur)
-
+ 
             # calculate length based on frequency (neglecting kinetic inductance)
             # TODO: can we integrate kinetic inductance into length calculation? 
             l_fullwave, er_eff, F = cpw_calculations.guided_wavelength(
@@ -1599,29 +1799,34 @@ class QUtilities:
                 substrate_thickness=h,
                 film_thickness=ft,
             )
-
+ 
             # calculate length for quarter-wave resonator
             l_quarterwave_mm = f'{(l_fullwave / 4) * 1e3:.2f}mm'
-
+ 
             # store resonator values (length, effective permittivity, filling factor)
             resonator_vals.append([l_fullwave, er_eff, F])
-
-            # calculate y value of resonator start
-            res_y_val = y0 + tl_y - (feedline_upscale * 0.5 * w_float) - (feedline_upscale * g_float) - cg_cur - (0.5 * w_float) - g_float
+ 
+            # +1 if the resonator hangs above the feedline, -1 if below (geometry is mirrored about the feedline)
+            side_sign = 1 if sides[i] == "above" else -1
+ 
+            # calculate y value of resonator start (coupling section, offset from the feedline centre)
+            coupling_offset = (feedline_upscale * 0.5 * w_float) + (feedline_upscale * g_float) + cg_cur + (0.5 * w_float) + g_float
+            res_y_val = y0 + tl_y + side_sign * coupling_offset
             res_y_um = f'{res_y_val * 1e6:.3f}um'
-
-            # calculate y value of resonator end
-            res_end_y_um = f'{(res_y_val - QUtilities.parse_value_length(res_vertical)) * 1e6:.3f}um'
-
+ 
+            # calculate y value of resonator end (shorted end, away from the feedline)
+            res_end_y_um = f'{(res_y_val + side_sign * QUtilities.parse_value_length(res_vertical)) * 1e6:.3f}um'
+ 
             # strings for x position
             res_x_um = f'{x_pos_cur * 1e6:.3f}um'
-
+ 
             # printouts
             if print_statements: 
                 print(f' Resonator {i+1}:')
                 print(f'  name : {res}')
                 print(f'  l    : {l_quarterwave_mm}')
                 print(f'  f    : {frequencies[i] * 1e-9:.2f}GHz')
+                print(f'  side : {sides[i]}')
             
             # create pin component for start-point (open, 10um pocket)
             res_start_pin = OpenToGround(
@@ -1636,7 +1841,7 @@ class QUtilities:
                     orientation="180"
                 )
             )
-
+ 
             # create pin component for start-point (shorted)
             res_end_pin = OpenToGround(
                 design,
@@ -1647,20 +1852,20 @@ class QUtilities:
                     width=width_cur, 
                     gap=gap_cur, 
                     termination_gap="0um", 
-                    orientation="-90"
+                    orientation="-90" if side_sign < 0 else "90"
                 )
             )
-
+ 
             # get pin ids
             start_pin_id = next(iter(res_start_pin.pin_names))
             end_pin_id = next(iter(res_end_pin.pin_names))
-
+ 
             # check for scaled filleting
             if scaled_fillet:
                 fillet_cur = fillet[i]
             else: 
                 fillet_cur = fillet
-
+ 
             # make resonator
             if meander_method == "sqdmetal":
                 res = ResonatorMeander(design, 
@@ -1668,7 +1873,7 @@ class QUtilities:
                                        options=dict(
                                            pos_x=res_x_um, 
                                            pos_y=res_y_um, 
-                                           orientation=90,
+                                           orientation=90 if side_sign < 0 else -90,
                                            total_length=l_quarterwave_mm, 
                                            trace_width=width_cur, 
                                            trace_gap=gap_cur, 
@@ -1688,7 +1893,8 @@ class QUtilities:
                             fillet=fillet_cur,
                             # fillet_padding="10um",
                             fillet_padding="0um",
-                            start_left=True,
+                            # mirroring swaps handedness, so flip the meander's first turn for resonators above
+                            start_left=(side_sign < 0),
                             layer='1',
                             # lead = Dict(
                             #     start_straight='0um'
@@ -1706,7 +1912,7 @@ class QUtilities:
                     )
             
             resonators.append(res)
-
+ 
         # sanity check and outputs
         # TODO: embed capacitances and inductances in resonator_vals
         if LC_calculations: 
@@ -1957,3 +2163,16 @@ class QUtilities:
             design.chips.main.size.size_x = f"{x_total}mm"
             design.chips.main.size.size_y = f"{y_total}mm"
             design.rebuild()
+
+    @staticmethod
+    def round_shapely_polygon(pts, r, quad_segs=8):
+        """Round all corners (convex and concave) of a polygon with radius r."""
+        if r <= 0:
+            return np.asarray(pts)
+        poly = shapely.Polygon(pts)
+        kw = dict(join_style='round', quad_segs=quad_segs)
+        # close (rounds concave corners), then open (rounds convex corners)
+        poly = poly.buffer(r, **kw).buffer(-2 * r, **kw).buffer(r, **kw)
+        if poly.is_empty or poly.geom_type != 'Polygon':
+            raise ValueError(f"Fillet radius {r} too large for this shape")
+        return np.array(poly.exterior.coords)[:-1]  # drop repeated closing point

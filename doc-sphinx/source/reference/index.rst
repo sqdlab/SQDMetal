@@ -34,6 +34,7 @@ Useful Utilities
 - :ref:`MakeGDS <utilities-gds>` - a GDS exporter with useful manipulation/postprocessing functionality.
 - :ref:`ManipulateGDS <utilities-mgds>`
 - :ref:`Qubit Designer <utilities-qbder>`
+- :ref:`Single Qubit Cells <utilities-sqcells>` - single-qubit capacitance simulations copied out of a full chip design.
 
 .. toctree::
    :maxdepth: 2
@@ -43,3 +44,4 @@ Useful Utilities
    utilitygds
    utilitymgds
    qubitdesigner
+   singlequbitcells

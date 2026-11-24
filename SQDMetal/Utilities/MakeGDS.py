@@ -142,6 +142,8 @@ class MakeGDS:
 
         print(f'\nExport type: {self.export_type}') if self.print_statements else 0
         neg_layer_offset = np.max(leLayers) + 10
+        self.neg_layer_offset = int(neg_layer_offset)  # negative of layer L is written to layer L + neg_layer_offset
+        self._negative_layers = {int(l) + self.neg_layer_offset for l in [0, *leLayers]}  # auto-generated negatives
         for cur_layer in all_layers:
             layer, metals = cur_layer
             gds_metal = self._shapely_to_gds(metals, layer)
@@ -363,9 +365,11 @@ class MakeGDS:
         """
         try:
             import pya # type: ignore
-            # Load the layout
+            gds_input_file = str(gds_input_file)
+            if not gds_input_file.lower().endswith(".gds"):
+                gds_input_file = f"{gds_input_file}.gds"
             layout = pya.Layout()
-            layout.read(f"{gds_input_file}.gds") if gds_input_file[-4:] != ".gds" else layout.read(f"{gds_input_file}")
+            layout.read(gds_input_file)
             # Iterate through all layers in the original layout
             for layer_index in layout.layer_indices():
                 # Iterate through all cells in the layout
@@ -381,19 +385,23 @@ class MakeGDS:
             # Commit the transaction (finalize the operation)
             layers_in_design = [layout.get_info(layer_index) for layer_index in layout.layer_indices()]
             if inplace:
-                layout.write(f"{gds_input_file}")
-                print(f"\nSuccessfully saved the merged GDS file inplace as {gds_input_file}.\n Merged layers: {list(layers_in_design)}")
+                output_file = gds_input_file
             else:
-                layout.write(f"{gds_input_file}_merged")
-                print(f"\nSuccessfully saved the merged GDS file as {gds_input_file}_merged.\n Merged layers: {list(layers_in_design)}")
+                base, ext = os.path.splitext(gds_input_file)
+                output_file = f"{base}_merged{ext}"
+            layout.write(output_file)
+            print(f"\nSuccessfully saved the merged GDS file as {output_file}.\n Merged layers: {list(layers_in_design)}")
         except ImportError:
             print("KLayout (pya) is not installed. Please install it with 'pip install klayout' to run this function.")
         except AttributeError as e:
             print(f"Attribute error: {e}. Please ensure you're using the correct KLayout API (i.e. NOT 'pip install pya' - this is a different library). Use 'pip install klayout' instead.")
 
-    def perforate_layer(self, layer_ind:int=0, x_space:float=20e-6, y_space:float=20e-6, hole_size:float=2e-6, keep_hole_layer:bool=False, x_space_edge_proportion:float=0.5, y_space_edge_proportion:float=0.5):
+    def perforate_layer(self, layer_ind:int=0, x_space:float=20e-6, y_space:float=20e-6, hole_size:float=2e-6, keep_hole_layer:bool=False, x_space_edge_proportion:float=0.5, y_space_edge_proportion:float=0.5, clearance:float=2e-6, avoid_geometry:bool=True, avoid_layers:list[int]=None):
         """
         Perforate a given layer with a uniform grid of square holes (a.k.a. cheesing).
+
+        By default, holes are only placed where they fit entirely inside the layer's metal, at least ``clearance``
+        away from the metal's edges (e.g. CPW gaps, the chip boundary) and from shapes on every other layer.
 
         Parameters
         ----------
@@ -406,19 +414,30 @@ class MakeGDS:
         hole_size : float
             Size of each square hole in metres. Default value is 2e-6
         keep_hole_layer : bool
-            If True, the temporary layer created as a stencil (i.e. the hole polygons) is removed. Defaults to False.
+            If True, the temporary layer created as a stencil (i.e. the hole polygons) is kept. Defaults to False.
         x_space_edge_proportion : float
             Padding on the left and right edges before placing the holes. Given as a proportion of x_space (default value being 0.5).
         y_space_edge_proportion : float
             Padding on the top and bottom edges before placing the holes. Given as a proportion of y_space (default value being 0.5).
-        
+        clearance : float
+            Minimum distance in metres between the edge of any hole and (a) the edge of the perforated metal and
+            (b) any geometry on the avoided layers. Default value is 2e-6 (holes may not overlap anything, but can
+            come right up to it). Placement is slightly conservative near diagonal or curved edges (by up to
+            ~0.2 x hole_size), as the check treats each hole as the circle enclosing it.
+        avoid_geometry : bool
+            If True (default), skip holes that would violate ``clearance``. If False, every grid position is used
+            and holes may cut into edges and overlap other layers (the previous behaviour).
+        avoid_layers : list[int]
+            Layers whose shapes the holes must keep clear of. Default is None, which uses every layer currently in
+            the cell except the perforated layer itself and the auto-generated negative layers (these cover the
+            whole chip by construction). Pass ``[]`` to only keep clear of the perforated layer's own edges.
+
         Returns
         -------
         hole_layer : int
-            Integer index of the perforated layer.
+            Integer index of the hole layer if ``keep_hole_layer`` is True, otherwise None.
         """
         #TODO: Add options to perhaps output into different layer?
-        #TODO: Add ability to avoid other layers or rather the edges of the layer (i.e. don't tread close to edge of ground plane etc...)
 
         x_space /= self.gds_units
         y_space /= self.gds_units
@@ -433,29 +452,83 @@ class MakeGDS:
         x_pos = np.arange(xMin+dx0, xMax-dx0+x_space/2, x_space)
         y_pos = np.arange(yMin+dy0, yMax-dy0+y_space/2, y_space)
         hole_size /= self.gds_units
+        clearance /= self.gds_units
+        assert clearance >= 0, "clearance must be non-negative."
 
-        gds_metal = None
+        chip_rect = gdstk.rectangle((xMin, yMin), (xMax, yMax))
+        negative_pattern = (self.export_type == "negative" and layer_ind == 0)
+
+        # hole centres on the full grid
+        xx, yy = np.meshgrid(x_pos, y_pos)
+        centres = np.column_stack([xx.ravel(), yy.ravel()])
+        n_grid = len(centres)
+
+        if avoid_geometry:
+            def to_shapely(polys):
+                geoms = [shapely.Polygon(p.points) for p in polys if len(p.points) >= 3]
+                # buffer(0) repairs the self-touching "keyhole" polygons that gdstk uses for holes
+                return shapely.union_all([g if g.is_valid else g.buffer(0) for g in geoms]) if geoms else shapely.Polygon()
+
+            # metal that can be perforated (in a negative export, layer 0 is the etched pattern instead)
+            layer_polys = [p for p in self.cell.polygons if p.layer == layer_ind]
+            if negative_pattern:
+                metal = shapely.Polygon(chip_rect.points).difference(to_shapely(layer_polys))
+            else:
+                metal = to_shapely(layer_polys)
+
+            # geometry on other layers to keep clear of
+            if avoid_layers is None:
+                skip = {int(layer_ind)} | getattr(self, "_negative_layers", set())
+                avoid_layers = [l for l in self.get_cell_layers() if l not in skip]
+            keepout = to_shapely([p for p in self.cell.polygons if p.layer in set(avoid_layers)])
+
+            # a hole centre is valid if the hole's enclosing circle (radius hole_size/sqrt(2)) plus clearance
+            # fits inside the metal and stays clear of the keep-out geometry
+            margin = clearance + hole_size / np.sqrt(2)
+            allowed = metal.buffer(-margin)
+            if not keepout.is_empty:
+                allowed = allowed.difference(keepout.buffer(margin))
+            shapely.prepare(allowed)
+            centres = centres[shapely.contains_xy(allowed, centres[:, 0], centres[:, 1])]
+
+            print(f"Perforating layer {layer_ind}: {len(centres)} of {n_grid} holes placed (avoiding layers {avoid_layers}, clearance {clearance:g} um)") if self.print_statements else 0
+
+        if len(centres) == 0:
+            print(f"Warning: no holes could be placed on layer {layer_ind} with the given spacing, size and clearance.")
+            return None
+
         hole_layer = int(np.max([x for x in self._layer_metals]) + 10)
 
-        cur_coords = [[x_pos[0]-hole_size/2, y_pos[0]-hole_size/2], [x_pos[0]+hole_size/2, y_pos[0]-hole_size/2], [x_pos[0]+hole_size/2, y_pos[0]+hole_size/2], [x_pos[0]-hole_size/2, y_pos[0]+hole_size/2]]
-        seed_hole = gdstk.Polygon(cur_coords, layer=hole_layer)
-
+        # one seed hole, placed at the first valid centre and repeated at the others
+        # (gdstk counts the reference's own position as the first copy, so offsets are relative to it)
+        seed_hole = gdstk.rectangle((-hole_size/2, -hole_size/2), (hole_size/2, hole_size/2), layer=hole_layer)
         temp_cell = self.lib.new_cell(f'Holes{hole_layer}')
         temp_cell.add(seed_hole)
-        # Create a reference to the cell
-        ref = gdstk.Reference(temp_cell)
-        # Define a rectangular repetition for the reference
-        ref.repetition = gdstk.Repetition(columns=x_pos.size, rows=y_pos.size, spacing=(x_space, y_space))
-        # ref.repetition = gdstk.Repetition(columns=5, rows=3, spacing=(x_space, y_space))
-        temp_cell.flatten()
+        ref = gdstk.Reference(temp_cell, origin=tuple(centres[0]))
+        if len(centres) > 1:
+            ref.repetition = gdstk.Repetition(offsets=(centres[1:] - centres[0]).tolist())
 
-        holed_metal = gdstk.boolean(self._layer_metals[layer_ind], ref, 'not', layer=layer_ind, precision=self.precision)
-        #Delete original layer
+        if negative_pattern:
+            # layer 0 holds the negative (etched) pattern: holes in the metal are extra etched area
+            holes_in_chip = gdstk.boolean(ref, chip_rect, "and", precision=self.precision)
+            holed_metal = gdstk.boolean(self._layer_metals[layer_ind], holes_in_chip, "or", layer=layer_ind, precision=self.precision)
+        else:
+            holed_metal = gdstk.boolean(self._layer_metals[layer_ind], ref, "not", layer=layer_ind, precision=self.precision)
+
+        # Replace the original layer
         self.cell.filter([(int(layer_ind), 0)], True)
         self.cell.add(*holed_metal)
+        self._layer_metals[layer_ind] = holed_metal
+
+        # Update the matching negative layer (only present for "all" exports) so the holes appear there too
+        neg_layer = int(layer_ind) + getattr(self, "neg_layer_offset", 0)
+        if self.export_type == "all" and neg_layer != layer_ind and neg_layer in self._layer_metals:
+            holed_neg = gdstk.boolean(chip_rect, holed_metal, "not", layer=neg_layer, precision=self.precision)
+            self.cell.filter([(neg_layer, 0)], True)
+            self.cell.add(*holed_neg)
+            self._layer_metals[neg_layer] = holed_neg
 
         if not keep_hole_layer:
-            self.cell.filter([(int(hole_layer), 0)], True)
             self.lib.remove(temp_cell)
             return None
         else:

@@ -32,11 +32,13 @@ class AirBridgeCPW(QComponent):
         * pad_gap    - Gap from the CPW gap to the air bridge pad.
         * pad_width  - Width of the air bridge pad
         * pad_length - Length of the air bridge pad along the CPW
+        * pad_fillet - Fillet radius on the first layer pads
     The second layer I-bar parameters are specified via:
         * bridge_pad_gap    - Gap from the first layer pad to the pad-sections on the I-bar.
         * bridge_pad_width  - Width of the pad-sections on the I-bar.
         * bridge_pad_length - Length of the pad-sections on the I-bar along the CPW
         * bridge_width      - The width of the stem in the I-bar (the actual bridge across the CPW)
+        * bridge_fillet     - Fillet radius on the I-bar
 
     This class ignores pos_x, pos_y and orientation...
         
@@ -84,7 +86,14 @@ class AirBridgeCPW(QComponent):
         * bridge_pad_gap='5um'
         * bridge_pad_width='5um'
         * bridge_pad_length='15um'
-        * bridge_width='8um
+        * bridge_width='8um'
+        * pad_fillet='0um'
+        * bridge_fillet='0um'
+
+    3D simulation:
+        The bridges can be simulated as 3D air-bridges in Palace via PALACE_Model_Base.add_airbridges_from_design(); the
+        deck width and foot sizes are taken from the I-bar (bridge_width, bridge_pad_width and bridge_pad_length). Do not
+        pass layer_bridge to add_metallic in that case.
     """
 
     default_options = Dict(pathObj='',
@@ -98,7 +107,9 @@ class AirBridgeCPW(QComponent):
                            bridge_pad_gap='5um',
                            bridge_pad_width='5um',
                            bridge_pad_length='15um',
-                           bridge_width='8um')
+                           bridge_width='8um',
+                           pad_fillet='0um',
+                           bridge_fillet='0um')
 
     def make(self):
         """This is executed by the user to generate the qgeometry for the
@@ -126,6 +137,8 @@ class AirBridgeCPW(QComponent):
         airbridge_iBars = []
         self.current_positions = []
         self.current_arclengths = []
+        self.airbridge_feet = []
+        foot_dist = width*0.5 + gap + p.pad_gap + p.bridge_pad_gap + p.bridge_pad_width*0.5
         for m in range(final_pts.shape[0]):
             matTrans = np.array([normals[m], [-normals[m][1], normals[m][0]]])
 
@@ -135,13 +148,15 @@ class AirBridgeCPW(QComponent):
                 (width*0.5 + gap + p.pad_gap, -p.pad_length*0.5),
                 (width*0.5 + gap + p.pad_gap + p.pad_width, -p.pad_length*0.5),
                 (width*0.5 + gap + p.pad_gap + p.pad_width, p.pad_length*0.5)])
-            cur_pts = cur_pts@matTrans + final_pts[m]
+            # cur_pts = cur_pts@matTrans + final_pts[m]
+            cur_pts = QUtilities.round_shapely_polygon(cur_pts @ matTrans + final_pts[m], p.pad_fillet)
             cur_pts2 = np.array([
                 (-width*0.5 - gap - p.pad_gap, -p.pad_length*0.5),
                 (-width*0.5 - gap - p.pad_gap, p.pad_length*0.5),
                 (-width*0.5 - gap - p.pad_gap - p.pad_width, p.pad_length*0.5),
                 (-width*0.5 - gap - p.pad_gap - p.pad_width, -p.pad_length*0.5)])
-            cur_pts2 = cur_pts2@matTrans + final_pts[m]
+            # cur_pts2 = cur_pts2@matTrans + final_pts[m]
+            cur_pts2 = QUtilities.round_shapely_polygon(cur_pts2 @ matTrans + final_pts[m], p.pad_fillet)
 
             #Check that the air bridge pads do not intersect with any obstacles...
             thresh = 1e-6
@@ -150,6 +165,7 @@ class AirBridgeCPW(QComponent):
                 airbridge_pads += [cur_pts, cur_pts2]
                 self.current_positions += [final_pts[m]]
                 self.current_arclengths += [dists[m]]
+                self.airbridge_feet += [(final_pts[m] - np.array(normals[m])*foot_dist, final_pts[m] + np.array(normals[m])*foot_dist)]
             else:
                 continue
             
@@ -169,7 +185,8 @@ class AirBridgeCPW(QComponent):
                 (-width*0.5 - gap - p.pad_gap - p.bridge_pad_gap, -p.bridge_pad_length*0.5),
                 (-width*0.5 - gap - p.pad_gap - p.bridge_pad_gap, -p.bridge_width*0.5)
             ]
-            airbridge_iBars += [np.array(iBar)@matTrans + final_pts[m]]
+            # airbridge_iBars += [np.array(iBar)@matTrans + final_pts[m]]
+            airbridge_iBars += [QUtilities.round_shapely_polygon(np.array(iBar)@matTrans + final_pts[m], p.bridge_fillet)]
 
 
         self.current_positions = np.array(self.current_positions)
@@ -185,3 +202,13 @@ class AirBridgeCPW(QComponent):
         self.add_qgeometry('poly',
                            dict(iBars=shapely.MultiPolygon(airbridge_iBars)),
                            layer=p.layer_bridge)
+
+    def get_airbridge_specs(self):
+        """Returns the air-bridges of this component as a list of dictionaries (in metres) for
+        PALACE_Model_Base.add_airbridges_from_design(). The feet are centred on the I-bar pad sections."""
+        unit_conv = QUtilities.get_units(self.design)
+        p = self.p
+        return [dict(name=f"ab_{self.name}_{m}", pos_start=np.array(pA)*unit_conv, pos_end=np.array(pB)*unit_conv,
+                     width=float(p.bridge_width)*unit_conv, foot_length=float(p.bridge_pad_width)*unit_conv,
+                     foot_width=float(p.bridge_pad_length)*unit_conv, bond_type='ground')
+                for m, (pA, pB) in enumerate(self.airbridge_feet)]
