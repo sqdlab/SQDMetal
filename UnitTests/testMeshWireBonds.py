@@ -541,5 +541,83 @@ class TestWireBondCapacitance(unittest.TestCase):
         self.assertEqual(len(sim._cur_cap_terminals), 1)
 
 
+class TestTrenchedAirBridges(unittest.TestCase):
+    """Substrate trenching with lumped ports on the launch pads and 3D air-bridges. Regression test: the trench walls used to
+    end exactly on the port edges, leaving unmerged vertices at the port corners ('1D mesh not forming a closed loop')."""
+
+    def test_trenched_mesh(self):
+        out = output_dir(type(self).__name__, self._testMethodName)
+        design = build_feedline_design()
+        AirBridgeCPW(design, 'abs', options=dict(pathObj='feed', layer=4, layer_bridge=5, dist_air_bridges='500um', dist_air_bridges_ends='300um'))
+        quiet(design.rebuild)
+        sim = quiet(PALACE_Eigenmode_Simulation, name='wb_trench', metal_design=design, sim_parent_directory=out + '/',
+                    mode='simPC', meshing='GMSH', create_files=True,
+                    user_options={'mesh_max': 200e-6, 'mesh_min': 20e-6, 'number_of_freqs': 1, 'starting_freq': 4e9})
+        sim.add_metallic(1)
+        sim.add_ground_plane()
+        sim.create_port_CPW_on_Launcher('lpL', 20e-6)
+        sim.create_port_CPW_on_Launcher('lpR', 20e-6)
+        sim.enforce_full_3D_simulation(0, substrate_trenching=10e-6)
+        #Fine enough at the launch pads to put mesh nodes inside the 20um x 60um ports (checked below)
+        sim.fine_mesh_components(['lpL', 'lpR'], min_size=5e-6, max_size=200e-6, taper_dist_min=10e-6, metals_only=False)
+        sim.set_airbridge_defaults(cross_section='sheet', height=3e-6)
+        num_bridges = sim.add_airbridges_from_design()
+        self.assertGreater(num_bridges, 0)
+        sim.setup_EPR_interfaces(metal_air=MaterialInterface('Aluminium-Vacuum'), substrate_air=MaterialInterface('Silicon-Vacuum'),
+                                 substrate_metal=MaterialInterface('Silicon-Aluminium'))
+        quiet(sim.prepare_simulation)
+        save_summary(sim, os.path.join(out, 'wb_trench', 'wirebond_summary.txt'))
+
+        with open(os.path.join(out, 'wb_trench', 'wb_trench.json')) as f:
+            bnds = json.load(f)['Boundaries']
+        self.assertEqual(len(bnds['LumpedPort']), 2)
+        summary = sim.get_wirebond_summary(print_summary=False)
+        self.assertEqual(len(summary), num_bridges)
+        for x in summary:
+            self.assertIn(x['physical_group'], bnds['PEC']['Attributes'])
+
+        msh = os.path.join(out, 'wb_trench', 'wb_trench.msh')
+        ext = physical_group_extents(msh, ['ab_', 'rf_port_'])
+        self.assertEqual(len([x for x in ext if x.startswith('ab_')]), num_bridges)
+        self.assertEqual(len([x for x in ext if x.startswith('rf_port_')]), 4)
+        for name, (lo, hi) in ext.items():
+            self.assertAlmostEqual(lo[2], 0, delta=1e-9, msg=name)
+        #The substrate-air EPR interface is the trench floors and walls - it must not reference empty physical groups
+        #(Palace: 'Unknown boundary postprocessing attributes')
+        sa = [x for x in bnds['Postprocessing']['Dielectric'] if x['Type'] == 'SA'][0]['Attributes']
+        gaps = physical_group_extents(msh, ['dielectric_gaps'])
+        self.assertEqual(len(gaps), 1)
+        lo, hi = gaps['dielectric_gaps']
+        self.assertAlmostEqual(lo[2], -10e-6, delta=1e-9)
+        self.assertAlmostEqual(hi[2], 0, delta=1e-9)
+        gmsh.initialize()
+        gmsh.option.setNumber('General.Verbosity', 0)
+        try:
+            gmsh.open(msh)
+            for attr in sa:
+                ents = gmsh.model.getEntitiesForPhysicalGroup(2, attr)
+                self.assertGreater(sum(sum(len(t) for t in gmsh.model.mesh.getElements(2, e)[1]) for e in ents), 0, msg=f"SA attribute {attr}")
+        finally:
+            gmsh.finalize()
+        #The substrate is trenched (10um) under the CPW gaps, including under the lumped ports
+        gmsh.initialize()
+        gmsh.option.setNumber('General.Verbosity', 0)
+        try:
+            gmsh.open(msh)
+            sub = [pg for d, pg in gmsh.model.getPhysicalGroups(3) if gmsh.model.getPhysicalName(d, pg) == 'dielectric_substrate'][0]
+            zmax_under_port = []
+            for e in gmsh.model.getEntitiesForPhysicalGroup(3, sub):
+                tags, coords, _ = gmsh.model.mesh.getNodes(3, e, includeBoundary=True)
+                c = np.array(coords).reshape(-1, 3)
+                lo, hi = ext['rf_port_0a']
+                sel = (c[:, 0] > lo[0]*1e3 + 1e-4) & (c[:, 0] < hi[0]*1e3 - 1e-4) & (c[:, 1] > lo[1]*1e3 + 1e-4) & (c[:, 1] < hi[1]*1e3 - 1e-4)
+                zmax_under_port += c[sel, 2].tolist()
+        finally:
+            gmsh.finalize()
+        #No substrate above the trench floor under the port (it would sit at z=0 without trenching)
+        self.assertGreater(len(zmax_under_port), 0)
+        self.assertLessEqual(max(zmax_under_port)*1e-3, -10e-6 + 1e-9)
+
+
 if __name__ == '__main__':
     unittest.main()

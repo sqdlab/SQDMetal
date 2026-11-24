@@ -198,6 +198,10 @@ class GMSH_Geometry_Builder:
             gap_entities = []
             for cur_gap in gap_names:
                 gap_entities += dict_all_entities[cur_gap]
+            # preserve ports over trenched regions
+            port_entities = [x for cur_name in sim_construct_names for x in dict_all_entities[cur_name] if x[0] == 2]
+            if len(port_entities) > 0:
+                gap_entities = gap_entities + gmsh.model.occ.copy(port_entities)
             trenches = gmsh.model.occ.extrude(gap_entities, 0, 0, -trench_depth)
             self._gmsh_sync()
             dict_all_entities['temp_trenches'] = [x for x in trenches if x[0] == 3]
@@ -388,11 +392,17 @@ class GMSH_Geometry_Builder:
         #TODO: support integration over metals (for superconductors, it's fine as it'll reject B-field anyway)
         #Process Dielectric Gaps
         leDielectricGaps = []
-        for cur_gap in gaps_div:
-            for cur_piece in cur_gap:
-                cur_phys_grp = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_piece]], name=cur_piece)
-                phys_grp_ints[cur_piece] = cur_phys_grp
-                leDielectricGaps.append(cur_phys_grp)
+        if full_3D_params is not None and full_3D_params['substrate_trenching'] > 0:
+            # With trenching, the z=0 gap surfaces were consumed when cutting the trenches; the substrate-air interface is
+            # now the trench floors and walls (collected in 'dielectric_gaps'). Using the gap pieces here would give empty
+            # physical groups (which Palace reports as 'Unknown boundary postprocessing attributes').
+            leDielectricGaps.append(gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities['dielectric_gaps'] if x[0] == 2], name='dielectric_gaps'))
+        else:
+            for cur_gap in gaps_div:
+                for cur_piece in cur_gap:
+                    cur_phys_grp = gmsh.model.addPhysicalGroup(2, [x[1] for x in dict_all_entities[cur_piece]], name=cur_piece)
+                    phys_grp_ints[cur_piece] = cur_phys_grp
+                    leDielectricGaps.append(cur_phys_grp)
         
         final_int_areas = []
         if 'integration_areas' in kwargs:
